@@ -1,12 +1,13 @@
 {
-  "region": "Worcestershire",
-  "email": "website@thelenches.org.uk",
-  "noindex": true,
-  "nav": [
-    { "title": "Home", "url": "/" },
-    { "title": "News & Events", "url": "/news-events/" },
-    { "title": "Groups & Clubs", "url": "/groups/" },
-    { "title": "Village Halls", "url": "/halls/" },
-    { "title": "Contact", "url": "/contact/" }
-  ]
+  "name": "thelenches-site",
+  "version": "1.0.0",
+  "description": "The Lenches village website — static site built with Eleventy.",
+  "license": "MIT",
+  "scripts": {
+    "build": "eleventy",
+    "serve": "eleventy --serve"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^3.0.0"
+  }
 }
