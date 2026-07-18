@@ -1,0 +1,62 @@
+---
+layout: base.njk
+title: News & Events
+description: What's on across the Lenches villages this week — events, news, notices and bin collection days.
+---
+<main class="container">
+  <section>
+    <h1>News &amp; Events</h1>
+    <p class="lead">What's happening across the villages, gathered from the newsletter and other local sources.</p>
+    <p><span class="datestamp">Updated {{ content.updated }}</span></p>
+    <div class="notice"><strong>Updated every Thursday</strong>, alongside the newsletter. Got something to include? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a> by the end of Wednesday.</div>
+  </section>
+
+  <section>
+    <h2>Bin day</h2>
+    <div class="bin-box">
+      {% for c in content.bin.colours %}<div class="bin-swatch" style="background:{{ c }};"></div>{% endfor %}
+      <div>
+        <strong>{{ content.bin.headline }}</strong>
+        <div class="small mut">{{ content.bin.note }} &middot; <a href="{{ content.bin.lookup }}">Check your own address &rarr;</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Events</h2>
+    {% for e in content.events %}
+    <div class="event">
+      <div class="date"><span class="dow">{{ e.dow }}</span><span class="day">{{ e.day }}</span><span class="mon">{{ e.mon }}</span></div>
+      <div>
+        <h3 class="mt0">{{ e.title }}{% if e.tag == "vale" %} <span class="tag tag-vale">Wider Vale &middot; for your call</span>{% elif e.tag == "fb" %} <span class="tag tag-fb">From the group</span>{% endif %}</h3>
+        <p class="mt0">{{ e.body }}{% if e.link %} <a href="{{ e.link.url }}">{{ e.link.text }} &rarr;</a>{% endif %}</p>
+      </div>
+    </div>
+    {% endfor %}
+    {% if content.eventsFootnote %}<p class="small mut">{{ content.eventsFootnote }}</p>{% endif %}
+  </section>
+
+  <section>
+    <h2>News</h2>
+    <div class="grid">
+      {% for n in content.news %}
+      <div class="card">
+        <h3 class="mt0">{{ n.title }}{% if n.tag == "fb" %} <span class="tag tag-fb">From the group</span>{% endif %}</h3>
+        <p>{{ n.body }}{% if n.link %} <a href="{{ n.link.url }}">{{ n.link.text }} &rarr;</a>{% endif %}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section>
+    <h2>Notices</h2>
+    <div class="grid">
+      {% for n in content.notices %}
+      <div class="card">
+        <h3 class="mt0">{{ n.title }}{% if n.tag == "fb" %} <span class="tag tag-fb">From the group</span>{% endif %}</h3>
+        <p class="mt0">{{ n.body }}{% if n.link %} <a href="{{ n.link.url }}">{{ n.link.text }} &rarr;</a>{% endif %}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</main>

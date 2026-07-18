@@ -1,0 +1,51 @@
+---
+layout: base.njk
+title: Village Halls
+description: Church Lench and Rous Lench village halls — history, hire charges and how to book.
+---
+<main class="container">
+
+  <section>
+    <h1>Village Halls</h1>
+    <p class="lead">Both Church Lench and Rous Lench have village halls available for regular users and one-off events.</p>
+  </section>
+
+  <section id="church-lench">
+    <h2>Church Lench Village Hall</h2>
+    <img class="feature-img" src="https://storage.mlcdn.com/account_image/2093769/o9HhMUAMfkHyovQ1FTNZra1g6FtyzEwX8mpWBp6x.jpg" alt="Church Lench Village Hall" loading="lazy">
+    <p><a class="btn btn-outline" href="https://calendar.google.com/calendar/u/0/embed?src=clvillagehallbookings@gmail.com&ctz=Europe/London">View the hall calendar</a></p>
+
+    <p>On 7 April 1933, a plot of land was conveyed to the community of Church Lench by Archibald Powell of Church Farm for the sum of £5. The community was defined as the Parish of Church Lench and its immediate vicinity, represented by some fourteen residents who agreed to act as a Council of Management. The land was to be used for physical and mental recreation, and for the social, moral and intellectual development of the community.</p>
+    <p>The first village hall stood until 2006, when it was replaced by the building we have today. The hall is now used for social and recreational purposes, for committee meetings, and as a polling station for local and national elections. Regular users include several weekly exercise classes, Lenches Pre-School, South Lenches Parish Council, Lenches Tennis Club, All Saints Parish Church and GLADS.</p>
+    <img class="feature-img" src="https://storage.mlcdn.com/account_image/2093769/2AxxQ8LOO2UNw7Pc9ytHs1tKVB04MBiycAJRMuM0.jpg" alt="Inside Church Lench Village Hall" loading="lazy">
+
+    <h3>Hire the hall</h3>
+    <div class="card">
+      <table class="contacts">
+        <tr><td>Hourly</td><td>£15</td></tr>
+        <tr><td>Hourly (regular users, at least monthly)</td><td>£10 per hour</td></tr>
+        <tr><td>Maximum full day</td><td>£150</td></tr>
+        <tr><td>Party package (4hr daytime)</td><td>£45</td></tr>
+        <tr><td>Weekend package</td><td>£400 <span class="small muted">(Fri 16:00–23:00, Sat &amp; Sun 08:00–23:30)</span></td></tr>
+        <tr><td>Sound system with loop induction</td><td>£15 per day <span class="small muted">(other times by arrangement)</span></td></tr>
+      </table>
+    </div>
+    <p>To enquire about a booking, email <a href="mailto:clvillagehallbookings@gmail.com">clvillagehallbookings@gmail.com</a>. Once a date and time are agreed, hirers read and accept the booking conditions and complete a booking form. The hall may be hired by anyone over 21, subject to availability and approval by the Hall Committee, and to the terms in the Hirers' Agreement.</p>
+    <p>A non-refundable 50% deposit is paid with the booking form; the balance is due in cleared funds at least seven days before the event. Cash or cheque accepted, and a returnable security deposit may be requested.</p>
+
+    <h3>The Management Committee</h3>
+    <p>The hall is run by a voluntary management committee of community members responsible for its maintenance, improvement and hiring.</p>
+
+    <h3>The 100 Club</h3>
+    <p>Anyone is welcome to join the 100 Club. The annual fee is £12, which goes towards the running costs of the hall. Four times a year, at functions organised by the committee, a draw takes place — first prize £25, second £10, third £5. You don't need to be present to win. To join, email <a href="mailto:clvillagehallbookings@gmail.com">clvillagehallbookings@gmail.com</a>.</p>
+  </section>
+
+  <section id="rous-lench">
+    <h2>Rous Lench Village Hall</h2>
+    <div class="card">
+      <p class="mt0">Built in 1885 and deeded to the village in 1947, Rous Lench Village Hall hosts public events and is available for hire.</p>
+      <p><a href="https://rouslench.com/">Visit the Rous Lench website &rarr;</a></p>
+    </div>
+  </section>
+
+</main>
