@@ -3,7 +3,7 @@
   "bin": {
     "colours": ["#3a6b35", "#7a4a12"],
     "headline": "This Monday, 20 July — recycling and garden waste.",
-    "note": "Next black bin (non-recyclable): Monday 27 July. Collections are on the usual Monday — put bins out before 7am. (WR11 4UG)",
+    "note": "Next black bin (non-recyclable): Monday 27 July.",
     "lookup": "https://selfservice.wychavon.gov.uk/wdcroundlookup/"
   },
   "events": [
