@@ -30,7 +30,7 @@
         <a href="mailto:{{ site.email }}">{{ site.email }}</a>
       </div>
       <div>
-        {% for item in site.nav %}{% if not loop.first %} &middot; {% endif %}<a href="{{ item.url | url }}">{{ item.title }}</a>{% endfor %}
+        {% for item in site.nav %}{% if not loop.first %} &middot; {% endif %}<a href="{{ item.url | url }}">{{ item.title }}</a>{% endfor %} &middot; <a href="{{ '/privacy/' | url }}">Privacy</a>
       </div>
     </div>
     <div class="container">
