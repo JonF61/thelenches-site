@@ -6,16 +6,16 @@
   {% if site.noindex %}<meta name="robots" content="noindex, nofollow">{% endif %}
   <title>{{ title }} — The Lenches</title>
   {% if description %}<meta name="description" content="{{ description }}">{% endif %}
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="{{ '/style.css' | url }}">
 </head>
 <body>
 
   <header class="site-header">
     <div class="container">
-      <a class="brand" href="/">The Lenches <span>&middot; {{ site.region }}</span></a>
+      <a class="brand" href="{{ '/' | url }}">The Lenches <span>&middot; {{ site.region }}</span></a>
       <nav class="nav">
         {% for item in site.nav %}
-        <a href="{{ item.url }}"{% if page.url == item.url %} class="active"{% endif %}>{{ item.title }}</a>
+        <a href="{{ item.url | url }}"{% if page.url == item.url %} class="active"{% endif %}>{{ item.title }}</a>
         {% endfor %}
       </nav>
     </div>
@@ -30,7 +30,7 @@
         <a href="mailto:{{ site.email }}">{{ site.email }}</a>
       </div>
       <div>
-        {% for item in site.nav %}{% if not loop.first %} &middot; {% endif %}<a href="{{ item.url }}">{{ item.title }}</a>{% endfor %}
+        {% for item in site.nav %}{% if not loop.first %} &middot; {% endif %}<a href="{{ item.url | url }}">{{ item.title }}</a>{% endfor %}
       </div>
     </div>
     <div class="container">
