@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% if site.noindex %}<meta name="robots" content="noindex, nofollow">{% endif %}
+  <title>{{ title }} — The Lenches</title>
+  {% if description %}<meta name="description" content="{{ description }}">{% endif %}
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="/">The Lenches <span>&middot; {{ site.region }}</span></a>
+      <nav class="nav">
+        {% for item in site.nav %}
+        <a href="{{ item.url }}"{% if page.url == item.url %} class="active"{% endif %}>{{ item.title }}</a>
+        {% endfor %}
+      </nav>
+    </div>
+  </header>
+
+  {{ content | safe }}
+
+  <footer class="site-footer">
+    <div class="container">
+      <div>
+        <strong>The Lenches Newsletter</strong><br>
+        <a href="mailto:{{ site.email }}">{{ site.email }}</a>
+      </div>
+      <div>
+        {% for item in site.nav %}{% if not loop.first %} &middot; {% endif %}<a href="{{ item.url }}">{{ item.title }}</a>{% endfor %}
+      </div>
+    </div>
+    <div class="container">
+      <p class="disclaimer">Information on this website is provided by third parties and, while we try to keep it accurate and up to date, it may not always be. Spotted something wrong? Let us know.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
