@@ -1,7 +1,7 @@
 ---
 layout: base.njk
 title: Contact & About
-description: Contact the Lenches newsletter, submit content, and read our privacy note.
+description: Contact the Lenches newsletter, submit content, and find village contacts.
 ---
 <main class="container">
 
@@ -18,14 +18,20 @@ description: Contact the Lenches newsletter, submit content, and read our privac
     </div>
   </section>
 
+  <section>
+    <h2>Village contacts</h2>
+    <table class="contacts">
+      <tr><td>The Lenches Club</td><td><a href="mailto:lenchesclubmail@gmail.com">lenchesclubmail@gmail.com</a> &middot; 01386 870221</td></tr>
+      <tr><td>Church Lench Village Hall</td><td><a href="mailto:clvillagehallbookings@gmail.com">clvillagehallbookings@gmail.com</a></td></tr>
+      <tr><td>Tennis Club</td><td><a href="mailto:lenchestc@gmail.com">lenchestc@gmail.com</a></td></tr>
+      <tr><td>Cricket Club</td><td><a href="mailto:cricket.lenches@googlemail.com">cricket.lenches@googlemail.com</a></td></tr>
+      <tr><td>Newsletter / website</td><td><a href="mailto:{{ site.email }}">{{ site.email }}</a></td></tr>
+    </table>
+  </section>
+
   <section id="submit">
     <h2>Submit something for the newsletter</h2>
     <p>Got an event, notice or bit of news? Send it to <a href="mailto:{{ site.email }}">{{ site.email }}</a> by the <strong>end of Wednesday</strong> and we'll aim to include it in Thursday's newsletter and here on the site. A short paragraph and, if you have one, a poster or photo is ideal.</p>
-  </section>
-
-  <section id="privacy">
-    <h2>Privacy note</h2>
-    <p>If you sign up for the newsletter, we use your email address only to send you the weekly newsletter via our email provider. We don't sell or share it, and you can unsubscribe at any time using the link in any newsletter, or by emailing us.</p>
   </section>
 
 </main>
