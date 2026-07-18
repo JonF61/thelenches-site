@@ -1,0 +1,99 @@
+---
+layout: base.njk
+title: Home
+description: News, events and information for the Lenches villages in Worcestershire, and the weekly Thursday newsletter.
+---
+<div class="hero" style="background-image: linear-gradient(rgba(44,82,40,.5), rgba(44,82,40,.6)), url('https://storage.mlcdn.com/account_image/2093769/BGik9FG7P22q0P3h_Club-view.jpeg');">
+  <h1>Welcome to the Lenches</h1>
+  <p>News, events and information for Church, Rous, Ab, Atch and Sheriffs Lench — and our weekly newsletter, delivered every Thursday morning.</p>
+</div>
+
+<main class="container">
+
+  <section>
+    <p class="lead">This site supports our weekly newsletter and gathers what's happening across the villages in one place. Everything here is collected from local groups, organisations and residents, and kept as accurate and up to date as we can manage.</p>
+    <img class="feature-img" src="https://storage.mlcdn.com/account_image/2093769/7sCP0DH5djSOZl2NBF3KtItKeii7CoQcFvSKpeiR.jpg" alt="The Lenches, Worcestershire" loading="lazy">
+    <p><a class="btn" href="/news-events/">See what's on this week</a>
+       <a class="btn btn-outline" href="#signup">Get the newsletter</a></p>
+  </section>
+
+  <section id="signup">
+    <h2>Newsletter sign-up</h2>
+    <div class="signup">
+      <p class="mt0">Our newsletter is sent every <strong>Thursday morning</strong>. Enter your email to join.</p>
+      <form class="ml-signup" action="https://assets.mailerlite.com/jsonp/2093769/pages/178653313424689086/subscribe" method="post" target="ml_iframe">
+        <input type="email" name="fields[email]" placeholder="you@example.com" aria-label="Email address" required
+               style="padding:.6rem .8rem;border:1px solid var(--line);border-radius:6px;min-width:240px;font-size:1rem;margin:.25rem .5rem .25rem 0;">
+        <input type="hidden" name="ml-submit" value="1">
+        <button type="submit" class="btn">Subscribe</button>
+      </form>
+      <p class="ml-thanks small" style="display:none;color:var(--green-dark);font-weight:600;margin-top:.8rem;">Thanks — please check your inbox to confirm your subscription.</p>
+      <iframe name="ml_iframe" title="signup" style="display:none;width:0;height:0;border:0;"></iframe>
+      <p class="small muted">You can unsubscribe any time. See our <a href="/contact/#privacy">privacy note</a>.</p>
+      <script>document.addEventListener('submit',function(e){if(e.target.classList.contains('ml-signup')){var t=e.target.parentNode.querySelector('.ml-thanks');if(t)t.style.display='block';}});</script>
+    </div>
+  </section>
+
+  <section>
+    <h2>Around the villages</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>News &amp; Events</h3>
+        <p>Village events, notices, cricket fixtures, church services and bin days — refreshed each week alongside the newsletter.</p>
+        <p><a href="/news-events/">What's on &rarr;</a></p>
+      </div>
+      <div class="card">
+        <h3>Groups &amp; Clubs</h3>
+        <p>GLADS, the Walking Group, cricket and tennis, the community orchard and more — including pages we host for groups without their own site.</p>
+        <p><a href="/groups/">Meet the groups &rarr;</a></p>
+      </div>
+      <div class="card">
+        <h3>Village Halls</h3>
+        <p>Church Lench and Rous Lench village halls — history, hire charges and how to book.</p>
+        <p><a href="/halls/">Halls &amp; hire &rarr;</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Village contacts</h2>
+    <table class="contacts">
+      <tr><td>The Lenches Club</td><td><a href="mailto:lenchesclubmail@gmail.com">lenchesclubmail@gmail.com</a> &middot; 01386 870221</td></tr>
+      <tr><td>Church Lench Village Hall</td><td><a href="mailto:clvillagehallbookings@gmail.com">clvillagehallbookings@gmail.com</a></td></tr>
+      <tr><td>Tennis Club</td><td><a href="mailto:lenchestc@gmail.com">lenchestc@gmail.com</a></td></tr>
+      <tr><td>Cricket Club</td><td><a href="mailto:cricket.lenches@googlemail.com">cricket.lenches@googlemail.com</a></td></tr>
+      <tr><td>Newsletter / website</td><td><a href="mailto:{{ site.email }}">{{ site.email }}</a></td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>Useful local links</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Councils &amp; services</h3>
+        <p>
+          <a href="https://www.southlenchesparishcouncil.org/">South Lenches Parish Council</a><br>
+          <a href="https://rous-lench.parish.uk/">Rous Lench Parish</a><br>
+          <a href="https://www.wychavon.gov.uk/">Wychavon District Council</a>
+        </p>
+      </div>
+      <div class="card">
+        <h3>Church &amp; schools</h3>
+        <p>
+          <a href="https://www.archbenefice.org.uk/">The Archbenefice (churches)</a><br>
+          <a href="https://www.churchlench.worcs.sch.uk/">Church Lench CofE First School</a><br>
+          <a href="https://thelenchespreschool.org.uk/">The Lenches Pre-school</a>
+        </p>
+      </div>
+      <div class="card">
+        <h3>Out and about</h3>
+        <p>
+          <a href="https://lenchestheatre.co.uk/">Lenches Amphitheatre</a><br>
+          <a href="https://www.valeandspa.co.uk/">Vale &amp; Spa — what's on</a><br>
+          <a href="https://www.rightmove.co.uk/property-for-sale/Church-Lench.html">Property for sale</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+</main>
