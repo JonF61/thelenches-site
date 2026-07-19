@@ -3,7 +3,7 @@
   "bin": {
     "colours": ["#3a6b35", "#7a4a12"],
     "headline": "This Monday, 20 July — recycling and garden waste.",
-    "note": "Next black bin (non-recyclable): Monday 27 July.",
+    "note": "",
     "lookup": "https://selfservice.wychavon.gov.uk/wdcroundlookup/"
   },
   "events": [
@@ -41,7 +41,7 @@
       "dow": "Sun", "day": "26", "mon": "Jul",
       "title": "Illyria: The Pirates of Penzance — Lenches Amphitheatre",
       "body": "The award-winning Illyria return to the open-air stage. Performance 4pm, gates 2.30pm, with a pop-up café, ice creams and licensed bar.",
-      "link": { "text": "Book tickets", "url": "https://lenchestheatre.co.uk/" }
+      "link": { "text": "Book tickets", "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/1987175" }
     },
     {
       "dow": "Sat", "day": "18", "mon": "Jul",
