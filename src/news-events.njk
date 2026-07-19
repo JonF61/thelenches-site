@@ -15,7 +15,7 @@ description: What's on across the Lenches villages this week — events, news, n
         {% for c in whatson.bin.colours %}<div class="bin-swatch" style="background:{{ c }};"></div>{% endfor %}
         <div>
           <strong>{{ whatson.bin.headline }}</strong>
-          <div class="small mut">{{ whatson.bin.note }}</div>
+          {% if whatson.bin.note %}<div class="small mut">{{ whatson.bin.note }}</div>{% endif %}
         </div>
       </div>
     </div>
@@ -29,7 +29,7 @@ description: What's on across the Lenches villages this week — events, news, n
       <div class="date"><span class="dow">{{ e.dow }}</span><span class="day">{{ e.day }}</span><span class="mon">{{ e.mon }}</span></div>
       <div>
         <h3 class="mt0">{{ e.title }}{% if e.tag == "vale" %} <span class="tag tag-vale">Wider Vale &middot; for your call</span>{% elif e.tag == "fb" %} <span class="tag tag-fb">From the group</span>{% endif %}</h3>
-        <p class="mt0">{{ e.body }}{% if e.link %} <a href="{{ e.link.url }}">{{ e.link.text }} &rarr;</a>{% endif %}</p>
+        <p class="mt0">{{ e.body }}{% if e.link %} <a href="{{ e.link.url }}" target="_blank" rel="noopener">{{ e.link.text }} &rarr;</a>{% endif %}</p>
       </div>
     </div>
     {% endfor %}
@@ -42,7 +42,7 @@ description: What's on across the Lenches villages this week — events, news, n
       {% for n in whatson.news %}
       <div class="card">
         <h3 class="mt0">{{ n.title }}{% if n.tag == "fb" %} <span class="tag tag-fb">From the group</span>{% endif %}</h3>
-        <p>{{ n.body }}{% if n.link %} <a href="{{ n.link.url }}">{{ n.link.text }} &rarr;</a>{% endif %}</p>
+        <p>{{ n.body }}{% if n.link %} <a href="{{ n.link.url }}" target="_blank" rel="noopener">{{ n.link.text }} &rarr;</a>{% endif %}</p>
       </div>
       {% endfor %}
     </div>
@@ -54,7 +54,7 @@ description: What's on across the Lenches villages this week — events, news, n
       {% for n in whatson.notices %}
       <div class="card">
         <h3 class="mt0">{{ n.title }}{% if n.tag == "fb" %} <span class="tag tag-fb">From the group</span>{% endif %}</h3>
-        <p class="mt0">{{ n.body }}{% if n.link %} <a href="{{ n.link.url }}">{{ n.link.text }} &rarr;</a>{% endif %}</p>
+        <p class="mt0">{{ n.body }}{% if n.link %} <a href="{{ n.link.url }}" target="_blank" rel="noopener">{{ n.link.text }} &rarr;</a>{% endif %}</p>
       </div>
       {% endfor %}
     </div>
