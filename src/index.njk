@@ -3,7 +3,7 @@ layout: base.njk
 title: Home
 description: News, events and information for the Lenches villages in Worcestershire, and the weekly Thursday newsletter.
 ---
-<div class="hero" style="background-image: linear-gradient(rgba(44,82,40,.5), rgba(44,82,40,.6)), url('https://storage.mlcdn.com/account_image/2093769/BGik9FG7P22q0P3h_Club-view.jpeg');">
+<div class="hero" style="background-image: linear-gradient(rgba(44,82,40,.5), rgba(44,82,40,.6)), url('{{ '/images/club-view.jpg' | url }}');">
   <h1>Welcome to the Lenches</h1>
   <p>News, events and information for Church, Rous, Ab, Atch and Sheriffs Lench — and our weekly newsletter, delivered every Thursday morning.</p>
 </div>
@@ -12,7 +12,7 @@ description: News, events and information for the Lenches villages in Worcesters
 
   <section>
     <p class="lead">This site supports our weekly newsletter and gathers what's happening across the villages in one place. Everything here is collected from local groups, organisations and residents, and kept as accurate and up to date as we can manage.</p>
-    <img class="feature-img" src="https://storage.mlcdn.com/account_image/2093769/7sCP0DH5djSOZl2NBF3KtItKeii7CoQcFvSKpeiR.jpg" alt="The Lenches, Worcestershire" loading="lazy">
+    <img class="feature-img" src="{{ '/images/lenches-aerial.jpg' | url }}" alt="The Lenches, Worcestershire" loading="lazy">
     <p><a class="btn" href="{{ '/news-events/' | url }}">See what's on this week</a></p>
   </section>
 
