@@ -3,7 +3,7 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy("src/images");
 
   return {
-    pathPrefix: "/thelenches-site/",
+    pathPrefix: "/",
     dir: {
       input: "src",
       includes: "_includes",
