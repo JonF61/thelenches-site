@@ -4,10 +4,27 @@
   <meta name="google-site-verification" content="tZwnp0H9L9izwMlQb5imWeptFYtCY3UstxkKAWSvj38" />
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  {% if site.noindex %}<meta name="robots" content="noindex, nofollow">{% endif %}
+  {% if site.noindex or noindex %}<meta name="robots" content="noindex, nofollow">{% endif %}
   <title>{{ title }} — The Lenches</title>
   {% if description %}<meta name="description" content="{{ description }}">{% endif %}
   <link rel="stylesheet" href="{{ '/style.css' | url }}">
+  <link rel="icon" href="{{ '/images/favicon.svg' | url }}" type="image/svg+xml">
+  <meta name="theme-color" content="#3a6b35">
+  <link rel="canonical" href="{{ site.url }}{{ page.url }}">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{{ site.name }}">
+  <meta property="og:locale" content="en_GB">
+  <meta property="og:title" content="{{ title }} — The Lenches">
+  {% if description %}<meta property="og:description" content="{{ description }}">{% endif %}
+  <meta property="og:url" content="{{ site.url }}{{ page.url }}">
+  <meta property="og:image" content="{{ site.ogImage }}">
+  <meta property="og:image:alt" content="{{ site.ogImageAlt }}">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ title }} — The Lenches">
+  {% if description %}<meta name="twitter:description" content="{{ description }}">{% endif %}
+  <meta name="twitter:image" content="{{ site.ogImage }}">
 </head>
 <body>
 
