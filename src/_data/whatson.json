@@ -25,13 +25,53 @@
       "body": "The award-winning Illyria return to the open-air stage. Performance 4pm, gates 2.30pm, with a pop-up café, ice creams and licensed bar.",
       "link": { "text": "Book tickets", "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/1987175" }
     },
+          {
+                    "dow": "Sun", "day": "9", "mon": "Aug",
+                    "title": "Sounds of the 60s: The Nightingales — Lenches Amphitheatre",
+                    "body": "Gates 4pm, performance 5–7pm.",
+                    "link": { "text": "Book tickets", "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/2282639" }
+          },
+          {
+                    "dow": "Sun", "day": "16", "mon": "Aug",
+                    "title": "Jeeves and Wooster: Stiff Upper Lip — Lenches Amphitheatre",
+                    "body": "Alfresco Actors perform Wodehouse's comedy. Gates 1pm, performance 2.30–4.40pm.",
+                    "link": { "text": "Book tickets", "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/2098402" }
+          },
     {
       "dow": "Fri", "day": "24", "mon": "Jul",
       "title": "Freedom Fields Festival",
       "tag": "vale",
       "body": "From midday at The Farm Animal Sanctuary, Evesham (runs across the weekend).",
       "link": { "text": "More on Visit Evesham", "url": "https://www.visitevesham.co.uk/whats-on/" }
-    }
+    },
+          {
+                    "dow": "Fri", "day": "31", "mon": "Jul",
+                    "title": "Battle of Evesham Festival — Crown & Corporation Meadow",
+                    "tag": "vale",
+                    "body": "Europe's largest 13th-century battle re-enactment, running into Saturday 1 Aug, with a talks programme including Alice Roberts and the Medieval Baebes.",
+                    "link": { "text": "More on Visit Evesham", "url": "https://www.visitevesham.co.uk/whats-on/" }
+          },
+          {
+                    "dow": "Sun", "day": "9", "mon": "Aug",
+                    "title": "Mikron Theatre: Top of the Wold — Evesham",
+                    "tag": "vale",
+                    "body": "A touring theatre company's new play celebrating community and culture.",
+                    "link": { "text": "More on Visit Evesham", "url": "https://www.visitevesham.co.uk/whats-on/" }
+          },
+          {
+                    "dow": "Sat", "day": "15", "mon": "Aug",
+                    "title": "Evesham Scarecrow Festival — Hampton Ferry",
+                    "tag": "vale",
+                    "body": "Scarecrow-making, live music, stalls and the Rotary duck race.",
+                    "link": { "text": "More on Vale & Spa", "url": "https://www.valeandspa.co.uk/whats-on/events/" }
+          },
+          {
+                    "dow": "Sat", "day": "15", "mon": "Aug",
+                    "title": "Murder Mystery Night: Bingo! Bonkers! — Evesham",
+                    "tag": "vale",
+                    "body": "A bingo night with a sinister twist.",
+                    "link": { "text": "More on Visit Evesham", "url": "https://www.visitevesham.co.uk/whats-on/" }
+          }
   ],
   "eventsFootnote": "Also further ahead at the Club: Cash Bingo 7 Aug, private party 15 Aug, Cash Bingo 21 Aug, Glo Quiz 22 Aug.",
   "news": [
@@ -48,7 +88,12 @@
       "tag": "fb",
       "body": "Thanks to Dave Burns and Paul Davey, who did an excellent job repairing the broken see-saw in the play area — \"better than the original,\" and the pre-school are delighted to have it back for September.",
       "link": { "text": "See the post", "url": "https://www.facebook.com/groups/thelenchescommunity" }
-    }
+    },
+        {
+                "title": "Summer of Heritage across Worcestershire",
+                "body": "Wychavon's summer heritage programme is bringing history events across the county, including next month's Battle of Evesham Festival.",
+                "link": { "text": "More from Evesham Observer", "url": "https://eveshamobserver.co.uk/news/summer-of-heritage-brings-history-to-life-across-worcestershire-63035/" }
+        }
   ],
   "notices": [
     {
