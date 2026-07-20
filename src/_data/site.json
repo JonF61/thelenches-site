@@ -1,7 +1,7 @@
 {
   "region": "Worcestershire",
   "email": "website@thelenches.org.uk",
-  "noindex": true,
+  "noindex": false,
   "nav": [
     { "title": "Home", "url": "/" },
     { "title": "News & Events", "url": "/news-events/" },
