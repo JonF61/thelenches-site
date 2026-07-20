@@ -1,5 +1,5 @@
 {
-  "updated": "Friday 17 July 2026",
+  "updated": "Monday 20 July 2026",
   "bin": {
     "colours": ["#3a6b35", "#7a4a12"],
     "headline": "This Monday, 20 July — recycling and garden waste.",
@@ -7,24 +7,6 @@
     "lookup": "https://selfservice.wychavon.gov.uk/wdcroundlookup/"
   },
   "events": [
-    {
-      "dow": "Sat", "day": "18", "mon": "Jul",
-      "title": "Lenches Cricket — match day",
-      "body": "1st XI away to Leek Wootton CC; 2nd XI at home to Ashton Under Hill CC at The Lenches. A lovely way to spend a Saturday afternoon — supporters and families welcome.",
-      "link": { "text": "Fixtures & results", "url": "https://lenchescc.play-cricket.com/" }
-    },
-    {
-      "dow": "Sat", "day": "18", "mon": "Jul",
-      "title": "Glo Quiz — The Lenches Club",
-      "body": "From 8pm. Children welcome.",
-      "link": { "text": "Club calendar", "url": "https://calendar.google.com/calendar/embed?src=the.lenches.club1%40gmail.com&ctz=Europe%2FLondon" }
-    },
-    {
-      "dow": "Sun", "day": "19", "mon": "Jul",
-      "title": "World Cup Final — big screen at the Club",
-      "body": "Shown on the screens at The Lenches Club. Children welcome.",
-      "link": { "text": "Club calendar", "url": "https://calendar.google.com/calendar/embed?src=the.lenches.club1%40gmail.com&ctz=Europe%2FLondon" }
-    },
     {
       "dow": "Fri", "day": "24", "mon": "Jul",
       "title": "Cash Bingo — The Lenches Club",
@@ -42,13 +24,6 @@
       "title": "Illyria: The Pirates of Penzance — Lenches Amphitheatre",
       "body": "The award-winning Illyria return to the open-air stage. Performance 4pm, gates 2.30pm, with a pop-up café, ice creams and licensed bar.",
       "link": { "text": "Book tickets", "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/1987175" }
-    },
-    {
-      "dow": "Sat", "day": "18", "mon": "Jul",
-      "title": "Bretforton Village Proms",
-      "tag": "vale",
-      "body": "From 5pm at Bretforton Sports Club, near Evesham.",
-      "link": { "text": "More on Visit Evesham", "url": "https://www.visitevesham.co.uk/whats-on/" }
     },
     {
       "dow": "Fri", "day": "24", "mon": "Jul",
