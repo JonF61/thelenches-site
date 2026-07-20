@@ -9,7 +9,7 @@ description: What's on across the Lenches villages this week — events, news, n
       <div class="ne-title">
         <h1>News &amp; Events</h1>
         <p class="lead">What's happening across the villages, gathered from the newsletter and other local sources.</p>
-        <p><span class="datestamp">Updated {{ whatson.updated }}</span></p>
+        <p><span class="datestamp">Page updated {{ whatson.updated }}</span></p>
       </div>
       <div class="bin-box">
         {% for c in whatson.bin.colours %}<div class="bin-swatch" style="background:{{ c }};"></div>{% endfor %}
@@ -19,7 +19,7 @@ description: What's on across the Lenches villages this week — events, news, n
         </div>
       </div>
     </div>
-    <div class="notice"><strong>Updated every Thursday</strong>, alongside the newsletter. Got something to include? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a> by the end of Wednesday.</div>
+    <div class="notice">Got something to include? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a> by the end of Wednesday.</div>
   </section>
 
   <section>
