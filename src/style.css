@@ -77,10 +77,13 @@ h3{font-size:1.15rem;margin-bottom:.3rem}
 .bin-box{display:flex;align-items:center;gap:1rem;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem 1.2rem}
 .bin-swatch{width:38px;height:50px;border-radius:4px 4px 2px 2px;border:2px solid rgba(0,0,0,.15);flex:0 0 auto}
 
-/* Contacts table */
+/* Tables (contacts + hire charges) */
 .contacts{width:100%;border-collapse:collapse}
-.contacts td{padding:.5rem .4rem;border-bottom:1px solid var(--line);vertical-align:top}
-.contacts td:first-child{font-weight:600;white-space:nowrap}
+.contacts caption{text-align:left;font-weight:700;color:var(--green-dark);padding:0 0 .5rem;font-size:1rem}
+.contacts th,.contacts td{padding:.55rem .4rem;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}
+.contacts thead th{font-size:.8rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);border-bottom:2px solid var(--line)}
+.contacts th[scope="row"]{font-weight:600}
+.contacts a{word-break:break-word}
 
 /* Images */
 .feature-img{width:100%;max-height:360px;object-fit:cover;border-radius:var(--radius);box-shadow:var(--shadow);margin:1.2rem 0}
@@ -99,3 +102,35 @@ h3{font-size:1.15rem;margin-bottom:.3rem}
 .small{font-size:.88rem}
 .mt0{margin-top:0}
 .center{text-align:center}
+
+/* Skip link */
+.skip-link{position:absolute;left:-9999px;top:0;background:var(--accent);color:#fff;padding:.7rem 1.1rem;border-radius:0 0 6px 0;z-index:100;text-decoration:none;font-weight:600}
+.skip-link:focus{left:0}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* Tap targets */
+.nav a{display:flex;align-items:center;min-height:44px;padding:.4rem .8rem}
+.brand{display:inline-flex;align-items:center;min-height:44px}
+.site-footer a{display:inline-block;padding:.25rem 0}
+
+/* Stable image boxes (prevents layout shift) */
+.feature-img{aspect-ratio:16/9;height:auto}
+.gallery img,.card .thumb{aspect-ratio:3/2;height:auto}
+
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+/* Mobile */
+@media (max-width:560px){
+  .container{padding:0 1rem}
+  .hero{padding:2.25rem 1rem}
+  .hero h1{font-size:1.65rem}
+  h2{font-size:1.3rem}
+  .contacts,.contacts thead,.contacts tbody,.contacts tr,.contacts th,.contacts td{display:block;width:100%}
+  .contacts thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .contacts tr{border-bottom:1px solid var(--line);padding:.55rem 0}
+  .contacts th[scope="row"]{border:none;padding:0 0 .15rem;font-weight:700}
+  .contacts td{border:none;padding:0}
+  .card{padding:1rem}
+  .event .date{flex:0 0 54px}
+  .site-footer .container{flex-direction:column}
+}
