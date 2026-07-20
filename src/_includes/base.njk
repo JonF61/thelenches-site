@@ -4,42 +4,27 @@
   <meta name="google-site-verification" content="tZwnp0H9L9izwMlQb5imWeptFYtCY3UstxkKAWSvj38" />
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  {% if site.noindex or noindex %}<meta name="robots" content="noindex, nofollow">{% endif %}
+  {% if site.noindex %}<meta name="robots" content="noindex, nofollow">{% endif %}
   <title>{{ title }} — The Lenches</title>
   {% if description %}<meta name="description" content="{{ description }}">{% endif %}
   <link rel="stylesheet" href="{{ '/style.css' | url }}">
-  <link rel="icon" href="{{ '/images/favicon.svg' | url }}" type="image/svg+xml">
-  <meta name="theme-color" content="#3a6b35">
-  <link rel="canonical" href="{{ site.url }}{{ page.url }}">
-
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="{{ site.name }}">
-  <meta property="og:locale" content="en_GB">
-  <meta property="og:title" content="{{ title }} — The Lenches">
-  {% if description %}<meta property="og:description" content="{{ description }}">{% endif %}
-  <meta property="og:url" content="{{ site.url }}{{ page.url }}">
-  <meta property="og:image" content="{{ site.ogImage }}">
-  <meta property="og:image:alt" content="{{ site.ogImageAlt }}">
-
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="{{ title }} — The Lenches">
-  {% if description %}<meta name="twitter:description" content="{{ description }}">{% endif %}
-  <meta name="twitter:image" content="{{ site.ogImage }}">
+  {% if page.url == "/" %}<link rel="preload" as="image" href="{{ '/images/club-view.jpg' | url }}" fetchpriority="high">{% endif %}
 </head>
 <body>
+  <a class="skip-link" href="#main">Skip to content</a>
 
   <header class="site-header">
     <div class="container">
       <a class="brand" href="{{ '/' | url }}">The Lenches <span>&middot; {{ site.region }}</span></a>
-      <nav class="nav">
+      <nav class="nav" aria-label="Main">
         {% for item in site.nav %}
-        <a href="{{ item.url | url }}"{% if page.url == item.url %} class="active"{% endif %}>{{ item.title }}</a>
+        <a href="{{ item.url | url }}"{% if page.url == item.url %} class="active" aria-current="page"{% endif %}>{{ item.title }}</a>
         {% endfor %}
       </nav>
     </div>
   </header>
 
-  {{ content | safe }}
+  <div id="main" tabindex="-1">{{ content | safe }}</div>
 
   <footer class="site-footer">
     <div class="container">
