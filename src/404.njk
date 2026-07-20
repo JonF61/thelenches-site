@@ -1,0 +1,26 @@
+---
+layout: base.njk
+title: Page not found
+description: Sorry, that page doesn't exist on the Lenches website.
+permalink: /404.html
+eleventyExcludeFromCollections: true
+---
+<main class="container">
+  <section>
+    <h1>Page not found</h1>
+    <p class="lead">Sorry &mdash; that page doesn't exist, or it may have moved when we rebuilt the site.</p>
+
+    <p>Try one of these instead:</p>
+    <ul>
+      <li><a href="{{ '/news-events/' | url }}">News &amp; Events</a> &mdash; what's on this week, plus bin days</li>
+      <li><a href="{{ '/groups/' | url }}">Groups &amp; Clubs</a> &mdash; GLADS, the walking group, cricket, tennis and more</li>
+      <li><a href="{{ '/halls/' | url }}">Village Halls</a> &mdash; hire charges and how to book</li>
+      <li><a href="{{ '/contact/' | url }}">Contact</a> &mdash; village contacts and how to send us something</li>
+    </ul>
+
+    <p><a class="btn" href="{{ '/' | url }}">Back to the home page</a></p>
+
+    <p>If you followed a link from the newsletter and it brought you here, please let us know at
+    <a href="mailto:{{ site.email }}">{{ site.email }}</a> and we'll put it right.</p>
+  </section>
+</main>
