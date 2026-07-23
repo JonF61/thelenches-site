@@ -21,6 +21,12 @@
     },
     {
       "dow": "Sat", "day": "25", "mon": "Jul",
+      "title": "Badsey Flower Show",
+      "body": "One of the area's oldest village shows returns for its 123rd year, from 1pm at Badsey.",
+      "link": { "text": "More on Vale & Spa", "url": "https://www.valeandspa.co.uk/whats-on/event/badsey-flower-show-6/" }
+    },
+    {
+      "dow": "Sat", "day": "25", "mon": "Jul",
       "title": "Flat Tonic — live music at the Club",
       "body": "From 8pm. Children welcome.",
       "link": { "text": "Club calendar", "url": "https://calendar.google.com/calendar/embed?src=the.lenches.club1%40gmail.com&ctz=Europe%2FLondon" }
@@ -83,7 +89,7 @@
       "dow": "Sat", "day": "15", "mon": "Aug",
       "title": "Evesham Scarecrow Festival — Hampton Ferry",
       "body": "Scarecrow-making, live music, stalls and the Rotary duck race, 10am–5pm.",
-      "link": { "text": "More on Vale & Spa", "url": "https://www.valeandspa.co.uk/whats-on/events/" }
+      "link": { "text": "More on Vale & Spa", "url": "https://www.valeandspa.co.uk/whats-on/event/evesham-scarecrow-festival-5/" }
     },
     {
       "dow": "Sat", "day": "15", "mon": "Aug",
