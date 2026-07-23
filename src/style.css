@@ -1,13 +1,14 @@
 /* The Lenches — shared stylesheet */
 
 :root{
-  --green:#3a6b35;--green-dark:#2c5228;--green-light:#e8f0e4;--ink:#23291f;
-  --muted:#5c6657;--cream:#faf8f2;--card:#fff;--line:#dce3d3;--accent:#c8772e;
-  --maxw:960px;--radius:10px;--shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.05);
+  --green:#3F5233;--green-dark:#2E3D26;--green-light:#EFE7D3;--ink:#2E2A1F;
+  --muted:#5B5240;--cream:#F6F1E4;--card:#fff;--line:#DCCFAE;--accent:#C0703A;
+  --maxw:960px;--radius:12px;--shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.05);
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--cream);line-height:1.6}
+body{margin:0;font-family:"Work Sans",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--cream);line-height:1.6}
+h1,h2,h3,.brand{font-family:"Source Serif 4",Georgia,serif}
 a{color:var(--green-dark)}a:hover{color:var(--accent)}
 img{max-width:100%;height:auto;display:block}
 .container{max-width:var(--maxw);margin:0 auto;padding:0 1.25rem}
@@ -48,7 +49,7 @@ h3{font-size:1.15rem;margin-bottom:.3rem}
 .card p:last-child{margin-bottom:0}
 
 /* Buttons */
-.btn{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;padding:.6rem 1.1rem;border-radius:6px;font-weight:600;border:none;cursor:pointer}
+.btn{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;padding:.6rem 1.1rem;border-radius:999px;font-weight:600;border:none;cursor:pointer}
 .btn:hover{background:#a95f1f;color:#fff}
 .btn-outline{background:transparent;border:2px solid var(--green);color:var(--green-dark)}
 .btn-outline:hover{background:var(--green);color:#fff}
