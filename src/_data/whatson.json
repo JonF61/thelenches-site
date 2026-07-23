@@ -14,9 +14,15 @@
       "link": { "text": "Club calendar", "url": "https://calendar.google.com/calendar/embed?src=the.lenches.club1%40gmail.com&ctz=Europe%2FLondon" }
     },
     {
+      "dow": "Fri", "day": "24", "mon": "Jul",
+      "title": "Freedom Fields Festival",
+      "body": "From midday at The Farm Animal Sanctuary, Evesham (runs across the weekend).",
+      "link": { "text": "More on Visit Evesham", "url": "https://www.visitevesham.co.uk/whats-on/" }
+    },
+    {
       "dow": "Sat", "day": "25", "mon": "Jul",
       "title": "Flat Tonic — live music at the Club",
-      "body": "From 7.30pm. Children welcome.",
+      "body": "From 8pm. Children welcome.",
       "link": { "text": "Club calendar", "url": "https://calendar.google.com/calendar/embed?src=the.lenches.club1%40gmail.com&ctz=Europe%2FLondon" }
     },
     {
@@ -25,87 +31,100 @@
       "body": "The award-winning Illyria return to the open-air stage. Performance 4pm, gates 2.30pm, with a pop-up café, ice creams and licensed bar.",
       "link": { "text": "Book tickets", "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/1987175" }
     },
-          {
-                    "dow": "Sun", "day": "9", "mon": "Aug",
-                    "title": "Sounds of the 60s: The Nightingales — Lenches Amphitheatre",
-                    "body": "Gates 4pm, performance 5–7pm.",
-                    "link": { "text": "Book tickets", "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/2282639" }
-          },
-          {
-                    "dow": "Sun", "day": "16", "mon": "Aug",
-                    "title": "Jeeves and Wooster: Stiff Upper Lip — Lenches Amphitheatre",
-                    "body": "Alfresco Actors perform Wodehouse's comedy. Gates 1pm, performance 2.30–4.40pm.",
-                    "link": { "text": "Book tickets", "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/2098402" }
-          },
     {
-      "dow": "Fri", "day": "24", "mon": "Jul",
-      "title": "Freedom Fields Festival",
-      "tag": "vale",
-      "body": "From midday at The Farm Animal Sanctuary, Evesham (runs across the weekend).",
+      "dow": "Sun", "day": "26", "mon": "Jul",
+      "title": "Messy Church — Church Lench",
+      "body": "An informal, craft-and-activity based afternoon for families, 3.30–5.30pm. Regular Sunday services that morning at Rous Lench (8.30am), Harvington (10am) and Church Lench (11am).",
+      "link": { "text": "ARCH Benefice calendar", "url": "https://www.archbenefice.org.uk/whats-on/google-calendar/" }
+    },
+    {
+      "dow": "Fri", "day": "31", "mon": "Jul",
+      "title": "Battle of Evesham Festival — Crown & Corporation Meadow",
+      "body": "Europe's largest 13th-century battle re-enactment, running into the weekend. The Friday evening opens with a Queen tribute act, and the talks programme includes Alice Roberts and the Medieval Baebes on the Saturday.",
       "link": { "text": "More on Visit Evesham", "url": "https://www.visitevesham.co.uk/whats-on/" }
     },
-          {
-                    "dow": "Fri", "day": "31", "mon": "Jul",
-                    "title": "Battle of Evesham Festival — Crown & Corporation Meadow",
-                    "tag": "vale",
-                    "body": "Europe's largest 13th-century battle re-enactment, running into Saturday 1 Aug, with a talks programme including Alice Roberts and the Medieval Baebes.",
-                    "link": { "text": "More on Visit Evesham", "url": "https://www.visitevesham.co.uk/whats-on/" }
-          },
-          {
-                    "dow": "Sun", "day": "9", "mon": "Aug",
-                    "title": "Mikron Theatre: Top of the Wold — Evesham",
-                    "tag": "vale",
-                    "body": "A touring theatre company's new play celebrating community and culture.",
-                    "link": { "text": "More on Visit Evesham", "url": "https://www.visitevesham.co.uk/whats-on/" }
-          },
-          {
-                    "dow": "Sat", "day": "15", "mon": "Aug",
-                    "title": "Evesham Scarecrow Festival — Hampton Ferry",
-                    "tag": "vale",
-                    "body": "Scarecrow-making, live music, stalls and the Rotary duck race.",
-                    "link": { "text": "More on Vale & Spa", "url": "https://www.valeandspa.co.uk/whats-on/events/" }
-          },
-          {
-                    "dow": "Sat", "day": "15", "mon": "Aug",
-                    "title": "Murder Mystery Night: Bingo! Bonkers! — Evesham",
-                    "tag": "vale",
-                    "body": "A bingo night with a sinister twist.",
-                    "link": { "text": "More on Visit Evesham", "url": "https://www.visitevesham.co.uk/whats-on/" }
-          }
+    {
+      "dow": "Tue", "day": "4", "mon": "Aug",
+      "title": "Community coffee morning — Abbots Morton Village Hall",
+      "body": "Drop in for a coffee and a chat, 10am to midday.",
+      "link": { "text": "ARCH Benefice calendar", "url": "https://www.archbenefice.org.uk/whats-on/google-calendar/" }
+    },
+    {
+      "dow": "Fri", "day": "7", "mon": "Aug",
+      "title": "Cash Bingo — The Lenches Club",
+      "body": "The Club's monthly bingo night returns. Over-18s only.",
+      "link": { "text": "Club calendar", "url": "https://calendar.google.com/calendar/embed?src=the.lenches.club1%40gmail.com&ctz=Europe%2FLondon" }
+    },
+    {
+      "dow": "Sat", "day": "8", "mon": "Aug",
+      "title": "'Bimble' car drive-out — Abbots Morton",
+      "body": "An afternoon run out for classic and interesting cars, setting off from Abbots Morton from 12.45pm.",
+      "link": { "text": "ARCH Benefice calendar", "url": "https://www.archbenefice.org.uk/whats-on/google-calendar/" }
+    },
+    {
+      "dow": "Sat", "day": "8", "mon": "Aug",
+      "title": "Glo-Quiz — The Lenches Club",
+      "body": "The Club's glow-in-the-dark quiz night, from 8pm.",
+      "link": { "text": "Club calendar", "url": "https://calendar.google.com/calendar/embed?src=the.lenches.club1%40gmail.com&ctz=Europe%2FLondon" }
+    },
+    {
+      "dow": "Sun", "day": "9", "mon": "Aug",
+      "title": "Sounds of the 60s: The Nightingales — Lenches Amphitheatre",
+      "body": "Gates 4pm, performance 5–7pm.",
+      "link": { "text": "Book tickets", "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/2282639" }
+    },
+    {
+      "dow": "Sun", "day": "9", "mon": "Aug",
+      "title": "Mikron Theatre: Top of the Wold — Evesham",
+      "body": "A touring company's new play about a mobile library, celebrating community and culture. From 2.30pm.",
+      "link": { "text": "More on Visit Evesham", "url": "https://www.visitevesham.co.uk/whats-on/" }
+    },
+    {
+      "dow": "Sat", "day": "15", "mon": "Aug",
+      "title": "Evesham Scarecrow Festival — Hampton Ferry",
+      "body": "Scarecrow-making, live music, stalls and the Rotary duck race, 10am–5pm.",
+      "link": { "text": "More on Vale & Spa", "url": "https://www.valeandspa.co.uk/whats-on/events/" }
+    },
+    {
+      "dow": "Sat", "day": "15", "mon": "Aug",
+      "title": "Murder Mystery Night: Bingo! Bonkers! — The Vale Golf Club",
+      "body": "A bingo night with a sinister twist, from 7pm.",
+      "link": { "text": "More on Visit Evesham", "url": "https://www.visitevesham.co.uk/whats-on/" }
+    },
+    {
+      "dow": "Sun", "day": "16", "mon": "Aug",
+      "title": "Jeeves and Wooster: Stiff Upper Lip — Lenches Amphitheatre",
+      "body": "Alfresco Actors perform Wodehouse's comedy. Gates 1pm, performance 2.30–4.40pm.",
+      "link": { "text": "Book tickets", "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/2098402" }
+    }
   ],
-  "eventsFootnote": "Also further ahead at the Club: Cash Bingo 7 Aug, private party 15 Aug, Cash Bingo 21 Aug, Glo Quiz 22 Aug.",
+  "eventsFootnote": "Weekly regulars: yoga at Abbots Morton Village Hall on Mondays (9.45am), Lenches Tennis Club cardio on Tuesdays (6.30pm), tai chi at Abbots Morton on Wednesdays (10am), and candlelight yoga at Rous Lench Village Hall on Thursdays (6.30pm). Further ahead at the Club: sports bar closed 13–14 Aug, a private wedding reception 15 Aug, Cash Bingo 21 Aug and a private function 22 Aug.",
   "news": [
     {
-      "title": "A standing ovation for The Handlebards",
-      "body": "The amphitheatre's open-air As You Like It was a hit — \"a spirited performance in a beautiful setting.\" The summer season continues with Illyria on 26 July."
+      "title": "Six weeks of roadworks at Pinvin",
+      "body": "Main Street in Pinvin closes from today until 28 August while the gas mains are upgraded — worth allowing extra time if you head that way towards Pershore or Worcester.",
+      "link": { "text": "More from Evesham Observer", "url": "https://eveshamobserver.co.uk/news/travel-alert-pinvin-road-closure-for-six-weeks-for-gas-pipe-upgrades/" }
     },
     {
       "title": "Cricket club: new players welcome",
       "body": "Players of all ages and abilities are wanted, whether experienced, returning or brand new. Contact Venky on 07442 772470 or Charlie on 07775 660065."
     },
     {
-      "title": "Play area see-saw mended",
-      "tag": "fb",
-      "body": "Thanks to Dave Burns and Paul Davey, who did an excellent job repairing the broken see-saw in the play area — \"better than the original,\" and the pre-school are delighted to have it back for September.",
-      "link": { "text": "See the post", "url": "https://www.facebook.com/groups/thelenchescommunity" }
-    },
-        {
-                "title": "Summer of Heritage across Worcestershire",
-                "body": "Wychavon's summer heritage programme is bringing history events across the county, including next month's Battle of Evesham Festival.",
-                "link": { "text": "More from Evesham Observer", "url": "https://eveshamobserver.co.uk/news/summer-of-heritage-brings-history-to-life-across-worcestershire-63035/" }
-        }
+      "title": "Summer of Heritage across Worcestershire",
+      "body": "Wychavon's summer heritage programme is bringing history events across the county, including this month's Battle of Evesham Festival.",
+      "link": { "text": "More from Evesham Observer", "url": "https://eveshamobserver.co.uk/news/summer-of-heritage-brings-history-to-life-across-worcestershire-63035/" }
+    }
   ],
   "notices": [
     {
-      "title": "Free bike marking",
-      "tag": "fb",
-      "body": "Pershore Police are offering free BikeRegister anti-tamper security marking at Evesham Adventure Playground — a simple way to protect your bike.",
-      "link": { "text": "About BikeRegister", "url": "https://www.bikeregister.com/" }
+      "title": "Car stolen at Offenham",
+      "body": "A white Audi was taken from a driveway in Offenham this weekend. A good moment to check keys are stored away from the front door and that vehicles are locked overnight.",
+      "link": { "text": "More from Evesham Observer", "url": "https://eveshamobserver.co.uk/news/white-audi-stolen-from-a-home-in-offenham/" }
     },
     {
-      "title": "Patchy broadband",
-      "tag": "fb",
-      "body": "A few residents have reported slow or intermittent internet this week. Worth knowing you're not alone if yours has been playing up."
+      "title": "ARCH Messenger deadline",
+      "body": "Copy for the next edition of the benefice magazine is due by Monday 10 August.",
+      "link": { "text": "ARCH Benefice", "url": "https://www.archbenefice.org.uk/whats-on/google-calendar/" }
     },
     {
       "title": "Newsletter deadline",
