@@ -27,6 +27,12 @@
     },
     {
       "dow": "Sat", "day": "25", "mon": "Jul",
+      "title": "Cricket: 1st XI at home to Overbury",
+      "body": "Village cricket at The Lenches as the 1st XI host Overbury, while the 2nd XI travel to Fladbury. Spectators welcome.",
+      "link": { "text": "Lenches Cricket", "url": "https://www.thelenches.org.uk/lenches-cricket" }
+    },
+    {
+      "dow": "Sat", "day": "25", "mon": "Jul",
       "title": "Flat Tonic — live music at the Club",
       "body": "From 8pm. Children welcome.",
       "link": { "text": "Club calendar", "url": "https://calendar.google.com/calendar/embed?src=the.lenches.club1%40gmail.com&ctz=Europe%2FLondon" }
@@ -104,7 +110,7 @@
       "link": { "text": "Book tickets", "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/2098402" }
     }
   ],
-  "eventsFootnote": "Weekly regulars: yoga at Abbots Morton Village Hall on Mondays (9.45am), Lenches Tennis Club cardio on Tuesdays (6.30pm), tai chi at Abbots Morton on Wednesdays (10am), and candlelight yoga at Rous Lench Village Hall on Thursdays (6.30pm). Further ahead at the Club: sports bar closed 13–14 Aug, a private wedding reception 15 Aug, Cash Bingo 21 Aug and a private function 22 Aug.",
+  "eventsFootnote": "Weekly regulars: yoga at Abbots Morton Village Hall on Mondays (9.45am), Lenches Tennis Club cardio on Tuesdays (6.30pm), tai chi at Abbots Morton on Wednesdays (10am), and candlelight yoga at Rous Lench Village Hall on Thursdays (6.30pm). Encompass are also running children's tennis and multi-sport camps at the Tennis Club every Wednesday and Thursday through the school holidays. Further ahead: a free junior tennis taster session on 21 Aug (5.30pm); the Amphitheatre's free open-air cinema on 30 Aug; and at the Club — sports bar closed 13–14 Aug, private party 15 Aug, Cash Bingo 21 Aug and Glo Quiz 22 Aug.",
   "news": [
     {
       "title": "Six weeks of roadworks at Pinvin",
