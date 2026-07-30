@@ -11,11 +11,10 @@ description: What's on across the Lenches villages this week — events, news, n
         <p class="lead">What's happening across the villages, gathered from the newsletter and other local sources.</p>
         <p><span class="datestamp">Page updated {{ whatson.updated }}</span></p>
       </div>
-      <div class="bin-box">
-        {% for c in whatson.bin.colours %}<div class="bin-swatch" style="background:{{ c }};"></div>{% endfor %}
+      <div class="bin-box" id="bin-box">
         <div>
-          <strong>{{ whatson.bin.headline }}</strong>
-          {% if whatson.bin.note %}<div class="small mut">{{ whatson.bin.note }}</div>{% endif %}
+          <strong>Bin collections</strong>
+          <div class="small mut"><a href="https://www.wychavon.gov.uk/waste-and-recycling/bins-and-collections" target="_blank" rel="noopener">Check your bin day at Wychavon &rarr;</a></div>
         </div>
       </div>
     </div>
@@ -69,3 +68,39 @@ description: What's on across the Lenches villages this week — events, news, n
     </div>
   </section>
 </main>
+
+<script>
+(function () {
+  var data = {{ bins | dump | safe }};
+  var box = document.getElementById('bin-box');
+  if (!box || !data || !data.collections) return;
+
+  var colours = { black: '#2f2f2f', green: '#7ab648', brown: '#6b4a2c' };
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+
+  function toDate(s) { var p = s.split('-'); return new Date(+p[0], p[1] - 1, +p[2]); }
+
+  var next = null;
+  for (var i = 0; i < data.collections.length; i++) {
+    if (toDate(data.collections[i].date) >= today) { next = data.collections[i]; break; }
+  }
+  if (!next) return;
+
+  var d = toDate(next.date);
+  var when = d.getTime() === today.getTime()
+    ? 'Today'
+    : d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+
+  var label = next.bins.indexOf('black') > -1
+    ? 'Black bin'
+    : 'Green recycling bin' + (next.bins.indexOf('brown') > -1 ? ' &amp; brown garden bin' : '');
+
+  var swatches = next.bins.map(function (b) {
+    return '<div class="bin-swatch" style="background:' + (colours[b] || '#999') + ';"></div>';
+  }).join('');
+
+  box.innerHTML = swatches +
+    '<div><strong>' + when + ' — ' + label + '</strong>' +
+    '<div class="small mut">' + (next.note || 'Out by ' + data.putOutBy + '.') + '</div></div>';
+})();
+</script>
