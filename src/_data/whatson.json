@@ -1,79 +1,157 @@
 {
   "updated": "Thursday 30 July 2026",
   "bin": {
-    "colours": ["#3a6b35", "#7a4a12"],
+    "colours": [
+      "#3a6b35",
+      "#7a4a12"
+    ],
     "headline": "This Monday, 3 August — recycling and garden waste.",
     "note": "",
     "lookup": "https://selfservice.wychavon.gov.uk/wdcroundlookup/"
   },
   "events": [
     {
-      "dow": "Fri", "day": "31", "mon": "Jul",
+      "dow": "Fri",
+      "day": "31",
+      "mon": "Jul",
       "title": "Battle of Evesham Festival — Crown & Corporation Meadow",
       "body": "Europe's largest 13th-century battle re-enactment, running into the weekend. The Friday evening opens with a Queen tribute act, and the talks programme includes Alice Roberts and the Medieval Baebes on the Saturday.",
-      "link": { "text": "More on Visit Evesham", "url": "https://www.visitevesham.co.uk/whats-on/" }
+      "link": {
+        "text": "More on Visit Evesham",
+        "url": "https://www.visitevesham.co.uk/whats-on/"
+      }
     },
     {
-      "dow": "Tue", "day": "4", "mon": "Aug",
+      "dow": "Sat",
+      "day": "1",
+      "mon": "Aug",
+      "title": "Cricket: 1st XI at home to Temple Grafton",
+      "body": "A local-derby weekend as both senior teams meet Temple Grafton CC — the 1st XI at home at The Lenches, the 2nd XI away. Spectators welcome for an afternoon of village cricket.",
+      "link": {
+        "text": "Lenches Cricket",
+        "url": "https://www.thelenches.org.uk/lenches-cricket"
+      }
+    },
+    {
+      "dow": "Tue",
+      "day": "4",
+      "mon": "Aug",
       "title": "Community coffee morning — Abbots Morton Village Hall",
       "body": "Drop in for a coffee and a chat, 10am to midday.",
-      "link": { "text": "ARCH Benefice calendar", "url": "https://www.archbenefice.org.uk/whats-on/google-calendar/" }
+      "link": {
+        "text": "ARCH Benefice calendar",
+        "url": "https://www.archbenefice.org.uk/whats-on/google-calendar/"
+      }
     },
     {
-      "dow": "Fri", "day": "7", "mon": "Aug",
+      "dow": "Fri",
+      "day": "7",
+      "mon": "Aug",
       "title": "Cash Bingo — The Lenches Club",
-      "body": "The Club's monthly bingo night returns. Over-18s only.",
-      "link": { "text": "Club calendar", "url": "https://calendar.google.com/calendar/embed?src=the.lenches.club1%40gmail.com&ctz=Europe%2FLondon" }
+      "body": "Ticket sales from 7.15pm, eyes down 8pm. £5 a book, winner takes all. Over-18s only.",
+      "link": {
+        "text": "Club calendar",
+        "url": "https://calendar.google.com/calendar/embed?src=the.lenches.club1%40gmail.com&ctz=Europe%2FLondon"
+      }
     },
     {
-      "dow": "Sat", "day": "8", "mon": "Aug",
+      "dow": "Sat",
+      "day": "8",
+      "mon": "Aug",
       "title": "'Bimble' car drive-out — Abbots Morton",
       "body": "An afternoon run out for classic and interesting cars, setting off from Abbots Morton from 12.45pm.",
-      "link": { "text": "ARCH Benefice calendar", "url": "https://www.archbenefice.org.uk/whats-on/google-calendar/" }
+      "link": {
+        "text": "ARCH Benefice calendar",
+        "url": "https://www.archbenefice.org.uk/whats-on/google-calendar/"
+      }
     },
     {
-      "dow": "Sat", "day": "8", "mon": "Aug",
+      "dow": "Sat",
+      "day": "8",
+      "mon": "Aug",
       "title": "Glo-Quiz — The Lenches Club",
-      "body": "The Club's glow-in-the-dark quiz night, from 8pm.",
-      "link": { "text": "Club calendar", "url": "https://calendar.google.com/calendar/embed?src=the.lenches.club1%40gmail.com&ctz=Europe%2FLondon" }
+      "body": "The Club's live, hosted glow-in-the-dark quiz night. Gather a team and play for prizes. Children welcome.",
+      "link": {
+        "text": "Club calendar",
+        "url": "https://calendar.google.com/calendar/embed?src=the.lenches.club1%40gmail.com&ctz=Europe%2FLondon"
+      }
     },
     {
-      "dow": "Sun", "day": "9", "mon": "Aug",
+      "dow": "Sun",
+      "day": "9",
+      "mon": "Aug",
       "title": "Sounds of the 60s: The Nightingales — Lenches Amphitheatre",
       "body": "Gates 4pm, performance 5–7pm.",
-      "link": { "text": "Book tickets", "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/2282639" }
+      "link": {
+        "text": "Book tickets",
+        "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/2282639"
+      }
     },
     {
-      "dow": "Sun", "day": "9", "mon": "Aug",
+      "dow": "Sun",
+      "day": "9",
+      "mon": "Aug",
       "title": "Mikron Theatre: Top of the Wold — Evesham",
       "body": "A touring company's new play about a mobile library, celebrating community and culture. From 2.30pm.",
-      "link": { "text": "More on Visit Evesham", "url": "https://www.visitevesham.co.uk/whats-on/" }
+      "link": {
+        "text": "More on Visit Evesham",
+        "url": "https://www.visitevesham.co.uk/whats-on/"
+      }
     },
     {
-      "dow": "Sat", "day": "15", "mon": "Aug",
+      "dow": "Sat",
+      "day": "15",
+      "mon": "Aug",
       "title": "Evesham Scarecrow Festival — Hampton Ferry",
       "body": "Scarecrow-making, live music, stalls and the Rotary duck race, 10am–5pm.",
-      "link": { "text": "More on Vale & Spa", "url": "https://www.valeandspa.co.uk/whats-on/event/evesham-scarecrow-festival-5/" }
+      "link": {
+        "text": "More on Vale & Spa",
+        "url": "https://www.valeandspa.co.uk/whats-on/event/evesham-scarecrow-festival-5/"
+      }
     },
     {
-      "dow": "Sat", "day": "15", "mon": "Aug",
+      "dow": "Sat",
+      "day": "15",
+      "mon": "Aug",
       "title": "Murder Mystery Night: Bingo! Bonkers! — The Vale Golf Club",
       "body": "A bingo night with a sinister twist, from 7pm.",
-      "link": { "text": "More on Visit Evesham", "url": "https://www.visitevesham.co.uk/whats-on/" }
+      "link": {
+        "text": "More on Visit Evesham",
+        "url": "https://www.visitevesham.co.uk/whats-on/"
+      }
     },
     {
-      "dow": "Sun", "day": "16", "mon": "Aug",
+      "dow": "Sun",
+      "day": "16",
+      "mon": "Aug",
       "title": "Jeeves and Wooster: Stiff Upper Lip — Lenches Amphitheatre",
       "body": "Alfresco Actors perform Wodehouse's comedy. Gates 1pm, performance 2.30–4.40pm.",
-      "link": { "text": "Book tickets", "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/2098402" }
+      "link": {
+        "text": "Book tickets",
+        "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/2098402"
+      }
+    },
+    {
+      "dow": "Fri",
+      "day": "25",
+      "mon": "Sep",
+      "title": "Unmasked: The Magic of Angus Baskerville — The Lenches Club",
+      "body": "Magic Circle magician and mentalist Angus Baskerville brings his hit show to the Club — jaw-dropping illusions, mind-reading and warm storytelling drawn from his own experience of autism and ADHD. 7.30–9pm, a show for all ages.",
+      "link": {
+        "text": "Book tickets",
+        "url": "https://www.eventbrite.co.uk/e/unmasked-the-magic-of-angus-baskerville-tickets-1983816787414"
+      }
     }
   ],
-  "eventsFootnote": "Weekly regulars: yoga at Abbots Morton Village Hall on Mondays (9.45am), Lenches Tennis Club cardio on Tuesdays (6.30pm), tai chi at Abbots Morton on Wednesdays (10am), and candlelight yoga at Rous Lench Village Hall on Thursdays (6.30pm). Encompass are also running children's tennis and multi-sport camps at the Tennis Club every Wednesday and Thursday through the school holidays. Further ahead: a free junior tennis taster session on 21 Aug (5.30pm); the Amphitheatre's free open-air cinema on 30 Aug; and at the Club — sports bar closed 13–14 Aug, private party 15 Aug, Cash Bingo 21 Aug and Glo Quiz 22 Aug.",
+  "eventsFootnote": "Weekly regulars: yoga at Abbots Morton Village Hall on Mondays (9.45am), Lenches Tennis Club cardio on Tuesdays (6.30pm), tai chi at Abbots Morton on Wednesdays (10am), and candlelight yoga at Rous Lench Village Hall on Thursdays (6.30pm). Encompass are also running children's tennis and multi-sport camps at the Tennis Club every Wednesday and Thursday through the school holidays. Further ahead: a free junior tennis taster session on 21 Aug (5.30pm); the Amphitheatre's free open-air cinema on 30 Aug; and at the Club — private party 15 Aug, Cash Bingo 21 Aug and Glo Quiz 22 Aug.",
   "news": [
     {
       "title": "Six weeks of roadworks at Pinvin",
       "body": "Main Street in Pinvin is closed until 28 August while the gas mains are upgraded — worth allowing extra time if you head that way towards Pershore or Worcester.",
-      "link": { "text": "More from Evesham Observer", "url": "https://eveshamobserver.co.uk/news/travel-alert-pinvin-road-closure-for-six-weeks-for-gas-pipe-upgrades/" }
+      "link": {
+        "text": "More from Evesham Observer",
+        "url": "https://eveshamobserver.co.uk/news/travel-alert-pinvin-road-closure-for-six-weeks-for-gas-pipe-upgrades/"
+      }
     },
     {
       "title": "Cricket club: new players welcome",
@@ -82,19 +160,24 @@
     {
       "title": "£270k raised for hospice care",
       "body": "An Evesham woman and her brother have raised more than a quarter of a million pounds for hospice care in memory of their parents — a remarkable local fundraising effort.",
-      "link": { "text": "More from Evesham Observer", "url": "https://eveshamobserver.co.uk/news/evesham-woman-and-brother-raise-270k-for-hospice-care/" }
+      "link": {
+        "text": "More from Evesham Observer",
+        "url": "https://eveshamobserver.co.uk/news/evesham-woman-and-brother-raise-270k-for-hospice-care/"
+      }
     }
   ],
   "notices": [
     {
-      "title": "Car stolen at Offenham",
-      "body": "A white Audi was taken from a driveway in Offenham this weekend. A good moment to check keys are stored away from the front door and that vehicles are locked overnight.",
-      "link": { "text": "More from Evesham Observer", "url": "https://eveshamobserver.co.uk/news/white-audi-stolen-from-a-home-in-offenham/" }
+      "title": "Neighbourhood Plan: last chance to comment",
+      "body": "South Lenches Parish Council's draft Neighbourhood Plan is in its formal (Regulation 16) consultation, which closes on Monday 3 August. Paper copies and feedback forms are available at the Lenches Club bar, All Saints Church, Church Lench, and Ellenden Farm Shop, Harvington."
     },
     {
       "title": "ARCH Messenger deadline",
       "body": "Copy for the next edition of the benefice magazine is due by Monday 10 August.",
-      "link": { "text": "ARCH Benefice", "url": "https://www.archbenefice.org.uk/whats-on/google-calendar/" }
+      "link": {
+        "text": "ARCH Benefice",
+        "url": "https://www.archbenefice.org.uk/whats-on/google-calendar/"
+      }
     },
     {
       "title": "Newsletter deadline",
