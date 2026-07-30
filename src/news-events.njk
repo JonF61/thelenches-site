@@ -24,11 +24,12 @@ description: What's on across the Lenches villages this week — events, news, n
 
   <section>
     <h2>Events</h2>
-    {% for e in whatson.events %}
+    {% for e in whatson.events | upcoming %}
+    {% set d = e.date | dateParts %}
     <div class="event">
-      <div class="date"><span class="dow">{{ e.dow }}</span><span class="day">{{ e.day }}</span><span class="mon">{{ e.mon }}</span></div>
+      <div class="date"><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>
       <div>
-                <h3 class="mt0">{{ e.title }}</h3>
+        <h3 class="mt0">{{ e.title }}</h3>
         <p class="mt0">{{ e.body }}{% if e.link %} <a href="{{ e.link.url }}" target="_blank" rel="noopener">{{ e.link.text }} &rarr;</a>{% endif %}</p>
       </div>
     </div>
@@ -49,7 +50,7 @@ description: What's on across the Lenches villages this week — events, news, n
     <div class="grid">
       {% for n in whatson.news %}
       <div class="card">
-                <h3 class="mt0">{{ n.title }}</h3>
+        <h3 class="mt0">{{ n.title }}</h3>
         <p>{{ n.body }}{% if n.link %} <a href="{{ n.link.url }}" target="_blank" rel="noopener">{{ n.link.text }} &rarr;</a>{% endif %}</p>
       </div>
       {% endfor %}
@@ -61,7 +62,7 @@ description: What's on across the Lenches villages this week — events, news, n
     <div class="grid">
       {% for n in whatson.notices %}
       <div class="card">
-                <h3 class="mt0">{{ n.title }}</h3>
+        <h3 class="mt0">{{ n.title }}</h3>
         <p class="mt0">{{ n.body }}{% if n.link %} <a href="{{ n.link.url }}" target="_blank" rel="noopener">{{ n.link.text }} &rarr;</a>{% endif %}</p>
       </div>
       {% endfor %}
