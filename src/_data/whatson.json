@@ -1,5 +1,5 @@
 {
-    "updated": "Tuesday 28 July 2026",
+  "updated": "Thursday 30 July 2026",
   "bin": {
     "colours": ["#3a6b35", "#7a4a12"],
     "headline": "This Monday, 3 August — recycling and garden waste.",
@@ -7,48 +7,6 @@
     "lookup": "https://selfservice.wychavon.gov.uk/wdcroundlookup/"
   },
   "events": [
-    {
-      "dow": "Fri", "day": "24", "mon": "Jul",
-      "title": "Cash Bingo — The Lenches Club",
-      "body": "Doors 7.15pm, eyes down 8pm. Over-18s only.",
-      "link": { "text": "Club calendar", "url": "https://calendar.google.com/calendar/embed?src=the.lenches.club1%40gmail.com&ctz=Europe%2FLondon" }
-    },
-    {
-      "dow": "Fri", "day": "24", "mon": "Jul",
-      "title": "Freedom Fields Festival",
-      "body": "From midday at The Farm Animal Sanctuary, Evesham (runs across the weekend).",
-      "link": { "text": "More on Visit Evesham", "url": "https://www.visitevesham.co.uk/whats-on/" }
-    },
-    {
-      "dow": "Sat", "day": "25", "mon": "Jul",
-      "title": "Badsey Flower Show",
-      "body": "One of the area's oldest village shows returns for its 123rd year, from 1pm at Badsey.",
-      "link": { "text": "More on Vale & Spa", "url": "https://www.valeandspa.co.uk/whats-on/event/badsey-flower-show-6/" }
-    },
-    {
-      "dow": "Sat", "day": "25", "mon": "Jul",
-      "title": "Cricket: 1st XI at home to Overbury",
-      "body": "Village cricket at The Lenches as the 1st XI host Overbury, while the 2nd XI travel to Fladbury. Spectators welcome.",
-      "link": { "text": "Lenches Cricket", "url": "https://www.thelenches.org.uk/lenches-cricket" }
-    },
-    {
-      "dow": "Sat", "day": "25", "mon": "Jul",
-      "title": "Flat Tonic — live music at the Club",
-      "body": "From 8pm. Children welcome.",
-      "link": { "text": "Club calendar", "url": "https://calendar.google.com/calendar/embed?src=the.lenches.club1%40gmail.com&ctz=Europe%2FLondon" }
-    },
-    {
-      "dow": "Sun", "day": "26", "mon": "Jul",
-      "title": "Illyria: The Pirates of Penzance — Lenches Amphitheatre",
-      "body": "The award-winning Illyria return to the open-air stage. Performance 4pm, gates 2.30pm, with a pop-up café, ice creams and licensed bar.",
-      "link": { "text": "Book tickets", "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/1987175" }
-    },
-    {
-      "dow": "Sun", "day": "26", "mon": "Jul",
-      "title": "Messy Church — Church Lench",
-      "body": "An informal, craft-and-activity based afternoon for families, 3.30–5.30pm. Regular Sunday services that morning at Rous Lench (8.30am), Harvington (10am) and Church Lench (11am).",
-      "link": { "text": "ARCH Benefice calendar", "url": "https://www.archbenefice.org.uk/whats-on/google-calendar/" }
-    },
     {
       "dow": "Fri", "day": "31", "mon": "Jul",
       "title": "Battle of Evesham Festival — Crown & Corporation Meadow",
@@ -114,7 +72,7 @@
   "news": [
     {
       "title": "Six weeks of roadworks at Pinvin",
-      "body": "Main Street in Pinvin closes from today until 28 August while the gas mains are upgraded — worth allowing extra time if you head that way towards Pershore or Worcester.",
+      "body": "Main Street in Pinvin is closed until 28 August while the gas mains are upgraded — worth allowing extra time if you head that way towards Pershore or Worcester.",
       "link": { "text": "More from Evesham Observer", "url": "https://eveshamobserver.co.uk/news/travel-alert-pinvin-road-closure-for-six-weeks-for-gas-pipe-upgrades/" }
     },
     {
