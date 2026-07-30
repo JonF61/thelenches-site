@@ -76,13 +76,16 @@ description: What's on across the Lenches villages this week — events, news, n
   if (!box || !data || !data.collections) return;
 
   var colours = { black: '#2f2f2f', green: '#7ab648', brown: '#6b4a2c' };
-  var today = new Date(); today.setHours(0, 0, 0, 0);
+
+  var now = new Date();
+  var today = new Date(now); today.setHours(0, 0, 0, 0);
 
   function toDate(s) { var p = s.split('-'); return new Date(+p[0], p[1] - 1, +p[2]); }
+  function expiry(s) { var d = toDate(s); d.setHours(10, 0, 0, 0); return d; }
 
   var next = null;
   for (var i = 0; i < data.collections.length; i++) {
-    if (toDate(data.collections[i].date) >= today) { next = data.collections[i]; break; }
+    if (expiry(data.collections[i].date) > now) { next = data.collections[i]; break; }
   }
   if (!next) return;
 
