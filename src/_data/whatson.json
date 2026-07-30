@@ -11,9 +11,8 @@
   },
   "events": [
     {
-      "dow": "Fri",
-      "day": "31",
-      "mon": "Jul",
+      "date": "2026-07-31",
+      "endDate": "2026-08-02",
       "title": "Battle of Evesham Festival — Crown & Corporation Meadow",
       "body": "Europe's largest 13th-century battle re-enactment, running into the weekend. The Friday evening opens with a Queen tribute act, and the talks programme includes Alice Roberts and the Medieval Baebes on the Saturday.",
       "link": {
@@ -22,9 +21,7 @@
       }
     },
     {
-      "dow": "Sat",
-      "day": "1",
-      "mon": "Aug",
+      "date": "2026-08-01",
       "title": "Cricket: 1st XI at home to Temple Grafton",
       "body": "A local-derby weekend as both senior teams meet Temple Grafton CC — the 1st XI at home at The Lenches, the 2nd XI away. Spectators welcome for an afternoon of village cricket.",
       "link": {
@@ -33,9 +30,7 @@
       }
     },
     {
-      "dow": "Tue",
-      "day": "4",
-      "mon": "Aug",
+      "date": "2026-08-04",
       "title": "Community coffee morning — Abbots Morton Village Hall",
       "body": "Drop in for a coffee and a chat, 10am to midday.",
       "link": {
@@ -44,9 +39,7 @@
       }
     },
     {
-      "dow": "Fri",
-      "day": "7",
-      "mon": "Aug",
+      "date": "2026-08-07",
       "title": "Cash Bingo — The Lenches Club",
       "body": "Ticket sales from 7.15pm, eyes down 8pm. £5 a book, winner takes all. Over-18s only.",
       "link": {
@@ -55,9 +48,7 @@
       }
     },
     {
-      "dow": "Sat",
-      "day": "8",
-      "mon": "Aug",
+      "date": "2026-08-08",
       "title": "'Bimble' car drive-out — Abbots Morton",
       "body": "An afternoon run out for classic and interesting cars, setting off from Abbots Morton from 12.45pm.",
       "link": {
@@ -66,9 +57,7 @@
       }
     },
     {
-      "dow": "Sat",
-      "day": "8",
-      "mon": "Aug",
+      "date": "2026-08-08",
       "title": "Glo-Quiz — The Lenches Club",
       "body": "The Club's live, hosted glow-in-the-dark quiz night. Gather a team and play for prizes. Children welcome.",
       "link": {
@@ -77,9 +66,7 @@
       }
     },
     {
-      "dow": "Sun",
-      "day": "9",
-      "mon": "Aug",
+      "date": "2026-08-09",
       "title": "Sounds of the 60s: The Nightingales — Lenches Amphitheatre",
       "body": "Gates 4pm, performance 5–7pm.",
       "link": {
@@ -88,9 +75,7 @@
       }
     },
     {
-      "dow": "Sun",
-      "day": "9",
-      "mon": "Aug",
+      "date": "2026-08-09",
       "title": "Mikron Theatre: Top of the Wold — Evesham",
       "body": "A touring company's new play about a mobile library, celebrating community and culture. From 2.30pm.",
       "link": {
@@ -99,9 +84,7 @@
       }
     },
     {
-      "dow": "Sat",
-      "day": "15",
-      "mon": "Aug",
+      "date": "2026-08-15",
       "title": "Evesham Scarecrow Festival — Hampton Ferry",
       "body": "Scarecrow-making, live music, stalls and the Rotary duck race, 10am–5pm.",
       "link": {
@@ -110,9 +93,7 @@
       }
     },
     {
-      "dow": "Sat",
-      "day": "15",
-      "mon": "Aug",
+      "date": "2026-08-15",
       "title": "Murder Mystery Night: Bingo! Bonkers! — The Vale Golf Club",
       "body": "A bingo night with a sinister twist, from 7pm.",
       "link": {
@@ -121,9 +102,7 @@
       }
     },
     {
-      "dow": "Sun",
-      "day": "16",
-      "mon": "Aug",
+      "date": "2026-08-16",
       "title": "Jeeves and Wooster: Stiff Upper Lip — Lenches Amphitheatre",
       "body": "Alfresco Actors perform Wodehouse's comedy. Gates 1pm, performance 2.30–4.40pm.",
       "link": {
@@ -132,9 +111,7 @@
       }
     },
     {
-      "dow": "Fri",
-      "day": "25",
-      "mon": "Sep",
+      "date": "2026-09-25",
       "title": "Unmasked: The Magic of Angus Baskerville — The Lenches Club",
       "body": "Magic Circle magician and mentalist Angus Baskerville brings his hit show to the Club — jaw-dropping illusions, mind-reading and warm storytelling drawn from his own experience of autism and ADHD. 7.30–9pm, a show for all ages.",
       "link": {
