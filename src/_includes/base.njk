@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   {% if site.noindex %}<meta name="robots" content="noindex, nofollow">{% endif %}
-  <title>{{ title }} — The Lenches</title>
+<title>{% if page.url == "/" %}The Lenches — Newsletter{% else %}{{ title }} — The Lenches{% endif %}</title>
   {% if description %}<meta name="description" content="{{ description }}">{% endif %}
   <link rel="stylesheet" href="{{ '/style.css' | url }}">
   {% if page.url == "/" %}<link rel="preload" as="image" href="{{ '/images/club-view.jpg' | url }}" fetchpriority="high">{% endif %}
