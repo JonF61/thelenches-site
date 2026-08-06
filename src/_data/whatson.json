@@ -122,4 +122,33 @@
     },
     {
       "title": "Cricket club: new players welcome",
-      "body": "Players of all ages and abilities are wanted, whether experienced
+      "body": "Players of all ages and abilities are wanted, whether experienced, returning or brand new. Contact Venky on 07442 772470 or Charlie on 07775 660065."
+    },
+    {
+      "title": "Fire crews praised after Harvington blaze",
+      "body": "Firefighters have been thanked for their response after tackling a blaze at Harvington earlier this week.",
+      "link": {
+        "text": "More from Evesham Observer",
+        "url": "https://eveshamobserver.co.uk/news/fire-crews-praised-after-harvington-blaze/"
+      }
+    },
+    {
+      "title": "Lenches ladies clinch tennis league title",
+      "body": "The Lenches ladies' team have won Division 3 of the Evesham Summer League with a match still to play — a standout result for one of the league's smallest clubs. New players of all abilities are welcome; contact Joy Penzer on 07551 484114."
+    }
+  ],
+  "notices": [
+    {
+      "title": "ARCH Messenger deadline",
+      "body": "Copy for the next edition of the benefice magazine is due by Monday 10 August.",
+      "link": {
+        "text": "ARCH Benefice",
+        "url": "https://www.archbenefice.org.uk/whats-on/google-calendar/"
+      }
+    },
+    {
+      "title": "Newsletter deadline",
+      "body": "Got something for next week? Send it to website@thelenches.org.uk by the end of Wednesday."
+    }
+  ]
+}
