@@ -11,34 +11,6 @@
   },
   "events": [
     {
-      "date": "2026-07-31",
-      "endDate": "2026-08-02",
-      "title": "Battle of Evesham Festival — Crown & Corporation Meadow",
-      "body": "Europe's largest 13th-century battle re-enactment, running into the weekend. The Friday evening opens with a Queen tribute act, and the talks programme includes Alice Roberts and the Medieval Baebes on the Saturday.",
-      "link": {
-        "text": "More on Visit Evesham",
-        "url": "https://www.visitevesham.co.uk/whats-on/"
-      }
-    },
-    {
-      "date": "2026-08-01",
-      "title": "Cricket: 1st XI at home to Temple Grafton",
-      "body": "A local-derby weekend as both senior teams meet Temple Grafton CC — the 1st XI at home at The Lenches, the 2nd XI away. Spectators welcome for an afternoon of village cricket.",
-      "link": {
-        "text": "Lenches Cricket",
-        "url": "https://www.thelenches.org.uk/lenches-cricket"
-      }
-    },
-    {
-      "date": "2026-08-04",
-      "title": "Community coffee morning — Abbots Morton Village Hall",
-      "body": "Drop in for a coffee and a chat, 10am to midday.",
-      "link": {
-        "text": "ARCH Benefice calendar",
-        "url": "https://www.archbenefice.org.uk/whats-on/google-calendar/"
-      }
-    },
-    {
       "date": "2026-08-07",
       "title": "Cash Bingo — The Lenches Club",
       "body": "Ticket sales from 7.15pm, eyes down 8pm. £5 a book, winner takes all. Over-18s only.",
@@ -120,7 +92,7 @@
       }
     }
   ],
-  "eventsFootnote": "Weekly regulars: yoga at Abbots Morton Village Hall on Mondays (9.45am), Lenches Tennis Club cardio on Tuesdays (6.30pm), tai chi at Abbots Morton on Wednesdays (10am), and candlelight yoga at Rous Lench Village Hall on Thursdays (6.30pm). Encompass are also running children's tennis and multi-sport camps at the Tennis Club every Wednesday and Thursday through the school holidays. Further ahead: a free junior tennis taster session on 21 Aug (5.30pm); the Amphitheatre's free open-air cinema on 30 Aug; and at the Club — private party 15 Aug, Cash Bingo 21 Aug and Glo Quiz 22 Aug.",
+  "eventsFootnote": "Weekly regulars: yoga at Abbots Morton Village Hall on Mondays (9.45am), Lenches Tennis Club cardio on Tuesdays (6.30pm), tai chi at Abbots Morton on Wednesdays (10am), and candlelight yoga at Rous Lench Village Hall on Thursdays (6.30pm). Encompass are also running children's tennis and multi-sport camps at the Tennis Club every Wednesday and Thursday through the school holidays. Further ahead: a free junior tennis taster session on 21 Aug (5.30pm); the Amphitheatre's free open-air cinema on 30 Aug (How to Train Your Dragon in the afternoon, Good Morning, Vietnam in the evening); and at the Club — private party 15 Aug, Cash Bingo 21 Aug and Glo Quiz 22 Aug.",
   "news": [
     {
       "title": "Six weeks of roadworks at Pinvin",
@@ -135,19 +107,15 @@
       "body": "Players of all ages and abilities are wanted, whether experienced, returning or brand new. Contact Venky on 07442 772470 or Charlie on 07775 660065."
     },
     {
-      "title": "£270k raised for hospice care",
-      "body": "An Evesham woman and her brother have raised more than a quarter of a million pounds for hospice care in memory of their parents — a remarkable local fundraising effort.",
+      "title": "Fire crews praised after Harvington blaze",
+      "body": "Firefighters have been thanked for their response after tackling a blaze at Harvington earlier this week.",
       "link": {
         "text": "More from Evesham Observer",
-        "url": "https://eveshamobserver.co.uk/news/evesham-woman-and-brother-raise-270k-for-hospice-care/"
+        "url": "https://eveshamobserver.co.uk/news/fire-crews-praised-after-harvington-blaze/"
       }
     }
   ],
   "notices": [
-    {
-      "title": "Neighbourhood Plan: last chance to comment",
-      "body": "South Lenches Parish Council's draft Neighbourhood Plan is in its formal (Regulation 16) consultation, which closes on Monday 3 August. Paper copies and feedback forms are available at the Lenches Club bar, All Saints Church, Church Lench, and Ellenden Farm Shop, Harvington."
-    },
     {
       "title": "ARCH Messenger deadline",
       "body": "Copy for the next edition of the benefice magazine is due by Monday 10 August.",
