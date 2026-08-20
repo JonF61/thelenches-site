@@ -1,5 +1,4 @@
 {
-  "updated": "Thursday 6 August 2026",
   "bin": {
     "colours": [
       "#3a6b35",
@@ -11,30 +10,21 @@
   },
   "events": [
     {
-      "date": "2026-08-15",
-      "title": "Evesham Scarecrow Festival — Hampton Ferry",
-      "body": "Scarecrow-making, live music, stalls and the Rotary duck race, 10am–5pm.",
+      "date": "2026-08-22",
+      "title": "Cricket: 1st XI at home to Moreton-in-Marsh",
+      "body": "The Lenches 1st XI host Moreton-in-Marsh at The Lenches on Saturday afternoon, with the 2nd XI away at Elmley Castle. Spectators warmly welcome for village cricket in one of the county's most scenic settings.",
       "link": {
-        "text": "More on Vale & Spa",
-        "url": "https://www.valeandspa.co.uk/whats-on/event/evesham-scarecrow-festival-5/"
+        "text": "Lenches Cricket",
+        "url": "https://www.thelenches.org.uk/lenches-cricket"
       }
     },
     {
-      "date": "2026-08-15",
-      "title": "Murder Mystery Night: Bingo! Bonkers! — The Vale Golf Club",
-      "body": "A bingo night with a sinister twist, from 7pm.",
+      "date": "2026-08-26",
+      "title": "Cricket: midweek Evesham Derby v Offenham",
+      "body": "The Lenches face local neighbours Offenham CC in a Wednesday-evening Evesham Derby, hoping to build on a recent midweek win over Fladbury.",
       "link": {
-        "text": "More on Vale & Spa",
-        "url": "https://www.valeandspa.co.uk/whats-on/event/18630/"
-      }
-    },
-    {
-      "date": "2026-08-16",
-      "title": "Jeeves and Wooster: Stiff Upper Lip — Lenches Amphitheatre",
-      "body": "Alfresco Actors perform Wodehouse's comedy with live jazz. Gates 1pm, performance 2.30–4.40pm.",
-      "link": {
-        "text": "Book tickets",
-        "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/2098402"
+        "text": "Lenches Cricket",
+        "url": "https://www.thelenches.org.uk/lenches-cricket"
       }
     },
     {
@@ -53,6 +43,15 @@
       "link": {
         "text": "Book free tickets",
         "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/2346509"
+      }
+    },
+    {
+      "date": "2026-08-31",
+      "title": "Pershore Plum Festival: Plum Fayre Day — Pershore",
+      "body": "The grand finale of the month-long Plum Festival, with the historic market town given over to stalls, food and family entertainment across the August bank holiday Monday.",
+      "link": {
+        "text": "More on Vale & Spa",
+        "url": "https://www.valeandspa.co.uk/whats-on/event/pershore-plum-festival-bank-holiday-monday/"
       }
     },
     {
@@ -83,7 +82,7 @@
       }
     }
   ],
-  "eventsFootnote": "Weekly regulars: yoga at Abbots Morton Village Hall on Mondays (9.45am), Lenches Tennis Club cardio on Tuesdays (6.30pm), tai chi at Abbots Morton on Wednesdays (10am), and candlelight yoga at Rous Lench Village Hall on Thursdays (6.30pm). Encompass are also running children's tennis and multi-sport camps at the Tennis Club every Wednesday and Thursday through the school holidays. Also on: a free junior tennis taster session on 21 Aug (5.30pm), and at the Club — Cash Bingo on 21 Aug and Glo Quiz on 22 Aug.",
+  "eventsFootnote": "Weekly regulars: yoga at Abbots Morton Village Hall on Mondays (9.45am), Lenches Tennis Club cardio on Tuesdays (6.30pm), tai chi at Abbots Morton on Wednesdays (10am), and candlelight yoga at Rous Lench Village Hall on Thursdays (6.30pm). Encompass are also running children's tennis and multi-sport camps at the Tennis Club every Wednesday and Thursday through the school holidays. Also on this week: a free junior tennis taster session on 21 Aug (5.30pm), and at the Club — Cash Bingo on 21 Aug and Glo Quiz on 22 Aug.",
   "news": [
     {
       "title": "Six weeks of roadworks at Pinvin",
@@ -94,8 +93,12 @@
       }
     },
     {
-      "title": "Lenches ladies clinch tennis league title",
-      "body": "The Lenches ladies' team have won Division 3 of the Evesham Summer League with a match still to play — a standout result for one of the league's smallest clubs. New players of all abilities are welcome; contact Joy Penzer on 07551 484114."
+      "title": "Scarecrow Festival raises £1,400 for charity",
+      "body": "Evesham's annual Scarecrow Festival at Hampton Ferry drew big crowds last weekend, with a Rotary duck race, live music and a scarecrow competition raising £1,400 for Muscular Dystrophy UK.",
+      "link": {
+        "text": "More from Evesham Observer",
+        "url": "https://eveshamobserver.co.uk/news/plenty-of-scarecrow-fun-at-evesham-festival/"
+      }
     },
     {
       "title": "Cricket club: new players welcome",
