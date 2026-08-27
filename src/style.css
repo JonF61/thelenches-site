@@ -152,3 +152,7 @@ h3{font-size:1.2rem;margin-bottom:.3rem}
   h2{font-size:1.3rem}
   .ne-top .bin-box{margin:0 0 1.25rem}
   .contacts,.contacts thead,.contacts
+
+  .newsletter-archive { list-style: none; padding: 0; margin: 0; columns: 2; column-gap: 2rem; }
+.newsletter-archive li { break-inside: avoid; padding: 0.35rem 0; }
+@media (max-width: 600px) { .newsletter-archive { columns: 1; } }
