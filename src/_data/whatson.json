@@ -10,36 +10,36 @@
   },
   "events": [
     {
-      "date": "2026-08-22",
-      "title": "Cricket: 1st XI at home to Moreton-in-Marsh",
-      "body": "The Lenches 1st XI host Moreton-in-Marsh at The Lenches on Saturday afternoon, with the 2nd XI away at Elmley Castle. Spectators warmly welcome for village cricket in one of the county's most scenic settings.",
+      "date": "2026-08-29",
+      "title": "Cricket: final-Saturday double-header v Broadway",
+      "body": "The season closes with both sides facing Broadway — the 1st XI away chasing promotion after a 233-run win over Moreton-in-Marsh, and the 2nd XI at home at The Lenches. Spectators warmly welcome for a big finale.",
       "link": {
         "text": "Lenches Cricket",
         "url": "https://www.thelenches.org.uk/lenches-cricket"
       }
     },
     {
-      "date": "2026-08-26",
-      "title": "Cricket: midweek Evesham Derby v Offenham",
-      "body": "The Lenches face local neighbours Offenham CC in a Wednesday-evening Evesham Derby, hoping to build on a recent midweek win over Fladbury.",
+      "date": "2026-08-29",
+      "title": "Bank Holiday weekend at The Lenches Club",
+      "body": "The Club is open right across the bank holiday weekend with drinks promotions and the best view in the village — Saturday and Sunday from noon, and Monday noon to 10pm.",
       "link": {
-        "text": "Lenches Cricket",
-        "url": "https://www.thelenches.org.uk/lenches-cricket"
+        "text": "The Lenches Club",
+        "url": "https://thelenchesclub.co.uk/"
       }
     },
     {
       "date": "2026-08-30",
       "title": "Free open-air cinema: How to Train Your Dragon — Lenches Amphitheatre",
-      "body": "A free family afternoon screening of the 2010 animated adventure (PG). Gates 4pm, film 5pm; the tearoom and bar are open and pre-ordering food is recommended.",
+      "body": "The free family matinee screening of the 2010 animated adventure (PG) is now sold out with a waiting list; if you have tickets you can't use, please email the theatre so they can be reallocated. Gates 4pm, film 5pm.",
       "link": {
-        "text": "Book free tickets",
-        "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/2346426"
+        "text": "Contact the theatre",
+        "url": "https://lenchestheatre.co.uk"
       }
     },
     {
       "date": "2026-08-30",
       "title": "Sunset cinema: Good Morning, Vietnam — Lenches Amphitheatre",
-      "body": "A free evening screening of the 1987 Robin Williams classic (15), chosen by public vote. Gates 7.30pm, film 8.30pm; bring a rug or chairs.",
+      "body": "Free tickets are still available for this atmospheric evening screening of the 1987 Robin Williams classic (15). Gates 7.30pm, film 8.30pm; bring a rug or chairs, with the tearoom and bar open through the night.",
       "link": {
         "text": "Book free tickets",
         "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/2346509"
@@ -55,6 +55,15 @@
       }
     },
     {
+      "date": "2026-09-04",
+      "title": "Cash Bingo — The Lenches Club",
+      "body": "Bring your friends, grab a bingo book and get dabbing. Ticket sales from 7.15pm, eyes down at 8pm; cash only and over-18s only.",
+      "link": {
+        "text": "The Lenches Club",
+        "url": "https://thelenchesclub.co.uk/"
+      }
+    },
+    {
       "date": "2026-09-05",
       "title": "Inter-Generation Tennis Funday — Lenches Tennis Club",
       "body": "A fun, all-ages tennis day in memory of Rod Stroud, open to everyone — no club membership needed. Any two people with an age gap can pair up; barbecue, cakes, drinks and prizes, with the emphasis firmly on fun. To take part, email lenchestc@gmail.com.",
@@ -66,43 +75,34 @@
     {
       "date": "2026-09-06",
       "title": "Sherlock Holmes and the Mystery of the Governor's Nose — Lenches Amphitheatre",
-      "body": "Jenny Wren Productions bring an outdoor Sherlock Holmes mystery to the amphitheatre. Gates 1pm, performance 2.30–4.30pm.",
+      "body": "Jenny Wren Productions bring the season's final outdoor performance to the amphitheatre — a newly written Sherlock Holmes mystery adapted from Conan Doyle. Gates 1pm, performance 2.30–4.30pm.",
       "link": {
         "text": "Book tickets",
         "url": "https://www.tickettailor.com/events/thelenchesamphitheatre/2098444"
       }
-    },
-    {
-      "date": "2026-09-25",
-      "title": "Unmasked: The Magic of Angus Baskerville — The Lenches Club",
-      "body": "Magic Circle magician and mentalist Angus Baskerville brings his hit show to the Club — jaw-dropping illusions, mind-reading and warm storytelling drawn from his own experience of autism and ADHD. 7.30–9pm, a show for all ages.",
-      "link": {
-        "text": "Book tickets",
-        "url": "https://www.eventbrite.co.uk/e/unmasked-the-magic-of-angus-baskerville-tickets-1983816787414"
-      }
     }
   ],
-  "eventsFootnote": "Weekly regulars: yoga at Abbots Morton Village Hall on Mondays (9.45am), Lenches Tennis Club cardio on Tuesdays (6.30pm), tai chi at Abbots Morton on Wednesdays (10am), and candlelight yoga at Rous Lench Village Hall on Thursdays (6.30pm). Encompass are also running children's tennis and multi-sport camps at the Tennis Club every Wednesday and Thursday through the school holidays. Also on this week: a free junior tennis taster session on 21 Aug (5.30pm), and at the Club — Cash Bingo on 21 Aug and Glo Quiz on 22 Aug.",
+  "eventsFootnote": "Weekly regulars: yoga at Abbots Morton Village Hall on Mondays (9.45am), Lenches Tennis Club cardio on Tuesdays (6.30pm), tai chi at Abbots Morton on Wednesdays (10am), and candlelight yoga at Rous Lench Village Hall on Thursdays (6.30pm). Encompass are also running children's tennis and multi-sport camps at the Tennis Club on Wednesdays and Thursdays through this final week of the summer holidays.",
   "news": [
     {
-      "title": "Six weeks of roadworks at Pinvin",
-      "body": "Main Street in Pinvin is closed until 28 August while the gas mains are upgraded — worth allowing extra time if you head that way towards Pershore or Worcester.",
+      "title": "School applications open for September 2027",
+      "body": "Applications for primary and secondary school places starting in September 2027 open on 1 September 2026 — worth noting the date if you have a child due to start or move up.",
       "link": {
         "text": "More from Evesham Observer",
-        "url": "https://eveshamobserver.co.uk/news/travel-alert-pinvin-road-closure-for-six-weeks-for-gas-pipe-upgrades/"
+        "url": "https://eveshamobserver.co.uk/news/school-applications-for-september-2027-open-on-1-september-2026-63967/"
       }
     },
     {
-      "title": "Scarecrow Festival raises £1,400 for charity",
-      "body": "Evesham's annual Scarecrow Festival at Hampton Ferry drew big crowds last weekend, with a Rotary duck race, live music and a scarecrow competition raising £1,400 for Muscular Dystrophy UK.",
+      "title": "Pinvin bus service restored",
+      "body": "After weeks of disruption during the Main Street gas works, the bus service through Pinvin towards Pershore and Worcester has now been reinstated.",
       "link": {
         "text": "More from Evesham Observer",
-        "url": "https://eveshamobserver.co.uk/news/plenty-of-scarecrow-fun-at-evesham-festival/"
+        "url": "https://eveshamobserver.co.uk/news/stranded-pinvin-villagers-have-bus-service-restored/"
       }
     },
     {
       "title": "Cricket club: new players welcome",
-      "body": "Players of all ages and abilities are wanted, whether experienced, returning or brand new. Contact Venky on 07442 772470 or Charlie on 07775 660065."
+      "body": "With the season just ended, the club is already looking ahead — players of all ages and abilities are wanted, whether experienced, returning or brand new. Contact Venky on 07442 772470 or Charlie on 07775 660065."
     }
   ],
   "notices": [
