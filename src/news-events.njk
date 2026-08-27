@@ -67,6 +67,18 @@ description: What's on across the Lenches villages this week — events, news, n
       {% endfor %}
     </div>
   </section>
+
+  <section>
+    <h2>Previous Newsletters</h2>
+    <p class="mut">Every edition, newest first. Each one opens in your browser exactly as it appeared in the email.</p>
+    <div class="card">
+      <ul class="newsletter-archive mt0">
+        {% for item in newsletters %}
+        <li><a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.label }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
 </main>
 
 <script>
