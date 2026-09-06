@@ -1,7 +1,7 @@
 ---
 layout: base.njk
 title: Bin Collections
-description: Bin collection days for Church, Rous, Ab, Atch and Sheriffs Lench and Harvington, plus what goes in which bin and where the nearest tip is.
+description: Bin collection days for Church, Rous, Ab, Atch and Sheriffs Lench and Harvington, what goes in which bin, and where the nearest tip and recycling banks are.
 ---
 <main class="container">
 
@@ -16,28 +16,88 @@ description: Bin collection days for Church, Rous, Ab, Atch and Sheriffs Lench a
     <div class="grid" id="bin-grid">
       <p class="mut">Collection days are shown here automatically — if nothing appears, <a href="https://www.wychavon.gov.uk/waste-and-recycling/bins-and-collections" target="_blank" rel="noopener">check your bin day at Wychavon</a>.</p>
     </div>
-    <p class="small mut">Bins out by {{ bins.putOutBy }} on the day. Five villages are collected on a Monday; Rous Lench is collected on the Friday of the same week.</p>
+    <p class="small mut">Bins out by {{ bins.putOutBy }} on the day, at the boundary of your property nearest the road, with the lid closed — crews may leave a bin whose lid won't shut. Five villages are collected on a Monday; Rous Lench is collected on the Friday of the same week.</p>
   </section>
 
   <section>
     <h2>What goes where</h2>
+
+    <h3>Green bin — recycling</h3>
+    <p>Everything must be <strong>clean, dry and loose</strong>. A bin with black sacks inside won't be collected, even if the sacks are full of recycling.</p>
     <div class="grid">
       <div class="card">
-        <h3 class="mt0">Black bin</h3>
-        <p class="mt0">General household waste, including food waste — Wychavon has not yet introduced separate food waste collections.</p>
-        <p>Small electricals, batteries and textiles can go out <em>with</em> the black bin collection rather than inside it.</p>
+        <h3 class="mt0">Cans, tins and foil</h3>
+        <p class="mt0">Food and pet food tins, drinks cans, aerosols, sweet and biscuit tins, metal jar lids. Clean aluminium foil and foil trays — scrunch foil into a ball, or small pieces get lost in sorting. Aluminium tubes such as tomato purée.</p>
+        <p class="small mut mt0">No saucepans, cutlery or tools; no foil pouches or coffee pods; don't flatten cans.</p>
       </div>
       <div class="card">
-        <h3 class="mt0">Green bin</h3>
-        <p class="mt0">Recycling — collected on the alternate fortnight to the black bin.</p>
+        <h3 class="mt0">Glass bottles and jars</h3>
+        <p class="mt0">All colours. Lids can stay on, labels can stay on. Also fragrance bottles and make-up or moisturiser jars.</p>
+        <p class="small mut mt0">No drinking glasses, Pyrex or window glass, and no nail varnish bottles. If you're on a sack collection, glass can't go in the sack — use a bank or the tip.</p>
       </div>
       <div class="card">
-        <h3 class="mt0">Brown bin</h3>
-        <p class="mt0">Garden waste. This is a <strong>paid subscription</strong> service, so it only applies if you've signed up. Where it runs, it's collected on the same day as the green bin.</p>
-        <p><a href="https://www.wychavon.gov.uk/waste-and-recycling/bins-and-collections" target="_blank" rel="noopener">Sign up for garden waste at Wychavon &rarr;</a></p>
+        <h3 class="mt0">Plastic bottles, pots, tubs and trays</h3>
+        <p class="mt0">Drinks, milk, detergent, bleach, shampoo and shower gel bottles; yoghurt and margarine pots; meat, ready meal and fruit trays; plant pots. Plastic tubes such as toothpaste and hand cream — squeeze out and put the lid back on.</p>
+        <p class="small mut mt0">No black plastic, no film or bags, no pump tops or trigger sprays, no hard plastics or toys. Screw bottle tops back on rather than binning them loose.</p>
+      </div>
+      <div class="card">
+        <h3 class="mt0">Paper</h3>
+        <p class="mt0">Newspapers, magazines, catalogues, junk mail, letters, envelopes and greetings cards. Shredded paper only if it's contained inside another paper item — a cereal box or envelope.</p>
+        <p class="small mut mt0">No glittery cards or metallic wrapping paper, no sticky labels, nothing food-stained.</p>
+      </div>
+      <div class="card">
+        <h3 class="mt0">Cardboard</h3>
+        <p class="mt0">Packaging, cereal and pet food boxes, ready meal sleeves, egg boxes, kitchen and toilet roll tubes. Flatten boxes and tubes.</p>
+        <p class="small mut mt0">Take out any film, bags or polystyrene first, and leave greasy pizza boxes for the black bin.</p>
+      </div>
+      <div class="card">
+        <h3 class="mt0">Cartons</h3>
+        <p class="mt0">Milk, juice, smoothie, soup, passata, custard and UHT cartons. Flatten them. Plastic spouts can stay on; lids come off but can go in the bin separately.</p>
       </div>
     </div>
-    <p class="small mut">Some rural properties are given sacks rather than wheelie bins. The collection days are the same either way.</p>
+
+    <h3>Black bin — everything else</h3>
+    <div class="card">
+      <p class="mt0">General household rubbish, <strong>including food waste</strong> — there's no separate food collection here yet.</p>
+      <p>Also black plastic, cling film and soft plastics, crisp packets and sweet wrappers, foil pouches, coffee pods, drinking glasses and Pyrex, and pump tops and trigger sprays.</p>
+      <p class="small mut mt0">Soft plastics can go to the carrier bag recycling point at larger supermarkets in the meantime. Wychavon expects to collect plastic film from the kerbside from spring 2027.</p>
+    </div>
+
+    <h3>Alongside the black bin, not in it</h3>
+    <div class="grid">
+      <div class="card">
+        <h3 class="mt0">Batteries</h3>
+        <p class="mt0">In a small plastic bag placed <em>on top of</em> the black bin. Crews put them in a separate cage on the lorry. Most supermarkets take them too.</p>
+      </div>
+      <div class="card">
+        <h3 class="mt0">Small electricals</h3>
+        <p class="mt0">Anything with a plug, a battery or a crossed-out wheelie bin symbol. On top of or beside the bin — never inside it, and never in the recycling.</p>
+      </div>
+      <div class="card">
+        <h3 class="mt0">Textiles</h3>
+        <p class="mt0">Clean, dry clothing, bed sheets and towels in a securely tied bag next to the bin, so they survive the rain. Anything still good is better off at a charity shop.</p>
+      </div>
+    </div>
+
+    <h3>Brown bin — garden waste</h3>
+    <div class="card">
+      <p class="mt0">A <strong>paid subscription</strong> service, so it only applies if you've signed up. Where it runs, it's collected on the same day as the green bin.</p>
+      <p><a href="https://www.wychavon.gov.uk/waste-and-recycling/garden-waste-collection-service" target="_blank" rel="noopener">Garden waste collection service at Wychavon &rarr;</a></p>
+    </div>
+    <p class="small mut">Some rural properties are given sacks rather than wheelie bins. Collection days are the same either way.</p>
+  </section>
+
+  <section>
+    <h2>Recycling banks nearby</h2>
+    <div class="card">
+      <p class="mt0">If you have a green bin you don't need these — paper, glass, card and cans all go in the bin. They're useful for sack households and for overflow.</p>
+      <ul>
+        <li>The Fish &amp; Anchor, Evesham Road, Offenham — glass</li>
+        <li>Oat Street, Evesham — glass and cans</li>
+        <li>Morrisons, Springfield Drive, Evesham — glass and cans</li>
+        <li>Tesco, Worcester Road, Evesham — glass and cans</li>
+      </ul>
+    </div>
   </section>
 
   <section>
@@ -45,12 +105,13 @@ description: Bin collection days for Church, Rous, Ab, Atch and Sheriffs Lench a
     <div class="card">
       <p class="mt0"><strong>Hill &amp; Moor</strong>, Piddle Brook Lane, Wyre Piddle WR10 2LW.</p>
       <p>Monday to Saturday 8am&ndash;6pm, Sunday 9am&ndash;1.30pm. No booking needed for cars, but you'll need proof of a Worcestershire address. Opening hours change seasonally, so it's worth checking before you set out.</p>
+      <p class="small mut mt0">Vans, trailers and pickups need an e-permit from Worcestershire County Council.</p>
     </div>
   </section>
 
   <section>
     <div class="card">
-      <p class="mt0 small muted">Collection days are taken from Wychavon's published calendar and may change, particularly around Christmas and New Year. If a date here looks wrong, please email <a href="mailto:{{ site.email }}">{{ site.email }}</a> and <a href="https://www.wychavon.gov.uk/waste-and-recycling/bins-and-collections" target="_blank" rel="noopener">check directly with Wychavon</a>.</p>
+      <p class="mt0 small muted">Checked against Wychavon District Council and Worcestershire County Council guidance in September 2026. Collection days may change, particularly around Christmas and New Year. If something here looks wrong, please email <a href="mailto:{{ site.email }}">{{ site.email }}</a>, and for a specific item try Wychavon's <a href="https://www.wychavon.gov.uk/waste-and-recycling/recycling/a-to-z-recycling-guide" target="_blank" rel="noopener">A to Z recycling guide</a>.</p>
     </div>
   </section>
 
