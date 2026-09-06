@@ -6,6 +6,14 @@
   "source": "Wychavon District Council 2026 bin collection calendar (Yellow)",
   "validTo": "2026-12-14",
   "note": "Bank holiday collections as normal except Christmas and New Year. Weeks of 21 and 28 December follow a revised schedule not yet published.",
+  "areas": [
+    { "name": "Church Lench", "day": "Monday", "offset": 0 },
+    { "name": "Ab Lench", "day": "Monday", "offset": 0 },
+    { "name": "Atch Lench", "day": "Monday", "offset": 0 },
+    { "name": "Sheriffs Lench", "day": "Monday", "offset": 0 },
+    { "name": "Harvington", "day": "Monday", "offset": 0 },
+    { "name": "Rous Lench", "day": "Friday", "offset": 4 }
+  ],
   "collections": [
     { "date": "2026-08-03", "bins": ["green", "brown"] },
     { "date": "2026-08-10", "bins": ["black"] },
