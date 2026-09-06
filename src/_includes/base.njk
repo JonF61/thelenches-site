@@ -5,10 +5,32 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   {% if site.noindex %}<meta name="robots" content="noindex, nofollow">{% endif %}
-<title>{% if page.url == "/" %}The Lenches — Newsletter{% else %}{{ title }} — The Lenches{% endif %}</title>
-  {% if description %}<meta name="description" content="{{ description }}">{% endif %}
+  {% set pageTitle %}{% if page.url == "/" %}The Lenches — Newsletter{% else %}{{ title }} — The Lenches{% endif %}{% endset %}
+  {% set pageDesc = description or site.description %}
+  {% set pageImage = ogImage or site.ogImage %}
+  {% set pageImageAlt = ogImageAlt or site.ogImageAlt %}
+  <title>{{ pageTitle }}</title>
+  {% if pageDesc %}<meta name="description" content="{{ pageDesc }}">{% endif %}
+  <link rel="canonical" href="{{ site.url }}{{ page.url }}">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="The Lenches Newsletter">
+  <meta property="og:locale" content="en_GB">
+  <meta property="og:title" content="{{ pageTitle }}">
+  {% if pageDesc %}<meta property="og:description" content="{{ pageDesc }}">{% endif %}
+  <meta property="og:url" content="{{ site.url }}{{ page.url }}">
+  {% if pageImage %}<meta property="og:image" content="{{ pageImage }}">
+  <meta property="og:image:alt" content="{{ pageImageAlt }}">{% endif %}
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ pageTitle }}">
+  {% if pageDesc %}<meta name="twitter:description" content="{{ pageDesc }}">{% endif %}
+  {% if pageImage %}<meta name="twitter:image" content="{{ pageImage }}">
+  <meta name="twitter:image:alt" content="{{ pageImageAlt }}">{% endif %}
+
   <link rel="stylesheet" href="{{ '/style.css' | url }}">
   {% if page.url == "/" %}<link rel="preload" as="image" href="{{ '/images/club-view.jpg' | url }}" fetchpriority="high">{% endif %}
 </head>
