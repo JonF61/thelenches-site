@@ -3,7 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const CACHE = path.join(__dirname, "..", "..", "cache", "newsletters.json");
+const CACHE = path.join(__dirname, "cache", "newsletters.json");
 const API = "https://connect.mailerlite.com/api/campaigns";
 
 const longDate = (stamp) =>
