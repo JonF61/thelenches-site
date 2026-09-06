@@ -1,4 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="The Lenches">
-  <rect width="64" height="64" rx="12" fill="#3a6b35"/>
-  <path d="M22 14h9v28h13v8H22z" fill="#faf8f2"/>
+  <rect width="64" height="64" rx="12" fill="#3F5233"/>
+  <circle cx="32" cy="19" r="10.5" fill="#F6F1E4"/>
+  <circle cx="44.4" cy="28" r="10.5" fill="#F6F1E4"/>
+  <circle cx="39.6" cy="42.5" r="10.5" fill="#F6F1E4"/>
+  <circle cx="24.4" cy="42.5" r="10.5" fill="#F6F1E4"/>
+  <circle cx="19.6" cy="28" r="10.5" fill="#F6F1E4"/>
+  <circle cx="32" cy="32" r="7" fill="#C0703A"/>
 </svg>
