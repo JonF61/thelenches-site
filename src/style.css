@@ -165,3 +165,7 @@ h3{font-size:1.2rem;margin-bottom:.3rem}
 .newsletter-archive{list-style:none;padding:0;margin:0;columns:2;column-gap:2rem}
 .newsletter-archive li{break-inside:avoid;padding:.35rem 0}
 @media (max-width:600px){.newsletter-archive{columns:1}}
+
+/* Header updated stamp */
+.site-updated{flex:1 0 100%;margin:0;text-align:right;font-size:.78rem;color:#d9e8d2;letter-spacing:.02em}
+@media (max-width:560px){.site-updated{text-align:left}}
