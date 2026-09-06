@@ -3,6 +3,8 @@ name: Build and deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: "0 12 * * 4"
   workflow_dispatch:
 
 permissions:
@@ -24,6 +26,8 @@ jobs:
           node-version: 20
       - run: npm install
       - run: npx @11ty/eleventy
+        env:
+          MAILERLITE_API_KEY: ${{ secrets.MAILERLITE_API_KEY }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
