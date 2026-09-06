@@ -16,7 +16,7 @@ description: Bin collection days for Church, Rous, Ab, Atch and Sheriffs Lench a
     <div class="grid" id="bin-grid">
       <p class="mut">Collection days are shown here automatically — if nothing appears, <a href="https://www.wychavon.gov.uk/waste-and-recycling/bins-and-collections" target="_blank" rel="noopener">check your bin day at Wychavon</a>.</p>
     </div>
-    <p class="small mut">Bins out by {{ bins.putOutBy }} on the day, at the boundary of your property nearest the road, with the lid closed — crews may leave a bin whose lid won't shut. Five villages are collected on a Monday; Rous Lench is collected on the Friday of the same week.</p>
+    <p class="small mut">Bins out by {{ bins.putOutBy }} on the day, at the boundary of your property nearest the road, with the lid closed — crews may leave a bin whose lid won't shut.</p>
   </section>
 
   <section>
@@ -140,27 +140,43 @@ description: Bin collection days for Church, Rous, Ab, Atch and Sheriffs Lench a
       ? 'Black bin'
       : 'Green recycling bin' + (list.indexOf('brown') > -1 ? ' &amp; brown garden bin' : '');
   }
+  function names(list) {
+    return list.length < 2 ? list[0] : list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1];
+  }
 
-  var html = data.areas.map(function (area) {
+  // One entry per collection day, however many villages share it
+  var groups = [];
+  data.areas.forEach(function (area) {
     var off = area.offset || 0;
-    var found = [];
-    for (var i = 0; i < data.collections.length && found.length < 2; i++) {
-      var c = data.collections[i];
-      var d = shift(toDate(c.date), off);
-      var cutoff = new Date(d); cutoff.setHours(10, 0, 0, 0);
-      if (cutoff > now) found.push({ date: d, bins: c.bins, note: c.note });
-    }
-    if (!found.length) return '';
+    var g = null;
+    for (var i = 0; i < groups.length; i++) { if (groups[i].offset === off) g = groups[i]; }
+    if (!g) { g = { offset: off, villages: [] }; groups.push(g); }
+    g.villages.push(area.name);
+  });
 
-    var n = found[0];
+  groups.forEach(function (g) {
+    g.found = [];
+    for (var i = 0; i < data.collections.length && g.found.length < 2; i++) {
+      var c = data.collections[i];
+      var d = shift(toDate(c.date), g.offset);
+      var cutoff = new Date(d); cutoff.setHours(10, 0, 0, 0);
+      if (cutoff > now) g.found.push({ date: d, bins: c.bins, note: c.note });
+    }
+  });
+
+  groups = groups.filter(function (g) { return g.found.length; });
+  groups.sort(function (a, b) { return a.found[0].date - b.found[0].date; });
+
+  var html = groups.map(function (g) {
+    var n = g.found[0];
     var swatches = n.bins.map(function (b) {
       return '<div class="bin-swatch" style="background:' + (colours[b] || '#999') + ';"></div>';
     }).join('');
 
     return '<div class="bin-box">' + swatches +
-      '<div><strong>' + area.name + '</strong>' +
-      '<div>' + when(n.date) + ' &mdash; ' + label(n.bins) + '</div>' +
-      (found[1] ? '<div class="small mut">Then ' + when(found[1].date) + ' &mdash; ' + label(found[1].bins) + '</div>' : '') +
+      '<div><strong>' + when(n.date) + ' &mdash; ' + label(n.bins) + '</strong>' +
+      '<div>' + names(g.villages) + '</div>' +
+      (g.found[1] ? '<div class="small mut">Then ' + when(g.found[1].date) + ' &mdash; ' + label(g.found[1].bins) + '</div>' : '') +
       (n.note ? '<div class="small mut">' + n.note + '</div>' : '') +
       '</div></div>';
   }).join('');
