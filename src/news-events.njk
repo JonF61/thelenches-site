@@ -1,23 +1,13 @@
 ---
 layout: base.njk
 title: News & Events
-description: What's on across the Lenches villages this week — events, news, notices and bin collection days.
+description: What's on across the Lenches villages this week — events, news and notices.
 ---
 <main class="container">
   <section>
-    <div class="ne-top">
-      <div class="ne-title">
-        <h1>News &amp; Events</h1>
-        <p class="lead">What's happening across the villages, gathered from the newsletter and other local sources.</p>
-        <p><span class="datestamp">Page updated {{ updated | longDate }}</span></p>
-      </div>
-      <div class="bin-box" id="bin-box">
-        <div>
-          <strong>Bin collections</strong>
-          <div class="small mut"><a href="https://www.wychavon.gov.uk/waste-and-recycling/bins-and-collections" target="_blank" rel="noopener">Check your bin day at Wychavon &rarr;</a></div>
-        </div>
-      </div>
-    </div>
+    <h1>News &amp; Events</h1>
+    <p class="lead">What's happening across the villages, gathered from the newsletter and other local sources.</p>
+    <p><span class="datestamp">Page updated {{ updated | longDate }}</span></p>
     <div class="notice">Got something to include? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a> by the end of Wednesday.</div>
   </section>
 
@@ -80,42 +70,3 @@ description: What's on across the Lenches villages this week — events, news, n
     </div>
   </section>
 </main>
-
-<script>
-(function () {
-  var data = {{ bins | dump | safe }};
-  var box = document.getElementById('bin-box');
-  if (!box || !data || !data.collections) return;
-
-  var colours = { black: '#2f2f2f', green: '#7ab648', brown: '#6b4a2c' };
-
-  var now = new Date();
-  var today = new Date(now); today.setHours(0, 0, 0, 0);
-
-  function toDate(s) { var p = s.split('-'); return new Date(+p[0], p[1] - 1, +p[2]); }
-  function expiry(s) { var d = toDate(s); d.setHours(10, 0, 0, 0); return d; }
-
-  var next = null;
-  for (var i = 0; i < data.collections.length; i++) {
-    if (expiry(data.collections[i].date) > now) { next = data.collections[i]; break; }
-  }
-  if (!next) return;
-
-  var d = toDate(next.date);
-  var when = d.getTime() === today.getTime()
-    ? 'Today'
-    : d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
-
-  var label = next.bins.indexOf('black') > -1
-    ? 'Black bin'
-    : 'Green recycling bin' + (next.bins.indexOf('brown') > -1 ? ' &amp; brown garden bin' : '');
-
-  var swatches = next.bins.map(function (b) {
-    return '<div class="bin-swatch" style="background:' + (colours[b] || '#999') + ';"></div>';
-  }).join('');
-
-  box.innerHTML = swatches +
-    '<div><strong>' + when + ' — ' + label + '</strong>' +
-    '<div class="small mut">' + (next.note || 'Out by ' + data.putOutBy + '.') + '</div></div>';
-})();
-</script>
