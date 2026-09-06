@@ -12,6 +12,7 @@
     { "title": "News & Events", "url": "/news-events/" },
     { "title": "Groups & Clubs", "url": "/groups/" },
     { "title": "Village Halls", "url": "/halls/" },
+    { "title": "Churches", "url": "/churches/" },
     { "title": "Contact", "url": "/contact/" }
   ]
 }
