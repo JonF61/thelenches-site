@@ -10,42 +10,6 @@
 },
 "events": [
 {
-"date": "2026-09-19",
-"title": "Glo Quiz — The Lenches Club",
-"body": "Gather a team, bring your favourite tipple and compete for prizes at a live, hosted quiz night from 8pm.",
-"link": {
-"text": "The Lenches Club",
-"url": "https://thelenchesclub.co.uk/"
-}
-},
-{
-"date": "2026-09-19",
-"title": "Veg Fest 2026 — Evesham",
-"body": "Evesham's biggest celebration of fruit and veg, with plant-based chefs The Happy Pear among the guests — a family day of food, demos and stalls from 10am.",
-"link": {
-"text": "More on Visit Evesham",
-"url": "https://www.visitevesham.co.uk/event/veg-fest-2026/"
-}
-},
-{
-"date": "2026-09-19",
-"title": "A Celebration of Noel Coward — Bretforton",
-"body": "Evesham's own Alistair McGowan and his wife Charlotte perform a personal selection of Noel Coward's songs and rarely-heard poems at Bretforton Theatrebarn, from 7pm.",
-"link": {
-"text": "More on Vale & Spa",
-"url": "https://www.valeandspa.co.uk/whats-on/event/a-celebration-of-noel-coward/?start_date=2026-09-19-19:00:00&end_date=2026-09-19-21:30:00"
-}
-},
-{
-"date": "2026-09-21",
-"title": "A Flavour of the Fleece — Bretforton",
-"body": "Fleece Inn landlord Nigel Smith leads an evening tour of the historic Bretforton pub and its centuries of collected artefacts, with tastings along the way, from 6.15pm.",
-"link": {
-"text": "More on Vale & Spa",
-"url": "https://www.valeandspa.co.uk/whats-on/event/a-flavour-of-the-fleece-%c2%96-taste-tour/?start_date=2026-09-21-18:15:00&end_date=2026-09-21-19:15:00"
-}
-},
-{
 "date": "2026-09-24",
 "title": "Paint and Pud: Summer of Love — Bishampton",
 "body": "A relaxed evening of guided painting and indulgent desserts on a 'Summer of Love' theme at The Vale Golf Club, Bishampton, from 6.30pm.",
@@ -91,12 +55,30 @@
 }
 },
 {
+"date": "2026-10-02",
+"title": "Cash Bingo — The Lenches Club",
+"body": "October's first bingo night. Ticket sales from 7.15pm, eyes down at 8pm; cash only and over-18s only, with cash prizes to be won.",
+"link": {
+"text": "The Lenches Club",
+"url": "https://thelenchesclub.co.uk/"
+}
+},
+{
 "date": "2026-10-03",
 "title": "Pershore Broad Street Market — Pershore",
 "body": "Around 30 stalls of farm-fresh produce, food and crafts — everything grown or made within 10 miles of the town — fill Broad Street from 9am to 2pm.",
 "link": {
 "text": "More on Vale & Spa",
 "url": "https://www.valeandspa.co.uk/whats-on/event/pershore-broad-street-market-2/?start_date=2026-10-03-09:00:00&end_date=2026-10-03-14:00:00"
+}
+},
+{
+"date": "2026-10-03",
+"title": "Krapp's Last Tape — David Westhead",
+"body": "Acclaimed actor David Westhead performs Samuel Beckett's one-man classic, followed by a Q&A, from 7pm.",
+"link": {
+"text": "More on Visit Evesham",
+"url": "https://www.visitevesham.co.uk/event/krapps-last-tape-by-samuel-beckett-qa-with-david-westhead/"
 }
 },
 {
@@ -125,32 +107,59 @@
 "text": "More on Vale & Spa",
 "url": "https://www.valeandspa.co.uk/whats-on/event/apple-ale/?start_date=2026-10-09-11:00:00&end_date=2026-11-11-23:00:00"
 }
+},
+{
+"date": "2026-10-13",
+"title": "Fleecey Folk: Breabach — Bretforton",
+"body": "Award-winning Scottish folk band Breabach bring their acclaimed live show to the Fleece Inn, Bretforton, from 8pm.",
+"link": {
+"text": "More on Visit Evesham",
+"url": "https://www.visitevesham.co.uk/event/fleecey-folk-breabach/"
+}
+},
+{
+"date": "2026-10-15",
+"title": "An Evening with Mike Tindall — Bishampton",
+"body": "Former England rugby World Cup winner Mike Tindall shares behind-the-scenes stories from elite sport at The Vale Golf Club, Bishampton, from 6.30pm.",
+"link": {
+"text": "More on Vale & Spa",
+"url": "https://www.valeandspa.co.uk/whats-on/event/an-evening-with-mike-tindall/?start_date=2026-10-15-18:30:00&end_date=2026-10-15-22:30:00"
+}
+},
+{
+"date": "2026-10-16",
+"title": "GLADS present 'Peter Pandemonium' — The Lenches Club",
+"body": "The GLADS return to the Club with their pantomime-style show 'Peter Pandemonium' on Friday 16 and Saturday 17 October, 7.30pm; £10, tickets behind the bar or from any GLADS member.",
+"link": {
+"text": "The Lenches Club",
+"url": "https://thelenchesclub.co.uk/"
+}
 }
 ],
-"eventsFootnote": "Weekly regulars: yoga at Abbots Morton Village Hall on Mondays (9.45am), Lenches Tennis Club cardio on Tuesdays (6.30pm), tai chi at Abbots Morton on Wednesdays (10am), and candlelight yoga at Rous Lench Village Hall on Thursdays (6.30pm). Sunday services continue across the ARCH benefice churches at Harvington, Rous Lench, Abbots Morton, Church Lench and Norton & Lenchwick. Further afield, Flora Fields' pick-your-own dahlias run at Webbs, Wychbold until the end of September.",
+"eventsFootnote": "Weekly regulars: yoga at Abbots Morton Village Hall on Mondays (9.45am), Lenches Tennis Club cardio on Tuesdays (6.30pm), tai chi at Abbots Morton on Wednesdays (10am), and candlelight yoga at Rous Lench Village Hall on Thursdays (6.30pm). Sunday services continue across the ARCH benefice churches at Harvington, Rous Lench, Abbots Morton, Church Lench and Norton & Lenchwick.",
 "news": [
 {
-"title": "School applications open for September 2027",
-"body": "Applications for primary and secondary school places starting in September 2027 opened on 1 September 2026 — worth noting the date if you have a child due to start or move up.",
+"title": "The Lenches Club: new website and board",
+"body": "The Club now has its own membership website at thelenchesclub.co.uk, where members can sign in to see their membership, book the club and keep up with what's on. A new board has also taken over, with Lenny Percival as chairman following Philip Talbot's and Anne Hastings' departure in the summer.",
 "link": {
-"text": "More from Evesham Observer",
-"url": "https://eveshamobserver.co.uk/news/school-applications-for-september-2027-open-on-1-september-2026-63967/"
+"text": "Visit the Club site",
+"url": "https://thelenchesclub.co.uk/"
 }
 },
 {
-"title": "Wychavon challenges Government over planning powers",
-"body": "Wychavon District Council has taken the Government to the High Court over changes affecting local planning powers — a case with potential implications for how decisions are made across the district.",
+"title": "A wonderful season at the Amphitheatre",
+"body": "The Lenches Amphitheatre has closed its 2026 season with warm thanks to audiences, performers, volunteers and donors — the volunteer-run charity is already planning its 2027 programme. Watch its website and socials for next year's announcements.",
 "link": {
-"text": "More from Evesham Observer",
-"url": "https://eveshamobserver.co.uk/news/wychavon-takes-government-to-high-court-over-planning-powers-64408/"
+"text": "The Lenches Amphitheatre",
+"url": "https://lenchestheatre.co.uk/"
 }
 },
 {
-"title": "Range Rover stolen from Fladbury",
-"body": "A Range Rover was reported stolen from nearby Fladbury this week — a reminder for rural residents to stay vigilant and keep vehicles, keys and outbuildings secure.",
+"title": "Tougher penalties for fly-tipping proposed",
+"body": "Wychavon District Council is set to consider much tougher penalties for fly-tippers, with the maximum fixed penalty rising from £1,000 to £5,000 — welcome news across the rural lanes of the Lenches, where dumped waste is a recurring problem.",
 "link": {
 "text": "More from Evesham Observer",
-"url": "https://eveshamobserver.co.uk/news/range-rover-stolen-from-fladbury/"
+"url": "https://eveshamobserver.co.uk/news/fly-tippers-in-wychavon-set-to-face-much-tougher-penalties-64447/"
 }
 },
 {
@@ -161,7 +170,7 @@
 "notices": [
 {
 "title": "Road closures at Church Lench",
-"body": "Atch Lench Road and Low Road, Church Lench, are set to close from 21 September until 16 October for National Grid works, with diversions in place — allow extra time when travelling locally.",
+"body": "Atch Lench Road and Low Road, Church Lench, are closed until 16 October for National Grid works, with diversions in place — allow extra time when travelling locally.",
 "link": {
 "text": "Check on one.network",
 "url": "https://one.network/"
@@ -169,7 +178,7 @@
 },
 {
 "title": "Severn Trent update — South Lenches",
-"body": "South Lenches Parish Council reports the persistent Evesham Road and Hipton Hill leaks are down to the old water main, which Severn Trent must decommission before the flow can stop; an update on timing was expected this week. Further planned works follow at Hill Furze Road, Sheriffs Lench (13–26 October) and Handgate Lane (27 October–29 November)."
+"body": "South Lenches Parish Council reports the persistent Evesham Road and Hipton Hill leaks are down to the old water main, which Severn Trent must decommission before the flow can stop; timing is still to be confirmed. Further planned works follow at Hill Furze Road, Sheriffs Lench (13–26 October) and Handgate Lane (27 October–29 November)."
 },
 {
 "title": "Autumn tennis lessons for all ages",
