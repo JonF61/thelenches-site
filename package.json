@@ -5,7 +5,13 @@
   "license": "MIT",
   "scripts": {
     "build": "eleventy",
-    "serve": "eleventy --serve"
+    "serve": "eleventy --serve",
+    "ingest": "node scripts/ingest/index.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "googleapis": "^144.0.0",
+    "sharp": "^0.33.5"
   },
   "devDependencies": {
     "@11ty/eleventy": "^3.0.0"
