@@ -3,6 +3,8 @@ layout: base.njk
 title: News & Events
 description: What's on across the Lenches villages this week — events, news and notices.
 ---
+{#- Items come from whatson.json (hand-edited) and pipeline.json (written by scripts/publish). -#}
+{% set imgStyle = "display:block;max-width:100%;max-height:28rem;width:auto;height:auto;margin-top:.75rem;border-radius:6px" %}
 <main class="container">
   <section>
     <h1>News &amp; Events</h1>
@@ -13,13 +15,14 @@ description: What's on across the Lenches villages this week — events, news an
 
   <section>
     <h2>Events</h2>
-    {% for e in whatson.events | upcoming %}
+    {% for e in whatson.events | merge(pipeline.events) | upcoming %}
     {% set d = e.date | dateParts %}
     <div class="event">
       <div class="date"><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>
       <div>
-        <h3 class="mt0">{{ e.title }}</h3>
-        <p class="mt0">{{ e.body }}{% if e.link %} <a href="{{ e.link.url }}" target="_blank" rel="noopener">{{ e.link.text }} &rarr;</a>{% endif %}</p>
+        <h3 class="mt0">{{ e.title | escape }}</h3>
+        <p class="mt0">{{ e.body | escape }}{% if e.link %} <a href="{{ e.link.url | escape }}" target="_blank" rel="noopener">{{ e.link.text | escape }} &rarr;</a>{% endif %}</p>
+        {% if e.image %}<img src="{{ e.image.url | url }}" alt="{{ e.image.alt | escape }}" loading="lazy" style="{{ imgStyle }}">{% endif %}
       </div>
     </div>
     {% endfor %}
@@ -37,10 +40,11 @@ description: What's on across the Lenches villages this week — events, news an
   <section>
     <h2>News</h2>
     <div class="grid">
-      {% for n in whatson.news %}
+      {% for n in pipeline.news | current | merge(whatson.news) %}
       <div class="card">
-        <h3 class="mt0">{{ n.title }}</h3>
-        <p>{{ n.body }}{% if n.link %} <a href="{{ n.link.url }}" target="_blank" rel="noopener">{{ n.link.text }} &rarr;</a>{% endif %}</p>
+        {% if n.image %}<img src="{{ n.image.url | url }}" alt="{{ n.image.alt | escape }}" loading="lazy" style="{{ imgStyle }}">{% endif %}
+        <h3 class="mt0">{{ n.title | escape }}</h3>
+        <p>{{ n.body | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}</p>
       </div>
       {% endfor %}
     </div>
@@ -49,10 +53,11 @@ description: What's on across the Lenches villages this week — events, news an
   <section>
     <h2>Notices</h2>
     <div class="grid">
-      {% for n in whatson.notices %}
+      {% for n in pipeline.notices | current | merge(whatson.notices) %}
       <div class="card">
-        <h3 class="mt0">{{ n.title }}</h3>
-        <p class="mt0">{{ n.body }}{% if n.link %} <a href="{{ n.link.url }}" target="_blank" rel="noopener">{{ n.link.text }} &rarr;</a>{% endif %}</p>
+        {% if n.image %}<img src="{{ n.image.url | url }}" alt="{{ n.image.alt | escape }}" loading="lazy" style="{{ imgStyle }}">{% endif %}
+        <h3 class="mt0">{{ n.title | escape }}</h3>
+        <p class="mt0">{{ n.body | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}</p>
       </div>
       {% endfor %}
     </div>

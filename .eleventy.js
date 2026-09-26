@@ -24,6 +24,15 @@ module.exports = function (eleventyConfig) {
       .sort((a, b) => a.date.localeCompare(b.date));
   });
 
+  // Join two lists, e.g. hand-written whatson.json items plus pipeline.json items
+  eleventyConfig.addFilter("merge", (a, b) => [...(a || []), ...(b || [])]);
+
+  // Drop pipeline news/notices past their expiry date (between publish runs)
+  eleventyConfig.addFilter("current", (items) => {
+    const now = today();
+    return (items || []).filter((i) => !i.expires || i.expires >= now);
+  });
+
   // "Fri" / "31" / "Jul" for the date block
   eleventyConfig.addFilter("dateParts", (iso) => ({
     dow: fmt(iso, { weekday: "short" }),
