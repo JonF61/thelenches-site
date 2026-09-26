@@ -1,0 +1,18 @@
+# Cloudflare Worker: approval links and watchdog.
+# Deployed by .github/workflows/deploy-worker.yml; secrets DISPATCH_TOKEN and
+# APPROVAL_SIGNING_KEY are pushed from GitHub secrets at deploy time.
+name = "approvals"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+workers_dev = true
+
+[triggers]
+# Watchdog every 3 hours (UTC).
+crons = ["23 */3 * * *"]
+
+[vars]
+REPO = "JonF61/thelenches-site"
+SITE_URL = "https://thelenches.org.uk/"
+
+[observability]
+enabled = true
