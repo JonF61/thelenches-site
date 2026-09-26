@@ -1,0 +1,59 @@
+name: Thursday digest
+
+on:
+  schedule:
+    # 07:03 UK time on Thursdays: 06:03 UTC in BST, 07:03 UTC in GMT.
+    # The gate keeps the right slot, even if GitHub starts it late.
+    - cron: "3 6 * * 4"
+    - cron: "3 7 * * 4"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: digest
+  cancel-in-progress: false
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Gate on UK time
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          OFFSET=$(TZ=Europe/London date +%z)
+          SLOT="${{ github.event.schedule }}"
+          if { [ "$SLOT" = "3 6 * * 4" ] && [ "$OFFSET" = "+0100" ]; } || \
+             { [ "$SLOT" = "3 7 * * 4" ] && [ "$OFFSET" = "+0000" ]; }; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "Slot '$SLOT' is not 07:03 UK time (offset $OFFSET), skipping."
+          fi
+
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/checkout@v4
+
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - if: steps.gate.outputs.run == 'true'
+        run: npm install --no-audit --no-fund
+
+      - if: steps.gate.outputs.run == 'true'
+        name: Send digest
+        run: node scripts/digest/index.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: jon@thelenches.org.uk
+          DIGEST_TO: jon@thelenches.org.uk
+          WORKER_URL: https://approvals.lenches.workers.dev
