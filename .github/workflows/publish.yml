@@ -1,0 +1,54 @@
+name: Publish to site
+
+# Regenerates src/_data/pipeline.json (and item images) from approved/auto rows
+# in Pending. Runs after every approval and every ingestion run, commits only
+# if something changed, then starts the site build (a GITHUB_TOKEN push can't).
+on:
+  workflow_run:
+    workflows: ["Apply approval", "Ingest Pipeline label"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install --no-audit --no-fund
+
+      - name: Generate site data
+        run: node scripts/publish/index.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: jon@thelenches.org.uk
+
+      - name: Commit and build
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add src/_data/pipeline.json src/images
+          if git diff --cached --quiet; then echo "No changes."; exit 0; fi
+          git config user.name "Lenches Pipeline"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Publish pipeline items"
+          git pull --rebase
+          git push
+          gh workflow run build.yml --ref main
