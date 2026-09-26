@@ -1,0 +1,61 @@
+name: Ingest Pipeline label
+
+on:
+  schedule:
+    # Every hour at :17 from 05:17 to 22:17 UTC. The gate step below keeps only
+    # the even UK hours 06–22, so BST/GMT changes need no edits.
+    - cron: "17 5-22 * * *"
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: "Override start date (YYYY-MM-DD) for testing; blank = Settings F3"
+        required: false
+        default: ""
+
+permissions:
+  contents: read   # ingestion never commits; images are committed on approval (step 5)
+
+concurrency:
+  group: ingest
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Gate on UK time
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          H=$(TZ=Europe/London date +%-H)
+          if [ "$H" -ge 6 ] && [ "$H" -le 22 ] && [ $((H % 2)) -eq 0 ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "UK hour $H is outside the schedule, skipping."
+          fi
+
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/checkout@v4
+
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - if: steps.gate.outputs.run == 'true'
+        run: npm install --no-audit --no-fund
+
+      - if: steps.gate.outputs.run == 'true'
+        name: Run ingestion
+        run: node scripts/ingest/index.js
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: jon@thelenches.org.uk
+          GMAIL_LABEL: Pipeline
+          START_DATE_OVERRIDE: ${{ github.event.inputs.start_date }}
