@@ -59,3 +59,4 @@ jobs:
           GMAIL_USER: jon@thelenches.org.uk
           GMAIL_LABEL: Pipeline
           START_DATE_OVERRIDE: ${{ github.event.inputs.start_date }}
+                    CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
