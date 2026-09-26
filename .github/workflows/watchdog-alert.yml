@@ -1,0 +1,23 @@
+name: Watchdog alert
+
+# Fired by the Cloudflare Worker when a check fails. It fails deliberately so that
+# GitHub emails you; details are in the open "Watchdog alert" issue.
+on:
+  repository_dispatch:
+    types: [watchdog-alert]
+
+permissions: {}
+
+jobs:
+  alert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Report problems
+        env:
+          PROBLEMS: ${{ toJSON(github.event.client_payload.problems) }}
+        run: |
+          echo "The Cloudflare watchdog found problems:"
+          echo "$PROBLEMS"
+          echo "See the open 'Watchdog alert' issue; it closes itself once checks pass."
+          exit 1
