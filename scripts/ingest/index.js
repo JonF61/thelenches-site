@@ -1,12 +1,14 @@
 // scripts/ingest/index.js
 // Ingestion run: Gmail "Pipeline" label -> Claude extraction -> Pending tab.
 // Gmail is read-only; processed messages are recorded in the Log tab.
-// Nothing is committed to the repo and nothing is sent by this script.
+// Nothing is committed to the repo. The only email sent is the urgent-item alert
+// to jon@ (urgent.js); nothing ever goes to subscribers from here.
 'use strict';
 
 const g = require('./google');
 const { extract } = require('./extract');
 const { prepareAttachments, hashDistance } = require('./images');
+const { sendUrgentAlerts } = require('./urgent');
 
 const MAX_RETRIES = 3;            // after this, a failing message is left for the diagnostic
 const MAX_MESSAGES_PER_RUN = 25;  // caps run time and spend; the rest wait for the next run
@@ -226,6 +228,15 @@ async function main() {
 
   console.log(`Done. ${failed} failed. Claude tokens: ${ctx.tokensIn} in, ${ctx.tokensOut} out.`);
   if (todo.length > batch.length) console.log(`${todo.length - batch.length} left for the next run.`);
+
+  // Runs every time, not just when new items arrive, so a failed alert is retried next run.
+  try {
+    await sendUrgentAlerts(settings, holiday);
+  } catch (err) {
+    console.error(`Urgent alert failed (will retry next run): ${(err && err.message) || err}`);
+    process.exitCode = 1; // GitHub emails the failure
+  }
+
   if (gaveUp) {
     // Fails the run so GitHub emails an alert; the message won't be retried again.
     console.error(`${gaveUp} message(s) failed ${MAX_RETRIES} times and need attention.`);
