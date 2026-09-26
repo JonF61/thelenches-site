@@ -60,3 +60,5 @@ jobs:
           GMAIL_LABEL: Pipeline
           START_DATE_OVERRIDE: ${{ github.event.inputs.start_date }}
           CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
+          APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
+          WORKER_URL: https://approvals.lenches.workers.dev
