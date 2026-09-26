@@ -1,16 +1,18 @@
 // scripts/ingest/google.js
-// Google access for ingestion.
-// Gmail: read-only, domain-wide delegation impersonating GMAIL_USER.
+// Google access for the pipeline (ingestion, approvals, digest).
+// Gmail read: gmail.readonly, domain-wide delegation impersonating GMAIL_USER.
+// Gmail send: gmail.send, separate client with only that scope.
 // Sheets: service account shared directly on the Sheet (no delegation).
 'use strict';
 
 const { google } = require('googleapis');
 
 const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
+const GMAIL_SEND_SCOPE = 'https://www.googleapis.com/auth/gmail.send';
 const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
 
 // Retry reads and idempotent writes on rate limits / server errors.
-// POST (append) is deliberately excluded so a retry can't duplicate rows.
+// POST (append, send) is deliberately excluded so a retry can't duplicate rows or emails.
 google.options({
   retry: true,
   retryConfig: {
@@ -21,6 +23,7 @@ google.options({
 });
 
 let gmailClient;
+let gmailSendClient;
 let sheetsClient;
 const headerCache = {};
 
@@ -48,6 +51,20 @@ function gmail() {
     gmailClient = google.gmail({ version: 'v1', auth });
   }
   return gmailClient;
+}
+
+function gmailSender() {
+  if (!gmailSendClient) {
+    const key = saKey();
+    const auth = new google.auth.JWT({
+      email: key.client_email,
+      key: key.private_key,
+      scopes: [GMAIL_SEND_SCOPE],
+      subject: process.env.GMAIL_USER,
+    });
+    gmailSendClient = google.gmail({ version: 'v1', auth });
+  }
+  return gmailSendClient;
 }
 
 function sheets() {
@@ -197,6 +214,48 @@ function gmailLink(msg) {
     : `https://mail.google.com/mail/u/0/#all/${msg.id}`;
 }
 
+// Header value, RFC 2047-encoded if it contains anything beyond plain ASCII.
+function encodeHeader(s) {
+  const v = String(s || '');
+  return /^[\x20-\x7e]*$/.test(v) ? v : `=?UTF-8?B?${Buffer.from(v, 'utf8').toString('base64')}?=`;
+}
+
+function base64Lines(s) {
+  return Buffer.from(String(s || ''), 'utf8').toString('base64').replace(/.{76}/g, '$&\r\n');
+}
+
+// Send one email (plain text + HTML) as GMAIL_USER. Returns the Gmail message ID.
+// Not retried automatically, so a network blip can never send it twice.
+async function sendMail({ to, subject, text, html, fromName }) {
+  const user = process.env.GMAIL_USER;
+  if (!user) throw new Error('GMAIL_USER is not set');
+  const boundary = `lenches_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
+  const from = fromName ? `${encodeHeader(fromName)} <${user}>` : user;
+  const lines = [
+    `From: ${from}`,
+    `To: ${to}`,
+    `Subject: ${encodeHeader(subject)}`,
+    'MIME-Version: 1.0',
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    '',
+    `--${boundary}`,
+    'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
+    '',
+    base64Lines(text),
+    `--${boundary}`,
+    'Content-Type: text/html; charset=UTF-8',
+    'Content-Transfer-Encoding: base64',
+    '',
+    base64Lines(html),
+    `--${boundary}--`,
+    '',
+  ];
+  const raw = Buffer.from(lines.join('\r\n'), 'utf8').toString('base64url');
+  const res = await gmailSender().users.messages.send({ userId: 'me', requestBody: { raw } });
+  return res.data.id;
+}
+
 /* --------------------------------------------------------------- Sheets -- */
 
 function colLetter(index) {
@@ -251,6 +310,16 @@ async function readSettings() {
   return { sources, settings };
 }
 
+// Numeric tab ID (the #gid= part of a Sheet URL), for links straight to a row.
+async function getSheetGid(tab) {
+  const res = await sheets().spreadsheets.get({
+    spreadsheetId: spreadsheetId(),
+    fields: 'sheets.properties(sheetId,title)',
+  });
+  const s = (res.data.sheets || []).find((x) => x.properties.title === tab);
+  return s ? s.properties.sheetId : null;
+}
+
 // RAW input: nothing from an email can ever be evaluated as a formula.
 async function appendRows(tab, objects) {
   if (!objects.length) return;
@@ -265,7 +334,7 @@ async function appendRows(tab, objects) {
   });
 }
 
-// Update only the given fields of one row.
+// Update only the given fields of one row. Fields with no matching header are ignored.
 async function updateRow(tab, rowNumber, fields) {
   const headers = await readHeaders(tab);
   const data = Object.entries(fields)
@@ -286,8 +355,11 @@ module.exports = {
   getMessage,
   getAttachmentData,
   gmailLink,
+  sendMail,
   readTable,
   readSettings,
+  getSheetGid,
   appendRows,
   updateRow,
+  spreadsheetId,
 };
