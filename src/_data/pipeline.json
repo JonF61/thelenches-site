@@ -1,5 +1,120 @@
 {
-  "events": [],
-  "news": [],
-  "notices": []
+  "events": [
+    {
+      "id": "1a0cd84404be1268-1",
+      "title": "Jay & Eli Live — The Lenches Club",
+      "body": "Live acoustic rock and pop duo Jay & Eli perform at The Lenches Club on Saturday 26 September from 8.30pm. All welcome for an evening of live music.",
+      "date": "2026-09-26",
+      "expires": "2026-09-26",
+      "image": {
+        "url": "/images/items/1a0cd84404be1268-1.webp",
+        "alt": "Black and white promotional photo of musical duo Jay & Eli"
+      }
+    },
+    {
+      "id": "1a0cd84404be1268-2",
+      "title": "Cash Bingo — The Lenches Club",
+      "body": "Cash bingo night at The Lenches Club on Friday 2 October. Ticket sales from 7.15pm, eyes down at 8pm. £5 per book, £5 cash flyer, bonus ball £1 per square, cash only, over 18s only.",
+      "date": "2026-10-02",
+      "expires": "2026-10-02",
+      "image": {
+        "url": "/images/items/1a0cd84404be1268-2.webp",
+        "alt": "Poster for cash bingo night with pink and green striped border and ticket details"
+      }
+    },
+    {
+      "id": "1a0cd84404be1268-3",
+      "title": "Peter Pandemonium by GLADS — The Lenches Club",
+      "body": "GLADS present their pirate-themed show Peter Pandemonium at The Lenches Club on Friday 16 and Saturday 17 October, starting at 7.30pm. Tickets £10 per person, available at the bar or from any GLADS member.",
+      "date": "2026-10-16",
+      "expires": "2026-10-16",
+      "image": {
+        "url": "/images/items/1a0cd84404be1268-3.webp",
+        "alt": "AI-generated poster for GLADS production Peter Pandemonium featuring pirates and a mermaid"
+      }
+    }
+  ],
+  "news": [
+    {
+      "id": "1a0d2b4e10e7be31-1",
+      "title": "New Website and Board Update — The Lenches Club",
+      "body": "The Lenches Club has launched a members' website (www.thelenchesclub.co.uk) for checking membership and renewals, booking the club, and seeing what's on. The letter also introduces new board members following recent departures.",
+      "expires": "2026-10-08",
+      "link": {
+        "text": "The Lenches Club website",
+        "url": "https://www.thelenchesclub.co.uk"
+      }
+    },
+    {
+      "id": "1a0ce86a8d5857bc-1",
+      "title": "Season Finale Thanks — The Lenches Amphitheatre",
+      "body": "The Lenches Amphitheatre's 2026 season has closed, ending with Sherlock Holmes and the Mystery of the Governor's Nose. The volunteer-run charity thanks supporters, performers and donors, and is now planning its 2027 programme.",
+      "expires": "2026-10-07",
+      "link": {
+        "text": "The Lenches Amphitheatre",
+        "url": "https://lenchestheatre.co.uk/"
+      },
+      "image": {
+        "url": "/images/items/1a0ce86a8d5857bc-1.webp",
+        "alt": "Collage of photos from The Lenches Amphitheatre season, including performers, audiences and volunteers"
+      }
+    }
+  ],
+  "notices": [
+    {
+      "id": "1a0c74f0c5e08c85-1",
+      "title": "Road Closure — Evesham Road, Church Lench",
+      "body": "Evesham Road in Church Lench will be closed on Tuesday 29 September for streetworks, with a signed diversion route in place. Delays likely for local traffic.",
+      "date": "2026-09-29",
+      "expires": "2026-10-13",
+      "link": {
+        "text": "one.network alert",
+        "url": "https://one.network?GBTMI46475698"
+      }
+    },
+    {
+      "id": "1a0c74f0c5e08c85-2",
+      "title": "Roadworks — Radford Road, Rous Lench",
+      "body": "Openreach works on Radford Road, Rous Lench from Tuesday 29 September to Thursday 1 October, with multi-way traffic signals in place. Delays possible for road users.",
+      "date": "2026-09-29",
+      "expires": "2026-10-13",
+      "link": {
+        "text": "one.network alert",
+        "url": "https://one.network?GB151947281"
+      }
+    },
+    {
+      "id": "1a0c74f0c5e08c85-3",
+      "title": "Roadworks — Hipton Hill, Lenchwick",
+      "body": "Openreach roadworks will close Hipton Hill, Lenchwick on Tuesday 29 September. Delays are likely; drivers should plan alternative routes.",
+      "date": "2026-09-29",
+      "expires": "2026-10-13",
+      "link": {
+        "text": "one.network alert",
+        "url": "https://one.network?GB151432946"
+      }
+    },
+    {
+      "id": "1a0c74f0c5e08c85-4",
+      "title": "Roadworks — Evesham Road, Inkberrow",
+      "body": "Openreach traffic signals will be in place on Evesham Road, Inkberrow from Wednesday 30 September to Friday 2 October, with possible delays for road users.",
+      "date": "2026-09-30",
+      "expires": "2026-10-13",
+      "link": {
+        "text": "one.network alert",
+        "url": "https://one.network?GB151947473"
+      }
+    },
+    {
+      "id": "1a0c74f0c5e08c85-5",
+      "title": "Roadworks — Gooms Hill, Abbots Morton",
+      "body": "Two phases of roadworks are planned on Gooms Hill, Abbots Morton: Severn Trent Water on 24 September and Openreach from 29 September to 1 October, both using two-way traffic signals.",
+      "date": "2026-09-24",
+      "expires": "2026-10-13",
+      "link": {
+        "text": "one.network alert",
+        "url": "https://one.network?GB152409652"
+      }
+    }
+  ]
 }
