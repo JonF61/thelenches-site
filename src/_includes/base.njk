@@ -49,7 +49,6 @@
         <a href="{{ item.url | url }}"{% if page.url == item.url %} class="active" aria-current="page"{% endif %}>{{ item.title }}</a>
         {% endfor %}
       </nav>
-      <p class="site-updated">Site updated: <time datetime="{{ updated }}">{{ updated | longDate }}</time></p>
     </div>
   </header>
 
@@ -70,7 +69,7 @@
       </div>
     </div>
     <div class="container">
-      <p class="disclaimer">Information on this website is provided by third parties and, while we try to keep it accurate and up to date, it may not always be. Spotted something wrong? Let us know.</p>
+      <p class="disclaimer">Site updated <time datetime="{{ updated }}">{{ updated | longDate }}</time>. Information on this website is provided by third parties and, while we try to keep it accurate and up to date, it may not always be. Spotted something wrong? Let us know.</p>
     </div>
   </footer>
 

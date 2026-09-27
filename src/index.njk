@@ -5,86 +5,42 @@ description: News, events and information for the Lenches villages in Worcesters
 ---
 <main class="container">
 
-  <section>
-    <p class="lead lead-wide">This site supports our weekly newsletter, delivered every Thursday morning, and gathers news, events and information for our five villages in the Worcestershire countryside in one place. Everything here is collected from local groups, organisations and residents, and kept as accurate and up to date as we can manage.</p>
-    <img class="feature-img" src="{{ '/images/lenches-aerial.jpg' | url }}" alt="The Lenches, Worcestershire, seen from the air" fetchpriority="high">
+  <section class="intro">
+    <p class="intro-head">News, events and information for our five villages, and a newsletter every Thursday.</p>
+    <p class="muted">Everything here is collected from local groups, organisations and residents, and kept as accurate and up to date as we can manage.</p>
+    <img class="banner-img" src="{{ '/images/lenches-aerial.jpg' | url }}" alt="The Lenches, Worcestershire, seen from the air" fetchpriority="high">
   </section>
+
+  <div class="home-cols">
+    <section>
+      <div class="section-head"><h2>Coming up</h2><a href="{{ '/events/' | url }}">All events &rarr;</a></div>
+      {% for e in whatson.events | merge(pipeline.events) | upcoming %}{% if loop.index <= 4 %}
+      {% set d = e.date | dateParts %}
+      <div class="event">
+        <div class="date"><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>
+        <div>
+          <h3 class="mt0">{{ e.title | escape }}</h3>
+          <p class="event-sub">{{ e.body | truncate(100) | escape }}</p>
+        </div>
+      </div>
+      {% endif %}{% else %}
+      <p class="muted">Nothing listed at the moment. Check back after Thursday's newsletter.</p>
+      {% endfor %}
+    </section>
+
+    <section>
+      <div class="section-head"><h2>Latest news</h2><a href="{{ '/news/' | url }}">All news &rarr;</a></div>
+      {% for n in pipeline.news | current | merge(whatson.news) %}{% if loop.index <= 3 %}
+      <div class="card card-compact">
+        <h3 class="mt0">{{ n.title | escape }}</h3>
+        <p>{{ n.body | truncate(110) | escape }}</p>
+      </div>
+      {% endif %}{% else %}
+      <p class="muted">No news at the moment.</p>
+      {% endfor %}
+    </section>
+  </div>
 
   {% include "signup.njk" %}
-
-  <section>
-    <h2>Around the villages</h2>
-    <div class="grid">
-      <div class="card">
-        <h3>Events &amp; News</h3>
-        <p>Village events, news and notices — refreshed each week alongside the newsletter.</p>
-        <p><a href="{{ '/events/' | url }}">What's on &rarr;</a><br><a href="{{ '/news/' | url }}">Latest news &rarr;</a></p>
-      </div>
-      <div class="card">
-        <h3>Groups &amp; Clubs</h3>
-        <p>GLADS, the Walking Group, cricket and tennis, the community orchard and more — including pages we host for groups without their own site.</p>
-        <p><a href="{{ '/groups/' | url }}">Meet the groups &rarr;</a></p>
-      </div>
-      <div class="card">
-        <h3>Village Halls</h3>
-        <p>Church Lench and Rous Lench village halls — history, hire charges and how to book.</p>
-        <p><a href="{{ '/halls/' | url }}">Halls &amp; hire &rarr;</a></p>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <h2>The village Facebook group</h2>
-    <div class="card">
-      <p class="mt0">A good deal of the day-to-day village chatter happens in our Facebook group — lost cats, road closures, recommendations and things for sale.</p>
-      <p>It's a private group, so you'll need to ask to join, and what's posted there stays there rather than appearing on this site. Anything that ought to reach the whole village gets picked up here and in the Thursday newsletter.</p>
-      <p class="mt0"><a class="btn btn-outline" href="https://www.facebook.com/groups/thelenchescommunity/" target="_blank" rel="noopener">Find the group on Facebook</a></p>
-    </div>
-  </section>
-
-  <section>
-    <h2>Village contacts</h2>
-    <table class="contacts">
-      <thead>
-        <tr><th scope="col">Organisation</th><th scope="col">Contact</th></tr>
-      </thead>
-      <tbody>
-        <tr><th scope="row">Lenches Club</th><td><a href="mailto:lenchesclubmail@gmail.com">lenchesclubmail@gmail.com</a></td></tr>
-        <tr><th scope="row">Church Lench Village Hall</th><td><a href="mailto:churchlenchvillagehall@gmail.com">churchlenchvillagehall@gmail.com</a></td></tr>
-        <tr><th scope="row">Tennis Club</th><td><a href="mailto:lenchestc@gmail.com">lenchestc@gmail.com</a></td></tr>
-        <tr><th scope="row">Cricket Club</th><td><a href="mailto:cricket.lenches@googlemail.com">cricket.lenches@googlemail.com</a></td></tr>
-      </tbody>
-    </table>
-  </section>
-
-  <section>
-    <h2>Useful local links</h2>
-    <div class="grid">
-      <div class="card">
-        <h3>Councils &amp; services</h3>
-        <p>
-          <a href="https://www.southlenchesparishcouncil.org/" target="_blank" rel="noopener">South Lenches Parish Council</a><br>
-          <a href="https://rous-lench.parish.uk/" target="_blank" rel="noopener">Rous Lench Parish</a><br>
-          <a href="https://www.wychavon.gov.uk/" target="_blank" rel="noopener">Wychavon District Council</a>
-        </p>
-      </div>
-      <div class="card">
-        <h3>Church &amp; schools</h3>
-        <p>
-          <a href="https://www.archbenefice.org.uk/" target="_blank" rel="noopener">The Archbenefice (churches)</a><br>
-          <a href="https://www.churchlench.worcs.sch.uk/" target="_blank" rel="noopener">Church Lench CofE First School</a><br>
-          <a href="https://thelenchespreschool.org.uk/" target="_blank" rel="noopener">The Lenches Pre-school</a>
-        </p>
-      </div>
-      <div class="card">
-        <h3>Out and about</h3>
-        <p>
-          <a href="https://lenchestheatre.co.uk/" target="_blank" rel="noopener">Lenches Amphitheatre</a><br>
-          <a href="https://www.valeandspa.co.uk/whats-on/" target="_blank" rel="noopener">Vale &amp; Spa — what's on</a><br>
-          <a href="https://www.rightmove.co.uk/property-for-sale/Church-Lench.html" target="_blank" rel="noopener">Property for sale</a>
-        </p>
-      </div>
-    </div>
-  </section>
 
 </main>
