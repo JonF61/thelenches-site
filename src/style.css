@@ -30,7 +30,7 @@ img{max-width:100%;height:auto;display:block}
 .nav a.active{border-bottom-color:var(--accent)}
 
 /* Blocks */
-main{padding:2rem 0 1rem}
+main{padding:2.75rem 0 1rem}
 section{margin-bottom:3rem}
 h1,h2,h3{color:var(--green-dark);line-height:1.25;font-weight:600}
 h1{font-size:1.6rem;margin:0 0 .5rem}
@@ -39,6 +39,13 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 .lead{font-size:1.05rem;line-height:1.55;color:var(--muted);max-width:64ch}
 .lead-wide{max-width:none}
 .datestamp{display:inline-block;background:var(--green-light);color:var(--green-dark);font-weight:600;border-radius:20px;padding:.2rem .85rem;font-size:.85rem}
+
+/* Compact page heading (Events, News) */
+.page-head{margin-bottom:1.75rem}
+.page-intro{margin:0;color:var(--muted);font-size:.95rem}
+.list-label{font-family:"Work Sans",sans-serif;font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 .6rem}
+.month{margin-bottom:2rem}
+.submit-note{margin:1rem 0 2.5rem}
 
 /* Home */
 .intro-head{font-size:clamp(1.2rem,2.2vw,1.45rem);line-height:1.35;color:var(--green-dark);margin:0 0 .4rem;max-width:40ch}
@@ -66,6 +73,16 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 .card-compact h3{font-size:1.02rem;margin-bottom:.15rem}
 .card-compact p{font-size:.92rem;color:var(--muted);margin:0}
 
+/* Listed items: boxed (events) and rows (news) */
+.item-card,.item-row{display:flex;gap:1rem;align-items:flex-start}
+.item-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem 1.25rem;margin-bottom:.75rem}
+.item-row{padding:1rem 0;border-top:1px solid var(--line)}
+.item-body{flex:1;min-width:0}
+.item-body h3{margin:0 0 .2rem}
+.item-body p{margin:0}
+.thumb-link{flex:0 0 auto}
+.item-thumb{width:96px;height:96px;object-fit:cover;border-radius:8px}
+
 /* Buttons */
 .btn{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;padding:.6rem 1.2rem;border-radius:999px;font-weight:500;border:none;cursor:pointer}
 .btn:hover{background:#a95f1f;color:#fff}
@@ -87,12 +104,12 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 .signup-text{flex:1 1 380px}
 .signup-foot{padding-bottom:1.5rem}
 
-/* Events */
+/* Events: date tile (Events page and Home) */
 .event{display:flex;gap:1rem;padding:.85rem 0;border-top:1px solid var(--line)}
-.event .date{flex:0 0 52px;text-align:center;color:var(--green-dark);font-weight:600}
-.event .date .dow{font-size:.68rem;text-transform:uppercase;color:var(--muted);display:block;letter-spacing:.05em}
-.event .date .day{font-size:1.4rem;display:block;line-height:1.05}
-.event .date .mon{font-size:.7rem;text-transform:uppercase;letter-spacing:.05em}
+.date{flex:0 0 52px;text-align:center;color:var(--green-dark);font-weight:600;background:var(--green-light);border-radius:8px;padding:.4rem 0}
+.date .dow{font-size:.66rem;text-transform:uppercase;color:var(--muted);display:block;letter-spacing:.05em}
+.date .day{font-size:1.35rem;display:block;line-height:1.05}
+.date .mon{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em}
 .event h3{font-size:1.02rem;margin-bottom:.15rem}
 .event-sub{font-size:.92rem;color:var(--muted);margin:0}
 
@@ -145,9 +162,12 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 }
 @media (max-width:560px){
   .container{padding:0 1rem}
+  main{padding-top:2rem}
   h1{font-size:1.45rem}
   h2{font-size:1.2rem}
   .banner-img{aspect-ratio:2/1}
+  .item-thumb{width:72px;height:72px}
+  .item-card{padding:.9rem 1rem}
   .ne-top .bin-box{margin:0 0 1.25rem}
   .contacts,.contacts thead,.contacts tbody,.contacts tr,.contacts th,.contacts td{display:block;width:100%}
   .contacts thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}

@@ -28,6 +28,18 @@ module.exports = async function (eleventyConfig) {
       .sort((a, b) => a.date.localeCompare(b.date));
   });
 
+  // Group an already-sorted event list by month: [{ label: "October 2026", items: [...] }]
+  eleventyConfig.addFilter("byMonth", (events) => {
+    const groups = [];
+    for (const e of events || []) {
+      const label = fmt(e.date.slice(0, 7) + "-01", { month: "long", year: "numeric" });
+      const last = groups[groups.length - 1];
+      if (last && last.label === label) last.items.push(e);
+      else groups.push({ label, items: [e] });
+    }
+    return groups;
+  });
+
   // Join two lists, e.g. hand-written whatson.json items plus pipeline.json items
   eleventyConfig.addFilter("merge", (a, b) => [...(a || []), ...(b || [])]);
 
