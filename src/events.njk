@@ -1,0 +1,33 @@
+---
+layout: base.njk
+title: Events
+description: What's on across the Lenches villages — upcoming events from the newsletter and local groups.
+---
+{#- Items come from whatson.json (hand-edited) and pipeline.json (written by scripts/publish). -#}
+{% set imgStyle = "display:block;max-width:100%;max-height:28rem;width:auto;height:auto;margin-top:.75rem;border-radius:6px" %}
+<main class="container">
+  <section>
+    <h1>Events</h1>
+    <p class="lead">What's on across the villages, gathered from the newsletter and other local sources.</p>
+    <p><span class="datestamp">Page updated {{ updated | longDate }}</span></p>
+    <div class="notice">Got an event to include? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a> by 6pm on Wednesday. See our <a href="{{ '/contact/' | url }}#submit">submission guidelines</a>.</div>
+  </section>
+
+  <section>
+    <h2>Upcoming events</h2>
+    {% for e in whatson.events | merge(pipeline.events) | upcoming %}
+    {% set d = e.date | dateParts %}
+    <div class="event">
+      <div class="date"><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>
+      <div>
+        <h3 class="mt0">{{ e.title | escape }}</h3>
+        <p class="mt0">{{ e.body | escape }}{% if e.link %} <a href="{{ e.link.url | escape }}" target="_blank" rel="noopener">{{ e.link.text | escape }} &rarr;</a>{% endif %}</p>
+        {% if e.image %}<img src="{{ e.image.url | url }}" alt="{{ e.image.alt | escape }}" loading="lazy" style="{{ imgStyle }}">{% endif %}
+      </div>
+    </div>
+    {% else %}
+    <p class="mut">Nothing listed at the moment. Check back after Thursday's newsletter.</p>
+    {% endfor %}
+    {% if whatson.eventsFootnote %}<p class="small mut">{{ whatson.eventsFootnote }}</p>{% endif %}
+  </section>
+</main>

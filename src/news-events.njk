@@ -1,77 +1,17 @@
 ---
-layout: base.njk
-title: News & Events
-description: What's on across the Lenches villages this week — events, news and notices.
+permalink: /news-events/
+eleventyExcludeFromCollections: true
 ---
-{#- Items come from whatson.json (hand-edited) and pipeline.json (written by scripts/publish). -#}
-{% set imgStyle = "display:block;max-width:100%;max-height:28rem;width:auto;height:auto;margin-top:.75rem;border-radius:6px" %}
-<main class="container">
-  <section>
-    <h1>News &amp; Events</h1>
-    <p class="lead">What's happening across the villages, gathered from the newsletter and other local sources.</p>
-    <p><span class="datestamp">Page updated {{ updated | longDate }}</span></p>
-    <div class="notice">Got something to include? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a> by the end of Wednesday.</div>
-  </section>
-
-  <section>
-    <h2>Events</h2>
-    {% for e in whatson.events | merge(pipeline.events) | upcoming %}
-    {% set d = e.date | dateParts %}
-    <div class="event">
-      <div class="date"><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>
-      <div>
-        <h3 class="mt0">{{ e.title | escape }}</h3>
-        <p class="mt0">{{ e.body | escape }}{% if e.link %} <a href="{{ e.link.url | escape }}" target="_blank" rel="noopener">{{ e.link.text | escape }} &rarr;</a>{% endif %}</p>
-        {% if e.image %}<img src="{{ e.image.url | url }}" alt="{{ e.image.alt | escape }}" loading="lazy" style="{{ imgStyle }}">{% endif %}
-      </div>
-    </div>
-    {% endfor %}
-    {% if whatson.eventsFootnote %}<p class="small mut">{{ whatson.eventsFootnote }}</p>{% endif %}
-  </section>
-
-  <section id="signup">
-    <h2>Get the newsletter</h2>
-    <div class="signup">
-      <p class="mt0">Sent every <strong>Thursday morning</strong>. To join, simply email <a href="mailto:{{ site.email }}?subject=Add%20me%20to%20the%20mailing%20list">{{ site.email }}</a> and ask to be added to the mailing list.</p>
-      <p class="small muted">Haven't received one by the end of the week? Email us and we'll add you manually.</p>
-    </div>
-  </section>
-
-  <section>
-    <h2>News</h2>
-    <div class="grid">
-      {% for n in pipeline.news | current | merge(whatson.news) %}
-      <div class="card">
-        {% if n.image %}<img src="{{ n.image.url | url }}" alt="{{ n.image.alt | escape }}" loading="lazy" style="{{ imgStyle }}">{% endif %}
-        <h3 class="mt0">{{ n.title | escape }}</h3>
-        <p>{{ n.body | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}</p>
-      </div>
-      {% endfor %}
-    </div>
-  </section>
-
-  <section>
-    <h2>Notices</h2>
-    <div class="grid">
-      {% for n in pipeline.notices | current | merge(whatson.notices) %}
-      <div class="card">
-        {% if n.image %}<img src="{{ n.image.url | url }}" alt="{{ n.image.alt | escape }}" loading="lazy" style="{{ imgStyle }}">{% endif %}
-        <h3 class="mt0">{{ n.title | escape }}</h3>
-        <p class="mt0">{{ n.body | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}</p>
-      </div>
-      {% endfor %}
-    </div>
-  </section>
-
-  <section>
-    <h2>Previous Newsletters</h2>
-    <p class="mut">Every edition, newest first. Each one opens in your browser exactly as it appeared in the email.</p>
-    <div class="card">
-      <ul class="newsletter-archive mt0">
-        {% for item in newsletters %}
-        <li><a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.label }}</a></li>
-        {% endfor %}
-      </ul>
-    </div>
-  </section>
-</main>
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex">
+  <meta http-equiv="refresh" content="0; url={{ '/events/' | url }}">
+  <link rel="canonical" href="{{ site.url }}/events/">
+  <title>Moved — The Lenches</title>
+</head>
+<body>
+  <p>This page has moved to <a href="{{ '/events/' | url }}">Events</a> and <a href="{{ '/news/' | url }}">News</a>.</p>
+</body>
+</html>

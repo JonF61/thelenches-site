@@ -1,0 +1,18 @@
+---
+layout: base.njk
+title: Newsletter Archive
+description: Every edition of The Lenches weekly newsletter, newest first.
+---
+<main class="container">
+  <section>
+    <h1>Newsletter Archive</h1>
+    <p class="lead">Every edition, newest first. Each one opens in your browser exactly as it appeared in the email.</p>
+    <div class="card">
+      <ul class="newsletter-archive mt0">
+        {% for item in newsletters %}
+        <li><a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.label }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+</main>

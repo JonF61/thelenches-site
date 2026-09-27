@@ -9,11 +9,13 @@
   "noindex": false,
   "nav": [
     { "title": "Home", "url": "/" },
-    { "title": "News & Events", "url": "/news-events/" },
+    { "title": "Events", "url": "/events/" },
+    { "title": "News", "url": "/news/" },
     { "title": "Groups & Clubs", "url": "/groups/" },
     { "title": "Village Halls", "url": "/halls/" },
     { "title": "Churches", "url": "/churches/" },
     { "title": "Bins", "url": "/bins/" },
+    { "title": "Archive", "url": "/archive/" },
     { "title": "Contact", "url": "/contact/" }
   ]
 }
