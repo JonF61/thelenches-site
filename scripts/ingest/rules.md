@@ -1,14 +1,21 @@
 # Extraction rules — The Lenches
 
 Edit this file freely; it is read on every run. No code changes needed.
+Scope must match the Submission Guidelines (src/_includes/guidelines.md).
 
 ## Scope
-- Core area: Church Lench, Rous Lench, Ab Lench, Atch Lench, Sheriffs Lench and Harvington.
-- Also include events of clear interest within roughly 10 miles (e.g. Evesham, Pershore,
-  Bishampton, Bretforton, Broadway, Inkberrow, Abbots Morton).
-- Skip anything outside that, and anything that is not an item for residents: receipts,
-  auto-replies, delivery failures, marketing emails, mailing-list admin. Return no items and
-  give a skip_reason.
+- Covered area: the five Lenches (Church Lench, Rous Lench, Ab Lench, Atch Lench,
+  Sheriffs Lench) and the nearby villages and hamlets of Harvington, Abbots Morton,
+  Lenchwick and Radford. Events, news and notices from anywhere in this area are in scope.
+- Towns: Evesham, Pershore and Inkberrow are in scope only for events of clear interest to
+  residents of the covered area (e.g. a major show, fair or concert), not routine town news.
+- Everywhere else is out of scope, including other nearby villages (e.g. Bishampton,
+  Bretforton, Broadway). Don't record those items; set out_of_scope and give a skip_reason.
+- Council, roadworks and church sources follow their source-specific rules below.
+- Skip anything that is not an item for residents: receipts, auto-replies, delivery
+  failures, marketing emails, mailing-list admin. Return no items and give a skip_reason.
+- Classified adverts, party-political material and commercial advertising are still
+  recorded, with their flags set; the editor decides.
 
 ## Category (use exactly one)
 - event — has a date and something to attend.
@@ -18,8 +25,8 @@ Edit this file freely; it is read on every run. No code changes needed.
 
 ## Village
 One of: Church Lench, Rous Lench, Ab Lench, Atch Lench, Sheriffs Lench, Harvington,
-Lenches (for items covering several or all of the villages), or the town/village name for
-nearby places (e.g. Evesham).
+Abbots Morton, Lenchwick, Radford, Lenches (for items covering several or all of the
+villages), or Evesham, Pershore or Inkberrow for town events.
 
 ## House style
 - British English. Plain, warm, factual; no hype, no exclamation marks.
@@ -61,8 +68,8 @@ nearby places (e.g. Evesham).
 
 ## Source-specific
 - one.network (roadworks): one item per alert, category notice. Include road name,
-  village, dates, reason and diversion. Include only works in the core area or on the main
-  routes into it.
+  village, dates, reason and diversion. Include only works in the covered area or on the
+  main routes into it.
 - Wychavon newsletter: extract only items of practical use to Lenches residents (bin changes,
   consultations, grants, council tax, local events, fly-tipping etc.). Skip generic promotion.
   Category news or notice.
