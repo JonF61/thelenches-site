@@ -1,6 +1,7 @@
 // scripts/ingest/index.js
 // Ingestion run: Gmail "Pipeline" label -> Claude extraction -> Pending tab.
-// Gmail is read-only; processed messages are recorded in the Log tab.
+// Then RSS feeds (rss.js, Settings source rows whose match is a URL) -> Pending.
+// Gmail is read-only; processed messages and feed items are recorded in the Log tab.
 // Nothing is committed to the repo. Email sent from here: the per-run alert to jon@
 // (urgent.js) and submitter replies (replies.js, per Settings replies_mode).
 // Nothing ever goes to subscribers from here.
@@ -11,6 +12,7 @@ const { extract } = require('./extract');
 const { prepareAttachments, hashDistance } = require('./images');
 const { sendUrgentAlerts } = require('./urgent');
 const replies = require('./replies');
+const rss = require('./rss');
 
 const MAX_RETRIES = 3;            // after this, a failing message is left for the diagnostic
 const MAX_MESSAGES_PER_RUN = 25;  // caps run time and spend; the rest wait for the next run
@@ -55,6 +57,7 @@ function londonMidnightEpoch(ymd) {
 /* ------------------------------------------------------------- matching -- */
 
 // Sender first, so e.g. a Wychavon email forwarded via website@ counts as Wychavon.
+// Feed rows (match is a URL) can never match an address.
 function matchSource(msg, sources) {
   const from = msg.from.toLowerCase();
   const recipients = msg.recipients.toLowerCase();
@@ -276,8 +279,22 @@ async function main() {
     console.log(`${id}: ${outcome.status}, ${outcome.items} item(s)${outcome.error ? ` — ${outcome.error}` : ''}`);
   }
 
-  console.log(`Done. ${failed} failed. Claude tokens: ${ctx.tokensIn} in, ${ctx.tokensOut} out.`);
   if (todo.length > batch.length) console.log(`${todo.length - batch.length} left for the next run.`);
+
+  // RSS feeds: signpost items, approval by source mode, no replies. Before the urgent
+  // alert so an urgent feed item is flagged in the same run. A feed that can't be
+  // fetched only warns; an item that fails MAX_RETRIES times fails the run.
+  try {
+    const r = await rss.run(ctx, logById, londonMidnightEpoch(startYmd) * 1000,
+      { londonDateTime, findRepeat, decideStatus });
+    failed += r.failed;
+    gaveUp += r.gaveUp;
+  } catch (err) {
+    console.error(`RSS: ${(err && err.message) || err}`);
+    process.exitCode = 1;
+  }
+
+  console.log(`Done. ${failed} failed. Claude tokens: ${ctx.tokensIn} in, ${ctx.tokensOut} out.`);
 
   // Runs every time, not just when new items arrive, so a failed alert is retried next run.
   try {
@@ -300,8 +317,8 @@ async function main() {
   }
 
   if (gaveUp) {
-    // Fails the run so GitHub emails an alert; the message won't be retried again.
-    console.error(`${gaveUp} message(s) failed ${MAX_RETRIES} times and need attention.`);
+    // Fails the run so GitHub emails an alert; the item won't be retried again.
+    console.error(`${gaveUp} message(s) or feed item(s) failed ${MAX_RETRIES} times and need attention.`);
     process.exitCode = 1;
   }
 }
