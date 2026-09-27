@@ -1,14 +1,16 @@
 // scripts/ingest/index.js
 // Ingestion run: Gmail "Pipeline" label -> Claude extraction -> Pending tab.
 // Gmail is read-only; processed messages are recorded in the Log tab.
-// Nothing is committed to the repo. The only email sent is the urgent-item alert
-// to jon@ (urgent.js); nothing ever goes to subscribers from here.
+// Nothing is committed to the repo. Email sent from here: the per-run alert to jon@
+// (urgent.js) and submitter replies (replies.js, per Settings replies_mode).
+// Nothing ever goes to subscribers from here.
 'use strict';
 
 const g = require('./google');
 const { extract } = require('./extract');
 const { prepareAttachments, hashDistance } = require('./images');
 const { sendUrgentAlerts } = require('./urgent');
+const replies = require('./replies');
 
 const MAX_RETRIES = 3;            // after this, a failing message is left for the diagnostic
 const MAX_MESSAGES_PER_RUN = 25;  // caps run time and spend; the rest wait for the next run
@@ -98,15 +100,36 @@ async function processMessage(id, ctx) {
     return { status: 'skipped', received, source: source.source, items: 0, error: 'Source set to ignore' };
   }
 
+  // A message on a thread we've replied to is the submitter's answer: it updates the
+  // original Pending rows and creates no new item or reply.
+  const answered = replies.findAnsweredReply(msg, source.source, ctx);
+
   const { images, pdfs, notes } = await prepareAttachments(
     msg.attachments,
     (att) => g.getAttachmentData(msg.id, att)
   );
   const result = await extract({
-    msg, sourceName: source.source, receivedIso: received, today: ctx.today, images, pdfs,
+    msg,
+    sourceName: source.source,
+    receivedIso: received,
+    today: ctx.today,
+    images,
+    pdfs,
+    context: answered ? replies.answerContext(answered, ctx) : '',
   });
   ctx.tokensIn += (result.usage && result.usage.input_tokens) || 0;
   ctx.tokensOut += (result.usage && result.usage.output_tokens) || 0;
+
+  if (answered) {
+    const updated = await replies.applyAnswer({ msg, reply: answered, result, ctx, received });
+    return {
+      status: 'ok',
+      received,
+      source: source.source,
+      items: 0,
+      error: `Answer to reply ${answered.reply_id}: updated ${updated} item(s)`,
+    };
+  }
 
   const link = g.gmailLink(msg);
   const rows = result.items.map((item, n) => {
@@ -116,7 +139,7 @@ async function processMessage(id, ctx) {
     if (repeat) {
       noteParts.push(`Possible repeat of ${repeat.row.id} (${repeat.byImage ? 'same image' : 'same title/date'})`);
     }
-    return {
+    const row = {
       id: `${msg.id}-${n + 1}`,
       received,
       source: source.source,
@@ -149,11 +172,26 @@ async function processMessage(id, ctx) {
       flyer_count: repeat && repeat.byImage ? Number(repeat.row.flyer_count) || 0 : 0,
       message_id: msg.id,
       notes: noteParts.filter(Boolean).join(' | '),
+      thread_id: msg.threadId,
+      missing: item.missing.join(','),
     };
+    const flags = replies.itemPolicy({ ...row, classified: item.classified }, msg.internalDate);
+    if (result.anonymous) flags.push('anonymous');
+    row.policy_flags = flags.join(',');
+    return row;
   });
 
   if (rows.length) await g.appendRows('Pending', rows);
   rows.forEach((r) => ctx.existing.push(r)); // later emails in this run can match these
+
+  // Never fails the message: a retry would duplicate the Pending rows. A missed reply
+  // beats a duplicate; the run still fails so GitHub emails Jon.
+  try {
+    await replies.planReply({ msg, sourceName: source.source, result, rows, ctx });
+  } catch (err) {
+    ctx.replyErrors += 1;
+    console.error(`${id}: reply planning failed: ${(err && err.message) || err}`);
+  }
 
   return {
     status: 'ok',
@@ -170,10 +208,12 @@ async function main() {
   const startYmd = parseYmd(override) || parseYmd(settings.start_date);
   if (!startYmd) throw new Error(`Invalid start date: "${override || settings.start_date}"`);
   const holiday = String(settings.holiday_mode || '').toUpperCase() === 'TRUE';
+  const replyMode = replies.repliesMode(settings);
 
   const logRows = await g.readTable('Log');
   const logById = new Map(logRows.map((r) => [r.message_id, r]));
   const existing = await g.readTable('Pending');
+  const replyRows = replyMode === 'off' ? [] : await g.readTable('Replies');
 
   const ids = (await g.listMessageIds(process.env.GMAIL_LABEL || 'Pipeline', londonMidnightEpoch(startYmd)))
     .reverse(); // oldest first
@@ -183,10 +223,20 @@ async function main() {
   });
   const batch = todo.slice(0, MAX_MESSAGES_PER_RUN);
 
-  console.log(`Start ${startYmd}${override ? ' (override)' : ''}, holiday mode ${holiday ? 'ON' : 'off'}.`);
+  console.log(`Start ${startYmd}${override ? ' (override)' : ''}, holiday mode ${holiday ? 'ON' : 'off'}, replies ${replyMode}.`);
   console.log(`${ids.length} labelled, ${todo.length} to process, ${batch.length} this run.`);
 
-  const ctx = { sources, holiday, existing, today: londonDate(Date.now()), tokensIn: 0, tokensOut: 0 };
+  const ctx = {
+    sources,
+    settings,
+    holiday,
+    existing,
+    replies: replyRows,
+    replyErrors: 0,
+    today: londonDate(Date.now()),
+    tokensIn: 0,
+    tokensOut: 0,
+  };
   let failed = 0;
   let gaveUp = 0;
 
@@ -235,6 +285,18 @@ async function main() {
   } catch (err) {
     console.error(`Urgent alert failed (will retry next run): ${(err && err.message) || err}`);
     process.exitCode = 1; // GitHub emails the failure
+  }
+
+  // Sends queued replies and 24h-expired approvals (live mode only).
+  try {
+    await replies.sendDueReplies(settings, holiday);
+  } catch (err) {
+    console.error(`Replies: ${(err && err.message) || err}`);
+    process.exitCode = 1;
+  }
+  if (ctx.replyErrors) {
+    console.error(`${ctx.replyErrors} reply plan(s) failed; those messages get no reply.`);
+    process.exitCode = 1;
   }
 
   if (gaveUp) {
