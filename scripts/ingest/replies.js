@@ -23,7 +23,7 @@ const g = require('./google');
 const TZ = 'Europe/London';
 const REPLY_FROM = 'website@thelenches.org.uk'; // never jon@: replies must not expose it
 const OWN_DOMAIN = 'thelenches.org.uk';
-const GUIDELINES_URL = 'https://thelenches.org.uk/contact/';
+const GUIDELINES_URL = 'https://thelenches.org.uk/contact/#submit';
 const TEMPLATES_FILE = path.join(__dirname, '..', 'replies', 'templates.md');
 
 const EARLY_DAYS = 14;        // items appear no more than 2 weeks before the event
