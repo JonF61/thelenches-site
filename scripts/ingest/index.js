@@ -1,6 +1,7 @@
 // scripts/ingest/index.js
 // Ingestion run: Gmail "Pipeline" label -> Claude extraction -> Pending tab.
-// Then RSS feeds (rss.js, Settings source rows whose match is a URL) -> Pending.
+// Then RSS feeds (rss.js, Settings source rows whose match is a URL) -> Pending,
+// on the 06:00, 14:00 and 20:00 UK scheduled runs and every manual run.
 // Gmail is read-only; processed messages and feed items are recorded in the Log tab.
 // Nothing is committed to the repo. Email sent from here: the per-run alert to jon@
 // (urgent.js) and submitter replies (replies.js, per Settings replies_mode).
@@ -8,7 +9,7 @@
 'use strict';
 
 const g = require('./google');
-const { extract } = require('./extract');
+const { extract, stats: claudeStats } = require('./extract');
 const { prepareAttachments, hashDistance } = require('./images');
 const { sendUrgentAlerts } = require('./urgent');
 const replies = require('./replies');
@@ -18,6 +19,9 @@ const MAX_RETRIES = 3;            // after this, a failing message is left for t
 const MAX_MESSAGES_PER_RUN = 25;  // caps run time and spend; the rest wait for the next run
 const REPEAT_HASH_DISTANCE = 10;  // image hashes this close count as the same picture
 const LOW_CONFIDENCE = 0.5;       // auto sources below this go to approval (except holiday mode)
+// UK hours whose scheduled run also reads feeds (next hour included, in case GitHub
+// starts the run late). Fewer, larger batches make the prompt cache pay off.
+const RSS_HOURS = [6, 7, 14, 15, 20, 21];
 const TZ = 'Europe/London';
 
 /* ---------------------------------------------------------------- dates -- */
@@ -31,6 +35,10 @@ function londonDateTime(ms) {
     timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
   }).format(ms);
   return `${londonDate(ms)} ${time}`;
+}
+
+function londonHour(ms) {
+  return Number(new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', hourCycle: 'h23' }).format(ms));
 }
 
 function londonOffsetMinutes(ms) {
@@ -284,17 +292,22 @@ async function main() {
   // RSS feeds: signpost items, approval by source mode, no replies. Before the urgent
   // alert so an urgent feed item is flagged in the same run. A feed that can't be
   // fetched only warns; an item that fails MAX_RETRIES times fails the run.
-  try {
-    const r = await rss.run(ctx, logById, londonMidnightEpoch(startYmd) * 1000,
-      { londonDateTime, findRepeat, decideStatus });
-    failed += r.failed;
-    gaveUp += r.gaveUp;
-  } catch (err) {
-    console.error(`RSS: ${(err && err.message) || err}`);
-    process.exitCode = 1;
+  const scheduled = process.env.GITHUB_EVENT_NAME === 'schedule';
+  if (!scheduled || RSS_HOURS.includes(londonHour(Date.now()))) {
+    try {
+      const r = await rss.run(ctx, logById, londonMidnightEpoch(startYmd) * 1000,
+        { londonDateTime, findRepeat, decideStatus });
+      failed += r.failed;
+      gaveUp += r.gaveUp;
+    } catch (err) {
+      console.error(`RSS: ${(err && err.message) || err}`);
+      process.exitCode = 1;
+    }
+  } else {
+    console.log('RSS: not a feed run (06:00, 14:00, 20:00 UK and manual runs only).');
   }
 
-  console.log(`Done. ${failed} failed. Claude tokens: ${ctx.tokensIn} in, ${ctx.tokensOut} out.`);
+  console.log(`Done. ${failed} failed. Claude tokens: ${ctx.tokensIn} in (+${claudeStats.cacheRead} cached, +${claudeStats.cacheWrite} cache write), ${ctx.tokensOut} out.`);
 
   // Runs every time, not just when new items arrive, so a failed alert is retried next run.
   try {
