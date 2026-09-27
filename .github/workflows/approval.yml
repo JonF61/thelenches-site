@@ -1,12 +1,13 @@
 name: Apply approval
 
-# Fired by the Cloudflare Worker when an Approve/Reject button is confirmed.
+# Fired by the Cloudflare Worker when a button is confirmed:
+# approve/reject (Pending items) or send/skip (submitter replies).
 on:
   repository_dispatch:
     types: [approval]
 
 permissions:
-  contents: read   # step 5 raises this to write when approvals start publishing
+  contents: read
 
 concurrency:
   group: approval
@@ -30,5 +31,6 @@ jobs:
         env:
           GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
           SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: jon@thelenches.org.uk
           ITEM_ID: ${{ github.event.client_payload.id }}
           ACTION: ${{ github.event.client_payload.action }}
