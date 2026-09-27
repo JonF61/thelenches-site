@@ -1,5 +1,5 @@
 // scripts/ingest/google.js
-// Google access for the pipeline (ingestion, approvals, digest).
+// Google access for the pipeline (ingestion, approvals, digest, replies).
 // Gmail read: gmail.readonly, domain-wide delegation impersonating GMAIL_USER.
 // Gmail send: gmail.send, separate client with only that scope.
 // Sheets: service account shared directly on the Sheet (no delegation).
@@ -10,6 +10,9 @@ const { google } = require('googleapis');
 const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
 const GMAIL_SEND_SCOPE = 'https://www.googleapis.com/auth/gmail.send';
 const SHEETS_SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
+
+// Display name on all system email unless a caller passes another (Settings key from_name).
+const DEFAULT_FROM_NAME = 'Website and Newsletter Team';
 
 // Retry reads and idempotent writes on rate limits / server errors.
 // POST (append, send) is deliberately excluded so a retry can't duplicate rows or emails.
@@ -124,6 +127,14 @@ function header(headers, name) {
   return headerValues(headers, name)[0] || '';
 }
 
+// Bare lower-case address from "Name <a@b.c>" or "a@b.c"; '' if none.
+function addressOf(value) {
+  const v = String(value || '');
+  const angle = v.match(/<([^<>\s]+@[^<>\s]+)>/);
+  const bare = angle ? angle[1] : (v.match(/[^\s<>,;"']+@[^\s<>,;"']+/) || [''])[0];
+  return bare.trim().toLowerCase();
+}
+
 function htmlToText(html) {
   return html
     .replace(/<(script|style|head)[\s\S]*?<\/\1>/gi, ' ')
@@ -185,14 +196,30 @@ async function getMessage(id) {
     .flatMap((h) => headerValues(headers, h))
     .join(', ');
 
+  // Return-Path: null if the header is absent, '' if empty ("<>", i.e. a bounce).
+  const rp = headerValues(headers, 'Return-Path');
+  const returnPath = rp.length ? rp[rp.length - 1].replace(/[<>\s]/g, '') : null;
+
   return {
     id: msg.id,
     threadId: msg.threadId,
     internalDate: Number(msg.internalDate),
     from: header(headers, 'From'),
+    fromAddress: addressOf(header(headers, 'From')),
+    replyTo: header(headers, 'Reply-To'),
     recipients,
     subject: header(headers, 'Subject'),
     rfcMessageId: header(headers, 'Message-ID'),
+    inReplyTo: header(headers, 'In-Reply-To'),
+    references: header(headers, 'References'),
+    // Used by replies.js to never auto-reply to automated mail.
+    auto: {
+      autoSubmitted: header(headers, 'Auto-Submitted'),
+      precedence: header(headers, 'Precedence'),
+      listId: header(headers, 'List-Id'),
+      listUnsubscribe: header(headers, 'List-Unsubscribe'),
+      returnPath,
+    },
     text,
     attachments: out.attachments,
   };
@@ -214,9 +241,14 @@ function gmailLink(msg) {
     : `https://mail.google.com/mail/u/0/#all/${msg.id}`;
 }
 
+// Strip CR/LF so nothing taken from an inbound email can inject extra headers.
+function oneLine(s) {
+  return String(s ?? '').replace(/[\r\n]+/g, ' ').trim();
+}
+
 // Header value, RFC 2047-encoded if it contains anything beyond plain ASCII.
 function encodeHeader(s) {
-  const v = String(s || '');
+  const v = oneLine(s);
   return /^[\x20-\x7e]*$/.test(v) ? v : `=?UTF-8?B?${Buffer.from(v, 'utf8').toString('base64')}?=`;
 }
 
@@ -224,17 +256,42 @@ function base64Lines(s) {
   return Buffer.from(String(s || ''), 'utf8').toString('base64').replace(/.{76}/g, '$&\r\n');
 }
 
-// Send one email (plain text + HTML) as GMAIL_USER. Returns the Gmail message ID.
-// Not retried automatically, so a network blip can never send it twice.
-async function sendMail({ to, subject, text, html, fromName }) {
+const ADDRESS_RE = /^[^\s@<>,;"']+@[^\s@<>,;"']+\.[^\s@<>,;"']+$/;
+// Headers a caller may not set through `headers` (built here, or never wanted).
+const RESERVED = ['from', 'to', 'cc', 'bcc', 'subject', 'mime-version', 'content-type',
+  'content-transfer-encoding', 'reply-to', 'sender'];
+
+// Send one email (plain text + HTML) as GMAIL_USER, to exactly one recipient.
+// Options:
+//   from      sending address (a "Send mail as" alias); default GMAIL_USER.
+//             Gmail silently rewrites an unauthorised From to GMAIL_USER.
+//   fromName  display name; default DEFAULT_FROM_NAME.
+//   threadId  Gmail thread to file the sent message in (replies).
+//   headers   extra headers, e.g. { 'In-Reply-To': ..., 'Auto-Submitted': 'auto-replied' }.
+// Returns the Gmail message ID. Not retried automatically, so a blip can never send twice.
+async function sendMail({ to, subject, text, html, fromName, from, threadId, headers }) {
   const user = process.env.GMAIL_USER;
   if (!user) throw new Error('GMAIL_USER is not set');
+  const sender = oneLine(from || user).toLowerCase();
+  if (!ADDRESS_RE.test(sender)) throw new Error(`Bad from address "${sender}"`);
+  const rcpt = addressOf(to);
+  if (!rcpt || !ADDRESS_RE.test(rcpt) || /[,;]/.test(String(to))) {
+    throw new Error(`sendMail needs exactly one valid recipient, got "${oneLine(to)}"`);
+  }
+
+  const name = fromName === undefined ? DEFAULT_FROM_NAME : fromName;
+  const fromHeader = name ? `${encodeHeader(name)} <${sender}>` : sender;
+  const extra = Object.entries(headers || {})
+    .map(([k, v]) => [oneLine(k), oneLine(v)])
+    .filter(([k, v]) => /^[A-Za-z0-9-]+$/.test(k) && v && !RESERVED.includes(k.toLowerCase()))
+    .map(([k, v]) => `${k}: ${v}`);
+
   const boundary = `lenches_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
-  const from = fromName ? `${encodeHeader(fromName)} <${user}>` : user;
   const lines = [
-    `From: ${from}`,
-    `To: ${to}`,
+    `From: ${fromHeader}`,
+    `To: ${rcpt}`,
     `Subject: ${encodeHeader(subject)}`,
+    ...extra,
     'MIME-Version: 1.0',
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
     '',
@@ -252,7 +309,8 @@ async function sendMail({ to, subject, text, html, fromName }) {
     '',
   ];
   const raw = Buffer.from(lines.join('\r\n'), 'utf8').toString('base64url');
-  const res = await gmailSender().users.messages.send({ userId: 'me', requestBody: { raw } });
+  const requestBody = threadId ? { raw, threadId: oneLine(threadId) } : { raw };
+  const res = await gmailSender().users.messages.send({ userId: 'me', requestBody });
   return res.data.id;
 }
 
@@ -310,6 +368,11 @@ async function readSettings() {
   return { sources, settings };
 }
 
+// Display name for system email: Settings from_name, else the default.
+function fromNameFor(settings) {
+  return String((settings && settings.from_name) || '').trim() || DEFAULT_FROM_NAME;
+}
+
 // Numeric tab ID (the #gid= part of a Sheet URL), for links straight to a row.
 async function getSheetGid(tab) {
   const res = await sheets().spreadsheets.get({
@@ -355,11 +418,14 @@ module.exports = {
   getMessage,
   getAttachmentData,
   gmailLink,
+  addressOf,
   sendMail,
   readTable,
   readSettings,
+  fromNameFor,
   getSheetGid,
   appendRows,
   updateRow,
   spreadsheetId,
+  DEFAULT_FROM_NAME,
 };
