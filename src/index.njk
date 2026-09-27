@@ -16,11 +16,13 @@ description: News, events and information for the Lenches villages in Worcesters
       <div class="section-head"><h2>Coming up</h2><a href="{{ '/events/' | url }}">All events &rarr;</a></div>
       {% for e in whatson.events | merge(pipeline.events) | upcoming %}{% if loop.index <= 4 %}
       {% set d = e.date | dateParts %}
+      {#- Anchor must match the id built in events.njk -#}
+      {% set anchor = ("ev-" + e.date + "-" + e.title) | slugify %}
       <div class="event">
         <div class="date"><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>
         <div>
           <h3 class="mt0">{{ e.title | escape }}</h3>
-          <p class="event-sub">{{ e.body | truncate(100) | escape }}</p>
+          <p class="event-sub">{{ e.body | truncate(100) | escape }}{% if e.body | length > 100 %} <a class="more" href="{{ '/events/' | url }}#{{ anchor }}">more</a>{% endif %}</p>
         </div>
       </div>
       {% endif %}{% else %}
@@ -31,9 +33,11 @@ description: News, events and information for the Lenches villages in Worcesters
     <section>
       <div class="section-head"><h2>Latest news</h2><a href="{{ '/news/' | url }}">All news &rarr;</a></div>
       {% for n in pipeline.news | current | merge(whatson.news) %}{% if loop.index <= 3 %}
+      {#- Anchor must match the id built in news.njk -#}
+      {% set anchor = ("news-" + n.title) | slugify %}
       <div class="card card-compact">
         <h3 class="mt0">{{ n.title | escape }}</h3>
-        <p>{{ n.body | truncate(110) | escape }}</p>
+        <p>{{ n.body | truncate(110) | escape }}{% if n.body | length > 110 %} <a class="more" href="{{ '/news/' | url }}#{{ anchor }}">more</a>{% endif %}</p>
       </div>
       {% endif %}{% else %}
       <p class="muted">No news at the moment.</p>

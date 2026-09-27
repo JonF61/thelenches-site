@@ -16,7 +16,8 @@ description: What's on across the Lenches villages — upcoming events from the 
     <h2 class="list-label">{{ g.label }}</h2>
     {% for e in g.items %}
     {% set d = e.date | dateParts %}
-    <div class="item-card">
+    {#- id is linked from the home page's "more" links: keep the two in step -#}
+    <div class="item-card" id="{{ ('ev-' + e.date + '-' + e.title) | slugify }}">
       <div class="date"><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>
       <div class="item-body">
         <h3>{{ e.title | escape }}</h3>

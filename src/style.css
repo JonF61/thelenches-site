@@ -30,7 +30,7 @@ img{max-width:100%;height:auto;display:block}
 .nav a.active{border-bottom-color:var(--accent)}
 
 /* Blocks */
-main{padding:2.75rem 0 1rem}
+main{padding:3.75rem 0 1rem}
 section{margin-bottom:3rem}
 h1,h2,h3{color:var(--green-dark);line-height:1.25;font-weight:600}
 h1{font-size:1.6rem;margin:0 0 .5rem}
@@ -57,6 +57,7 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 .section-head h2{margin:0}
 .section-head a{font-size:.9rem;color:var(--accent-text);text-decoration:none;white-space:nowrap}
 .section-head a:hover{text-decoration:underline}
+.more{color:var(--accent-text);font-weight:500;white-space:nowrap}
 
 /* News & Events header row (legacy) */
 .ne-top{display:flex;flex-wrap:wrap;gap:1.5rem;justify-content:space-between;align-items:flex-start}
@@ -74,9 +75,11 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 .card-compact p{font-size:.92rem;color:var(--muted);margin:0}
 
 /* Listed items: boxed (events) and rows (news) */
-.item-card,.item-row{display:flex;gap:1rem;align-items:flex-start}
+.item-card,.item-row{display:flex;gap:1rem;align-items:flex-start;scroll-margin-top:1.5rem}
 .item-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem 1.25rem;margin-bottom:.75rem}
 .item-row{padding:1rem 0;border-top:1px solid var(--line)}
+.item-card:target{box-shadow:0 0 0 2px var(--accent)}
+.item-row:target{background:var(--green-light);border-radius:8px;padding-left:.75rem;padding-right:.75rem}
 .item-body{flex:1;min-width:0}
 .item-body h3{margin:0 0 .2rem}
 .item-body p{margin:0}
@@ -162,7 +165,7 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 }
 @media (max-width:560px){
   .container{padding:0 1rem}
-  main{padding-top:2rem}
+  main{padding-top:2.5rem}
   h1{font-size:1.45rem}
   h2{font-size:1.2rem}
   .banner-img{aspect-ratio:2/1}
