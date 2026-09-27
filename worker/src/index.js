@@ -2,7 +2,7 @@
 // Lenches approvals Worker.
 //   GET  /a?t=TOKEN  confirm page only (link scanners just GET, so they can't act on anything)
 //   POST /a          verifies the signed token, fires repository_dispatch "approval"
-//   cron             watchdog: ingestion still running and site up; alerts via GitHub
+//   cron             watchdog: ingestion and daily diagnostic still running, site up; alerts via GitHub
 // Actions: approve/reject (Pending items), send/skip (submitter replies awaiting a decision).
 // Single use is enforced downstream: the approval Action only changes rows still
 // "pending" (items) or "awaiting" (replies).
@@ -11,6 +11,7 @@ const enc = new TextEncoder();
 const dec = new TextDecoder();
 
 const INGEST_STALE_HOURS = 9;        // ingestion pauses overnight for about 7 hours
+const DIAGNOSTIC_STALE_HOURS = 30;   // daily run, plus slack for GitHub cron delays
 const ISSUE_TITLE = 'Watchdog alert';
 
 // action -> [confirm verb, done word, button class]
@@ -176,6 +177,38 @@ async function checkIngestion(env, problems) {
   }
 }
 
+// Tolerates diagnostic.yml not existing yet (404 = not deployed, no alert), and a
+// newly added workflow with no scheduled run yet (measured from its creation time).
+async function checkDiagnostic(env, problems) {
+  try {
+    const w = await github(env, `/repos/${env.REPO}/actions/workflows/diagnostic.yml`);
+    if (w.status === 404) {
+      console.log('Diagnostic workflow not yet deployed; skipping check.');
+      return;
+    }
+    if (!w.ok) {
+      problems.push(`GitHub API returned HTTP ${w.status} when checking the diagnostic workflow`);
+      return;
+    }
+    const wf = await w.json();
+    const r = await github(env, `/repos/${env.REPO}/actions/workflows/diagnostic.yml/runs?event=schedule&per_page=1`);
+    if (!r.ok) {
+      problems.push(`GitHub API returned HTTP ${r.status} when checking diagnostic runs`);
+      return;
+    }
+    const run = ((await r.json()).workflow_runs || [])[0];
+    const since = Date.parse(run ? run.created_at : wf.created_at);
+    const hours = (Date.now() - since) / 3600000;
+    if (hours > DIAGNOSTIC_STALE_HOURS) {
+      problems.push(run
+        ? `No scheduled diagnostic run for ${Math.floor(hours)} hours (GitHub may have paused the schedule)`
+        : `Diagnostic workflow added ${Math.floor(hours)} hours ago but has never run on schedule`);
+    }
+  } catch (e) {
+    problems.push(`Diagnostic check failed: ${e.message}`);
+  }
+}
+
 async function checkSite(env, problems) {
   try {
     const r = await fetch(env.SITE_URL, { redirect: 'follow' });
@@ -220,7 +253,7 @@ async function report(env, problems) {
 
 async function watchdog(env) {
   const problems = [];
-  await Promise.all([checkIngestion(env, problems), checkSite(env, problems)]);
+  await Promise.all([checkIngestion(env, problems), checkDiagnostic(env, problems), checkSite(env, problems)]);
   console.log(problems.length ? `Problems: ${problems.join(' | ')}` : 'All checks passed.');
   try {
     await report(env, problems);
