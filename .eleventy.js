@@ -1,4 +1,8 @@
-module.exports = function (eleventyConfig) {
+module.exports = async function (eleventyConfig) {
+  // Eleventy v3 is ESM; load the RenderPlugin from this CommonJS config via import()
+  const { RenderPlugin } = await import("@11ty/eleventy");
+  eleventyConfig.addPlugin(RenderPlugin); // {% renderFile %} for src/_includes/guidelines.md
+
   eleventyConfig.addPassthroughCopy("src/style.css");
   eleventyConfig.addPassthroughCopy("src/images");
 
