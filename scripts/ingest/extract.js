@@ -5,6 +5,7 @@
 // "out_of_scope", used by replies.js. Date, deadline and count checks are done in code.
 // Signpost mode (RSS, via rss.js): one feed item in, at most one item out, written in
 // Claude's own words from the feed text only; link, link text and blanks set in code.
+// The system prompt (with tools) is cached for 5 minutes, so later calls in a run are cheap.
 'use strict';
 
 const fs = require('fs');
@@ -20,6 +21,9 @@ const RULES = fs.readFileSync(path.join(__dirname, 'rules.md'), 'utf8');
 
 // Required details a submitter can be asked for (Submission Guidelines). "What" is the title.
 const MISSING_CODES = ['where', 'date', 'time', 'cost', 'contact'];
+
+// Per-run cache counters, printed by index.js.
+const stats = { cacheRead: 0, cacheWrite: 0 };
 
 const client = new Anthropic({ maxRetries: 3, timeout: 120000 }); // reads ANTHROPIC_API_KEY
 
@@ -225,7 +229,11 @@ async function extract(input) {
   const res = await client.messages.create({
     model: MODEL,
     max_tokens: 8000,
-    system: signpost ? `${SYSTEM}\n\n${SIGNPOST}` : SYSTEM,
+    system: [{
+      type: 'text',
+      text: signpost ? `${SYSTEM}\n\n${SIGNPOST}` : SYSTEM,
+      cache_control: { type: 'ephemeral' }, // caches tools + system for 5 minutes
+    }],
     tools: [TOOL],
     tool_choice: { type: 'tool', name: 'record_items' },
     messages: [{
@@ -238,6 +246,9 @@ async function extract(input) {
   if (res.stop_reason === 'max_tokens') throw new Error('Claude output truncated (max_tokens)');
   const block = res.content.find((b) => b.type === 'tool_use');
   if (!block) throw new Error(`No structured output from Claude (stop_reason: ${res.stop_reason})`);
+  const u = res.usage || {};
+  stats.cacheRead += u.cache_read_input_tokens || 0;
+  stats.cacheWrite += u.cache_creation_input_tokens || 0;
   let items = normalise(block.input.items, images.length);
   if (signpost) items = toSignpost(items, input.sourceName, str(input.feedItem.link));
   return {
@@ -245,8 +256,8 @@ async function extract(input) {
     anonymous: signpost ? false : block.input.anonymous === true,
     outOfScope: block.input.out_of_scope === true,
     skipReason: str(block.input.skip_reason),
-    usage: res.usage,
+    usage: res.usage, // input_tokens excludes cached tokens; see stats
   };
 }
 
-module.exports = { extract, MISSING_CODES };
+module.exports = { extract, MISSING_CODES, stats };
