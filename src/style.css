@@ -31,6 +31,8 @@ img{max-width:100%;height:auto;display:block}
 .site-header .container{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.5rem;padding-top:.9rem;padding-bottom:.9rem}
 .brand{font-size:1.4rem;font-weight:700;letter-spacing:.3px;color:#fff;text-decoration:none}
 .brand span{color:#d9e8d2;font-weight:400;margin-left:.45rem}
+.brand-wrap{display:flex;flex-direction:column}
+.brand-villages{margin:-.35rem 0 0;font-size:.82rem;color:#d9e8d2;letter-spacing:.04em}
 .nav{display:flex;flex-wrap:wrap;gap:.25rem}
 .nav a{color:#eaf3e5;text-decoration:none;padding:.4rem .7rem;border-radius:6px;font-size:.96rem}
 .nav a:hover,.nav a.active{background:rgba(255,255,255,.16);color:#fff}
@@ -127,6 +129,7 @@ h3{font-size:1.2rem;margin-bottom:.3rem}
 .small{font-size:.88rem}
 .mt0{margin-top:0}
 .center{text-align:center}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* Skip link */
 .skip-link{position:absolute;left:-9999px;top:0;background:var(--accent);color:#fff;padding:.7rem 1.1rem;border-radius:0 0 6px 0;z-index:100;text-decoration:none;font-weight:600}

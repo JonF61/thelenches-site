@@ -33,14 +33,16 @@
   <meta name="twitter:image:alt" content="{{ pageImageAlt }}">{% endif %}
 
   <link rel="stylesheet" href="{{ '/style.css' | url }}">
-  {% if page.url == "/" %}<link rel="preload" as="image" href="{{ '/images/club-view.jpg' | url }}" fetchpriority="high">{% endif %}
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
 
   <header class="site-header">
     <div class="container">
-      <a class="brand" href="{{ '/' | url }}">The Lenches <span>Website</span></a>
+      <div class="brand-wrap">
+        <a class="brand" href="{{ '/' | url }}">The Lenches <span>Website</span></a>
+        <p class="brand-villages">Church &middot; Rous &middot; Ab &middot; Atch &middot; Sheriffs</p>
+      </div>
       <nav class="nav" aria-label="Main">
         {% for item in site.nav %}
         <a href="{{ item.url | url }}"{% if page.url == item.url %} class="active" aria-current="page"{% endif %}>{{ item.title }}</a>
