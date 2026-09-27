@@ -113,6 +113,16 @@ async function listMessageIds(labelName, afterEpochSeconds) {
   return ids;
 }
 
+// "Send mail as" addresses GMAIL_USER may use (lower case): the primary address plus
+// aliases that are verified or need no verification (same-domain aliases).
+async function sendAsAddresses() {
+  const res = await gmail().users.settings.sendAs.list({ userId: 'me' });
+  return (res.data.sendAs || [])
+    .filter((s) => s.isPrimary || !s.verificationStatus || s.verificationStatus === 'accepted')
+    .map((s) => String(s.sendAsEmail || '').toLowerCase())
+    .filter(Boolean);
+}
+
 function decode(data) {
   return Buffer.from(data, 'base64url');
 }
@@ -415,6 +425,7 @@ async function updateRow(tab, rowNumber, fields) {
 
 module.exports = {
   listMessageIds,
+  sendAsAddresses,
   getMessage,
   getAttachmentData,
   gmailLink,
