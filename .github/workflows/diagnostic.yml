@@ -1,0 +1,40 @@
+name: Daily diagnostic
+
+on:
+  schedule:
+    # 04:40 UTC = 05:40 UK in summer, 04:40 in winter. No gate needed for a daily check.
+    - cron: "40 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read   # the diagnostic never commits with this token
+  actions: write   # re-run failed jobs, read job logs, re-enable paused workflows
+
+concurrency:
+  group: diagnostic
+  cancel-in-progress: false
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm install --no-audit --no-fund
+
+      - name: Run diagnostic
+        run: node scripts/diagnostic/index.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: jon@thelenches.org.uk
+          GMAIL_LABEL: Pipeline
+          WORKER_URL: https://approvals.lenches.workers.dev
