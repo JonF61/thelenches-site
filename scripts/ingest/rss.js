@@ -14,6 +14,8 @@ const MAX_FEED_ITEMS_PER_RUN = 10; // across all feeds; the rest wait for the ne
 const MAX_RETRIES = 3;
 const FETCH_TIMEOUT_MS = 20000;
 const USER_AGENT = 'LenchesPipeline/1.0 (+https://thelenches.org.uk)';
+// Tracking parameters removed from article links (plus any utm_*).
+const TRACKING_PARAMS = ['fbclid', 'gclid', 'mc_cid', 'mc_eid', 'ref'];
 
 /* ------------------------------------------------------------- parsing -- */
 
@@ -79,7 +81,7 @@ function cleanLink(url) {
     const u = new URL(url);
     if (!/^https?:$/.test(u.protocol)) return '';
     [...u.searchParams.keys()].forEach((k) => {
-      if (/^utm_/i.test(k) || ['fbclid', 'gclid', 'mc_cid', 'mc_eid'].includes(k.toLowerCase())) {
+      if (/^utm_/i.test(k) || TRACKING_PARAMS.includes(k.toLowerCase())) {
         u.searchParams.delete(k);
       }
     });
