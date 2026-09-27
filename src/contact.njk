@@ -35,7 +35,10 @@ description: Contact the Lenches newsletter, submit content, and find village co
 
   <section id="submit">
     <h2>Submit something for the newsletter</h2>
-    <p>Got an event, notice or bit of news? Send it to <a href="mailto:{{ site.email }}">{{ site.email }}</a> by the <strong>end of Wednesday</strong> and we'll aim to include it in Thursday's newsletter and here on the site. A short paragraph and, if you have one, a poster or photo is ideal.</p>
+    <p>Got an event, notice or bit of news? Email it to <a href="mailto:{{ site.email }}">{{ site.email }}</a>. It goes in Thursday's newsletter and here on the site.</p>
+    <div id="guidelines">
+{% renderFile "./src/_includes/guidelines.md" %}
+    </div>
   </section>
 
 </main>
