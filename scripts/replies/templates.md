@@ -51,4 +51,4 @@ You can find our submission guidelines on the Contact page: {guidelines_url}
 
 ## signature
 Best wishes,
-The Website and Newsletter Team
+The Lenches Website and Newsletter Team
