@@ -40,7 +40,8 @@
   <header class="site-header">
     <div class="container">
       <div class="brand-wrap">
-        <a class="brand" href="{{ '/' | url }}">The Lenches <span>Website</span></a>
+        {#- On the home page the site name doubles as the page's H1. -#}
+        {% if page.url == "/" %}<h1 class="brand-h1">{% endif %}<a class="brand" href="{{ '/' | url }}">The Lenches <span>Website</span></a>{% if page.url == "/" %}</h1>{% endif %}
         <p class="brand-villages">Church &middot; Rous &middot; Ab &middot; Atch &middot; Sheriffs</p>
       </div>
       <nav class="nav" aria-label="Main">
