@@ -1,15 +1,25 @@
 // worker/src/index.js
 // Lenches approvals Worker.
-//   GET  /a?t=TOKEN  confirm page only (link scanners just GET, so they can't approve anything)
+//   GET  /a?t=TOKEN  confirm page only (link scanners just GET, so they can't act on anything)
 //   POST /a          verifies the signed token, fires repository_dispatch "approval"
 //   cron             watchdog: ingestion still running and site up; alerts via GitHub
-// Single use is enforced downstream: the approval Action only changes rows still "pending".
+// Actions: approve/reject (Pending items), send/skip (submitter replies awaiting a decision).
+// Single use is enforced downstream: the approval Action only changes rows still
+// "pending" (items) or "awaiting" (replies).
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
 const INGEST_STALE_HOURS = 9;        // ingestion pauses overnight for about 7 hours
 const ISSUE_TITLE = 'Watchdog alert';
+
+// action -> [confirm verb, done word, button class]
+const ACTIONS = {
+  approve: ['Approve', 'Approved', 'approve'],
+  reject: ['Reject', 'Rejected', 'reject'],
+  send: ['Send reply', 'Reply queued to send', 'approve'],
+  skip: ['Skip reply', 'Reply skipped', 'reject'],
+};
 
 /* -------------------------------------------------------------- helpers -- */
 
@@ -45,7 +55,7 @@ async function verifyToken(token, secret) {
   } catch {
     return null;
   }
-  if (!payload || !['approve', 'reject'].includes(payload.a)) return null;
+  if (!payload || !Object.prototype.hasOwnProperty.call(ACTIONS, payload.a)) return null;
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(String(payload.i || ''))) return null;
   if (!payload.e || payload.e < Date.now() / 1000) return { expired: true };
   return payload;
@@ -77,9 +87,9 @@ button{font-size:1rem;padding:12px 24px;border:0;border-radius:8px;color:#fff;cu
 }
 
 const invalidPage = () => page('Invalid link',
-  '<h1>Invalid link</h1><p>This link is not valid. Please use the buttons in the latest digest.</p>', 400);
+  '<h1>Invalid link</h1><p>This link is not valid. Please use the buttons in the latest email.</p>', 400);
 const expiredPage = () => page('Link expired',
-  '<h1>Link expired</h1><p>This link has expired. The item is still in the Sheet and will appear in the next digest.</p>', 410);
+  '<h1>Link expired</h1><p>This link has expired. Nothing has changed; the row is still in the Sheet.</p>', 410);
 
 function github(env, path, init = {}) {
   return fetch(`https://api.github.com${path}`, {
@@ -104,15 +114,15 @@ async function handleApproval(request, env) {
     const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
     if (!p) return invalidPage();
     if (p.expired) return expiredPage();
-    const verb = p.a === 'approve' ? 'Approve' : 'Reject';
-    return page(`${verb} item`, `
-<h1>${verb} this item?</h1>
+    const [verb, , cls] = ACTIONS[p.a];
+    return page(verb, `
+<h1>${esc(verb)}?</h1>
 <p><strong>${esc(p.t || p.i)}</strong></p>
 <form method="post" action="/a">
   <input type="hidden" name="t" value="${esc(token)}">
-  <button class="${p.a}" type="submit">${verb}</button>
+  <button class="${cls}" type="submit">${esc(verb)}</button>
 </form>
-<p class="muted">Item ${esc(p.i)}</p>`);
+<p class="muted">${esc(p.i)}</p>`);
   }
 
   if (request.method === 'POST') {
@@ -133,13 +143,13 @@ async function handleApproval(request, env) {
     if (res.status !== 204) {
       console.error(`Dispatch failed: HTTP ${res.status} ${await res.text()}`);
       return page('Something went wrong',
-        '<h1>Something went wrong</h1><p>GitHub did not accept the request. Please try again in a few minutes; the item is unchanged.</p>', 502);
+        '<h1>Something went wrong</h1><p>GitHub did not accept the request. Please try again in a few minutes; nothing has changed.</p>', 502);
     }
-    const done = p.a === 'approve' ? 'Approved' : 'Rejected';
+    const [, done] = ACTIONS[p.a];
     return page(done, `
-<h1>${done}</h1>
+<h1>${esc(done)}</h1>
 <p><strong>${esc(p.t || p.i)}</strong></p>
-<p>Recorded. If this item had already been decided, nothing changes.</p>`);
+<p>Recorded. If this had already been decided, nothing changes.</p>`);
   }
 
   return new Response('Method not allowed', { status: 405 });
