@@ -3,38 +3,71 @@ layout: base.njk
 title: News
 description: News and notices from across the Lenches villages.
 ---
-{#- Items come from whatson.json (hand-edited) and pipeline.json (written by scripts/publish). -#}
+{#- Items come from whatson.json (hand-edited) and pipeline.json (written by scripts/publish).
+    Page-specific newspaper styling lives here rather than in style.css; ids on stories are
+    linked from the home page's "more" links, so keep ('news-' + title) | slugify in step. -#}
+<style>
+.np-head{border-bottom:1px solid var(--line);padding-bottom:.6rem;margin-bottom:1.5rem}
+.np-head h1{font-size:1.6rem;margin:0}
+.np-date{margin:.15rem 0 0;font-size:.85rem;color:var(--muted)}
+.np-serif{font-family:"Source Serif 4",Georgia,serif}
+.story{scroll-margin-top:1.5rem;border-radius:var(--radius)}
+.story:target{background:#FDEBD8;box-shadow:0 0 0 3px var(--accent);padding:.75rem;animation:flash 1.2s ease-out 2}
+.story h2,.story h3{color:var(--green-dark);font-weight:700}
+.story p{font-family:"Source Serif 4",Georgia,serif;margin:0 0 .4rem}
+.np-lead{display:grid;grid-template-columns:minmax(0,1fr) 240px;gap:1.5rem;align-items:start;margin-bottom:1.75rem}
+.np-lead.no-img{grid-template-columns:1fr}
+.np-lead h2{font-size:1.6rem;line-height:1.15;margin:0 0 .5rem}
+.np-lead p{font-size:1.05rem;line-height:1.6}
+.np-lead img{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px}
+.np-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.5rem 2rem;border-top:1px solid var(--line);padding-top:1.25rem;margin-bottom:2.5rem}
+.np-cols h3{font-size:1.1rem;line-height:1.2;margin:0 0 .3rem}
+.np-cols p{font-size:.95rem;line-height:1.55}
+.np-cols img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:8px;margin-bottom:.6rem}
+.np-notice{padding:.6rem 0;border-top:1px solid var(--line);font-size:.95rem;scroll-margin-top:1.5rem}
+.np-notice:last-of-type{border-bottom:1px solid var(--line)}
+.np-notice strong{color:var(--green-dark)}
+.np-notice:target{background:#FDEBD8;box-shadow:0 0 0 3px var(--accent);border-radius:var(--radius);padding:.6rem .75rem}
+@media (prefers-reduced-motion:reduce){.story:target{animation:none}}
+@media (max-width:640px){.np-lead,.np-cols{grid-template-columns:1fr}.np-lead h2{font-size:1.35rem}}
+</style>
 <main class="container">
-  <div class="page-head">
+  <div class="np-head">
     <h1>News</h1>
-    <p class="page-intro">News and notices from across the villages &middot; updated {{ updated | longDate }}</p>
+    <p class="np-date">{{ updated | longDate }}</p>
   </div>
 
-  <section>
-    <h2 class="list-label">Latest news</h2>
-    {% for n in pipeline.news | current | merge(whatson.news) %}
-    {#- id is linked from the home page's "more" links: keep the two in step -#}
-    <div class="item-row" id="{{ ('news-' + n.title) | slugify }}">
-      <div class="item-body">
-        <h3>{{ n.title | escape }}</h3>
-        <p>{{ n.body | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}</p>
-      </div>
-      {% if n.image %}<a class="thumb-link" href="{{ n.image.url | url }}" target="_blank" rel="noopener" aria-label="View full image"><img class="item-thumb" src="{{ n.image.url | url }}" alt="{{ n.image.alt | escape }}" loading="lazy"></a>{% endif %}
+  {% set stories = pipeline.news | current | merge(whatson.news) %}
+  {% if stories | length %}
+  {% set lead = stories | first %}
+  <article class="story np-lead{% if not lead.image %} no-img{% endif %}" id="{{ ('news-' + lead.title) | slugify }}">
+    <div>
+      <h2 class="np-serif">{{ lead.title | escape }}</h2>
+      <p>{{ lead.body | escape }}{% if lead.link %} <a href="{{ lead.link.url | escape }}" target="_blank" rel="noopener">{{ lead.link.text | escape }} &rarr;</a>{% endif %}</p>
     </div>
-    {% else %}
-    <p class="muted">No news at the moment.</p>
-    {% endfor %}
-  </section>
+    {% if lead.image %}<a href="{{ lead.image.url | url }}" target="_blank" rel="noopener" aria-label="View full image"><img src="{{ lead.image.url | url }}" alt="{{ lead.image.alt | escape }}" loading="lazy"></a>{% endif %}
+  </article>
+
+  {% if stories | length > 1 %}
+  <div class="np-cols">
+    {% for n in stories %}{% if not loop.first %}
+    <article class="story" id="{{ ('news-' + n.title) | slugify }}">
+      {% if n.image %}<a href="{{ n.image.url | url }}" target="_blank" rel="noopener" aria-label="View full image"><img src="{{ n.image.url | url }}" alt="{{ n.image.alt | escape }}" loading="lazy"></a>{% endif %}
+      <h3 class="np-serif">{{ n.title | escape }}</h3>
+      <p>{{ n.body | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}</p>
+    </article>
+    {% endif %}{% endfor %}
+  </div>
+  {% endif %}
+  {% else %}
+  <p class="muted">No news at the moment.</p>
+  {% endif %}
 
   <section>
     <h2 class="list-label">Notices</h2>
     {% for n in pipeline.notices | current | merge(whatson.notices) %}
-    <div class="item-row" id="{{ ('notice-' + n.title) | slugify }}">
-      <div class="item-body">
-        <h3>{{ n.title | escape }}</h3>
-        <p>{{ n.body | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}</p>
-      </div>
-      {% if n.image %}<a class="thumb-link" href="{{ n.image.url | url }}" target="_blank" rel="noopener" aria-label="View full image"><img class="item-thumb" src="{{ n.image.url | url }}" alt="{{ n.image.alt | escape }}" loading="lazy"></a>{% endif %}
+    <div class="np-notice" id="{{ ('notice-' + n.title) | slugify }}">
+      <strong>{{ n.title | escape }}:</strong> {{ n.body | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" target="_blank" rel="noopener">(image)</a>{% endif %}
     </div>
     {% else %}
     <p class="muted">No notices at the moment.</p>
