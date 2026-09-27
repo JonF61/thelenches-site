@@ -2,18 +2,16 @@
 // Thursday digest: one email listing every Pending item awaiting a decision, with
 // signed Approve/Reject links (checked by the Cloudflare Worker), an Edit link to the
 // Sheet row and a link to the original email. Also lists items auto-published this week.
+// Signed links come from scripts/ingest/links.js (shared with the per-run action email);
+// the sender display name comes from Settings from_name.
 'use strict';
 
-const crypto = require('crypto');
 const g = require('../ingest/google');
+const { signedLink, linksEnabled, LINK_DAYS } = require('../ingest/links');
 
 const TZ = 'Europe/London';
-const LINK_DAYS = 14;          // approval links expire after this
 const AUTO_LOOKBACK_DAYS = 7;  // "auto-published this week" window
 const LOW_CONFIDENCE = 0.5;
-
-const WORKER_URL = String(process.env.WORKER_URL || '').replace(/\/+$/, '');
-const KEY = process.env.APPROVAL_SIGNING_KEY;
 
 const C = { green: '#3F5233', cream: '#F6F1E4', orange: '#C0703A', red: '#A33B2B', grey: '#666666' };
 
@@ -33,19 +31,6 @@ function longDate(ymd) {
   return new Intl.DateTimeFormat('en-GB', {
     timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
   }).format(new Date(`${ymd}T12:00:00Z`));
-}
-
-// Signed link: base64url(JSON).base64url(HMAC-SHA256). The Worker verifies with the same key.
-function signedLink(item, action) {
-  const payload = {
-    i: item.id,
-    a: action,
-    t: String(item.title || '').slice(0, 80),
-    e: Math.floor(Date.now() / 1000) + LINK_DAYS * 86400,
-  };
-  const body = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
-  const sig = crypto.createHmac('sha256', KEY).update(body).digest('base64url');
-  return `${WORKER_URL}/a?t=${body}.${sig}`;
 }
 
 function flagsOf(item) {
@@ -166,8 +151,7 @@ function buildText({ pending, auto, holiday, rowUrl, dateLabel }) {
 /* ----------------------------------------------------------------- main -- */
 
 async function main() {
-  if (!KEY) throw new Error('APPROVAL_SIGNING_KEY is not set');
-  if (!WORKER_URL) throw new Error('WORKER_URL is not set');
+  if (!linksEnabled()) throw new Error('APPROVAL_SIGNING_KEY or WORKER_URL is not set');
   const to = process.env.DIGEST_TO || process.env.GMAIL_USER;
 
   const [rows, { settings }, gid] = await Promise.all([
@@ -199,7 +183,7 @@ async function main() {
     subject,
     text: buildText(ctx),
     html: buildHtml(ctx),
-    fromName: 'Lenches Pipeline',
+    fromName: g.fromNameFor(settings),
   });
   console.log(`Digest sent to ${to}: ${pending.length} to review, ${auto.length} auto-published. Gmail id ${id}.`);
 }
