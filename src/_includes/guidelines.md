@@ -9,7 +9,7 @@ The five Lenches (Church Lench, Rous Lench, Ab Lench, Atch Lench and Sheriffs Le
 ### What we don't include
 
 - Party-political material.
-- Commercial advertising, other than from our sponsors.
+- Commercial advertising.
 - Classified adverts (items for sale or wanted, lettings, jobs or personal services).
 - Anonymous or unverified material. Please tell us your name or the group you're writing for.
 
