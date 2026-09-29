@@ -30,8 +30,8 @@ img{max-width:100%;height:auto;display:block}
 .nav a.active{border-bottom-color:var(--accent)}
 
 /* Blocks */
-/* main.container needed: .container's padding otherwise overrides main's top padding */
-main,main.container{padding-top:7.5rem;padding-bottom:1rem}
+/* Space above page titles, same on every page. main.container needed: .container's padding otherwise overrides it */
+main,main.container{padding-top:.75rem;padding-bottom:1rem}
 section{margin-bottom:3rem}
 h1,h2,h3{color:var(--green-dark);line-height:1.25;font-weight:600}
 h1{font-size:1.4rem;margin:0 0 .5rem}
@@ -168,7 +168,6 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 }
 @media (max-width:560px){
   .container{padding:0 1rem}
-  main,main.container{padding-top:5rem}
   .brand{font-size:1.5rem}
   h1{font-size:1.3rem}
   h2{font-size:1.1rem}
