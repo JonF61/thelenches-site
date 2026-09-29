@@ -164,8 +164,8 @@ description: Bin collection days for Church, Rous, Ab, Atch and Sheriffs Lench a
     }
   });
 
+  // Boxes keep the order of areas in bins.json, so Church Lench's group always comes first.
   groups = groups.filter(function (g) { return g.found.length; });
-  groups.sort(function (a, b) { return a.found[0].date - b.found[0].date; });
 
   var html = groups.map(function (g) {
     var n = g.found[0];
@@ -174,8 +174,8 @@ description: Bin collection days for Church, Rous, Ab, Atch and Sheriffs Lench a
     }).join('');
 
     return '<div class="bin-box">' + swatches +
-      '<div><strong>' + when(n.date) + ' &mdash; ' + label(n.bins) + '</strong>' +
-      '<div>' + names(g.villages) + '</div>' +
+      '<div><h3 class="mt0">' + names(g.villages) + '</h3>' +
+      '<div><strong>' + when(n.date) + ' &mdash; ' + label(n.bins) + '</strong></div>' +
       (g.found[1] ? '<div class="small mut">Then ' + when(g.found[1].date) + ' &mdash; ' + label(g.found[1].bins) + '</div>' : '') +
       (n.note ? '<div class="small mut">' + n.note + '</div>' : '') +
       '</div></div>';
