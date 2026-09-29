@@ -173,12 +173,13 @@ description: Bin collection days for Church, Rous, Ab, Atch and Sheriffs Lench a
       return '<div class="bin-swatch" style="background:' + (colours[b] || '#999') + ';"></div>';
     }).join('');
 
-    return '<div class="bin-box">' + swatches +
-      '<div><h3 class="mt0">' + names(g.villages) + '</h3>' +
+    // Text on the left (fills the box), bin colours on the right
+    return '<div class="bin-box">' +
+      '<div style="flex:1;min-width:0"><h3 class="mt0">' + names(g.villages) + '</h3>' +
       '<div><strong>' + when(n.date) + ' &mdash; ' + label(n.bins) + '</strong></div>' +
       (g.found[1] ? '<div class="small mut">Then ' + when(g.found[1].date) + ' &mdash; ' + label(g.found[1].bins) + '</div>' : '') +
       (n.note ? '<div class="small mut">' + n.note + '</div>' : '') +
-      '</div></div>';
+      '</div>' + swatches + '</div>';
   }).join('');
 
   if (html) wrap.innerHTML = html;
