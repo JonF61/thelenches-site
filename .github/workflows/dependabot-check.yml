@@ -1,9 +1,10 @@
 name: Dependabot check
 
 # Step 7F. Builds every PR into main. For Dependabot npm PRs that pass, merges
-# patch/minor bumps automatically; majors, 0.x minors and action updates wait
+# patch/minor bumps automatically; majors, 0.x packages and action updates wait
 # for me. Checking and merging are separate jobs, so the new package code
 # (npm ci) never runs alongside a token that can write to the repo.
+# The gate fails closed: any missing or unclear data means "hold".
 on:
   pull_request:
     branches: [main]
@@ -64,31 +65,43 @@ jobs:
       - name: Decide
         id: decide
         env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
           ECOSYSTEM: ${{ steps.meta.outputs.package-ecosystem }}
           UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
           DEPS: ${{ steps.meta.outputs.updated-dependencies-json }}
         run: |
           REASON=""
+          NAMES=$(echo "${DEPS:-[]}" | jq -r '.[].dependencyName // empty' 2>/dev/null || true)
+
           if [ "$ECOSYSTEM" != "npm_and_yarn" ]; then
-            REASON="not an npm update ($ECOSYSTEM)"
+            REASON="not an npm update (${ECOSYSTEM:-unknown})"
           elif [ "$UPDATE_TYPE" != "version-update:semver-patch" ] && \
                [ "$UPDATE_TYPE" != "version-update:semver-minor" ]; then
-            REASON="update type is $UPDATE_TYPE"
+            REASON="update type is ${UPDATE_TYPE:-unknown}"
+          elif [ -z "$NAMES" ]; then
+            REASON="could not read which packages changed"
+          elif ! BASE_PKG=$(gh api "repos/$GH_REPO/contents/package.json?ref=$BASE_SHA" \
+                 -H "Accept: application/vnd.github.raw"); then
+            REASON="could not read package.json on main"
           else
-            # On 0.x packages a minor bump can break things (0.0.x: any bump).
-            RISKY=$(echo "$DEPS" | jq -r '[.[]
-              | (.prevVersion // "") as $p
-              | select(($p | startswith("0.0.")) or
-                       (($p | startswith("0.")) and .updateType == "version-update:semver-minor"))
-              | "\(.dependencyName) \($p) -> \(.newVersion)"] | join(", ")')
-            [ -n "$RISKY" ] && REASON="0.x minor bump: $RISKY"
+            # Packages still on 0.x in main's package.json: any bump can break them.
+            ZERO=$(echo "$BASE_PKG" | jq -r '(.dependencies // {}) + (.devDependencies // {})
+              | to_entries[] | select(.value | test("^[~^=]?0\\.")) | .key')
+            RISKY=""
+            for n in $NAMES; do
+              if echo "$ZERO" | grep -qxF "$n"; then RISKY="$RISKY $n"; fi
+            done
+            [ -n "$RISKY" ] && REASON="0.x package:$RISKY"
           fi
+
           if [ -n "$REASON" ]; then
             echo "merge=false" >> "$GITHUB_OUTPUT"
             echo "Held for manual review: $REASON" | tee -a "$GITHUB_STEP_SUMMARY"
           else
             echo "merge=true" >> "$GITHUB_OUTPUT"
-            echo "Auto-merging ($UPDATE_TYPE)" | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "Auto-merging ($UPDATE_TYPE): $(echo $NAMES)" | tee -a "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Merge and rebuild site
