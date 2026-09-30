@@ -4,6 +4,8 @@
 // Sheet row and a link to the original email. Also lists items auto-published this week.
 // Signed links come from scripts/ingest/links.js (shared with the per-run action email);
 // the sender display name comes from Settings from_name.
+// Step 7D: a one-line pipeline status from the latest Health row (daily diagnostic),
+// listing any problems and flagging the row if it is older than HEALTH_STALE_HOURS.
 'use strict';
 
 const g = require('../ingest/google');
@@ -12,6 +14,7 @@ const { signedLink, linksEnabled, LINK_DAYS } = require('../ingest/links');
 const TZ = 'Europe/London';
 const AUTO_LOOKBACK_DAYS = 7;  // "auto-published this week" window
 const LOW_CONFIDENCE = 0.5;
+const HEALTH_STALE_HOURS = 30; // diagnostic runs daily ~05:40 UK; digest 07:03
 
 const C = { green: '#3F5233', cream: '#F6F1E4', orange: '#C0703A', red: '#A33B2B', grey: '#666666' };
 
@@ -24,6 +27,14 @@ const truthy = (v) => String(v).trim().toUpperCase() === 'TRUE';
 
 function londonDate(ms) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(ms); // YYYY-MM-DD
+}
+
+// Same format the diagnostic writes to Health.date: "YYYY-MM-DD HH:MM" (UK time).
+function londonStamp(ms) {
+  const t = new Intl.DateTimeFormat('en-GB', {
+    timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).format(ms);
+  return `${londonDate(ms)} ${t}`;
 }
 
 function longDate(ymd) {
@@ -49,6 +60,35 @@ function whenOf(item) {
   return [longDate(item.event_date), item.event_time].filter(Boolean).join(', ');
 }
 
+/* --------------------------------------------------------------- health -- */
+
+// Latest Health row as { line, problems, level }. Never throws: the digest must
+// still send if the Health tab is missing or unreadable.
+async function readHealth() {
+  let rows;
+  try {
+    rows = await g.readTable('Health');
+  } catch (e) {
+    return { line: `Pipeline health: Health tab unreadable (${String(e && e.message || e).slice(0, 120)}).`, problems: [], level: 'bad', tag: 'unreadable' };
+  }
+  const last = rows.filter((r) => String(r.date || '').trim()).pop();
+  if (!last) return { line: 'Pipeline health: no Health rows yet (daily diagnostic has not recorded a run).', problems: [], level: 'bad', tag: 'no data' };
+
+  const date = String(last.date).trim();
+  const status = String(last.status || '').trim().toUpperCase() || 'UNKNOWN';
+  const summary = String(last.summary || '').trim() || status;
+  const problems = String(last.problems || '').split(' | ').map((p) => p.trim()).filter(Boolean);
+  // RAW strings in "YYYY-MM-DD HH:MM" UK time compare correctly as text.
+  const valid = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(date);
+  const stale = !valid || date < londonStamp(Date.now() - HEALTH_STALE_HOURS * 3600000);
+
+  let line = `Pipeline health (${date}): ${summary}`;
+  if (stale) line += `. STALE: latest check is over ${HEALTH_STALE_HOURS}h old, so the daily diagnostic may not be running.`;
+  const level = (stale || status === 'PROBLEMS' || problems.length) ? 'bad' : (status === 'OK' ? 'ok' : 'warn');
+  const tag = stale ? 'stale' : (level === 'bad' ? 'PROBLEMS' : '');
+  return { line, problems, level, tag };
+}
+
 /* ----------------------------------------------------------------- HTML -- */
 
 function button(href, label, bg) {
@@ -58,6 +98,15 @@ function button(href, label, bg) {
 
 function textLink(href, label) {
   return `<a href="${esc(href)}" style="color:${C.green};margin-right:14px;font-size:14px;">${esc(label)}</a>`;
+}
+
+function healthHtml(h) {
+  const colour = { ok: C.green, warn: C.orange, bad: C.red }[h.level];
+  const list = h.problems.length
+    ? `<ul style="margin:6px 0 0 18px;padding:0;">${h.problems.map((p) => `<li>${esc(p)}</li>`).join('')}</ul>`
+    : '';
+  return `<div style="margin-top:10px;padding:8px 12px;background:#ffffff;border-left:4px solid ${colour};`
+    + `border-radius:4px;font-size:13px;color:#2b2b2b;"><span style="color:${colour};font-weight:bold;">${esc(h.line)}</span>${list}</div>`;
 }
 
 function itemHtml(item, sheetRowUrl) {
@@ -85,7 +134,7 @@ function itemHtml(item, sheetRowUrl) {
 </td></tr>`;
 }
 
-function buildHtml({ pending, auto, holiday, rowUrl, dateLabel }) {
+function buildHtml({ pending, auto, holiday, rowUrl, dateLabel, health }) {
   const intro = pending.length
     ? `${pending.length} item${pending.length === 1 ? '' : 's'} to review. Each button opens a confirm page; nothing changes until you confirm.`
     : 'Nothing awaiting approval this week.';
@@ -104,6 +153,7 @@ function buildHtml({ pending, auto, holiday, rowUrl, dateLabel }) {
       <tr><td style="padding:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;">
         <div style="font-size:22px;font-weight:bold;color:${C.green};">Lenches digest</div>
         <div style="font-size:14px;color:${C.grey};">${esc(dateLabel)}</div>
+        ${healthHtml(health)}
         ${holiday ? `<div style="margin-top:8px;font-size:14px;color:${C.orange};font-weight:bold;">Holiday mode is ON: only items that always need a human decision are listed.</div>` : ''}
         <div style="margin-top:10px;font-size:15px;color:#2b2b2b;">${esc(intro)}</div>
       </td></tr>
@@ -118,8 +168,10 @@ function buildHtml({ pending, auto, holiday, rowUrl, dateLabel }) {
 </body></html>`;
 }
 
-function buildText({ pending, auto, holiday, rowUrl, dateLabel }) {
-  const out = [`Lenches digest, ${dateLabel}`, ''];
+function buildText({ pending, auto, holiday, rowUrl, dateLabel, health }) {
+  const out = [`Lenches digest, ${dateLabel}`, '', health.line];
+  health.problems.forEach((p) => out.push(`- ${p}`));
+  out.push('');
   if (holiday) out.push('Holiday mode is ON: only items that always need a human decision are listed.', '');
   out.push(pending.length ? `${pending.length} item(s) to review.` : 'Nothing awaiting approval this week.', '');
   for (const i of pending) {
@@ -154,10 +206,11 @@ async function main() {
   if (!linksEnabled()) throw new Error('APPROVAL_SIGNING_KEY or WORKER_URL is not set');
   const to = process.env.DIGEST_TO || process.env.GMAIL_USER;
 
-  const [rows, { settings }, gid] = await Promise.all([
+  const [rows, { settings }, gid, health] = await Promise.all([
     g.readTable('Pending'),
     g.readSettings(),
     g.getSheetGid('Pending'),
+    readHealth(),
   ]);
   const holiday = truthy(settings.holiday_mode);
   const base = `https://docs.google.com/spreadsheets/d/${g.spreadsheetId()}/edit`;
@@ -173,11 +226,12 @@ async function main() {
 
   const today = londonDate(Date.now());
   const dateLabel = longDate(today);
-  const subject = pending.length
+  const healthTag = health.tag ? ` [health: ${health.tag}]` : '';
+  const subject = (pending.length
     ? `Lenches digest: ${pending.length} to review (${dateLabel})`
-    : `Lenches digest: nothing to review (${dateLabel})`;
+    : `Lenches digest: nothing to review (${dateLabel})`) + healthTag;
 
-  const ctx = { pending, auto, holiday, rowUrl, dateLabel };
+  const ctx = { pending, auto, holiday, rowUrl, dateLabel, health };
   const id = await g.sendMail({
     to,
     subject,
@@ -185,7 +239,7 @@ async function main() {
     html: buildHtml(ctx),
     fromName: g.fromNameFor(settings),
   });
-  console.log(`Digest sent to ${to}: ${pending.length} to review, ${auto.length} auto-published. Gmail id ${id}.`);
+  console.log(`Digest sent to ${to}: ${pending.length} to review, ${auto.length} auto-published. ${health.line} Gmail id ${id}.`);
 }
 
 main().catch((err) => {
