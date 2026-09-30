@@ -2,9 +2,10 @@
 
 Used by scripts/ingest/replies.js. Each "## key" section is one block of the reply.
 Placeholders in {braces} are filled in by code. Keep blocks as plain text (no Markdown
-formatting): they are sent as the email body. Never use a personal name.
-Keep in step with src/_includes/guidelines.md. Don't rename or remove a key: the code
-needs every one of them.
+formatting): they are sent as the email body. Never use a team member's name: the only
+name used is Holly, the website assistant (see voice.md).
+Keep in step with src/_includes/guidelines.md and scripts/replies/voice.md. Don't rename
+or remove a key: the code needs every one of them.
 
 ## greeting
 Hello,
@@ -51,4 +52,6 @@ You can find our submission guidelines on the Contact page: {guidelines_url}
 
 ## signature
 Best wishes,
+Holly
+The Lenches website assistant, on behalf of
 The Lenches Website and Newsletter Team
