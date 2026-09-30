@@ -1,0 +1,35 @@
+# Dependabot (step 7F). Monthly checks; PRs are built and gated by
+# .github/workflows/dependabot-check.yml, which auto-merges only safe bumps.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: monthly
+      time: "06:00"
+      timezone: Europe/London
+    # Wait a week after a release before proposing it (lets bad releases get pulled).
+    cooldown:
+      default-days: 7
+    # Patch and minor bumps arrive together in one PR; each major bump gets its own PR.
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+
+  # Action versions in workflow files. Never auto-merged: those PRs edit
+  # .github/workflows/, which stays a manual step.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+      time: "06:00"
+      timezone: Europe/London
+    groups:
+      actions:
+        patterns: ["*"]
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "actions"
