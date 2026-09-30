@@ -1,0 +1,103 @@
+name: Dependabot check
+
+# Step 7F. Builds every PR into main. For Dependabot npm PRs that pass, merges
+# patch/minor bumps automatically; majors, 0.x minors and action updates wait
+# for me. Checking and merging are separate jobs, so the new package code
+# (npm ci) never runs alongside a token that can write to the repo.
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dependabot-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Build site (no secrets; newsletters.js uses its cache)
+        run: npx @11ty/eleventy
+
+      - name: Smoke-test pipeline packages
+        run: |
+          node -e "
+            require('@anthropic-ai/sdk');
+            require('googleapis');
+            const sharp = require('sharp');
+            sharp({ create: { width: 4, height: 4, channels: 3, background: '#ffffff' } })
+              .webp().toBuffer()
+              .then(() => console.log('SDK, googleapis and sharp OK'))
+              .catch(e => { console.error(e); process.exit(1); });
+          "
+
+  merge:
+    needs: check
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    steps:
+      - id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Decide
+        id: decide
+        env:
+          ECOSYSTEM: ${{ steps.meta.outputs.package-ecosystem }}
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
+          DEPS: ${{ steps.meta.outputs.updated-dependencies-json }}
+        run: |
+          REASON=""
+          if [ "$ECOSYSTEM" != "npm_and_yarn" ]; then
+            REASON="not an npm update ($ECOSYSTEM)"
+          elif [ "$UPDATE_TYPE" != "version-update:semver-patch" ] && \
+               [ "$UPDATE_TYPE" != "version-update:semver-minor" ]; then
+            REASON="update type is $UPDATE_TYPE"
+          else
+            # On 0.x packages a minor bump can break things (0.0.x: any bump).
+            RISKY=$(echo "$DEPS" | jq -r '[.[]
+              | (.prevVersion // "") as $p
+              | select(($p | startswith("0.0.")) or
+                       (($p | startswith("0.")) and .updateType == "version-update:semver-minor"))
+              | "\(.dependencyName) \($p) -> \(.newVersion)"] | join(", ")')
+            [ -n "$RISKY" ] && REASON="0.x minor bump: $RISKY"
+          fi
+          if [ -n "$REASON" ]; then
+            echo "merge=false" >> "$GITHUB_OUTPUT"
+            echo "Held for manual review: $REASON" | tee -a "$GITHUB_STEP_SUMMARY"
+          else
+            echo "merge=true" >> "$GITHUB_OUTPUT"
+            echo "Auto-merging ($UPDATE_TYPE)" | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Merge and rebuild site
+        if: steps.decide.outputs.merge == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          gh pr merge "$PR_URL" --squash --delete-branch
+          # A GITHUB_TOKEN merge doesn't trigger build.yml, so start it explicitly.
+          gh workflow run build.yml --ref main
