@@ -8,10 +8,14 @@
 //
 // Tokens: GITHUB_TOKEN (actions: write) for runs, re-runs, job logs, re-enabling;
 // DISPATCH_TOKEN (checked for validity; opens issues; keep-alive commit).
+//
+// RSS: fetches each enabled feed itself (ingestion's fetch warnings are console-only).
+// Problems only from the Settings start_date on; before that, notes only.
 'use strict';
 
 const fs = require('fs');
 const tls = require('tls');
+const crypto = require('crypto');
 const dns = require('dns').promises;
 const { google } = require('googleapis');
 const g = require('../ingest/google');
@@ -199,7 +203,9 @@ async function checkGmail() {
 
 async function checkSheets(ctx) {
   try {
-    ctx.settings = (await g.readSettings()).settings;
+    const s = await g.readSettings();
+    ctx.settings = s.settings;
+    ctx.sources = s.sources;
     ctx.sheetsOk = true;
   } catch (e) {
     problem('Google Sheets: access failed', errText(e));
@@ -411,6 +417,86 @@ async function checkBounces() {
   if (bounces) stats.bounces = `${bounces} subscriber bounce(s)/2d`;
 }
 
+/* ------------------------------------------------------------ RSS feeds -- */
+
+const RSS_DEFAULT_SILENT_DAYS = 14;   // Settings column D "silent_days" overrides per feed
+const RSS_INGEST_GRACE_MS = DAY;      // ingestion reads feeds 3x daily, max 10 items per run
+const RSS_FETCH_TIMEOUT_MS = 20000;
+const RSS_USER_AGENT = 'LenchesPipeline/1.0 (+https://thelenches.org.uk)'; // as ingestion
+const rssMarkers = [];                // "RSS fetch failed: <source>", kept at the front of Health notes
+
+// Same key formula as scripts/ingest/rss.js logKey.
+const rssKey = (guid) => `rss:${crypto.createHash('sha1').update(guid).digest('hex').slice(0, 16)}`;
+const sheetMs = (s) => Date.parse(`${String(s || '').trim().replace(' ', 'T')}:00Z`);
+
+// Per enabled feed: fetch failing two days running; items older than 24h with no Log row
+// (ingestion broken); no new items for silent_days (source gone quiet).
+// Before the start date everything goes to notes only, never problems.
+async function checkRss(ctx, prevNotes) {
+  const feeds = (ctx.sources || []).filter((s) => /^https?:\/\//i.test(s.match) && s.mode !== 'ignore');
+  if (!feeds.length) return;
+  const ymd = String((ctx.settings && ctx.settings.start_date) || '').trim();
+  const startMs = /^\d{4}-\d{2}-\d{2}$/.test(ymd) ? Date.parse(`${ymd}T00:00:00Z`) : NaN;
+  const live = Number.isFinite(startMs) && Date.now() >= startMs;
+  const report = live ? problem : (text, detail) => notes.push(`(before start) ${text}${detail ? `: ${detail}` : ''}`);
+  const { parseFeed } = require('../ingest/rss');
+
+  const [settingsRows, logRows] = await Promise.all([g.readTable('Settings'), g.readTable('Log')]);
+  const logged = new Set();
+  const newestLog = {};
+  for (const r of logRows) {
+    if (!String(r.message_id).startsWith('rss:')) continue;
+    logged.add(r.message_id);
+    const t = sheetMs(r.received);
+    if (Number.isFinite(t) && !(newestLog[r.source] >= t)) newestLog[r.source] = t;
+  }
+
+  let fetched = 0;
+  for (const feed of feeds) {
+    const row = settingsRows.find((r) => Object.values(r).some((v) => String(v).trim().toLowerCase() === feed.match));
+    const silentDays = Number(row && row.silent_days) > 0 ? Number(row.silent_days) : RSS_DEFAULT_SILENT_DAYS;
+
+    let items = null;
+    try {
+      const res = await fetch(feed.match, {
+        headers: { 'User-Agent': RSS_USER_AGENT, Accept: 'application/rss+xml, application/xml;q=0.9, */*;q=0.8' },
+        redirect: 'follow',
+        signal: AbortSignal.timeout(RSS_FETCH_TIMEOUT_MS),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      items = parseFeed(await res.text());
+      fetched += 1;
+    } catch (e) {
+      const marker = `RSS fetch failed: ${feed.source}`;
+      rssMarkers.push(marker);
+      notes.push(`${marker} (${errText(e)})`);
+      if (String(prevNotes || '').includes(marker)) report(`RSS ${feed.source}: feed fetch failing 2+ days`, errText(e));
+    }
+
+    let newestFeed = -Infinity;
+    if (items) {
+      const cutoff = Date.now() - RSS_INGEST_GRACE_MS;
+      const missing = [];
+      for (const it of items) {
+        if (!Number.isFinite(it.publishedMs)) continue;
+        newestFeed = Math.max(newestFeed, it.publishedMs);
+        if (it.publishedMs >= startMs && it.publishedMs < cutoff && !logged.has(rssKey(it.guid))) missing.push(it);
+      }
+      if (missing.length) {
+        report(`RSS ${feed.source}: feed items not being ingested`,
+          `${missing.length} item(s) older than 24h with no Log row, e.g. "${clip(missing[0].title, 80)}"`);
+      }
+    }
+
+    if (live) {
+      const lastSeen = Math.max(startMs, newestFeed, newestLog[feed.source] ?? -Infinity);
+      const quiet = Math.floor((Date.now() - lastSeen) / DAY);
+      if (quiet >= silentDays) problem(`RSS ${feed.source}: no new items for ${silentDays}+ days`, `last seen ${quiet} days ago`);
+    }
+  }
+  stats.rss = `RSS ${fetched}/${feeds.length} fetched`;
+}
+
 /* --------------------------------------------------------------- issues -- */
 
 async function openIssues(newProblems) {
@@ -499,6 +585,7 @@ async function main() {
     await safe('Replies', checkReplies);
     await safe('Pending', countStalePending);
     await safe('Bounces', checkBounces);
+    await safe('RSS', () => checkRss(ctx, prev && prev.notes));
   }
 
   const newProblems = problems.filter((p) => !prevProblems.has(p));
@@ -509,7 +596,7 @@ async function main() {
     status,
     problems.length ? `${problems.length} problem(s)` : '',
     fixes.length ? `${fixes.length} fix(es)` : '',
-    stats.runs, stats.pending, stats.cert, stats.bounces,
+    stats.runs, stats.pending, stats.cert, stats.rss, stats.bounces,
   ].filter(Boolean).join(' · ');
 
   const row = {
@@ -518,7 +605,8 @@ async function main() {
     summary,
     problems: problems.join(' | '),
     fixes: fixes.join(' | '),
-    notes: clip(notes.join(' | '), 1500),
+    // RSS fetch-failure markers first, so clipping can't drop them (tomorrow compares them).
+    notes: clip([...rssMarkers, ...notes].join(' | '), 1500),
   };
 
   let recorded = false;
