@@ -68,6 +68,7 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 
 /* Cards */
 .grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.stack{display:grid;gap:1rem}
 .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:1.25rem}
 .card h3{margin-top:0}
 .card p:last-child{margin-bottom:0}

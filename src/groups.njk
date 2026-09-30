@@ -5,13 +5,14 @@ description: Groups and clubs across the Lenches villages, including pages we ho
 ---
 <main class="container">
 
-  <section>
+  <div class="page-head">
     <h1>Groups &amp; Clubs</h1>
-    <p class="lead">The Lenches punch well above their weight for community life. Below are our local groups — some have their own websites (we link to those), and for others we host their information here.</p>
-  </section>
+    <p class="page-intro">The Lenches punch well above their weight for community life. Below are our local groups — some have their own websites (we link to those), and for others we host their information here.</p>
+  </div>
 
   <section>
     <h2>Groups we host</h2>
+    <div class="stack">
 
     <div class="card" id="glads">
       <h3 class="mt0">GLADS — Great Lenches Amateur Dramatic Society</h3>
@@ -40,6 +41,8 @@ description: Groups and clubs across the Lenches villages, including pages we ho
         <img src="{{ '/images/gazebo-2.jpg' | url }}" alt="Orchard gazebo" loading="lazy">
       </div>
     </div>
+
+    </div>
   </section>
 
   <section>
@@ -49,7 +52,7 @@ description: Groups and clubs across the Lenches villages, including pages we ho
       <div class="card">
         <img class="thumb" src="{{ '/images/club-front.jpg' | url }}" alt="The Lenches Club" loading="lazy">
         <h3 class="mt0">The Lenches Club</h3>
-        <p>The community's social club since 1948, with two bars, sports facilities and one of the best views in the county. The club now has its own website.</p>
+        <p>The community's social club since 1948, with two bars, sports facilities and one of the best views in the county.</p>
         <p><a href="https://thelenchesclub.co.uk/" target="_blank" rel="noopener">Visit the Lenches Club &rarr;</a></p>
       </div>
 
@@ -92,7 +95,7 @@ description: Groups and clubs across the Lenches villages, including pages we ho
   </section>
 
   <section>
-    <div class="placeholder">
+    <div class="notice">
       Run a Lenches group that needs a home online? We're happy to host a page for groups without their own website — email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.
     </div>
   </section>
