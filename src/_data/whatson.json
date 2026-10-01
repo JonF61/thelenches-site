@@ -1,217 +1,271 @@
 {
-"bin": {
-"colours": [
-"#3a6b35",
-"#7a4a12"
-],
-"headline": "This Monday, 3 August — recycling and garden waste.",
-"note": "",
-"lookup": "https://selfservice.wychavon.gov.uk/wdcroundlookup/"
-},
-"events": [
-{
-"date": "2026-09-24",
-"title": "Paint and Pud: Summer of Love — Bishampton",
-"body": "A relaxed evening of guided painting and indulgent desserts on a 'Summer of Love' theme at The Vale Golf Club, Bishampton, from 6.30pm.",
-"link": {
-"text": "More on Vale & Spa",
-"url": "https://www.valeandspa.co.uk/whats-on/event/paint-and-pud-summer-of-love/?start_date=2026-09-24-18:30:00&end_date=2026-09-20-21:30:00"
-}
-},
-{
-"date": "2026-09-25",
-"title": "Broadway Arts Festival Exhibition — Broadway",
-"body": "The festival's annual open art competition and exhibition runs from 25 September to 4 October, showing work by professional and amateur artists across every medium.",
-"link": {
-"text": "More on Visit Evesham",
-"url": "https://www.visitevesham.co.uk/event/broadway-arts-festival-exhibition/"
-}
-},
-{
-"date": "2026-09-27",
-"title": "Evesham Rambling Club Sunday walk — Evesham",
-"body": "A friendly 10-mile Sunday ramble through the villages and along the River Avon, pausing for a picnic lunch; from 10am.",
-"link": {
-"text": "More on Visit Evesham",
-"url": "https://www.visitevesham.co.uk/event/evesham-rambling-club-september-sunday/"
-}
-},
-{
-"date": "2026-10-01",
-"title": "Fleecey Folk: Miguel Girão — Bretforton",
-"body": "Glasgow-based Portuguese musician Miguel Girão brings his exploration of folk traditions to the Fleece Inn, Bretforton, from 8pm.",
-"link": {
-"text": "More on Visit Evesham",
-"url": "https://www.visitevesham.co.uk/event/fleecey-folk-miguel-girao/"
-}
-},
-{
-"date": "2026-10-02",
-"title": "Pub night — Rous Lench Village Hall",
-"body": "The informal village-hall pub nights are back: drop in for a drink and a catch-up with friends and neighbours from 7.30pm. Further dates are 16 October and a family Halloween night on 30 October, all subject to volunteers running the bar."
-},
-{
-"date": "2026-10-03",
-"title": "Pershore Broad Street Market — Pershore",
-"body": "Around 30 stalls of farm-fresh produce, food and crafts — everything grown or made within 10 miles of the town — fill Broad Street from 9am to 2pm.",
-"link": {
-"text": "More on Vale & Spa",
-"url": "https://www.valeandspa.co.uk/whats-on/event/pershore-broad-street-market-2/?start_date=2026-10-03-09:00:00&end_date=2026-10-03-14:00:00"
-}
-},
-{
-"date": "2026-10-03",
-"title": "Krapp's Last Tape — David Westhead",
-"body": "Acclaimed actor David Westhead performs Samuel Beckett's one-man classic, followed by a Q&A, from 7pm.",
-"link": {
-"text": "More on Visit Evesham",
-"url": "https://www.visitevesham.co.uk/event/krapps-last-tape-by-samuel-beckett-qa-with-david-westhead/"
-}
-},
-{
-"date": "2026-10-04",
-"title": "Harvest services — Church Lench and Norton & Lenchwick",
-"body": "Harvest Eucharists at Norton & Lenchwick at 10am, followed by a harvest lunch at 12.30pm, and at All Saints', Church Lench, at 11am, followed by the harvest lunch in the village hall.",
-"link": {
-"text": "More in the ARCH Messenger",
-"url": "https://www.archbenefice.org.uk/content/pages/documents/september-arch-messenger-online-edition-1-.pdf"
-}
-},
-{
-"date": "2026-10-04",
-"title": "Harvest Lunch — Church Lench Village Hall",
-"body": "Church Lench Village Hall hosts a two-course Harvest Lunch with a licensed bar and raffle, 12.15 for a 12.30 sit-down; £15 per person. Tickets from Lyndall (871925), Celia (870147) or Nadine (woakesn@hotmail.com).",
-"link": {
-"text": "Tickets: email Nadine",
-"url": "mailto:woakesn@hotmail.com"
-}
-},
-{
-"date": "2026-10-07",
-"title": "Chitty Chitty Bang Bang — Evesham",
-"body": "Phoenix Theatre Group stage the family musical based on Ian Fleming's story at The Henrician, Evesham, with evening performances from 7 to 10 October.",
-"link": {
-"text": "More on Vale & Spa",
-"url": "https://www.valeandspa.co.uk/whats-on/event/chitty-chitty-bang-bang/?start_date=2026-10-07-19:30:00&end_date=2026-10-10-22:00:00"
-}
-},
-{
-"date": "2026-10-08",
-"title": "Open morning and evening — Church Lench First School",
-"body": "Families looking for a place for 2027–28 can visit the school, meet staff and pupils and look around: open morning 9.30–10.30am, open evening 6–7pm. Book on 01386 870297 or office@churchlench.worcs.sch.uk.",
-"link": {
-"text": "Email the school office",
-"url": "mailto:office@churchlench.worcs.sch.uk"
-}
-},
-{
-"date": "2026-10-09",
-"title": "Apple & Ale — Bretforton",
-"body": "The Fleece Inn's annual cider-making weekend and real ale festival returns to the Bretforton orchard, with music, morris and merry-making from Friday 9 October.",
-"link": {
-"text": "More on Vale & Spa",
-"url": "https://www.valeandspa.co.uk/whats-on/event/apple-ale/?start_date=2026-10-09-11:00:00&end_date=2026-11-11-23:00:00"
-}
-},
-{
-"date": "2026-10-11",
-"title": "Harvest service — Harvington",
-"body": "Harvest service at St James the Great, Harvington, at 11am, followed by a bring-and-share lunch.",
-"link": {
-"text": "More in the ARCH Messenger",
-"url": "https://www.archbenefice.org.uk/content/pages/documents/september-arch-messenger-online-edition-1-.pdf"
-}
-},
-{
-"date": "2026-10-13",
-"title": "Fleecey Folk: Breabach — Bretforton",
-"body": "Award-winning Scottish folk band Breabach bring their acclaimed live show to the Fleece Inn, Bretforton, from 8pm.",
-"link": {
-"text": "More on Visit Evesham",
-"url": "https://www.visitevesham.co.uk/event/fleecey-folk-breabach/"
-}
-},
-{
-"date": "2026-10-15",
-"title": "An Evening with Mike Tindall — Bishampton",
-"body": "Former England rugby World Cup winner Mike Tindall shares behind-the-scenes stories from elite sport at The Vale Golf Club, Bishampton, from 6.30pm.",
-"link": {
-"text": "More on Vale & Spa",
-"url": "https://www.valeandspa.co.uk/whats-on/event/an-evening-with-mike-tindall/?start_date=2026-10-15-18:30:00&end_date=2026-10-15-22:30:00"
-}
-}
-],
-"eventsFootnote": "Weekly regulars: yoga at Abbots Morton Village Hall on Mondays (9.45am), Lenches Tennis Club cardio on Tuesdays (6.30pm), tai chi at Abbots Morton on Wednesdays (10am), and candlelight yoga at Rous Lench Village Hall on Thursdays (6.30pm). Sunday services continue across the ARCH benefice churches at Harvington, Rous Lench, Abbots Morton, Church Lench and Norton & Lenchwick.",
-"news": [
-{
-"title": "Save the dates: harvest suppers and services later in October",
-"body": "Abbots Morton Village Hall's harvest supper is on Friday 16 October at 6.30pm: a pork roast with apple pie or crumble, bring your own drinks; contact Pippa at pippa@p1g.co.uk. St Peter's, Abbots Morton, holds its harvest service of thanksgiving on Sunday 18 October at 11am. Rous Lench Village Hall's harvest supper follows on Saturday 24 October at 7pm, with two courses (vegetarian option on request), games and a bar; tickets £15 from Fran at herdmanfrances@gmail.com, proceeds to St Peter's Church. Rous Lench's harvest service is on Sunday 25 October at 10am.",
-"link": {
-"text": "More in the ARCH Messenger",
-"url": "https://www.archbenefice.org.uk/content/pages/documents/september-arch-messenger-online-edition-1-.pdf"
-}
-},
-{
-"title": "From tees to trees: Harvington Wood takes shape",
-"body": "The Heart of England Forest has begun turning the former 47-hectare golf course at Manor Farm, Anchor Lane, Harvington, into woodland, wetland and wildflower meadow, with new footpaths to explore. Work started in August and is due to finish in April 2027, with 35,000 trees and 340 metres of new hedgerow planned. Low-lying areas will become wet woodland, and old bunkers and drains are being reshaped to hold water and slow flooding.",
-"link": {
-"text": "Register for updates",
-"url": "https://heartofenglandforest.org/harvington"
-}
-},
-{
-"title": "Harvington Youth Project: weekly groups are back",
-"body": "New-term groups meet at Harvington Baptist Chapel, £1 entry with a tuck shop: Adventurers (ages 7–10) on Thursdays 6.30–7.45pm, Explorers (10–13) on Tuesdays 6.30–8pm, and Ignite (13+) on Mondays 7–8.30pm. New volunteers are always welcome."
-},
-{
-"title": "Flower festivals bloom for village funds",
-"body": "Church Lench's Flower Festival in June, themed 'A Walk Through History' with scarecrows, 11 open gardens and music, drew hundreds of visitors and raised almost £4,000. Abbots Morton's festival made a profit of more than £500, rounded off with beer and a bouncy castle on the green."
-},
-{
-"title": "Tougher penalties for fly-tipping proposed",
-"body": "Wychavon District Council is set to consider much tougher penalties for fly-tippers, with the maximum fixed penalty rising from £1,000 to £5,000 — welcome news across the rural lanes of the Lenches, where dumped waste is a recurring problem.",
-"link": {
-"text": "More from Evesham Observer",
-"url": "https://eveshamobserver.co.uk/news/fly-tippers-in-wychavon-set-to-face-much-tougher-penalties-64447/"
-}
-},
-{
-"title": "Cricket club: new players welcome",
-"body": "With the season just ended, the club is already looking ahead — players of all ages and abilities are wanted, whether experienced, returning or brand new. Contact Venky on 07442 772470 or Charlie on 07775 660065."
-}
-],
-"notices": [
-{
-"title": "Road closures at Church Lench",
-"body": "Atch Lench Road and Low Road, Church Lench, are closed until 16 October for National Grid works, with diversions in place — allow extra time when travelling locally.",
-"link": {
-"text": "Check on one.network",
-"url": "https://one.network/"
-}
-},
-{
-"title": "Severn Trent update — South Lenches",
-"body": "South Lenches Parish Council reports the persistent Evesham Road and Hipton Hill leaks are down to the old water main, which Severn Trent must decommission before the flow can stop; timing is still to be confirmed. Further planned works follow at Hill Furze Road, Sheriffs Lench (13–26 October) and Handgate Lane (27 October–29 November)."
-},
-{
-"title": "Autumn tennis lessons for all ages",
-"body": "The Tennis Club, with new partner Encompass Coaching, is running tennis lessons for children and adults this autumn — a good chance to brush up your game or start a new one.",
-"link": {
-"text": "Book with Encompass",
-"url": "https://www.encompasscoaching.co.uk/the-lenches-booking"
-}
-},
-{
-"title": "Lenches Ladies welcomes new members",
-"body": "The Lenches Ladies meet on the second Tuesday evening of each month from September to July for talks, demonstrations, crafts, outings and socials, organised in turn by members. Newcomers to the area are especially welcome."
-},
-{
-"title": "Caring Hands foodbank",
-"body": "Please add an extra item or two to your weekly shop for Caring Hands: toilet rolls, toiletries and tinned or dried goods are always needed. Donation boxes are in the benefice's parish churches."
-},
-{
-"title": "Newsletter deadline",
-"body": "Got something for next week? Send it to website@thelenches.org.uk by the end of Wednesday."
-}
-]
+  "bin": {
+    "colours": [
+      "#3a6b35",
+      "#7a4a12"
+    ],
+    "headline": "This Monday, 3 August — recycling and garden waste.",
+    "note": "",
+    "lookup": "https://selfservice.wychavon.gov.uk/wdcroundlookup/"
+  },
+  "events": [
+    {
+      "date": "2026-10-01",
+      "title": "Broadway Arts Festival Exhibition — Broadway",
+      "body": "The festival's open art competition and exhibition, featuring professional and amateur artists working in every medium, is on until Sunday 4 October.",
+      "link": {
+        "text": "More on Visit Evesham",
+        "url": "https://www.visitevesham.co.uk/event/broadway-arts-festival-exhibition/"
+      }
+    },
+    {
+      "date": "2026-10-01",
+      "title": "Fleecey Folk: Miguel Girão — Bretforton",
+      "body": "Glasgow-based Portuguese musician Miguel Girão brings his exploration of folk traditions to the Fleece Inn, Bretforton, from 8pm.",
+      "link": {
+        "text": "More on Visit Evesham",
+        "url": "https://www.visitevesham.co.uk/event/fleecey-folk-miguel-girao/"
+      }
+    },
+    {
+      "date": "2026-10-02",
+      "title": "Pub night — Rous Lench Village Hall",
+      "body": "The informal village-hall pub nights are back: drop in for a drink and a catch-up with friends and neighbours from 7.30pm. Further dates are 16 October and a family Halloween night on 30 October, all subject to volunteers running the bar."
+    },
+    {
+      "date": "2026-10-03",
+      "title": "Pershore Broad Street Market — Pershore",
+      "body": "Around 30 stalls of farm-fresh produce, food and crafts — everything grown or made within 10 miles of the town — fill Broad Street from 9am to 2pm.",
+      "link": {
+        "text": "More on Vale & Spa",
+        "url": "https://www.valeandspa.co.uk/whats-on/event/pershore-broad-street-market-2/?start_date=2026-10-03-09:00:00&end_date=2026-10-03-14:00:00"
+      }
+    },
+    {
+      "date": "2026-10-03",
+      "title": "Krapp's Last Tape — David Westhead",
+      "body": "Acclaimed actor David Westhead performs Samuel Beckett's one-man classic, followed by a Q&A, from 7pm.",
+      "link": {
+        "text": "More on Visit Evesham",
+        "url": "https://www.visitevesham.co.uk/event/krapps-last-tape-by-samuel-beckett-qa-with-david-westhead/"
+      }
+    },
+    {
+      "date": "2026-10-04",
+      "title": "Harvest services — Church Lench and Norton & Lenchwick",
+      "body": "Harvest Eucharists at Norton & Lenchwick at 10am, followed by a harvest lunch at 12.30pm, and at All Saints', Church Lench, at 11am, followed by the harvest lunch in the village hall.",
+      "link": {
+        "text": "More in the ARCH Messenger",
+        "url": "https://www.archbenefice.org.uk/content/pages/documents/september-arch-messenger-online-edition-1-.pdf"
+      }
+    },
+    {
+      "date": "2026-10-04",
+      "title": "Harvest Lunch — Church Lench Village Hall",
+      "body": "Church Lench Village Hall hosts a two-course Harvest Lunch with a licensed bar and raffle, 12.15 for a 12.30 sit-down; £15 per person. Tickets from Lyndall (871925), Celia (870147) or Nadine (woakesn@hotmail.com).",
+      "link": {
+        "text": "Tickets: email Nadine",
+        "url": "mailto:woakesn@hotmail.com"
+      }
+    },
+    {
+      "date": "2026-10-07",
+      "title": "Chitty Chitty Bang Bang — Evesham",
+      "body": "Phoenix Theatre Group stage the family musical based on Ian Fleming's story at The Henrician, Evesham, with evening performances from 7 to 10 October.",
+      "link": {
+        "text": "More on Vale & Spa",
+        "url": "https://www.valeandspa.co.uk/whats-on/event/chitty-chitty-bang-bang/?start_date=2026-10-07-19:30:00&end_date=2026-10-10-22:00:00"
+      }
+    },
+    {
+      "date": "2026-10-08",
+      "title": "Open morning and evening — Church Lench First School",
+      "body": "Families looking for a place for 2027–28 can visit the school, meet staff and pupils and look around: open morning 9.30–10.30am, open evening 6–7pm. Book on 01386 870297 or office@churchlench.worcs.sch.uk.",
+      "link": {
+        "text": "Email the school office",
+        "url": "mailto:office@churchlench.worcs.sch.uk"
+      }
+    },
+    {
+      "date": "2026-10-09",
+      "title": "Apple & Ale — Bretforton",
+      "body": "The Fleece Inn's annual cider-making weekend and real ale festival returns to the Bretforton orchard, with music, morris and merry-making from Friday 9 October.",
+      "link": {
+        "text": "More on Vale & Spa",
+        "url": "https://www.valeandspa.co.uk/whats-on/event/apple-ale/?start_date=2026-10-09-11:00:00&end_date=2026-11-11-23:00:00"
+      }
+    },
+    {
+      "date": "2026-10-10",
+      "title": "Evesham Head rowing race — Evesham",
+      "body": "Crews from across the region race against the clock along the River Avon through Evesham from 10am — a good spectacle from the riverbank.",
+      "link": {
+        "text": "More on Visit Evesham",
+        "url": "https://www.visitevesham.co.uk/event/evesham-head-rowing-race-event/"
+      }
+    },
+    {
+      "date": "2026-10-11",
+      "title": "Harvest service — Harvington",
+      "body": "Harvest service at St James the Great, Harvington, at 11am, followed by a bring-and-share lunch.",
+      "link": {
+        "text": "More in the ARCH Messenger",
+        "url": "https://www.archbenefice.org.uk/content/pages/documents/september-arch-messenger-online-edition-1-.pdf"
+      }
+    },
+    {
+      "date": "2026-10-13",
+      "title": "Fleecey Folk: Breabach — Bretforton",
+      "body": "Award-winning Scottish folk band Breabach bring their acclaimed live show to the Fleece Inn, Bretforton, from 8pm.",
+      "link": {
+        "text": "More on Visit Evesham",
+        "url": "https://www.visitevesham.co.uk/event/fleecey-folk-breabach/"
+      }
+    },
+    {
+      "date": "2026-10-15",
+      "title": "An Evening with Mike Tindall — Bishampton",
+      "body": "Former England rugby World Cup winner Mike Tindall shares behind-the-scenes stories from elite sport at The Vale Golf Club, Bishampton, from 6.30pm.",
+      "link": {
+        "text": "More on Vale & Spa",
+        "url": "https://www.valeandspa.co.uk/whats-on/event/an-evening-with-mike-tindall/?start_date=2026-10-15-18:30:00&end_date=2026-10-15-22:30:00"
+      }
+    },
+    {
+      "date": "2026-10-16",
+      "title": "An Evening with Phil Taylor — darts legend",
+      "body": "Sixteen-time world darts champion Phil 'The Power' Taylor tells the story of his career in an evening talk from 6pm; see the listing for venue and tickets.",
+      "link": {
+        "text": "More on Visit Evesham",
+        "url": "https://www.visitevesham.co.uk/event/an-evening-with-phil-taylor-my-life-in-darts/"
+      }
+    },
+    {
+      "date": "2026-10-17",
+      "title": "Evesham Festival of Words: Autumnfest",
+      "body": "The festival's autumn programme gets under way with a day of author and speaker talks, including novelist Rachel Sargeant, a travel talk by Amelia Dalton and a journey through George Orwell's life.",
+      "link": {
+        "text": "More on Visit Evesham",
+        "url": "https://www.visitevesham.co.uk/event/from-perfect-to-ordinary/"
+      }
+    },
+    {
+      "date": "2026-10-17",
+      "title": "Macready! Dickens' Theatrical Friend",
+      "body": "Mark Stratford's one-man show brings to life the Victorian actor-manager William Macready and his friendship with Charles Dickens, from 7.30pm.",
+      "link": {
+        "text": "More on Visit Evesham",
+        "url": "https://www.visitevesham.co.uk/event/macready-dickens-theatrical-friend/"
+      }
+    },
+    {
+      "date": "2026-10-18",
+      "title": "The Cavern Beatles — Regal, Evesham",
+      "body": "The Cavern Club-endorsed tribute band recreate the Beatles' sound live on stage at the Regal, Evesham, from 7pm.",
+      "link": {
+        "text": "More on Visit Evesham",
+        "url": "https://www.visitevesham.co.uk/event/the-cavern-beatles-live-on-stage/"
+      }
+    },
+    {
+      "date": "2026-10-20",
+      "title": "Fleecey Folk: Chris While & Julie Matthews — Bretforton",
+      "body": "One of British folk's best-loved duos play the Fleece Inn, Bretforton, from 8pm.",
+      "link": {
+        "text": "More on Visit Evesham",
+        "url": "https://www.visitevesham.co.uk/event/fleecey-folk-chris-while-julie-matthews/"
+      }
+    },
+    {
+      "date": "2026-10-22",
+      "title": "Evesham Comedy Club with Angela Barnes",
+      "body": "Host Matt Richardson introduces a line-up of touring comics, headlined by Angela Barnes.",
+      "link": {
+        "text": "More on Visit Evesham",
+        "url": "https://www.visitevesham.co.uk/event/evesham-comedy-club-with-angela-barnes/"
+      }
+    },
+    {
+      "date": "2026-10-23",
+      "title": "Psychic Night for Dingley's Promise — Evesham",
+      "body": "An evening of mediumship with stalls, refreshments and a raffle at Wallace House, Oat Street, from 7pm, raising funds for a charity supporting under-fives with SEND.",
+      "link": {
+        "text": "Book on TicketSource",
+        "url": "https://www.ticketsource.com/fotu-events/psychic-night-in-aid-of-dingleys-promise/e-vglbvy"
+      }
+    }
+  ],
+  "eventsFootnote": "Weekly regulars: yoga at Abbots Morton Village Hall on Mondays (9.45am), Lenches Tennis Club cardio on Tuesdays (6.30pm), tai chi at Abbots Morton on Wednesdays (10am), and candlelight yoga at Rous Lench Village Hall on Thursdays (6.30pm). Sunday services continue across the ARCH benefice churches at Harvington, Rous Lench, Abbots Morton, Church Lench and Norton & Lenchwick.",
+  "news": [
+    {
+      "title": "Save the dates: harvest suppers and services later in October",
+      "body": "Abbots Morton Village Hall's harvest supper is on Friday 16 October at 6.30pm: a pork roast with apple pie or crumble, bring your own drinks; contact Pippa at pippa@p1g.co.uk. St Peter's, Abbots Morton, holds its harvest service of thanksgiving on Sunday 18 October at 11am. Rous Lench Village Hall's harvest supper follows on Saturday 24 October at 7pm, with two courses (vegetarian option on request), games and a bar; tickets £15 from Fran at herdmanfrances@gmail.com, proceeds to St Peter's Church. Rous Lench's harvest service is on Sunday 25 October at 10am.",
+      "link": {
+        "text": "More in the ARCH Messenger",
+        "url": "https://www.archbenefice.org.uk/content/pages/documents/september-arch-messenger-online-edition-1-.pdf"
+      }
+    },
+    {
+      "title": "From tees to trees: Harvington Wood takes shape",
+      "body": "The Heart of England Forest has begun turning the former 47-hectare golf course at Manor Farm, Anchor Lane, Harvington, into woodland, wetland and wildflower meadow, with new footpaths to explore. Work started in August and is due to finish in April 2027, with 35,000 trees and 340 metres of new hedgerow planned. Low-lying areas will become wet woodland, and old bunkers and drains are being reshaped to hold water and slow flooding.",
+      "link": {
+        "text": "Register for updates",
+        "url": "https://heartofenglandforest.org/harvington"
+      }
+    },
+    {
+      "title": "Harvington Youth Project: weekly groups are back",
+      "body": "New-term groups meet at Harvington Baptist Chapel, £1 entry with a tuck shop: Adventurers (ages 7–10) on Thursdays 6.30–7.45pm, Explorers (10–13) on Tuesdays 6.30–8pm, and Ignite (13+) on Mondays 7–8.30pm. New volunteers are always welcome."
+    },
+    {
+      "title": "Evesham horticultural supplier in administration",
+      "body": "BHGS, the growing-supplies firm at Vale Park, Evesham, has gone into administration after a run of losses, but is still trading while administrators look for investment or a buyer.",
+      "link": {
+        "text": "More from Evesham Observer",
+        "url": "https://eveshamobserver.co.uk/news/evesham-horticultural-supplier-goes-into-administration/"
+      }
+    }
+  ],
+  "notices": [
+    {
+      "title": "Road closures at Church Lench",
+      "body": "Atch Lench Road and Low Road, Church Lench, are closed until 16 October for National Grid works, with diversions in place — allow extra time when travelling locally.",
+      "link": {
+        "text": "Check on one.network",
+        "url": "https://one.network/"
+      }
+    },
+    {
+      "title": "Road closures nearby",
+      "body": "Planned closures in surrounding villages: Perry Mill Road and St Nicholas Road, Peopleton (2–15 October, resurfacing); Windmill Lane, Inkberrow (5–8 October); Church Lane, White Ladies Aston (5–7 October); and Church End and Church Lane, Bishampton (7–10 October, Openreach).",
+      "link": {
+        "text": "Check on one.network",
+        "url": "https://one.network/"
+      }
+    },
+    {
+      "title": "Severn Trent update — South Lenches",
+      "body": "South Lenches Parish Council reports the persistent Evesham Road and Hipton Hill leaks are down to the old water main, which Severn Trent must decommission before the flow can stop; timing is still to be confirmed. Further planned works follow at Hill Furze Road, Sheriffs Lench (13–26 October) and Handgate Lane (27 October–29 November)."
+    },
+    {
+      "title": "Autumn tennis lessons for all ages",
+      "body": "The Tennis Club, with new partner Encompass Coaching, is running tennis lessons for children and adults this autumn — a good chance to brush up your game or start a new one.",
+      "link": {
+        "text": "Book with Encompass",
+        "url": "https://www.encompasscoaching.co.uk/the-lenches-booking"
+      }
+    },
+    {
+      "title": "Lenches Ladies welcomes new members",
+      "body": "The Lenches Ladies meet on the second Tuesday evening of each month from September to July for talks, demonstrations, crafts, outings and socials, organised in turn by members. Newcomers to the area are especially welcome."
+    },
+    {
+      "title": "Caring Hands foodbank",
+      "body": "Please add an extra item or two to your weekly shop for Caring Hands: toilet rolls, toiletries and tinned or dried goods are always needed. Donation boxes are in the benefice's parish churches."
+    },
+    {
+      "title": "Newsletter deadline",
+      "body": "Got something for next week? Send it to website@thelenches.org.uk by the end of Wednesday."
+    }
+  ]
 }
