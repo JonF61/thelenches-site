@@ -1,22 +1,28 @@
 name: Newsletter build and send
 
-# Step 5b. action "build" (default): builds the issue and sends ONLY the test copy
-# (Settings test_to) and the preview (Settings preview_to).
-# action "send": scripts/newsletter/send.js, as Settings newsletter_mode says
-# (off / shadow / canary / live). canary and live need "Confirm recipient count".
-# Manual only for now; Worker cron triggers come in part 3.
+# Step 5b. Fired by the Cloudflare Worker (repository_dispatch "newsletter"):
+# Thu 06:30 build, 08:00 autosend, 12:00 + 17:00 remind; Send and Rebuild buttons
+# in the preview. Also runnable by hand (Run workflow).
+#   build     build the issue; send ONLY the test copy and the preview (with buttons)
+#   send      scripts/newsletter/send.js, as Settings newsletter_mode says
+#   autosend  does nothing unless holiday mode is on AND newsletter_mode is live
+#   remind    emails the preview address if the issue still needs you
 on:
+  repository_dispatch:
+    types: [newsletter]
   workflow_dispatch:
     inputs:
       action:
-        description: "build = build, test and preview; send = send as Settings newsletter_mode says"
+        description: "build / send / remind / autosend"
         type: choice
         options:
           - build
           - send
+          - remind
+          - autosend
         default: build
       issue_date:
-        description: "Issue date YYYY-MM-DD (build: blank = the coming Thursday; send: required)"
+        description: "Issue date YYYY-MM-DD (build/remind: blank = default; send: required)"
         required: false
         default: ""
       shadow:
@@ -31,58 +37,73 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: newsletter
-  cancel-in-progress: false
+env:
+  GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+  APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
+  WORKER_URL: https://approvals.lenches.workers.dev
+  SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+  GMAIL_USER: jon@thelenches.org.uk
+  ISSUE_DATE: ${{ github.event.client_payload.issue_date || inputs.issue_date }}
 
 jobs:
   build:
-    if: inputs.action != 'send'
+    if: (github.event.client_payload.action || inputs.action || 'build') == 'build'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: newsletter-build
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Build issue, send test and preview
+        run: node scripts/newsletter/index.js
+        env:
+          SHADOW: ${{ inputs.shadow }}
+
+  send:
+    if: contains(fromJSON('["send","autosend"]'), github.event.client_payload.action || inputs.action || 'build')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    concurrency:
+      group: newsletter-send
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Send (mode from Settings newsletter_mode)
+        run: node scripts/newsletter/send.js
+        env:
+          CONFIRM_COUNT: ${{ github.event.client_payload.confirm_count || inputs.confirm_count }}
+          EXPECT_HASH: ${{ github.event.client_payload.expect_hash }}
+          EXPECT_MODE: ${{ github.event.client_payload.expect_mode }}
+          AUTOSEND: ${{ (github.event.client_payload.action || inputs.action) == 'autosend' }}
+          RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+
+  remind:
+    if: (github.event.client_payload.action || inputs.action || 'build') == 'remind'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
         with:
           ref: main
-
       - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
-
       - run: npm ci --no-audit --no-fund
-
-      - name: Build issue, send test and preview
-        run: node scripts/newsletter/index.js
-        env:
-          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
-          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
-          GMAIL_USER: jon@thelenches.org.uk
-          ISSUE_DATE: ${{ inputs.issue_date }}
-          SHADOW: ${{ inputs.shadow }}
-
-  send:
-    if: inputs.action == 'send'
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: main
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
-          cache: npm
-
-      - run: npm ci --no-audit --no-fund
-
-      - name: Send (mode from Settings newsletter_mode)
-        run: node scripts/newsletter/send.js
-        env:
-          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
-          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
-          GMAIL_USER: jon@thelenches.org.uk
-          ISSUE_DATE: ${{ inputs.issue_date }}
-          CONFIRM_COUNT: ${{ inputs.confirm_count }}
-          RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Reminder if not sent
+        run: node scripts/newsletter/remind.js
