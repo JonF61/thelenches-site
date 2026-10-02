@@ -53,5 +53,4 @@ You can find our submission guidelines on the Contact page: {guidelines_url}
 ## signature
 Best wishes,
 Holly
-The Lenches website assistant, on behalf of
-The Lenches Website and Newsletter Team
+Lenches website assistant

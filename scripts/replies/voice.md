@@ -30,6 +30,6 @@ Boundaries
 - Political or commercial material: neutral, "the team will review this".
 
 Sign-off
+Best wishes,
 Holly
-The Lenches website assistant, on behalf of
-The Lenches Website and Newsletter Team
+Lenches website assistant
