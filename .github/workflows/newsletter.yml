@@ -1,19 +1,32 @@
-name: Newsletter build and test
+name: Newsletter build and send
 
-# Step 5b part 1: builds the weekly issue and sends ONLY a test copy
-# (Settings test_to) and a preview (Settings preview_to). Never sends to
-# subscribers. Manual only for now; Worker cron triggers come in part 3.
+# Step 5b. action "build" (default): builds the issue and sends ONLY the test copy
+# (Settings test_to) and the preview (Settings preview_to).
+# action "send": scripts/newsletter/send.js, as Settings newsletter_mode says
+# (off / shadow / canary / live). canary and live need "Confirm recipient count".
+# Manual only for now; Worker cron triggers come in part 3.
 on:
   workflow_dispatch:
     inputs:
+      action:
+        description: "build = build, test and preview; send = send as Settings newsletter_mode says"
+        type: choice
+        options:
+          - build
+          - send
+        default: build
       issue_date:
-        description: "Issue date YYYY-MM-DD (blank = the coming Thursday)"
+        description: "Issue date YYYY-MM-DD (build: blank = the coming Thursday; send: required)"
         required: false
         default: ""
       shadow:
-        description: "Count as shadow issue (MailerLite still sends)"
+        description: "Build only: count as shadow issue (MailerLite still sends)"
         type: boolean
         default: false
+      confirm_count:
+        description: "Send only (canary/live): recipient count, must match exactly"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -24,6 +37,7 @@ concurrency:
 
 jobs:
   build:
+    if: inputs.action != 'send'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -46,3 +60,29 @@ jobs:
           GMAIL_USER: jon@thelenches.org.uk
           ISSUE_DATE: ${{ inputs.issue_date }}
           SHADOW: ${{ inputs.shadow }}
+
+  send:
+    if: inputs.action == 'send'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Send (mode from Settings newsletter_mode)
+        run: node scripts/newsletter/send.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: jon@thelenches.org.uk
+          ISSUE_DATE: ${{ inputs.issue_date }}
+          CONFIRM_COUNT: ${{ inputs.confirm_count }}
+          RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
