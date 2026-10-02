@@ -7,7 +7,14 @@
 //           Sends rows use issue_id "<issue>:canary"; the issue's status is unchanged.
 //   live    real sends to Subscribers minus Do Not Send. Only on/after LIVE_FROM (code).
 // Env: GOOGLE_SA_KEY, SHEET_ID, GMAIL_USER, ISSUE_DATE (required), CONFIRM_COUNT
-// (canary/live: must equal the computed recipient count), RUN_ID (lock owner).
+// (canary/live: must equal the computed recipient count), RUN_ID (lock owner),
+// APPROVAL_SIGNING_KEY + WORKER_URL (per-recipient unsubscribe links).
+// Part 3 (Worker buttons and cron):
+//   EXPECT_HASH / EXPECT_MODE  from the signed Send button: refuse if the tested hash or
+//                              Settings newsletter_mode has changed since the preview.
+//   AUTOSEND=true              Thu 08:00: does nothing unless holiday mode is on AND the
+//                              mode is live; then sends a tested issue with the computed
+//                              count, all other pre-checks unchanged.
 // Safeguards: re-render must match the tested hash; Send-mail-as guard and From re-check
 // (message 1, then every 25th); Sends rows "sending" before and "sent" after each batch;
 // a resume skips sent, marks leftover "sending" as stuck (never resent) and checks Sent;
@@ -18,8 +25,10 @@ const fs = require('fs');
 const path = require('path');
 const { google } = require('googleapis');
 const g = require('../ingest/google');
+const { linksEnabled } = require('../ingest/links');
 const { select } = require('./select');
 const { render } = require('./render');
+const { personalise } = require('./unsub');
 
 const TZ = 'Europe/London';
 const ROOT = path.join(__dirname, '..', '..');
@@ -322,10 +331,12 @@ async function sendAll({ key, targets, issue, fromName, runId, startedMs }) {
       const t0 = Date.now();
       const email = lc(r.email);
       try {
+        // Each recipient gets their own unsubscribe link (footer + one-click header).
+        const mine = personalise(issue, email);
         const id = await g.sendMail({
-          to: email, from: FROM, fromName, subject: issue.subject, html: issue.html, text: issue.text,
+          to: email, from: FROM, fromName, subject: issue.subject, html: mine.html, text: mine.text,
           headers: {
-            'List-Unsubscribe': `<mailto:${FROM}?subject=UNSUBSCRIBE>`,
+            ...mine.headers,
             'Auto-Submitted': 'auto-generated',
             Precedence: 'bulk',
           },
@@ -381,7 +392,10 @@ async function main() {
   const issueDate = str(process.env.ISSUE_DATE);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate)) throw new Error('ISSUE_DATE (YYYY-MM-DD) is required for a send');
   const runId = str(process.env.RUN_ID) || `local-${startedMs}`;
-  const confirm = str(process.env.CONFIRM_COUNT);
+  const confirmIn = str(process.env.CONFIRM_COUNT);
+  const autosend = /^true$/i.test(str(process.env.AUTOSEND));
+  const expectHash = lc(process.env.EXPECT_HASH);
+  const expectMode = lc(process.env.EXPECT_MODE);
 
   const [{ sources, settings }, pending, issues, subscribers, dns, sends, replies, iHeaders, sHeaders, pHeaders] = await Promise.all([
     g.readSettings(), g.readTable('Pending'), g.readTable('Issues'), g.readTable('Subscribers'),
@@ -391,8 +405,12 @@ async function main() {
 
   const mode = lc(settings.newsletter_mode) || 'off';
   if (!MODES.includes(mode)) throw new Error(`Settings newsletter_mode "${mode}" is not one of ${MODES.join('/')}`);
+  if (autosend && mode !== 'live') { console.log(`Auto-send: newsletter_mode is ${mode}, not live. Nothing to do.`); return; }
   if (mode === 'off') throw new Error('Settings newsletter_mode is off: nothing sent');
-  console.log(`Mode: ${mode}. Issue ${issueDate}. Run ${runId}.`);
+  if (expectMode && expectMode !== mode) {
+    throw new Error(`This Send button was made in ${expectMode} mode, but Settings newsletter_mode is now ${mode}: nothing sent. Use Rebuild for a fresh preview.`);
+  }
+  console.log(`Mode: ${mode}${autosend ? ' (holiday auto-send)' : ''}. Issue ${issueDate}. Run ${runId}.`);
 
   const problems = [];
   const missing = (have, need, tab) => need.filter((h) => !have.includes(h)).forEach((h) => problems.push(`${tab} is missing header "${h}"`));
@@ -401,9 +419,20 @@ async function main() {
   missing(pHeaders, PENDING_HEADERS, 'Pending');
   if (problems.length) throw new Error(problems.join('\n'));
 
+  // Re-render now (same inputs as the build): needed for the hash check, and tells
+  // the auto-send whether holiday mode is on.
+  const model = select({
+    issueDate, pending, issues, settings, sources, jpegFor,
+    whatson: readJson('src/_data/whatson.json'),
+    bins: readJson('src/_data/bins.json'),
+  });
+  const issue = render(model);
+  if (autosend && !model.holiday) { console.log('Auto-send: holiday mode is off (you send from the preview). Nothing to do.'); return; }
+
   const row = issues.filter((r) => str(r.issue_id) === issueDate).pop();
   if (!row) throw new Error(`No Issues row for ${issueDate}: run the build first`);
   const status = lc(row.status);
+  if (autosend && ['sent', 'sending'].includes(status)) { console.log(`Auto-send: issue is already ${status}. Nothing to do.`); return; }
 
   if (status === 'sent') {
     if (mode === 'live' && !str(row.counts_applied_at)) { await applyCounts(issueDate); return; }
@@ -412,19 +441,18 @@ async function main() {
   if (status === 'aborted') throw new Error(`Issue ${issueDate} is aborted: check Sends and notes before doing anything else`);
   if (status === 'sending' && mode !== 'live') throw new Error(`Issue ${issueDate} is mid-send: only live mode can resume it`);
   if (!['tested', 'shadow', 'sending'].includes(status)) problems.push(`Issue status is "${status || 'blank'}"; needs tested or shadow (run the build first)`);
+  if (autosend && status !== 'tested') problems.push(`Auto-send needs status tested, found "${status}"`);
 
-  // Same content as the tested copy?
-  const model = select({
-    issueDate, pending, issues, settings, sources, jpegFor,
-    whatson: readJson('src/_data/whatson.json'),
-    bins: readJson('src/_data/bins.json'),
-  });
-  const issue = render(model);
+  // Same content as the tested copy (and as the preview the Send button came from)?
   if (issue.hash !== str(row.content_hash)) {
     problems.push(`Content changed since the test (now ${issue.hash.slice(0, 12)}, tested ${str(row.content_hash).slice(0, 12)}): rebuild and re-test`);
   }
+  if (expectHash && !lc(row.content_hash).startsWith(expectHash)) {
+    problems.push('This Send button is for an older build of the issue: use the Send button in the latest preview');
+  }
   if (model.empty) problems.push('Issue is empty');
   if (mode === 'live' && (today < LIVE_FROM || issueDate < LIVE_FROM)) problems.push(`Live sends are blocked in code before ${LIVE_FROM}`);
+  if (mode !== 'shadow' && !linksEnabled()) problems.push('APPROVAL_SIGNING_KEY or WORKER_URL is missing: unsubscribe links cannot be made');
   try { await assertSendAs(); } catch (err) { problems.push(errMsg(err)); }
 
   // Recipients.
@@ -439,8 +467,9 @@ async function main() {
 
   const key = mode === 'canary' ? `${issueDate}:canary` : issueDate;
   const targets = mode === 'canary' ? canaryList(settings.canary_to, problems) : full.list;
+  const confirm = autosend ? String(targets.length) : confirmIn;
   if (mode !== 'shadow') {
-    if (confirm !== String(targets.length)) problems.push(`Confirm recipient count: you entered "${confirm}", the computed count is ${targets.length}`);
+    if (confirm !== String(targets.length)) problems.push(`Confirm recipient count: you entered "${confirm}", the computed count is ${targets.length} (if someone unsubscribed since the preview, Rebuild for a fresh Send button)`);
   }
   const already = new Set(sends.filter((r) => str(r.issue_id) === key && lc(r.status) !== 'queued').map((r) => lc(r.email)));
   const toSend = targets.filter((e) => !already.has(e)).length;
@@ -470,7 +499,7 @@ async function main() {
 
   const fromName = g.fromNameFor(settings);
   const res = await sendAll({ key, targets, issue, fromName, runId, startedMs });
-  const summary = `${mode} ${stamp()}: ${res.sent} sent, ${res.failed} failed, ${res.stuck} stuck, ${res.queued} queued`;
+  const summary = `${mode}${autosend ? ' (auto)' : ''} ${stamp()}: ${res.sent} sent, ${res.failed} failed, ${res.stuck} stuck, ${res.queued} queued`;
   console.log(summary + (res.stop ? ` (stopped: ${res.stop})` : ''));
 
   if (res.fromRewritten) {

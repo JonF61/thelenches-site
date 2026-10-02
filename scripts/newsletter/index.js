@@ -1,11 +1,12 @@
 // scripts/newsletter/index.js
 // Builds the weekly issue "The Lenches Newsletter" and sends ONLY:
 //   - a test copy, exactly as subscribers would see it, to Settings test_to
-//   - a preview copy (banner + issue) to Settings preview_to
-// Nothing goes to subscribers from this script (step 5b part 1).
-// Env: GOOGLE_SA_KEY, SHEET_ID, GMAIL_USER; optional ISSUE_DATE (YYYY-MM-DD,
-// default the coming Thursday, UK time) and SHADOW ("true" marks the issue "shadow",
-// which counts like "sent" for the appearance limits during the MailerLite overlap).
+//   - a preview copy (banner with signed Send / Rebuild / Approve / Reject buttons, then
+//     the issue) to Settings preview_to
+// Nothing goes to subscribers from this script; the Send button runs send.js.
+// Env: GOOGLE_SA_KEY, SHEET_ID, GMAIL_USER, APPROVAL_SIGNING_KEY, WORKER_URL; optional
+// ISSUE_DATE (YYYY-MM-DD, default the coming Thursday, UK time) and SHADOW ("true" marks
+// the issue "shadow", which counts like "sent" for the appearance limits).
 // Issues tab: one row per issue; a rebuild of the same issue updates its row.
 'use strict';
 
@@ -14,6 +15,8 @@ const path = require('path');
 const g = require('../ingest/google');
 const { select } = require('./select');
 const { render, wrapPreview } = require('./render');
+const { personalise, forPreview } = require('./unsub');
+const { buttons } = require('./actions');
 
 const TZ = 'Europe/London';
 const ROOT = path.join(__dirname, '..', '..');
@@ -69,8 +72,9 @@ async function main() {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate)) throw new Error(`ISSUE_DATE must be YYYY-MM-DD, got "${issueDate}"`);
   const shadow = /^true$/i.test(str(process.env.SHADOW));
 
-  const [{ sources, settings }, pending, issues] = await Promise.all([
+  const [{ sources, settings }, pending, issues, subscribers, dns] = await Promise.all([
     g.readSettings(), g.readTable('Pending'), g.readTable('Issues'),
+    g.readTable('Subscribers'), g.readTable('Do Not Send'),
   ]);
   const testTo = recipient(settings.test_to, TEST_ALLOWED, 'test_to');
   const previewTo = recipient(settings.preview_to, PREVIEW_ALLOWED, 'preview_to');
@@ -119,27 +123,21 @@ async function main() {
   try {
     await assertSendAs();
     const fromName = g.fromNameFor(settings);
+    const test = personalise(issue, testTo);
     await sendChecked({
-      to: testTo, subject: issue.subject, html: issue.html, text: issue.text, fromName,
-      headers: {
-        'List-Unsubscribe': `<mailto:${FROM}?subject=UNSUBSCRIBE>`,
-        'Auto-Submitted': 'auto-generated',
-        Precedence: 'bulk',
-      },
+      to: testTo, subject: issue.subject, html: test.html, text: test.text, fromName,
+      headers: { ...test.headers, 'Auto-Submitted': 'auto-generated', Precedence: 'bulk' },
     });
     console.log(`Test copy sent to ${testTo}.`);
 
     const status = shadow ? 'shadow' : 'tested';
-    const pendingTitles = pending
-      .filter((r) => str(r.status).toLowerCase() === 'pending' && str(r.title))
-      .map((r) => str(r.title))
-      .sort();
-    const preview = wrapPreview(issue, { testTo, status, pendingTitles });
+    const actions = buttons({ issueDate, hash: issue.hash, settings, subscribers, dns, pending });
+    const preview = wrapPreview(forPreview(issue), { testTo, status, ...actions });
     await sendChecked({
       to: previewTo, subject: preview.subject, html: preview.html, text: preview.text, fromName,
       headers: { 'Auto-Submitted': 'auto-generated' },
     });
-    console.log(`Preview sent to ${previewTo}.`);
+    console.log(`Preview sent to ${previewTo}${actions.send ? ` (button: ${actions.send.label})` : ' (no Send button)'}.`);
 
     await g.updateRow('Issues', rowNumber, {
       status,

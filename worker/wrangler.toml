@@ -1,4 +1,4 @@
-# Cloudflare Worker: approval links and watchdog.
+# Cloudflare Worker: approval links, newsletter buttons, unsubscribe, schedule, watchdog.
 # Deployed by .github/workflows/deploy-worker.yml; secrets DISPATCH_TOKEN and
 # APPROVAL_SIGNING_KEY are pushed from GitHub secrets at deploy time.
 name = "approvals"
@@ -7,12 +7,17 @@ compatibility_date = "2026-09-01"
 workers_dev = true
 
 [triggers]
-# Watchdog every 3 hours (UTC).
-crons = ["23 */3 * * *"]
+# 1. Watchdog every 3 hours (UTC).
+# 2. Every 30 min on Wed/Thu (UTC): the Worker converts to UK time and fires the
+#    digest (Wed 18:30) and newsletter build/auto-send/reminders (Thu 06:30, 08:00,
+#    12:00, 17:00). Keep both strings identical to WATCHDOG_CRON / SCHEDULE_CRON in src.
+crons = ["23 */3 * * *", "0,30 * * * 3,4"]
 
 [vars]
 REPO = "JonF61/thelenches-site"
 SITE_URL = "https://thelenches.org.uk/"
+# Kill switch for the Wed/Thu schedule: set to "off" and commit to pause it.
+SCHEDULE = "on"
 
 [observability]
 enabled = true

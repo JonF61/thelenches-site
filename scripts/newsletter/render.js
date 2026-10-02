@@ -3,11 +3,14 @@
 // deterministic: no clock, no randomness; the content hash covers all three.
 // Layout: the mock-up agreed 2 Oct 2026. 600px table, inline CSS, site palette
 // (src/style.css :root), JPEG images hosted on the site.
+// The footer's unsubscribe link is UNSUB_MARK in the hashed content; unsub.js swaps in
+// each recipient's own link at send time (step 5b part 3).
 'use strict';
 
 const crypto = require('crypto');
 
 const SITE = 'https://thelenches.org.uk';
+const UNSUB_MARK = '%%UNSUBSCRIBE_URL%%';
 const LINKS = {
   site: `${SITE}/`,
   archive: `${SITE}/archive/`,
@@ -18,7 +21,7 @@ const LINKS = {
 const C = {
   green: '#3F5233', greenDark: '#2E3D26', greenLight: '#EFE7D3', ink: '#2E2A1F',
   muted: '#5B5240', accentText: '#9A5312', cream: '#F6F1E4', paper: '#FBF8F1',
-  card: '#ffffff', line: '#DCCFAE', accent: '#C0703A',
+  card: '#ffffff', line: '#DCCFAE', accent: '#C0703A', red: '#A33B2B',
 };
 const SANS = 'Arial,Helvetica,sans-serif';
 const SERIF = 'Georgia,\'Times New Roman\',serif';
@@ -177,7 +180,7 @@ function renderHtml(m, subject) {
   rows.push(`<tr><td style="padding:20px 0 0;"></td></tr>`);
   rows.push(`<tr><td class="px" style="background:${C.greenDark};color:${cream};padding:16px 24px;font-family:${SANS};font-size:12px;line-height:1.6;">`
     + `Got news for next week? Email ${a(`mailto:${LINKS.submit}`, LINKS.submit, cream)} by 6pm Wednesday.<br>`
-    + `To stop receiving this newsletter, reply with UNSUBSCRIBE.<br>`
+    + `To stop receiving this newsletter, ${a(UNSUB_MARK, 'unsubscribe here', cream)} or reply with UNSUBSCRIBE.<br>`
     + `${a(LINKS.site, 'thelenches.org.uk', cream)} · ${a(LINKS.archive, 'Past issues', cream)} · ${a(LINKS.privacy, 'Privacy', cream)}`
     + `</td></tr>`);
 
@@ -231,7 +234,7 @@ function renderText(m) {
     for (const e of m.elsewhere) out.push(`${e.title} · ${e.link.text}: ${e.link.url}`);
   }
   out.push('', '--', `Got news for next week? Email ${LINKS.submit} by 6pm Wednesday.`,
-    'To stop receiving this newsletter, reply with UNSUBSCRIBE.',
+    `To unsubscribe: ${UNSUB_MARK} (or reply with UNSUBSCRIBE).`,
     `Website: ${LINKS.site}`, `Past issues: ${LINKS.archive}`, `Privacy: ${LINKS.privacy}`, '');
   return out.join('\n').replace(/\n{3,}/g, '\n\n');
 }
@@ -246,26 +249,49 @@ function render(model) {
   return { subject, html, text, hash };
 }
 
-// Preview copy for Jon: a banner above the issue. Never part of the hash.
-// info: { testTo, hash, status, pendingTitles: [] }
+// Signed buttons (actions.js) as HTML and text, for the preview and reminder emails.
+// info: { send, rebuild, pending: [{ title, approve?, reject? }], pendingTotal, note }
+function actionsBlock(info) {
+  const btn = (link, bg) => (link
+    ? `<a href="${esc(link.url)}" style="display:inline-block;margin:6px 8px 0 0;padding:10px 16px;background:${bg};color:#ffffff;font-family:${SANS};font-size:14px;font-weight:bold;border-radius:4px;text-decoration:none;">${esc(link.label)}</a>`
+    : '');
+  const pend = info.pending || [];
+  const total = info.pendingTotal ?? pend.length;
+  const item = (p) => esc(p.title) + (p.approve
+    ? ` · <a href="${esc(p.approve)}" style="color:${C.green};font-weight:bold;">Approve</a>`
+      + ` · <a href="${esc(p.reject)}" style="color:${C.red};font-weight:bold;">Reject</a>`
+    : '');
+  const html = (total
+    ? `<div style="margin-top:8px;"><strong>Awaiting approval (${total}):</strong><br>${pend.map(item).join('<br>')}`
+      + `<div style="color:${C.muted};font-size:12px;">Approvals reach this issue only when you Rebuild.</div></div>`
+    : '<div style="margin-top:8px;">Nothing awaiting approval.</div>')
+    + `<div style="margin-top:10px;">${btn(info.send, C.green)}${btn(info.rebuild, C.accentText)}</div>`
+    + (info.note ? `<div style="margin-top:6px;color:${C.muted};font-size:12px;">${esc(info.note)}</div>` : '');
+  const lines = [total ? `Awaiting approval (${total}; approvals reach this issue only when you Rebuild):` : 'Nothing awaiting approval.'];
+  for (const p of pend) {
+    lines.push(`- ${p.title}`);
+    if (p.approve) lines.push(`  Approve: ${p.approve}`, `  Reject: ${p.reject}`);
+  }
+  if (info.send) lines.push('', `${info.send.label}: ${info.send.url}`);
+  if (info.rebuild) lines.push(`${info.rebuild.label}: ${info.rebuild.url}`);
+  if (info.note) lines.push(info.note);
+  return { html, text: lines.join('\n') };
+}
+
+// Preview copy for Jon: a banner with the buttons above the issue. Never part of the hash.
+// info: { testTo, status, ...actions.buttons() }
 function wrapPreview(rendered, info) {
-  const btn = (label) => `<span style="display:inline-block;margin:4px 6px 0 0;padding:8px 14px;background:#bbbbbb;color:#ffffff;font-family:${SANS};font-size:13px;border-radius:4px;">${esc(label)}</span>`;
-  const pend = info.pendingTitles || [];
-  const pendHtml = pend.length
-    ? `<div style="margin-top:8px;"><strong>Awaiting approval (${pend.length}):</strong><br>${pend.map(esc).join('<br>')}</div>`
-    : '<div style="margin-top:8px;">Nothing awaiting approval.</div>';
+  const block = actionsBlock(info);
   const banner = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="padding:16px 8px 0;">`
     + `<table role="presentation" class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background:#ffffff;border:2px solid ${C.accent};">`
     + `<tr><td style="padding:14px 18px;font-family:${SANS};font-size:13px;line-height:1.5;color:${C.ink};">`
     + `<div style="font-size:15px;font-weight:bold;color:${C.accentText};">PREVIEW: not sent to subscribers</div>`
     + `<div>Test copy sent to ${esc(info.testTo)}. Status: ${esc(info.status)}. Hash ${esc(rendered.hash.slice(0, 12))}.</div>`
-    + pendHtml
-    + `<div style="margin-top:8px;">${btn('Send to N subscribers (part 3)')}${btn('Rebuild with approvals (part 3)')}</div>`
+    + block.html
     + `</td></tr></table></td></tr></table>`;
   const textBanner = ['PREVIEW: not sent to subscribers',
     `Test copy sent to ${info.testTo}. Status: ${info.status}. Hash ${rendered.hash.slice(0, 12)}.`,
-    pend.length ? `Awaiting approval (${pend.length}):\n${pend.join('\n')}` : 'Nothing awaiting approval.',
-    'Send / Rebuild buttons arrive in part 3.', '', '========', ''].join('\n');
+    block.text, '', '========', ''].join('\n');
   return {
     subject: `[Preview] ${rendered.subject}`,
     html: rendered.html.replace('<!--PREVIEW-->', banner),
@@ -273,4 +299,4 @@ function wrapPreview(rendered, info) {
   };
 }
 
-module.exports = { render, wrapPreview, dateParts };
+module.exports = { render, wrapPreview, actionsBlock, dateParts, UNSUB_MARK };

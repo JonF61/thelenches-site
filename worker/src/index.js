@@ -1,11 +1,17 @@
 // worker/src/index.js
 // Lenches approvals Worker.
 //   GET  /a?t=TOKEN  confirm page only (link scanners just GET, so they can't act on anything)
-//   POST /a          verifies the signed token, fires repository_dispatch "approval"
-//   cron             watchdog: ingestion and daily diagnostic still running, site up; alerts via GitHub
-// Actions: approve/reject (Pending items), send/skip (submitter replies awaiting a decision).
-// Single use is enforced downstream: the approval Action only changes rows still
-// "pending" (items) or "awaiting" (replies).
+//   POST /a          verifies the signed token, fires repository_dispatch
+//   GET  /u?t=TOKEN  unsubscribe confirm page (people clicking the footer link)
+//   POST /u?t=TOKEN  one-click unsubscribe (RFC 8058: mail providers POST here) or the
+//                    confirm page's button; fires repository_dispatch "unsubscribe"
+//   cron WATCHDOG_CRON  ingestion and daily diagnostic still running, site up; alerts via GitHub
+//   cron SCHEDULE_CRON  UK-time schedule: Wed 18:30 digest; Thu 06:30 newsletter build,
+//                       08:00 auto-send (does nothing unless holiday mode + live), 12:00
+//                       and 17:00 reminders. A failed dispatch raises a watchdog alert.
+// Actions: approve/reject (Pending items), send/skip (submitter replies), nlsend/nlbuild
+// (newsletter Send and Rebuild buttons). Single use and every send safeguard are enforced
+// downstream: the Worker only passes signed requests on to GitHub.
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -13,6 +19,18 @@ const dec = new TextDecoder();
 const INGEST_STALE_HOURS = 9;        // ingestion pauses overnight for about 7 hours
 const DIAGNOSTIC_STALE_HOURS = 30;   // daily run, plus slack for GitHub cron delays
 const ISSUE_TITLE = 'Watchdog alert';
+const WATCHDOG_CRON = '23 */3 * * *';
+const SCHEDULE_CRON = '0,30 * * * 3,4';
+const NL_MODES = ['shadow', 'canary', 'live'];
+
+// UK times. payload(date) gets the UK date (YYYY-MM-DD) of the slot.
+const SLOTS = [
+  { dow: 'Wed', hm: '18:30', event: 'digest', payload: () => ({}) },
+  { dow: 'Thu', hm: '06:30', event: 'newsletter', payload: (d) => ({ action: 'build', issue_date: d }) },
+  { dow: 'Thu', hm: '08:00', event: 'newsletter', payload: (d) => ({ action: 'autosend', issue_date: d }) },
+  { dow: 'Thu', hm: '12:00', event: 'newsletter', payload: (d) => ({ action: 'remind', issue_date: d }) },
+  { dow: 'Thu', hm: '17:00', event: 'newsletter', payload: (d) => ({ action: 'remind', issue_date: d }) },
+];
 
 // action -> [confirm verb, done word, button class]
 const ACTIONS = {
@@ -20,6 +38,9 @@ const ACTIONS = {
   reject: ['Reject', 'Rejected', 'reject'],
   send: ['Send reply', 'Reply queued to send', 'approve'],
   skip: ['Skip reply', 'Reply skipped', 'reject'],
+  nlsend: ['Send newsletter', 'Send started', 'approve'],
+  nlbuild: ['Rebuild newsletter', 'Rebuild started', 'approve'],
+  unsub: ['Unsubscribe', 'Unsubscribed', 'reject'],
 };
 
 /* -------------------------------------------------------------- helpers -- */
@@ -27,11 +48,26 @@ const ACTIONS = {
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
 ));
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function b64urlToBytes(s) {
   const b64 = s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4);
   const bin = atob(b64);
   return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+}
+
+function validPayload(p) {
+  if (!p || !Object.prototype.hasOwnProperty.call(ACTIONS, p.a)) return false;
+  if (!/^[A-Za-z0-9_-]{1,100}$/.test(String(p.i || ''))) return false;
+  if (p.a === 'nlsend' || p.a === 'nlbuild') {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(p.i)) return false;
+  }
+  if (p.a === 'nlsend') {
+    if (!/^[0-9a-f]{12,64}$/.test(String(p.h || ''))) return false;
+    if (!Number.isInteger(p.n) || p.n < 0 || p.n > 5000) return false;
+    if (!NL_MODES.includes(p.m)) return false;
+  }
+  return true;
 }
 
 // Returns the payload, { expired: true }, or null if the token is invalid.
@@ -56,8 +92,7 @@ async function verifyToken(token, secret) {
   } catch {
     return null;
   }
-  if (!payload || !Object.prototype.hasOwnProperty.call(ACTIONS, payload.a)) return null;
-  if (!/^[A-Za-z0-9_-]{1,100}$/.test(String(payload.i || ''))) return null;
+  if (!validPayload(payload)) return null;
   if (!payload.e || payload.e < Date.now() / 1000) return { expired: true };
   return payload;
 }
@@ -75,6 +110,7 @@ h1{color:#3F5233;font-size:1.3rem;margin-top:0}
 button{font-size:1rem;padding:12px 24px;border:0;border-radius:8px;color:#fff;cursor:pointer}
 .approve{background:#3F5233}.reject{background:#A33B2B}
 .muted{color:#666;font-size:.9rem}
+.warn{color:#A33B2B;font-weight:bold}
 </style></head><body><main>${bodyHtml}</main></body></html>`;
   return new Response(html, {
     status,
@@ -90,7 +126,9 @@ button{font-size:1rem;padding:12px 24px;border:0;border-radius:8px;color:#fff;cu
 const invalidPage = () => page('Invalid link',
   '<h1>Invalid link</h1><p>This link is not valid. Please use the buttons in the latest email.</p>', 400);
 const expiredPage = () => page('Link expired',
-  '<h1>Link expired</h1><p>This link has expired. Nothing has changed; the row is still in the Sheet.</p>', 410);
+  '<h1>Link expired</h1><p>This link has expired. Nothing has changed.</p>', 410);
+const failedPage = () => page('Something went wrong',
+  '<h1>Something went wrong</h1><p>GitHub did not accept the request. Please try again in a few minutes; nothing has changed.</p>', 502);
 
 function github(env, path, init = {}) {
   return fetch(`https://api.github.com${path}`, {
@@ -105,7 +143,51 @@ function github(env, path, init = {}) {
   });
 }
 
+// repository_dispatch with retries. Returns true on HTTP 204.
+async function dispatch(env, eventType, clientPayload, tries = 1) {
+  let last = '';
+  for (let n = 1; n <= tries; n += 1) {
+    try {
+      const r = await github(env, `/repos/${env.REPO}/dispatches`, {
+        method: 'POST', body: JSON.stringify({ event_type: eventType, client_payload: clientPayload }),
+      });
+      if (r.status === 204) return true;
+      last = `HTTP ${r.status} ${(await r.text()).slice(0, 200)}`;
+    } catch (e) {
+      last = e.message;
+    }
+    if (n < tries) await sleep(3000 * n);
+  }
+  console.error(`Dispatch "${eventType}" failed: ${last}`);
+  return false;
+}
+
+function dispatchFor(p) {
+  if (p.a === 'nlsend') {
+    return ['newsletter', {
+      action: 'send', issue_date: p.i, confirm_count: String(p.n), expect_hash: p.h, expect_mode: p.m,
+    }];
+  }
+  if (p.a === 'nlbuild') return ['newsletter', { action: 'build', issue_date: p.i }];
+  return ['approval', { id: p.i, action: p.a }];
+}
+
 /* ------------------------------------------------------------ approvals -- */
+
+function confirmExtra(p) {
+  if (p.a === 'nlsend' && p.m === 'live') {
+    return '<p class="warn">This emails every subscriber. It cannot be undone.</p>';
+  }
+  if (p.a === 'nlsend') return `<p class="muted">Mode: ${esc(p.m)}. No subscriber receives anything in this mode.</p>`;
+  if (p.a === 'nlbuild') return '<p class="muted">Builds the issue again with any approvals, then sends a new test copy and preview. Older Send buttons stop working.</p>';
+  return '';
+}
+
+function doneText(p) {
+  if (p.a === 'nlsend') return 'Started. GitHub emails you if any safety check refuses it; the Issues and Sends tabs show progress.';
+  if (p.a === 'nlbuild') return 'Started. A new test copy and preview should arrive in a few minutes.';
+  return 'Recorded. If this had already been decided, nothing changes.';
+}
 
 async function handleApproval(request, env) {
   const url = new URL(request.url);
@@ -113,15 +195,16 @@ async function handleApproval(request, env) {
   if (request.method === 'GET') {
     const token = url.searchParams.get('t');
     const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
-    if (!p) return invalidPage();
+    if (!p || p.a === 'unsub') return invalidPage();
     if (p.expired) return expiredPage();
     const [verb, , cls] = ACTIONS[p.a];
     return page(verb, `
 <h1>${esc(verb)}?</h1>
 <p><strong>${esc(p.t || p.i)}</strong></p>
+${confirmExtra(p)}
 <form method="post" action="/a">
   <input type="hidden" name="t" value="${esc(token)}">
-  <button class="${cls}" type="submit">${esc(verb)}</button>
+  <button class="${cls}" type="submit">${esc(p.a === 'nlsend' ? (p.t || verb) : verb)}</button>
 </form>
 <p class="muted">${esc(p.i)}</p>`);
   }
@@ -134,26 +217,88 @@ async function handleApproval(request, env) {
       return invalidPage();
     }
     const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
-    if (!p) return invalidPage();
+    if (!p || p.a === 'unsub') return invalidPage();
     if (p.expired) return expiredPage();
 
-    const res = await github(env, `/repos/${env.REPO}/dispatches`, {
-      method: 'POST',
-      body: JSON.stringify({ event_type: 'approval', client_payload: { id: p.i, action: p.a } }),
-    });
-    if (res.status !== 204) {
-      console.error(`Dispatch failed: HTTP ${res.status} ${await res.text()}`);
-      return page('Something went wrong',
-        '<h1>Something went wrong</h1><p>GitHub did not accept the request. Please try again in a few minutes; nothing has changed.</p>', 502);
-    }
+    const [eventType, payload] = dispatchFor(p);
+    if (!(await dispatch(env, eventType, payload, 2))) return failedPage();
     const [, done] = ACTIONS[p.a];
     return page(done, `
 <h1>${esc(done)}</h1>
 <p><strong>${esc(p.t || p.i)}</strong></p>
-<p>Recorded. If this had already been decided, nothing changes.</p>`);
+<p>${esc(doneText(p))}</p>`);
   }
 
   return new Response('Method not allowed', { status: 405 });
+}
+
+/* ---------------------------------------------------------- unsubscribe -- */
+
+async function handleUnsubscribe(request, env) {
+  const url = new URL(request.url);
+  const expired = () => page('Link expired',
+    '<h1>Link expired</h1><p>This unsubscribe link has expired. Reply UNSUBSCRIBE to any newsletter and we will remove you.</p>', 410);
+
+  if (request.method === 'GET') {
+    const token = url.searchParams.get('t');
+    const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
+    if (!p || (!p.expired && p.a !== 'unsub')) return invalidPage();
+    if (p.expired) return expired();
+    return page('Unsubscribe', `
+<h1>Unsubscribe from The Lenches Newsletter?</h1>
+<p>You will stop receiving the weekly email. You can rejoin at any time by emailing website@thelenches.org.uk.</p>
+<form method="post" action="/u?t=${esc(token)}">
+  <button class="reject" type="submit">Unsubscribe</button>
+</form>`);
+  }
+
+  if (request.method === 'POST') {
+    // One-click POSTs carry the token in the URL (body "List-Unsubscribe=One-Click").
+    let token = url.searchParams.get('t');
+    if (!token) {
+      try { token = (await request.formData()).get('t'); } catch { token = ''; }
+    }
+    const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
+    if (!p || (!p.expired && p.a !== 'unsub')) return invalidPage();
+    if (p.expired) return expired();
+    if (!(await dispatch(env, 'unsubscribe', { id: p.i }, 2))) return failedPage();
+    return page('Unsubscribed', `
+<h1>You're unsubscribed</h1>
+<p>You won't receive The Lenches Newsletter any more. It can take a few minutes to take effect.</p>`);
+  }
+
+  return new Response('Method not allowed', { status: 405 });
+}
+
+/* ------------------------------------------------------------- schedule -- */
+
+function ukNow(ms) {
+  const p = {};
+  for (const x of new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/London', weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).formatToParts(ms)) p[x.type] = x.value;
+  return { dow: p.weekday, date: `${p.year}-${p.month}-${p.day}`, hm: `${p.hour}:${p.minute}` };
+}
+
+async function runSchedule(env, ms) {
+  if (String(env.SCHEDULE || 'on').toLowerCase() !== 'on') {
+    console.log('Schedule is switched off (wrangler.toml SCHEDULE).');
+    return;
+  }
+  const uk = ukNow(ms);
+  for (const s of SLOTS.filter((x) => x.dow === uk.dow && x.hm === uk.hm)) {
+    const payload = s.payload(uk.date);
+    const ok = await dispatch(env, s.event, payload, 3);
+    console.log(`${uk.dow} ${uk.hm} UK: ${s.event} ${JSON.stringify(payload)} ${ok ? 'dispatched' : 'FAILED'}`);
+    if (!ok) {
+      try {
+        await report(env, [`Scheduled ${s.event}${payload.action ? ` (${payload.action})` : ''} at ${uk.hm} UK could not be sent to GitHub`]);
+      } catch (e) {
+        console.error(`Reporting failed: ${e.message}`);
+      }
+    }
+  }
 }
 
 /* ------------------------------------------------------------- watchdog -- */
@@ -268,10 +413,12 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === '/a') return handleApproval(request, env);
+    if (url.pathname === '/u') return handleUnsubscribe(request, env);
     return new Response('Lenches approvals', { headers: { 'content-type': 'text/plain' } });
   },
 
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(watchdog(env));
+    if (event.cron === SCHEDULE_CRON) ctx.waitUntil(runSchedule(env, event.scheduledTime));
+    else ctx.waitUntil(watchdog(env));
   },
 };
