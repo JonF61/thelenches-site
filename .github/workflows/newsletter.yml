@@ -1,0 +1,48 @@
+name: Newsletter build and test
+
+# Step 5b part 1: builds the weekly issue and sends ONLY a test copy
+# (Settings test_to) and a preview (Settings preview_to). Never sends to
+# subscribers. Manual only for now; Worker cron triggers come in part 3.
+on:
+  workflow_dispatch:
+    inputs:
+      issue_date:
+        description: "Issue date YYYY-MM-DD (blank = the coming Thursday)"
+        required: false
+        default: ""
+      shadow:
+        description: "Count as shadow issue (MailerLite still sends)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: newsletter
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Build issue, send test and preview
+        run: node scripts/newsletter/index.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: jon@thelenches.org.uk
+          ISSUE_DATE: ${{ inputs.issue_date }}
+          SHADOW: ${{ inputs.shadow }}
