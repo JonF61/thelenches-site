@@ -1,0 +1,29 @@
+name: Unsubscribe (one-click)
+
+# Fired by the Cloudflare Worker's /u endpoint (repository_dispatch "unsubscribe").
+# The payload is an opaque id, never an address: this repo's Actions logs are public.
+on:
+  repository_dispatch:
+    types: [unsubscribe]
+
+permissions:
+  contents: read
+
+jobs:
+  unsubscribe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Add to Do Not Send
+        run: node scripts/newsletter/unsubscribe.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          SUB_ID: ${{ github.event.client_payload.id }}
