@@ -1,6 +1,9 @@
 // scripts/publish/index.js
 // Regenerates src/_data/pipeline.json from approved and auto rows in Pending,
 // and saves each item's image (resized WebP) the first time it is published.
+// Each WebP also gets a JPEG copy (same name, .jpg) for the email newsletter:
+// classic Outlook can't show WebP. Missing JPEGs are made from the WebP, so
+// existing items are backfilled on the next run.
 // Idempotent: safe to run as often as you like; the workflow commits only if files changed.
 // Edits made in the Sheet to a live row (title, summary, link, dates) flow through on the next run.
 // Image overrides in the image_url cell: "none" = no image; clear a "failed: ..." cell to retry.
@@ -63,6 +66,26 @@ async function saveImage(row) {
   return `${IMAGE_URL}/${file}`;
 }
 
+// JPEG copy of a saved item WebP, for the newsletter. Only for our own
+// /images/items/<id>.webp files; anything else (external URLs) is left alone.
+async function ensureJpeg(url, id, failures) {
+  const m = str(url).match(/^\/images\/items\/([A-Za-z0-9_-]{1,100})\.webp$/);
+  if (!m) return;
+  const src = path.join(IMAGE_DIR, `${m[1]}.webp`);
+  const dest = path.join(IMAGE_DIR, `${m[1]}.jpg`);
+  if (fs.existsSync(dest) || !fs.existsSync(src)) return;
+  try {
+    const jpg = await sharp(src)
+      .flatten({ background: '#ffffff' })
+      .jpeg({ quality: 80, mozjpeg: true })
+      .toBuffer();
+    fs.writeFileSync(dest, jpg);
+    console.log(`JPEG copy saved for ${id} (${Math.round(jpg.length / 1024)} KB).`);
+  } catch (err) {
+    failures.push(`${id}: JPEG copy: ${String((err && err.message) || err)}`);
+  }
+}
+
 async function imageFor(row, failures) {
   const current = str(row.image_url);
   if (current.toLowerCase() === 'none' || current.startsWith('failed')) return '';
@@ -118,7 +141,10 @@ async function main() {
     const url = safeUrl(row.link_url);
     if (url) item.link = { text: str(row.link_text) || 'More details', url };
     const img = await imageFor(row, failures);
-    if (img) item.image = { url: img, alt: str(row.alt_text) };
+    if (img) {
+      item.image = { url: img, alt: str(row.alt_text) };
+      await ensureJpeg(img, row.id, failures);
+    }
     out[list].push({ item, start });
   }
 
