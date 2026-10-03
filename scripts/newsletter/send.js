@@ -15,24 +15,23 @@
 //   AUTOSEND=true              Thu 08:00: does nothing unless holiday mode is on AND the
 //                              mode is live; then sends a tested issue with the computed
 //                              count, all other pre-checks unchanged.
-// Safeguards: re-render must match the tested hash; Send-mail-as guard and From re-check
-// (message 1, then every 25th); Sends rows "sending" before and "sent" after each batch;
-// a resume skips sent, marks leftover "sending" as stuck (never resent) and checks Sent;
-// 1,500 per rolling 24h (Sends + Replies); abort if recipients drop >10% vs last issue.
+// Frozen content (3 Oct): sends the issue saved in the Issues "snapshot" column by the
+// build, never a fresh selection, so later ingestion, publishing or edits can't change it.
+// The snapshot must still render to the tested hash (catches newsletter code changes).
+// Safeguards: Send-mail-as guard and From re-check (message 1, then every 25th); Sends
+// rows "sending" before and "sent" after each batch; a resume skips sent, marks leftover
+// "sending" as stuck (never resent) and checks Sent; 1,500 per rolling 24h (Sends +
+// Replies); abort if recipients drop >10% vs last issue.
 'use strict';
 
-const fs = require('fs');
-const path = require('path');
+const zlib = require('zlib');
 const { google } = require('googleapis');
 const g = require('../ingest/google');
 const { linksEnabled } = require('../ingest/links');
-const { select } = require('./select');
 const { render } = require('./render');
 const { personalise } = require('./unsub');
 
 const TZ = 'Europe/London';
-const ROOT = path.join(__dirname, '..', '..');
-const SITE = 'https://thelenches.org.uk';
 const FROM = 'website@thelenches.org.uk';
 const LIVE_FROM = '2026-10-22';
 const DAY_LIMIT = 1500;
@@ -47,13 +46,14 @@ const MODES = ['off', 'shadow', 'canary', 'live'];
 const COUNTED = ['sent', 'shadow'];
 const SENDS_HEADERS = ['issue_id', 'email', 'status', 'started_at', 'sent_at', 'gmail_id', 'run_id', 'notes'];
 const ISSUES_HEADERS = ['issue_id', 'issue_date', 'status', 'content_hash', 'item_keys', 'image_keys',
-  'subject', 'sent_at', 'recipients', 'notes', 'send_run', 'counts_applied_at'];
+  'subject', 'sent_at', 'recipients', 'notes', 'send_run', 'counts_applied_at', 'snapshot'];
 const PENDING_HEADERS = ['id', 'newsletter_count', 'flyer_count'];
 // Lower case only (inputs are lower-cased first). No quotes: sendMail rejects them.
 const ADDRESS_RE = /^[a-z0-9.!#$%&*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}$/;
 
 const str = (v) => String(v ?? '').trim();
 const lc = (v) => str(v).toLowerCase();
+const truthy = (v) => /^(true|yes|y|1)$/i.test(str(v));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const errMsg = (e) => String((e && e.message) || e).replace(/\s+/g, ' ').slice(0, 200);
 const londonDate = (ms) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(ms);
@@ -78,15 +78,13 @@ function minuteKey(v) {
 
 const appendNote = (old, add) => [str(old), add].filter(Boolean).join('; ').slice(-500);
 
-/* ------------------------------------------- same inputs as index.js -- */
-
-function readJson(rel) {
-  return JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
-}
-
-function jpegFor(webpUrl) {
-  const rel = webpUrl.replace(/\.webp$/, '.jpg');
-  return fs.existsSync(path.join(ROOT, 'src', rel)) ? `${SITE}${rel}` : '';
+// The issue as built and tested: deflated JSON (base64) from the Issues "snapshot" cell.
+function loadSnapshot(row) {
+  const b64 = str(row.snapshot);
+  if (!b64) throw new Error('snapshot cell is blank');
+  const model = JSON.parse(zlib.inflateSync(Buffer.from(b64, 'base64')).toString('utf8'));
+  if (!model || model.issueDate !== str(row.issue_id).slice(0, 10)) throw new Error('snapshot is for a different issue');
+  return model;
 }
 
 /* ------------------------------------------------------ Google helpers -- */
@@ -397,8 +395,8 @@ async function main() {
   const expectHash = lc(process.env.EXPECT_HASH);
   const expectMode = lc(process.env.EXPECT_MODE);
 
-  const [{ sources, settings }, pending, issues, subscribers, dns, sends, replies, iHeaders, sHeaders, pHeaders] = await Promise.all([
-    g.readSettings(), g.readTable('Pending'), g.readTable('Issues'), g.readTable('Subscribers'),
+  const [{ settings }, issues, subscribers, dns, sends, replies, iHeaders, sHeaders, pHeaders] = await Promise.all([
+    g.readSettings(), g.readTable('Issues'), g.readTable('Subscribers'),
     g.readTable('Do Not Send'), g.readTable('Sends'), g.readTable('Replies'),
     headersOf('Issues'), headersOf('Sends'), headersOf('Pending'),
   ]);
@@ -406,6 +404,7 @@ async function main() {
   const mode = lc(settings.newsletter_mode) || 'off';
   if (!MODES.includes(mode)) throw new Error(`Settings newsletter_mode "${mode}" is not one of ${MODES.join('/')}`);
   if (autosend && mode !== 'live') { console.log(`Auto-send: newsletter_mode is ${mode}, not live. Nothing to do.`); return; }
+  if (autosend && !truthy(settings.holiday_mode)) { console.log('Auto-send: holiday mode is off (you send from the preview). Nothing to do.'); return; }
   if (mode === 'off') throw new Error('Settings newsletter_mode is off: nothing sent');
   if (expectMode && expectMode !== mode) {
     throw new Error(`This Send button was made in ${expectMode} mode, but Settings newsletter_mode is now ${mode}: nothing sent. Use Rebuild for a fresh preview.`);
@@ -418,16 +417,6 @@ async function main() {
   missing(sHeaders, SENDS_HEADERS, 'Sends');
   missing(pHeaders, PENDING_HEADERS, 'Pending');
   if (problems.length) throw new Error(problems.join('\n'));
-
-  // Re-render now (same inputs as the build): needed for the hash check, and tells
-  // the auto-send whether holiday mode is on.
-  const model = select({
-    issueDate, pending, issues, settings, sources, jpegFor,
-    whatson: readJson('src/_data/whatson.json'),
-    bins: readJson('src/_data/bins.json'),
-  });
-  const issue = render(model);
-  if (autosend && !model.holiday) { console.log('Auto-send: holiday mode is off (you send from the preview). Nothing to do.'); return; }
 
   const row = issues.filter((r) => str(r.issue_id) === issueDate).pop();
   if (!row) throw new Error(`No Issues row for ${issueDate}: run the build first`);
@@ -443,14 +432,23 @@ async function main() {
   if (!['tested', 'shadow', 'sending'].includes(status)) problems.push(`Issue status is "${status || 'blank'}"; needs tested or shadow (run the build first)`);
   if (autosend && status !== 'tested') problems.push(`Auto-send needs status tested, found "${status}"`);
 
-  // Same content as the tested copy (and as the preview the Send button came from)?
-  if (issue.hash !== str(row.content_hash)) {
-    problems.push(`Content changed since the test (now ${issue.hash.slice(0, 12)}, tested ${str(row.content_hash).slice(0, 12)}): rebuild and re-test`);
+  // Frozen content: the issue exactly as the build selected and tested it.
+  let model = null;
+  let issue = null;
+  try {
+    model = loadSnapshot(row);
+    issue = render(model);
+  } catch (err) {
+    problems.push(`No usable content snapshot on the Issues row (${errMsg(err)}): use Rebuild`);
+  }
+  if (issue && issue.hash !== str(row.content_hash)) {
+    problems.push(`Snapshot renders differently from the tested copy (now ${issue.hash.slice(0, 12)}, tested ${str(row.content_hash).slice(0, 12)}): the newsletter code changed since the build; use Rebuild`);
   }
   if (expectHash && !lc(row.content_hash).startsWith(expectHash)) {
     problems.push('This Send button is for an older build of the issue: use the Send button in the latest preview');
   }
-  if (model.empty) problems.push('Issue is empty');
+  if (model && model.empty) problems.push('Issue is empty');
+  if (autosend && model && !model.holiday) problems.push('Holiday auto-send: this issue was built without holiday mode on; Rebuild first');
   if (mode === 'live' && (today < LIVE_FROM || issueDate < LIVE_FROM)) problems.push(`Live sends are blocked in code before ${LIVE_FROM}`);
   if (mode !== 'shadow' && !linksEnabled()) problems.push('APPROVAL_SIGNING_KEY or WORKER_URL is missing: unsubscribe links cannot be made');
   try { await assertSendAs(); } catch (err) { problems.push(errMsg(err)); }
@@ -530,4 +528,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { buildRecipients, canaryList, baseline, usedLast24h, minuteKey, stamp };
+module.exports = { buildRecipients, canaryList, baseline, usedLast24h, minuteKey, stamp, loadSnapshot };

@@ -7,13 +7,20 @@
 // Env: GOOGLE_SA_KEY, SHEET_ID, GMAIL_USER, APPROVAL_SIGNING_KEY, WORKER_URL; optional
 // ISSUE_DATE (YYYY-MM-DD, default the coming Thursday, UK time) and SHADOW ("true" marks
 // the issue "shadow", which counts like "sent" for the appearance limits).
+// Deadline: Pending items received after Wednesday 18:00 UK are held for next week,
+// unless this run came from the Rebuild button (client_payload.rebuild), which lets
+// late items in deliberately.
+// Frozen content: the selected issue is saved (deflated JSON, base64) in the Issues
+// "snapshot" column. send.js sends exactly that, so nothing ingested, published or
+// edited after the build changes the issue; only a Rebuild does.
 // Issues tab: one row per issue; a rebuild of the same issue updates its row.
 'use strict';
 
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 const g = require('../ingest/google');
-const { select } = require('./select');
+const { select, deadlineFor } = require('./select');
 const { render, wrapPreview } = require('./render');
 const { personalise, forPreview } = require('./unsub');
 const { buttons } = require('./actions');
@@ -22,6 +29,7 @@ const TZ = 'Europe/London';
 const ROOT = path.join(__dirname, '..', '..');
 const SITE = 'https://thelenches.org.uk';
 const FROM = 'website@thelenches.org.uk';
+const SNAPSHOT_MAX = 45000; // a Sheets cell holds 50,000 characters
 // Hard limits: a Sheet edit can never point a test or preview at anyone else.
 const TEST_ALLOWED = ['jon@alphaquad.co.uk'];
 const PREVIEW_ALLOWED = ['jon@thelenches.org.uk'];
@@ -37,6 +45,16 @@ function comingThursday(today) {
 
 function readJson(rel) {
   return JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
+}
+
+// client_payload of the repository_dispatch that started this run ({} otherwise).
+function dispatchPayload() {
+  try {
+    const ev = JSON.parse(fs.readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+    return (ev && ev.client_payload) || {};
+  } catch {
+    return {};
+  }
 }
 
 // Absolute URL of the JPEG copy publish.js makes, or '' if it isn't in the repo yet
@@ -71,6 +89,8 @@ async function main() {
   const issueDate = str(process.env.ISSUE_DATE) || comingThursday(today);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate)) throw new Error(`ISSUE_DATE must be YYYY-MM-DD, got "${issueDate}"`);
   const shadow = /^true$/i.test(str(process.env.SHADOW));
+  const rebuild = dispatchPayload().rebuild === true;
+  const cutoff = rebuild ? '' : deadlineFor(issueDate);
 
   const [{ sources, settings }, pending, issues, subscribers, dns] = await Promise.all([
     g.readSettings(), g.readTable('Pending'), g.readTable('Issues'),
@@ -85,7 +105,7 @@ async function main() {
   }
 
   const model = select({
-    issueDate, pending, issues, settings, sources, jpegFor,
+    issueDate, pending, issues, settings, sources, jpegFor, cutoff,
     whatson: readJson('src/_data/whatson.json'),
     bins: readJson('src/_data/bins.json'),
   });
@@ -93,7 +113,14 @@ async function main() {
   console.log(`Issue ${issueDate}: ${model.keys.length} items (${model.events.length} events, ${model.news.length} news, `
     + `${model.notices.length} notices, ${model.roads.length} roads, ${model.elsewhere.length} elsewhere), `
     + `${model.imageKeys.length} images, hash ${issue.hash.slice(0, 12)}${model.holiday ? ', holiday mode' : ''}.`);
+  console.log(cutoff
+    ? `Deadline ${cutoff} UK: ${model.held} late item(s) held for next week (Rebuild lets them in).`
+    : 'Rebuild: no deadline cutoff, late items included.');
   if (model.empty) console.warn('Warning: the issue is empty.');
+
+  const snapshot = zlib.deflateSync(Buffer.from(JSON.stringify(model), 'utf8'), { level: 9 }).toString('base64');
+  if (snapshot.length > SNAPSHOT_MAX) throw new Error(`Content snapshot is ${snapshot.length} characters, over the ${SNAPSHOT_MAX} limit for one Sheet cell`);
+  const cutoffNote = cutoff ? `deadline ${cutoff}${model.held ? `, ${model.held} held` : ''}` : 'rebuild: no deadline';
 
   const fields = {
     issue_id: issueDate,
@@ -107,17 +134,22 @@ async function main() {
     subject: issue.subject,
     built_at: new Date().toISOString(),
     tested_at: '',
-    notes: [model.holiday ? 'holiday mode' : '', model.empty ? 'EMPTY' : ''].filter(Boolean).join('; '),
+    snapshot,
+    notes: [model.holiday ? 'holiday mode' : '', model.empty ? 'EMPTY' : '', cutoffNote].filter(Boolean).join('; '),
   };
-  let rowNumber;
   if (existing.length) {
-    rowNumber = existing[existing.length - 1]._row;
-    await g.updateRow('Issues', rowNumber, fields);
+    await g.updateRow('Issues', existing[existing.length - 1]._row, fields);
   } else {
     await g.appendRows('Issues', [fields]);
-    const again = (await g.readTable('Issues')).filter((r) => str(r.issue_id) === issueDate);
-    if (!again.length) throw new Error('Issues row not found after writing: check the Issues tab headers');
-    rowNumber = again[again.length - 1]._row;
+  }
+  // Read back: the row must exist and hold the snapshot (updateRow skips unknown headers).
+  const again = (await g.readTable('Issues')).filter((r) => str(r.issue_id) === issueDate);
+  if (!again.length) throw new Error('Issues row not found after writing: check the Issues tab headers');
+  const written = again[again.length - 1];
+  const rowNumber = written._row;
+  if (str(written.snapshot) !== snapshot) {
+    await g.updateRow('Issues', rowNumber, { status: 'failed', notes: 'failed: snapshot not saved (Issues needs a "snapshot" header)' });
+    throw new Error('Content snapshot was not saved: add the header "snapshot" to the Issues tab (column Q)');
   }
 
   try {

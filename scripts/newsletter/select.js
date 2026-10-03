@@ -5,13 +5,17 @@
 // Rules (plan: "Newsletter send", agreed 2 Oct 2026):
 //   Events      every event dated issue date to +13 days (approved/auto Pending + whatson),
 //               each at most 3 issues; a flyer image at most 2 issues, then text only.
-//   News        Pending: new since the last issue, once. whatson news: once.
-//   Notices     Pending: new since the last issue, once. whatson notices: up to 3 issues.
+//   News        Pending: never shown and live since the day before the last issue, once.
+//               whatson news: once.
+//   Notices     as News. whatson notices: up to 3 issues.
 //   Roads       one.network Pending rows starting in the 14-day window (up to 3 issues),
-//               or new since the last issue (once).
+//               or new as for News (once).
 //   Bins        each area's next collection on or after the issue date, within 7 days.
-//   Elsewhere   RSS signposts new since the last issue, links only, once.
+//   Elsewhere   RSS signposts, new as for News, links only, once.
 //   Holiday     items flagged people_in_image or political_commercial are left out.
+//   Deadline    with a cutoff (the scheduled Thursday build: Wednesday 18:00 UK), Pending
+//               rows received after it are held for next week, automated ones included.
+//               A Rebuild passes no cutoff, so late items can be let in deliberately.
 // "Shown" counts come from Issues rows with status sent or shadow dated before this
 // issue, and for Pending rows also from newsletter_count / flyer_count (whichever is higher).
 'use strict';
@@ -22,6 +26,7 @@ const WINDOW_DAYS = 14;
 const MAX_APPEARANCES = 3;
 const MAX_IMAGE = 2;
 const BINS_DAYS = 7;
+const DEADLINE_HM = '18:00'; // Wednesday before the issue, UK time (submission guidelines)
 const COUNTED = new Set(['sent', 'shadow']);
 const LIVE = new Set(['approved', 'auto']);
 const WYCHAVON_LOOKUP = 'https://selfservice.wychavon.gov.uk/wdcroundlookup/';
@@ -34,6 +39,7 @@ const safeUrl = (u) => (/^(https?:\/\/|mailto:)/i.test(str(u)) ? str(u) : '');
 // Code-point comparison: unlike localeCompare it can't vary between machines.
 const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 const sha1 = (s) => crypto.createHash('sha1').update(s, 'utf8').digest('hex');
+const pad2 = (s) => String(s).padStart(2, '0');
 
 // Accepts 2026-10-15, 2026-10-15 09:30 or 15/10/2026 (in case the Sheet reformats).
 function ymd(value) {
@@ -41,13 +47,38 @@ function ymd(value) {
   let m = v.match(/^(\d{4}-\d{2}-\d{2})/);
   if (m) return m[1];
   m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-  return m ? `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}` : '';
+  return m ? `${m[3]}-${pad2(m[2])}-${pad2(m[1])}` : '';
+}
+
+// A Sheet timestamp as UK "YYYY-MM-DD HH:MM", or ''. Accepts UK "2026-10-07 18:05",
+// "07/10/2026 18:05[:00]", ISO with a zone (converted to UK), or a bare date (00:00).
+function minuteKey(value) {
+  const v = str(value);
+  if (/(Z|[+-]\d{2}:?\d{2})$/.test(v) && /T/.test(v) && !Number.isNaN(Date.parse(v))) {
+    const p = {};
+    for (const x of new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+    }).formatToParts(Date.parse(v))) p[x.type] = x.value;
+    return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}`;
+  }
+  let m = v.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{1,2}):(\d{2})/);
+  if (m) return `${m[1]} ${pad2(m[2])}:${m[3]}`;
+  m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})[ ,]+(\d{1,2}):(\d{2})/);
+  if (m) return `${m[3]}-${pad2(m[2])}-${pad2(m[1])} ${pad2(m[4])}:${m[5]}`;
+  const d = ymd(v);
+  return d ? `${d} 00:00` : '';
 }
 
 function addDays(day, n) {
   const d = new Date(`${day}T12:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
   return d.toISOString().slice(0, 10);
+}
+
+// Submission deadline for an issue: the day before at 18:00 UK ("YYYY-MM-DD HH:MM").
+function deadlineFor(issueDate) {
+  return `${addDays(issueDate, -1)} ${DEADLINE_HM}`;
 }
 
 // whatson items have no ids: key on list + date + title (an edited title is a new item).
@@ -89,8 +120,10 @@ function binsFor(bins, issueDate) {
   };
 }
 
-function select({ issueDate, pending, whatson, bins, issues, settings, sources, jpegFor }) {
+function select({ issueDate, pending, whatson, bins, issues, settings, sources, jpegFor, cutoff }) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate || '')) throw new Error(`Bad issue date "${issueDate}"`);
+  const deadline = str(cutoff);
+  if (deadline && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(deadline)) throw new Error(`Bad cutoff "${cutoff}"`);
   const holiday = truthy(settings && settings.holiday_mode);
   const windowEnd = addDays(issueDate, WINDOW_DAYS - 1);
   const inWindow = (d) => d && d >= issueDate && d <= windowEnd;
@@ -108,6 +141,9 @@ function select({ issueDate, pending, whatson, bins, issues, settings, sources, 
     tally(imaged, r.image_keys);
   }
   const lastIssue = past.map((r) => ymd(r.issue_date)).sort(cmp).pop() || addDays(issueDate, -7);
+  // From the day before the last issue, so items that missed its Wednesday deadline
+  // (held then) still count as new now. Never-shown is what stops repeats.
+  const newFrom = addDays(lastIssue, -1);
 
   const roadSources = new Set((sources || [])
     .filter((s) => /one\.network/i.test(s.match))
@@ -131,9 +167,14 @@ function select({ issueDate, pending, whatson, bins, issues, settings, sources, 
 
   // ---- Pending: approved/auto rows; later rows win, as on the site.
   const byKey = new Map();
+  let held = 0;
   for (const r of pending || []) {
     if (!LIVE.has(str(r.status).toLowerCase()) || !str(r.title)) continue;
     if (holiday && (truthy(r.people_in_image) || truthy(r.political_commercial))) continue;
+    if (deadline) {
+      const rec = minuteKey(r.received);
+      if (rec && rec > deadline) { held += 1; continue; }
+    }
     byKey.set(`${normTitle(r.title)}|${ymd(r.event_date)}`, r);
   }
   const pendingEvents = new Set();
@@ -144,7 +185,7 @@ function select({ issueDate, pending, whatson, bins, issues, settings, sources, 
     const start = ymd(row.decided_at) || ymd(row.received) || issueDate;
     const cat = str(row.category).toLowerCase();
     const count = Math.max(num(row.newsletter_count), shown.get(key) || 0);
-    const isNew = count === 0 && start >= lastIssue && start <= issueDate;
+    const isNew = count === 0 && start >= newFrom && start <= issueDate;
     const meta = [str(row.village), str(row.event_time), str(row.cost)].filter(Boolean).join(' · ');
     const base = {
       key, title: str(row.title), body: str(row.summary), meta,
@@ -213,6 +254,8 @@ function select({ issueDate, pending, whatson, bins, issues, settings, sources, 
     issueDate,
     holiday,
     lastIssue,
+    cutoff: deadline,
+    held,
     events: events.map(strip),
     regulars: str(w.eventsFootnote),
     news: news.map(strip),
@@ -226,4 +269,4 @@ function select({ issueDate, pending, whatson, bins, issues, settings, sources, 
   };
 }
 
-module.exports = { select, whatsonKey, ymd, addDays };
+module.exports = { select, whatsonKey, ymd, addDays, minuteKey, deadlineFor };
