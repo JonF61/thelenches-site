@@ -45,14 +45,14 @@ description: News and notices from across the Lenches villages.
       <h2 class="np-serif">{{ lead.title | escape }}</h2>
       <p>{{ lead.body | escape }}{% if lead.link %} <a href="{{ lead.link.url | escape }}" target="_blank" rel="noopener">{{ lead.link.text | escape }} &rarr;</a>{% endif %}</p>
     </div>
-    {% if lead.image %}<a href="{{ lead.image.url | url }}" target="_blank" rel="noopener" aria-label="View full image"><img src="{{ lead.image.url | url }}" alt="{{ lead.image.alt | escape }}" loading="lazy"></a>{% endif %}
+    {% if lead.image %}<a href="{{ lead.image.url | url }}" data-viewer aria-label="View full image"><img src="{{ lead.image.url | url }}" alt="{{ lead.image.alt | escape }}" loading="lazy"></a>{% endif %}
   </article>
 
   {% if stories | length > 1 %}
   <div class="np-cols">
     {% for n in stories %}{% if not loop.first %}
     <article class="story" id="{{ ('news-' + n.title) | slugify }}">
-      {% if n.image %}<a href="{{ n.image.url | url }}" target="_blank" rel="noopener" aria-label="View full image"><img src="{{ n.image.url | url }}" alt="{{ n.image.alt | escape }}" loading="lazy"></a>{% endif %}
+      {% if n.image %}<a href="{{ n.image.url | url }}" data-viewer aria-label="View full image"><img src="{{ n.image.url | url }}" alt="{{ n.image.alt | escape }}" loading="lazy"></a>{% endif %}
       <h3 class="np-serif">{{ n.title | escape }}</h3>
       <p>{{ n.body | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}</p>
     </article>
@@ -67,7 +67,7 @@ description: News and notices from across the Lenches villages.
     <h2 class="list-label">Notices</h2>
     {% for n in pipeline.notices | current | merge(whatson.notices) %}
     <div class="np-notice" id="{{ ('notice-' + n.title) | slugify }}">
-      <strong>{{ n.title | escape }}:</strong> {{ n.body | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" target="_blank" rel="noopener">(image)</a>{% endif %}
+      <strong>{{ n.title | escape }}:</strong> {{ n.body | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ (n.image.alt or n.title) | escape }}">(image)</a>{% endif %}
     </div>
     {% else %}
     <p class="muted">No notices at the moment.</p>
