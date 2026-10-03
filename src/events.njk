@@ -4,6 +4,11 @@ title: Events
 description: What's on across the Lenches villages — upcoming events from the newsletter and local groups.
 ---
 {#- Items come from whatson.json (hand-edited) and pipeline.json (written by scripts/publish). -#}
+{#- Thumbnail/tile floats right inside .item-body so the text wraps under it on phones (no blank space) -#}
+<style>
+  .item-card .item-body{display:flow-root}
+  .item-body > .thumb-link,.item-body > .tile{float:right;margin:0 0 .4rem .9rem}
+</style>
 <main class="container">
   <div class="page-head">
     <h1>Events</h1>
@@ -20,10 +25,10 @@ description: What's on across the Lenches villages — upcoming events from the 
     <div class="item-card" id="{{ ('ev-' + e.date + '-' + e.title) | slugify }}">
       <div class="date"><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>
       <div class="item-body">
+        {% if e.image %}<a class="thumb-link" href="{{ e.image.url | url }}" data-viewer aria-label="View full image"><img class="item-thumb" src="{{ e.image.url | url }}" alt="{{ e.image.alt | escape }}" loading="lazy"></a>{% else %}{{ e | tileSvg | safe }}{% endif %}
         <h3>{{ e.title | escape }}</h3>
         <p>{{ e.body | escape }}{% if e.link %} <a href="{{ e.link.url | escape }}" target="_blank" rel="noopener">{{ e.link.text | escape }} &rarr;</a>{% endif %}</p>
       </div>
-      {% if e.image %}<a class="thumb-link" href="{{ e.image.url | url }}" data-viewer aria-label="View full image"><img class="item-thumb" src="{{ e.image.url | url }}" alt="{{ e.image.alt | escape }}" loading="lazy"></a>{% else %}{{ e | tileSvg | safe }}{% endif %}
     </div>
     {% endfor %}
   </section>
