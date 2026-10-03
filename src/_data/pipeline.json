@@ -10,6 +10,17 @@
         "url": "/images/items/1a0cd84404be1268-3.webp",
         "alt": "AI-generated poster for GLADS production Peter Pandemonium featuring pirates and a mermaid"
       }
+    },
+    {
+      "id": "1a101c3325323267-1",
+      "title": "Test Bake Sale — Church Lench Village Hall",
+      "body": "A bake sale at Church Lench Village Hall on Saturday 17 October from 10am, free entry. Contact Jon Fletcher for details.",
+      "date": "2026-10-17",
+      "expires": "2026-10-17",
+      "image": {
+        "url": "/images/items/1a101c3325323267-1.webp",
+        "alt": "A stone village church with a crenellated tower, surrounded by trees and a graveyard"
+      }
     }
   ],
   "news": [
