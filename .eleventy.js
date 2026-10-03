@@ -43,6 +43,10 @@ module.exports = async function (eleventyConfig) {
   // Join two lists, e.g. hand-written whatson.json items plus pipeline.json items
   eleventyConfig.addFilter("merge", (a, b) => [...(a || []), ...(b || [])]);
 
+  // Illustrated fallback tile for an event with no image (Events page only; lib/tiles.js)
+  const { tileSvg } = require("./lib/tiles.js");
+  eleventyConfig.addFilter("tileSvg", tileSvg);
+
   // Drop pipeline news/notices past their expiry date (between publish runs)
   eleventyConfig.addFilter("current", (items) => {
     const now = today();

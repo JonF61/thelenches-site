@@ -23,7 +23,7 @@ description: What's on across the Lenches villages — upcoming events from the 
         <h3>{{ e.title | escape }}</h3>
         <p>{{ e.body | escape }}{% if e.link %} <a href="{{ e.link.url | escape }}" target="_blank" rel="noopener">{{ e.link.text | escape }} &rarr;</a>{% endif %}</p>
       </div>
-      {% if e.image %}<a class="thumb-link" href="{{ e.image.url | url }}" data-viewer aria-label="View full image"><img class="item-thumb" src="{{ e.image.url | url }}" alt="{{ e.image.alt | escape }}" loading="lazy"></a>{% endif %}
+      {% if e.image %}<a class="thumb-link" href="{{ e.image.url | url }}" data-viewer aria-label="View full image"><img class="item-thumb" src="{{ e.image.url | url }}" alt="{{ e.image.alt | escape }}" loading="lazy"></a>{% else %}{{ e | tileSvg | safe }}{% endif %}
     </div>
     {% endfor %}
   </section>
