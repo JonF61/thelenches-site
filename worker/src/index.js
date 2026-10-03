@@ -12,6 +12,8 @@
 // Actions: approve/reject (Pending items), send/skip (submitter replies), nlsend/nlbuild
 // (newsletter Send and Rebuild buttons). Single use and every send safeguard are enforced
 // downstream: the Worker only passes signed requests on to GitHub.
+// The Rebuild button's build carries rebuild: true, which lifts the Wednesday 18:00
+// deadline cutoff (the scheduled 06:30 build keeps it).
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -168,7 +170,7 @@ function dispatchFor(p) {
       action: 'send', issue_date: p.i, confirm_count: String(p.n), expect_hash: p.h, expect_mode: p.m,
     }];
   }
-  if (p.a === 'nlbuild') return ['newsletter', { action: 'build', issue_date: p.i }];
+  if (p.a === 'nlbuild') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true }];
   return ['approval', { id: p.i, action: p.a }];
 }
 
@@ -179,7 +181,7 @@ function confirmExtra(p) {
     return '<p class="warn">This emails every subscriber. It cannot be undone.</p>';
   }
   if (p.a === 'nlsend') return `<p class="muted">Mode: ${esc(p.m)}. No subscriber receives anything in this mode.</p>`;
-  if (p.a === 'nlbuild') return '<p class="muted">Builds the issue again with any approvals, then sends a new test copy and preview. Older Send buttons stop working.</p>';
+  if (p.a === 'nlbuild') return '<p class="muted">Builds the issue again with any approvals, including items that arrived after the Wednesday 6pm deadline, then sends a new test copy and preview. Older Send buttons stop working.</p>';
   return '';
 }
 
