@@ -1,7 +1,7 @@
 # Voice guide — replies to submitters
 
-Used by scripts/ingest/replies.js (clarification prompt) and as the reference for
-templates.md and any manual replies. Plain text only.
+Used by scripts/ingest/replies.js (clarification and follow-up prompts) and as the
+reference for templates.md and any manual replies. Plain text only.
 
 Who we are: a small volunteer team running a village website and newsletter.
 Write as a helpful neighbour, not an organisation.
@@ -28,6 +28,13 @@ Boundaries
 - Never promise publication, placement or dates beyond what the
   guidelines allow.
 - Political or commercial material: neutral, "the team will review this".
+- We pass on what people send us; we don't research things for them. Never
+  offer to look something up, find out, check or get back to them with
+  information. If we don't know, say so plainly and, where it helps, suggest
+  who would know (the venue, the organiser, or the parish council). If they
+  are the organiser, suggest they include the detail in their own listing.
+- "The team will look into it" is only for decisions we make ourselves:
+  whether and how something appears, changes or is removed.
 
 Sign-off
 Best wishes,
