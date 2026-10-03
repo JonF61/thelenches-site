@@ -209,8 +209,10 @@ async function processMessage(id, ctx) {
 
   // Never fails the message: a retry would duplicate the Pending rows. A missed reply
   // beats a duplicate; the run still fails so GitHub emails Jon.
+  let replyNote = '';
   try {
-    await replies.planReply({ msg, sourceName: source.source, result, rows, ctx });
+    const planned = await replies.planReply({ msg, sourceName: source.source, result, rows, ctx });
+    replyNote = replies.logNoteFor(planned); // per-sender limit: ack dropped / clarification held
   } catch (err) {
     ctx.replyErrors += 1;
     console.error(`${id}: reply planning failed: ${(err && err.message) || err}`);
@@ -221,7 +223,8 @@ async function processMessage(id, ctx) {
     received,
     source: source.source,
     items: rows.length,
-    error: rows.length ? '' : `No items: ${result.skipReason || 'none found'}`,
+    error: [rows.length ? '' : `No items: ${result.skipReason || 'none found'}`, replyNote]
+      .filter(Boolean).join(' | '),
   };
 }
 

@@ -11,14 +11,20 @@
 //   sending   written just before the send; a row stuck here is flagged and never resent
 //   sent / skipped / failed
 //
+// Per-sender limit (agreed 3 Oct): at most reply_max_per_sender replies (Settings,
+// default 3) to one address in 24h. Over it, a plain acknowledgement is dropped
+// (Replies row "skipped", note in the Log tab); a clarification is never dropped: it is
+// held as "awaiting" with policy code sender_limit and only goes out on Jon's Send
+// (never after 24h, never in holiday mode).
+//
 // Follow-ups (type "followup", agreed 30 Sept): a later message on a thread we've
 // replied to that needs a human (question, new issue, correction). Claude drafts a
 // response; the row waits as "awaiting" for Jon's Send/Edit/Skip and is NEVER sent
 // automatically, including after 24h and in holiday mode.
 //
 // Called from index.js: findAnsweredReply + applyAnswer + planFollowup (per message,
-// before new items), planReply (per message, after Pending rows are written),
-// sendDueReplies (end of run).
+// before new items), planReply + logNoteFor (per message, after Pending rows are
+// written), sendDueReplies (end of run).
 // Called from scripts/approve/index.js: decideReply (Send/Skip buttons).
 'use strict';
 
@@ -37,10 +43,13 @@ const EARLY_DAYS = 14;        // items appear no more than 2 weeks before the ev
 const FLYER_LIMIT = 2;        // a flyer image is shown no more than twice
 const NEWSLETTER_LIMIT = 3;   // newsletter shows an item up to 3 times
 const AWAIT_HOURS = 24;       // no decision within this: send without the question
-const SENDER_GAP_HOURS = 24;  // max one reply per sender in this window
+const SENDER_GAP_HOURS = 24;  // window for the per-sender limit
 const STUCK_MINUTES = 30;     // "sending" older than this is treated as stuck
 const DEFAULT_MAX_PER_RUN = 10;
 const DEFAULT_MAX_PER_DAY = 30;
+const DEFAULT_MAX_PER_SENDER = 3; // Settings reply_max_per_sender, per SENDER_GAP_HOURS
+const SENDER_LIMIT_CODE = 'sender_limit';
+const SENDER_LIMIT_NOTE = 'Sender limit reached';
 const MAX_CLARIFY_CHARS = 700;
 const MAX_FOLLOWUP_INPUT = 3000; // chars of the submitter's follow-up given to Claude
 const MAX_FOLLOWUP_CHARS = 900;  // longest follow-up draft accepted
@@ -119,6 +128,7 @@ function posInt(v, dflt) {
 
 const splitCodes = (s) => String(s || '').split(',').map((x) => x.trim()).filter(Boolean);
 const unique = (a) => [...new Set(a)];
+const sameAddress = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
 
 /* ------------------------------------------------------------ templates -- */
 
@@ -334,6 +344,16 @@ function automatedReason(msg, to) {
   return '';
 }
 
+// Held by the per-sender limit: only Jon's Send releases it.
+const heldBySenderLimit = (r) => splitCodes(r.policy_codes).includes(SENDER_LIMIT_CODE);
+
+// Note for the Log tab (index.js) when the per-sender limit changed what happened to a
+// planned reply, else ''.
+function logNoteFor(row) {
+  const first = String((row && row.notes) || '').split(' | ')[0];
+  return first.startsWith(SENDER_LIMIT_NOTE) ? `Reply: ${first}` : '';
+}
+
 /* ---------------------------------------------------------------- plan --- */
 
 async function appendReply(ctx, row) {
@@ -372,16 +392,23 @@ async function planReply({ msg, sourceName, result, rows, ctx }) {
   if (ctx.replies.some((r) => r.thread_id === msg.threadId && ACTIVE.includes(r.status))) {
     return skip('Already replied on this thread');
   }
+
+  // Per-sender limit. Over it: a plain acknowledgement is dropped; a clarification is
+  // never dropped but held for Jon's Send/Skip (see heldBySenderLimit).
+  const maxSender = posInt(ctx.settings.reply_max_per_sender, DEFAULT_MAX_PER_SENDER);
   const since = londonDateTime(Date.now() - SENDER_GAP_HOURS * 3600000);
-  if (ctx.replies.some((r) => r.to === to && ACTIVE.includes(r.status) && String(r.created_at) >= since)) {
-    return skip('Already replied to this sender in the last 24 hours');
-  }
+  const recent = ctx.replies.filter((r) => sameAddress(r.to, to) && ACTIVE.includes(r.status)
+    && String(r.created_at) >= since).length;
+  const overLimit = recent >= maxSender;
+  const limitNote = `${SENDER_LIMIT_NOTE} (${recent} replies to this sender in ${SENDER_GAP_HOURS}h, max ${maxSender})`;
+  if (overLimit && type === 'ack') return skip(`${limitNote}: acknowledgement dropped`);
 
   const items = rows.map((r) => ({ title: r.title, event_date: r.event_date, policy: splitCodes(r.policy_flags) }));
   const codes = unique([
     ...items.flatMap((i) => i.policy),
     result.outOfScope && 'out_of_scope',
     anonymous && 'anonymous',
+    overLimit && SENDER_LIMIT_CODE,
   ].filter(Boolean));
 
   let clarification = '';
@@ -390,7 +417,7 @@ async function planReply({ msg, sourceName, result, rows, ctx }) {
 
   let status = 'queued';
   if (mode === 'shadow') status = 'shadow';
-  else if (type === 'clarify' && !ctx.holiday) status = 'awaiting';
+  else if (overLimit || (type === 'clarify' && !ctx.holiday)) status = 'awaiting';
 
   return appendReply(ctx, {
     ...base,
@@ -398,7 +425,10 @@ async function planReply({ msg, sourceName, result, rows, ctx }) {
     subject: replySubject(msg.subject),
     body: buildBody({ items, outOfScope: result.outOfScope, clarification }),
     status,
-    notes: drafted ? '' : 'Clarification uses fallback wording (Claude draft unavailable)',
+    notes: [
+      overLimit ? `${limitNote}: clarification held for your Send/Skip, never sent automatically` : '',
+      drafted ? '' : 'Clarification uses fallback wording (Claude draft unavailable)',
+    ].filter(Boolean).join(' | '),
   });
 }
 
@@ -685,14 +715,15 @@ async function deliver(row, settings, { body, note = '', decidedAt = '' } = {}) 
 }
 
 // End of each ingestion run: sends queued rows, and awaiting rows past 24h (without the
-// question) or in holiday mode (as drafted). Follow-ups are never sent from here.
+// question) or in holiday mode (as drafted). Follow-ups and rows held by the per-sender
+// limit are never sent from here.
 // Throws if a cap is hit or a send fails, so the run fails and GitHub emails Jon.
 async function sendDueReplies(settings, holiday) {
   if (repliesMode(settings) !== 'live') return 0;
   const rows = await g.readTable('Replies');
   const cutoff = londonDateTime(Date.now() - AWAIT_HOURS * 3600000);
   const due = rows.filter((r) => r.reply_id && r.type !== 'followup' && (r.status === 'queued'
-    || (r.status === 'awaiting' && (holiday || String(r.created_at) <= cutoff))));
+    || (r.status === 'awaiting' && !heldBySenderLimit(r) && (holiday || String(r.created_at) <= cutoff))));
   if (!due.length) return 0;
 
   await assertSendAs();
@@ -768,6 +799,7 @@ module.exports = {
   isReplySource,
   itemPolicy,
   planReply,
+  logNoteFor,
   findAnsweredReply,
   answerContext,
   applyAnswer,
