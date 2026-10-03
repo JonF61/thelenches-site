@@ -132,13 +132,25 @@ async function processMessage(id, ctx) {
   ctx.tokensOut += (result.usage && result.usage.output_tokens) || 0;
 
   if (answered) {
-    const updated = await replies.applyAnswer({ msg, reply: answered, result, ctx, received });
+    const { updated, added } = await replies.applyAnswer({ msg, reply: answered, result, ctx, received });
+    // A question or new issue on the thread needs a human: flagged with a Claude draft
+    // for Send/Edit/Skip in the action email, never auto-sent. Never fails the message
+    // (a retry would re-apply the answer); the run fails instead so GitHub emails Jon.
+    let follow;
+    try {
+      const f = await replies.planFollowup({ msg, reply: answered, ctx, added });
+      follow = f.flagged ? `follow-up flagged (${f.reason})` : `no follow-up needed (${f.reason})`;
+    } catch (err) {
+      ctx.replyErrors += 1;
+      follow = 'follow-up check failed';
+      console.error(`${id}: follow-up check failed: ${(err && err.message) || err}`);
+    }
     return {
       status: 'ok',
       received,
       source: source.source,
       items: 0,
-      error: `Answer to reply ${answered.reply_id}: updated ${updated} item(s)`,
+      error: `Answer to reply ${answered.reply_id}: updated ${updated} item(s); ${follow}`,
     };
   }
 
@@ -325,7 +337,7 @@ async function main() {
     process.exitCode = 1;
   }
   if (ctx.replyErrors) {
-    console.error(`${ctx.replyErrors} reply plan(s) failed; those messages get no reply.`);
+    console.error(`${ctx.replyErrors} reply plan(s) or follow-up check(s) failed; see the log above.`);
     process.exitCode = 1;
   }
 
