@@ -1,6 +1,6 @@
 // Offline smoke test for dependency upgrades (step 7F). Run by dependabot-check.yml
 // on every PR into main, and by hand via its Run workflow button.
-// Exercises the SDK, googleapis and sharp the way the pipeline uses them.
+// Exercises the SDK, googleapis, sharp, mupdf and heic-convert the way the pipeline uses them.
 // No secrets and no real network calls: Claude is answered by a local mock server.
 'use strict';
 
@@ -113,10 +113,54 @@ async function testSharp() {
   console.log('sharp OK (dHash, metadata, JPEG, WebP resize)');
 }
 
+// A tiny valid A4 PDF with the given number of pages (a green box on each).
+function makePdf(pages) {
+  const objs = ['<< /Type /Catalog /Pages 2 0 R >>'];
+  const kids = [];
+  for (let i = 0; i < pages; i++) kids.push(`${3 + i * 2} 0 R`);
+  objs.push(`<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${pages} >>`);
+  const stream = '0.23 0.43 0.07 rg 50 50 495 742 re f';
+  for (let i = 0; i < pages; i++) {
+    objs.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents ${4 + i * 2} 0 R >>`);
+    objs.push(`<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`);
+  }
+  let out = '%PDF-1.4\n';
+  const offsets = [];
+  objs.forEach((o, i) => { offsets.push(out.length); out += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+  const xref = out.length;
+  out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+  offsets.forEach((o) => { out += `${String(o).padStart(10, '0')} 00000 n \n`; });
+  out += `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return Buffer.from(out, 'latin1');
+}
+
+// 4. mupdf + heic-convert: images.toRaster renders a 1-page PDF flyer (page 1, about
+//    1600px), refuses a 3-page PDF, passes photos through, and heic-convert loads.
+async function testRaster() {
+  const sharp = require('sharp');
+  const { toRaster, kindOf } = require(path.join(ROOT, 'scripts/ingest/images'));
+  const one = await toRaster(makePdf(1), 'application/pdf', 'flyer.pdf');
+  assert.ok(one.data, '1-page PDF not rendered');
+  const m = await sharp(one.data).metadata();
+  assert.ok(Math.abs(m.height - 1600) <= 2, `PDF render height ${m.height}, expected about 1600`);
+  assert.ok(m.width > 1000 && m.width < m.height, 'PDF render not portrait A4');
+  const three = await toRaster(makePdf(3), 'application/octet-stream', 'messenger.pdf');
+  assert.strictEqual(three.data, null, '3-page PDF should stay text only');
+  assert.strictEqual(three.pages, 3, 'PDF page count wrong');
+  const jpg = await sharp({ create: { width: 400, height: 300, channels: 3, background: '#d9732b' } })
+    .jpeg().toBuffer();
+  assert.strictEqual((await toRaster(jpg, 'image/jpeg', 'a.jpg')).data, jpg, 'photo not passed through');
+  assert.strictEqual(kindOf('application/octet-stream', 'IMG_1234.HEIC'), 'heic', 'HEIC not recognised');
+  assert.strictEqual(kindOf('application/msword', 'poster.doc'), '', 'Word file should be unusable');
+  assert.strictEqual(typeof require('heic-convert'), 'function', 'heic-convert did not load');
+  console.log('mupdf/heic-convert OK (PDF page 1 render, long PDF skipped, HEIC detection)');
+}
+
 (async () => {
   await testSdk();
   testGoogle();
   await testSharp();
+  await testRaster();
   console.log('All smoke tests passed.');
   process.exit(0);
 })().catch((err) => {

@@ -1,6 +1,8 @@
 // scripts/publish/index.js
 // Regenerates src/_data/pipeline.json from approved and auto rows in Pending,
 // and saves each item's image (resized WebP) the first time it is published.
+// The stored part may be a photo, an iPhone HEIC or a 1-2 page PDF flyer:
+// images.toRaster() turns it into a picture first (PDF = page 1).
 // Each WebP also gets a JPEG copy (same name, .jpg) for the email newsletter:
 // classic Outlook can't show WebP. Missing JPEGs are made from the WebP, so
 // existing items are backfilled on the next run.
@@ -13,6 +15,7 @@ const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
 const g = require('../ingest/google');
+const { toRaster } = require('../ingest/images');
 
 const TZ = 'Europe/London';
 const ROOT = path.join(__dirname, '..', '..');
@@ -54,7 +57,9 @@ async function saveImage(row) {
     const att = msg.attachments.find((a) => a.partId === str(row.image_part_id));
     if (!att) throw new Error(`image part ${row.image_part_id} not found in the email`);
     const raw = await g.getAttachmentData(msg.id, att);
-    const webp = await sharp(raw)
+    const { data: raster } = await toRaster(raw, att.mimeType, att.filename);
+    if (!raster) throw new Error(`${att.filename || 'attachment'} can't be shown as an image`);
+    const webp = await sharp(raster)
       .rotate()
       .resize({ width: IMAGE_EDGE, height: IMAGE_EDGE, fit: 'inside', withoutEnlargement: true })
       .webp({ quality: 80 })

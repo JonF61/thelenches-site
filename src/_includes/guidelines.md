@@ -27,7 +27,7 @@ A short paragraph covering:
 - **Cost** (or that it's free)
 - **Contact** (a name, email or phone number for enquiries)
 
-A poster or photo is welcome.
+A poster or photo is welcome: photos (JPEG, PNG or straight from an iPhone) or a PDF flyer. We can't use Word or Publisher files, so please save those as a PDF first.
 
 ### When items appear
 
