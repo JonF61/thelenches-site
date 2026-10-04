@@ -7,12 +7,17 @@
 //   JPEG/PNG/GIF/WebP as they are; iPhone HEIC/HEIF decoded to JPEG (heic-convert);
 //   PDFs of 1-2 pages rendered as page 1 (mupdf), so a PDF flyer can be published.
 // Longer PDFs (ARCH Messenger, minutes) stay text only. Shared with publish.
+// "unusable" lists attachments the sender meant us to use but we couldn't (Word,
+// Publisher, unreadable images, PDFs over 25 MB); Holly's reply mentions them.
 'use strict';
 
 const sharp = require('sharp');
 
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']);
 const IMAGE_EXT = /\.(jpe?g|png|gif|webp)$/i;  // for attachments sent as application/octet-stream
+// Document formats people send flyers in that we can't read (signatures, calendar
+// invites and the like are ignored silently, as before).
+const DOC_EXT = /\.(docx?|docm|dotx?|pub|odt|rtf|pages|pptx?|key|odp|xlsx?|ods|tiff?|bmp|psd|ai|eps)$/i;
 const MIN_IMAGE_BYTES = 5 * 1024;        // skips tracking pixels, icons, most signatures
 const MIN_IMAGE_EDGE = 300;              // px on the longest side
 const MAX_IMAGES = 8;                    // per email sent to Claude (rendered PDF pages count)
@@ -142,10 +147,12 @@ async function forClaude(raster, att) {
 }
 
 // attachments: from google.getMessage(); fetchData(att) returns a Buffer.
+// Returns { images, pdfs, notes, unusable } (unusable = attachment names for Holly).
 async function prepareAttachments(attachments, fetchData) {
   const images = [];
   const pdfs = [];
   const notes = [];
+  const unusable = [];
 
   for (const att of attachments || []) {
     const kind = kindOf(att.mimeType, att.filename);
@@ -163,6 +170,7 @@ async function prepareAttachments(attachments, fetchData) {
         } catch (err) {
           if (kind !== 'heic') throw err;
           notes.push(`Couldn't read ${name} (iPhone HEIC format): ${err.message}`);
+          if (att.filename) unusable.push(att.filename);
           continue;
         }
         const img = await forClaude(raster, att);
@@ -174,6 +182,7 @@ async function prepareAttachments(attachments, fetchData) {
         }
         if (att.size > MAX_PDF_BYTES) {
           notes.push(`Skipped PDF ${name}: larger than 25 MB`);
+          if (att.filename) unusable.push(att.filename);
           continue;
         }
         const data = await fetchData(att);
@@ -188,12 +197,16 @@ async function prepareAttachments(attachments, fetchData) {
         } catch (err) {
           notes.push(`PDF ${name} used as text only (couldn't render it as an image: ${err.message})`);
         }
+      } else if (DOC_EXT.test(att.filename || '')) {
+        notes.push(`Couldn't use ${name}: not a format we accept (photos or PDF only)`);
+        unusable.push(att.filename);
       }
     } catch (err) {
       notes.push(`Couldn't process ${name}: ${err.message}`);
+      if (kind === 'image' && att.filename) unusable.push(att.filename);
     }
   }
-  return { images, pdfs, notes };
+  return { images, pdfs, notes, unusable };
 }
 
 module.exports = { prepareAttachments, toRaster, kindOf, dHash, hashDistance };

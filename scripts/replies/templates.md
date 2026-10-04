@@ -20,6 +20,9 @@ Thank you for sending us the following. We've received them and will consider th
 ## ack_none
 Thank you for your email.
 
+## attachment_unusable
+We couldn't open {files}. We can use photos (JPEG, PNG or straight from an iPhone) and PDF flyers, so if it contains anything we need, please send it again in one of those formats or paste the details into an email.
+
 ## too_early
 "{title}" is more than two weeks away. We list events no earlier than two weeks before they take place, so we'll hold it and include it from {show_from}.
 
