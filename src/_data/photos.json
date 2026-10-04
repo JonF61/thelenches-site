@@ -1,5 +1,65 @@
 [
   {
+    "slug": "events-2026-10-09-apple-and-ale-bretforton",
+    "src": "/images/photos/events-2026-10-09-apple-and-ale-bretforton.webp",
+    "jpg": "/images/photos/events-2026-10-09-apple-and-ale-bretforton.jpg",
+    "width": 1400,
+    "height": 873,
+    "alt": "Three men standing by a large trailer full of freshly picked red and green apples at a Lenches harvest event",
+    "credit": "The Fleece Inn via Vale & Spa",
+    "village": "",
+    "subject": "Events",
+    "targets": [
+      "event:apple & ale — bretforton"
+    ],
+    "taken": ""
+  },
+  {
+    "slug": "events-2026-10-15-an-evening-with-mike-tindall-bishampton",
+    "src": "/images/photos/events-2026-10-15-an-evening-with-mike-tindall-bishampton.webp",
+    "jpg": "/images/photos/events-2026-10-15-an-evening-with-mike-tindall-bishampton.jpg",
+    "width": 1400,
+    "height": 873,
+    "alt": "Promotional graphic for 'An Evening With Mike Tindall' at The Vale Golf & Country Club, with a man's face and a stage microph",
+    "credit": "The Vale Golf & Country Club via Vale & Spa",
+    "village": "",
+    "subject": "Events",
+    "targets": [
+      "event:an evening with mike tindall — bishampton"
+    ],
+    "taken": ""
+  },
+  {
+    "slug": "events-2026-10-16-an-evening-with-phil-taylor-darts-legend",
+    "src": "/images/photos/events-2026-10-16-an-evening-with-phil-taylor-darts-legend.webp",
+    "jpg": "/images/photos/events-2026-10-16-an-evening-with-phil-taylor-darts-legend.jpg",
+    "width": 989,
+    "height": 1400,
+    "alt": "Poster for 'An Evening with Phil Taylor: My Life in Darts' at The Regal Theatre, Evesham, Friday 16th October 2026",
+    "credit": "Dartsworld Events / The Regal Theatre, Evesham via Visit Evesham",
+    "village": "",
+    "subject": "Events",
+    "targets": [
+      "event:an evening with phil taylor — darts legend"
+    ],
+    "taken": ""
+  },
+  {
+    "slug": "events-2026-10-17-macready-dickens-theatrical-friend",
+    "src": "/images/photos/events-2026-10-17-macready-dickens-theatrical-friend.webp",
+    "jpg": "/images/photos/events-2026-10-17-macready-dickens-theatrical-friend.jpg",
+    "width": 1036,
+    "height": 1042,
+    "alt": "Man smiling in period black costume with white cravat, holding a cane with a silver handle, studio backdrop",
+    "credit": "The Henrician, Evesham via Visit Evesham",
+    "village": "",
+    "subject": "Events",
+    "targets": [
+      "event:macready! dickens' theatrical friend"
+    ],
+    "taken": ""
+  },
+  {
     "slug": "bishampton-events-the-vale-bonfire-and-firework-night",
     "src": "/images/photos/bishampton-events-the-vale-bonfire-and-firework-night.webp",
     "jpg": "/images/photos/bishampton-events-the-vale-bonfire-and-firework-night.jpg",
@@ -56,6 +116,81 @@
     "subject": "Events",
     "targets": [
       "event:gloquiz"
+    ],
+    "taken": ""
+  },
+  {
+    "slug": "evesham-events-2026-10-07-chitty-chitty-bang-bang-evesham",
+    "src": "/images/photos/evesham-events-2026-10-07-chitty-chitty-bang-bang-evesham.webp",
+    "jpg": "/images/photos/evesham-events-2026-10-07-chitty-chitty-bang-bang-evesham.jpg",
+    "width": 1400,
+    "height": 873,
+    "alt": "Empty theatre auditorium viewed from the stage, rows of blue seats lit by stage lights above",
+    "credit": "The Henrician via Vale & Spa",
+    "village": "Evesham",
+    "subject": "Events",
+    "targets": [
+      "event:chitty chitty bang bang — evesham"
+    ],
+    "taken": ""
+  },
+  {
+    "slug": "evesham-events-2026-10-10-evesham-head-rowing-race-evesham",
+    "src": "/images/photos/evesham-events-2026-10-10-evesham-head-rowing-race-evesham.webp",
+    "jpg": "/images/photos/evesham-events-2026-10-10-evesham-head-rowing-race-evesham.jpg",
+    "width": 696,
+    "height": 324,
+    "alt": "Poster for Evesham Autumn Head rowing event, Saturday 10th October 2026, with bridge over river at sunset",
+    "credit": "Evesham Rowing Club via Visit Evesham",
+    "village": "Evesham",
+    "subject": "Events",
+    "targets": [
+      "event:evesham head rowing race — evesham"
+    ],
+    "taken": "2026-09-28"
+  },
+  {
+    "slug": "evesham-events-2026-10-17-evesham-festival-of-words-autumnfest",
+    "src": "/images/photos/evesham-events-2026-10-17-evesham-festival-of-words-autumnfest.webp",
+    "jpg": "/images/photos/evesham-events-2026-10-17-evesham-festival-of-words-autumnfest.jpg",
+    "width": 1400,
+    "height": 1400,
+    "alt": "Smiling woman with grey hair, gold necklace and floral top, in front of a blurred bookshelf",
+    "credit": "Evesham Festival of Words via Visit Evesham",
+    "village": "Evesham",
+    "subject": "Events",
+    "targets": [
+      "event:evesham festival of words: autumnfest"
+    ],
+    "taken": ""
+  },
+  {
+    "slug": "evesham-events-2026-10-18-the-cavern-beatles-regal-evesham",
+    "src": "/images/photos/evesham-events-2026-10-18-the-cavern-beatles-regal-evesham.webp",
+    "jpg": "/images/photos/evesham-events-2026-10-18-the-cavern-beatles-regal-evesham.jpg",
+    "width": 600,
+    "height": 889,
+    "alt": "Poster for The Cavern Beatles tribute band live at The Regal, Sunday 18 October 2026, doors 19:00",
+    "credit": "The Cavern Beatles / The Regal, Evesham via Visit Evesham",
+    "village": "Evesham",
+    "subject": "Events",
+    "targets": [
+      "event:the cavern beatles — regal evesham"
+    ],
+    "taken": ""
+  },
+  {
+    "slug": "evesham-events-2026-10-22-evesham-comedy-club-with-angela-barnes",
+    "src": "/images/photos/evesham-events-2026-10-22-evesham-comedy-club-with-angela-barnes.webp",
+    "jpg": "/images/photos/evesham-events-2026-10-22-evesham-comedy-club-with-angela-barnes.jpg",
+    "width": 1128,
+    "height": 1400,
+    "alt": "Poster for Evesham Comedy Club at Evesham Town Hall, Thursday 22 October, featuring four comedians, £20, QR code and website",
+    "credit": "Evesham Comedy Club (Evesham Live) via Visit Evesham",
+    "village": "Evesham",
+    "subject": "Events",
+    "targets": [
+      "event:evesham comedy club with angela barnes"
     ],
     "taken": ""
   },
