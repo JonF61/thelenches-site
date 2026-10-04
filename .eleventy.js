@@ -47,6 +47,26 @@ module.exports = async function (eleventyConfig) {
   const { tileSvg } = require("./lib/tiles.js");
   eleventyConfig.addFilter("tileSvg", tileSvg);
 
+  // Standing image for a recurring event: the event's own image if it has one, else the
+  // first photos.json item with a target "event:<key>" whose key appears in the title
+  // (letters and digits only, so "event:gloquiz" matches "Glo-Quiz — The Lenches Club").
+  // Set in the Photos tab: status approved, target event:<key>. Returns { url, alt } or null.
+  const squash = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+  eleventyConfig.addFilter("eventImage", (e, photos) => {
+    if (e && e.image && e.image.url) return e.image;
+    const title = squash(e && e.title);
+    if (!title) return null;
+    for (const p of photos || []) {
+      for (const t of p.targets || []) {
+        const m = String(t).match(/^event:(.+)$/);
+        if (m && squash(m[1]) && title.includes(squash(m[1])) && p.src) {
+          return { url: p.src, alt: p.alt || "" };
+        }
+      }
+    }
+    return null;
+  });
+
   // True for items in the five Lenches ("Lenches" badge on Events; lib/lenches.js)
   const { inLenches } = require("./lib/lenches.js");
   eleventyConfig.addFilter("inLenches", inLenches);
