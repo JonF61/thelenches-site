@@ -4,9 +4,9 @@
 //     meaning: <Village or General>/<Subject>/file; any "Rejected" folder = never
 //     use; folders starting "_" are ignored. A file that disappears = missing.
 //  2. Describe new rows: dHash (duplicates), Sonnet alt text, note and people check.
-//  3. Publish rows with status "approved": 1600px WebP + JPEG, all metadata
+//  3. Publish rows with status "approved": 1400px WebP + JPEG, all metadata
 //     (GPS, EXIF) stripped, to src/images/photos/<slug>; anything else that is
-//     live is removed. People/children/unknown need the people_ok tick.
+//     live is removed. People/children/unknown need people_ok (yes/TRUE).
 //  4. Rewrite src/_data/photos.json from what is live. The workflow commits.
 'use strict';
 
@@ -31,7 +31,9 @@ const IMAGE_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp
 const MAX_DESCRIBE = 25;            // Claude calls per run
 const MAX_RENDER = 20;              // photos resized per run
 const MAX_BYTES = 50 * 1024 * 1024;
-const EDGE = 1600;                  // longest side published
+const EDGE = 1400;                  // longest side published (4 Oct: was 1600)
+const WEBP_QUALITY = 72;            // 4 Oct: was 80 (WebP came out larger than the JPEG)
+const JPEG_QUALITY = 80;
 const CLAUDE_EDGE = 1024;           // longest side sent to Claude
 const DUP_DISTANCE = 6;             // dHash bits: same picture, resized or recompressed
 const PAUSE_MS = 1100;              // keeps Sheets writes well under 60/min
@@ -80,8 +82,18 @@ async function render(buf, slug) {
   const base = sharp(buf, { failOn: 'none' })
     .rotate()
     .resize({ width: EDGE, height: EDGE, fit: 'inside', withoutEnlargement: true });
-  await base.clone().webp({ quality: 80 }).toFile(fileFor(slug, 'webp'));
-  await base.clone().flatten({ background: '#ffffff' }).jpeg({ quality: 80, mozjpeg: true }).toFile(fileFor(slug, 'jpg'));
+  await base.clone().webp({ quality: WEBP_QUALITY, effort: 5 }).toFile(fileFor(slug, 'webp'));
+  await base.clone().flatten({ background: '#ffffff' }).jpeg({ quality: JPEG_QUALITY, mozjpeg: true }).toFile(fileFor(slug, 'jpg'));
+}
+
+// True if a published WebP is bigger than the current EDGE (rendered under older settings).
+async function oversized(slug) {
+  try {
+    const meta = await sharp(fileFor(slug, 'webp')).metadata();
+    return Math.max(meta.width || 0, meta.height || 0) > EDGE;
+  } catch {
+    return true;
+  }
 }
 
 function removeFiles(slug) {
@@ -207,7 +219,7 @@ async function main() {
       const buf = await drive.download(f);
       const hash = await dHash(buf);
       const dup = rows.find((o) => o !== row && validHash(o.dhash) && hashDistance(o.dhash, hash) <= DUP_DISTANCE);
-      const fields = { dhash: hash, duplicate_of: dup ? `row ${dup._row} (${dup.filename})` : '' };
+      const fields = { dhash: hash, duplicate_of: dup ? `${dup.filename} (${dup.path || 'top level'})` : '' };
       const thumb = await sharp(buf, { failOn: 'none' })
         .rotate()
         .resize({ width: CLAUDE_EDGE, height: CLAUDE_EDGE, fit: 'inside', withoutEnlargement: true })
@@ -248,7 +260,8 @@ async function main() {
       const slug = row.slug || uniqueSlug(row, used);
       const present = fs.existsSync(fileFor(slug, 'webp')) && fs.existsSync(fileFor(slug, 'jpg'));
       const stale = !live || !present || row.slug !== slug
-        || (row.drive_modified && row.drive_modified > row.published_at);
+        || (row.drive_modified && row.drive_modified > row.published_at)
+        || (await oversized(slug));
       if (!stale) continue;
       if (rendered >= MAX_RENDER) {
         console.log(`Publish cap (${MAX_RENDER}) reached: the rest wait for the next run.`);
@@ -275,12 +288,12 @@ async function main() {
       set(row, {
         published_at: '',
         image_url: '',
-        notes: blocked ? `${today()} taken down: tick people_ok to republish` : `${today()} taken down (status ${low(row.status) || 'blank'})`,
+        notes: blocked ? `${today()} taken down: put yes in people_ok to republish` : `${today()} taken down (status ${low(row.status) || 'blank'})`,
       });
       stats.removed++;
       await flush();
     } else if (blocked && !String(row.notes || '').includes('people_ok')) {
-      set(row, { notes: `${today()} approved, but people = ${row.people}: tick people_ok once consent is confirmed` });
+      set(row, { notes: `${today()} approved, but people = ${row.people}: put yes in people_ok once consent is confirmed` });
       await flush();
     }
   }
