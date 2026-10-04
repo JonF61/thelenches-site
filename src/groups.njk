@@ -78,7 +78,10 @@ description: Groups and clubs across the Lenches villages, including pages we ho
       </div>
 
       <div class="card">
-        <img class="thumb" src="https://rouslench.com/assets/images/card.jpg?v=29861e5d" alt="Rous Lench Village Hall" loading="lazy">
+        {#- Local copy from photos.json (Photos tab, chosen 4 Oct: IMG_3113, whole hall) -#}
+        {%- for p in photos %}{% if p.slug == "rous-lench-img-3113" %}
+        <img class="thumb" src="{{ p.src | url }}" alt="{{ p.alt | escape }}" width="{{ p.width }}" height="{{ p.height }}" loading="lazy">
+        {%- endif %}{% endfor %}
         <h3 class="mt0">Rous Lench Village Hall</h3>
         <p>A characterful Victorian hall opposite the village green — events and hall hire in Rous Lench.</p>
         <p><a href="https://rouslench.com/" target="_blank" rel="noopener">Visit &rarr;</a></p>

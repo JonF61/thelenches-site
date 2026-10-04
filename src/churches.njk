@@ -10,6 +10,17 @@ description: Churches serving the Lenches, Harvington and Abbots Morton — the 
     <p class="page-intro">The parish churches of the ARCH Benefice serve the Lenches and their neighbours, with several other congregations a short drive away in Evesham.</p>
   </div>
 
+  {#- Photos come from src/_data/photos.json (Photos tab, target "churches"). Caption = church name by village. -#}
+  {%- set churchNames = { "Rous Lench": "St Peter's, Rous Lench", "Church Lench": "All Saints', Church Lench", "Harvington": "St James the Great, Harvington", "Abbots Morton": "St Peter's, Abbots Morton" } %}
+  <div class="gallery">
+  {%- for p in photos %}{% if "churches" in p.targets %}
+    <figure style="margin:0">
+      <a href="{{ p.src | url }}" data-viewer data-caption="{{ p.alt | escape }}"><img src="{{ p.src | url }}" alt="{{ p.alt | escape }}" width="{{ p.width }}" height="{{ p.height }}" loading="lazy"{% if p.height > p.width %} style="object-position:50% 20%"{% endif %}></a>
+      <figcaption class="small muted">{{ churchNames[p.village] or p.village }}{% if p.credit %} &middot; {{ p.credit | escape }}{% endif %}</figcaption>
+    </figure>
+  {%- endif %}{% endfor %}
+  </div>
+
   <section id="arch">
     <h2>The ARCH Benefice</h2>
     <div class="card">
