@@ -115,7 +115,7 @@ async function processMessage(id, ctx) {
   // original Pending rows and creates no new item or reply.
   const answered = replies.findAnsweredReply(msg, source.source, ctx);
 
-  const { images, pdfs, notes } = await prepareAttachments(
+  const { images, pdfs, notes, unusable } = await prepareAttachments(
     msg.attachments,
     (att) => g.getAttachmentData(msg.id, att)
   );
@@ -211,7 +211,7 @@ async function processMessage(id, ctx) {
   // beats a duplicate; the run still fails so GitHub emails Jon.
   let replyNote = '';
   try {
-    const planned = await replies.planReply({ msg, sourceName: source.source, result, rows, ctx });
+    const planned = await replies.planReply({ msg, sourceName: source.source, result, rows, ctx, unusable });
     replyNote = replies.logNoteFor(planned); // per-sender limit: ack dropped / clarification held
   } catch (err) {
     ctx.replyErrors += 1;
@@ -223,8 +223,11 @@ async function processMessage(id, ctx) {
     received,
     source: source.source,
     items: rows.length,
-    error: [rows.length ? '' : `No items: ${result.skipReason || 'none found'}`, replyNote]
-      .filter(Boolean).join(' | '),
+    error: [
+      rows.length ? '' : `No items: ${result.skipReason || 'none found'}`,
+      replyNote,
+      unusable.length ? `Unusable attachment(s): ${unusable.join(', ')}` : '',
+    ].filter(Boolean).join(' | '),
   };
 }
 

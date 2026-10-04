@@ -2,6 +2,9 @@
 // Submitter auto-replies (step 6). One reply per inbound submission, threaded:
 // acknowledgement + policy notes (templates.md) + a Claude-drafted clarification if
 // required details are missing.
+// Attachments we couldn't use (Word, Publisher, unreadable images; from images.js)
+// get the attachment_unusable note, policy code attachment_unusable. An email whose only
+// content was such an attachment (no items) still gets an acknowledgement with the note.
 //
 // Lifecycle of a Replies row (status):
 //   shadow    replies_mode=shadow: drafted and logged, shown to Jon, never sent
@@ -50,6 +53,7 @@ const DEFAULT_MAX_PER_DAY = 30;
 const DEFAULT_MAX_PER_SENDER = 3; // Settings reply_max_per_sender, per SENDER_GAP_HOURS
 const SENDER_LIMIT_CODE = 'sender_limit';
 const SENDER_LIMIT_NOTE = 'Sender limit reached';
+const UNUSABLE_CODE = 'attachment_unusable';
 const MAX_CLARIFY_CHARS = 700;
 const MAX_FOLLOWUP_INPUT = 3000; // chars of the submitter's follow-up given to Claude
 const MAX_FOLLOWUP_CHARS = 900;  // longest follow-up draft accepted
@@ -163,13 +167,20 @@ function fill(key, vars = {}) {
 }
 
 // items: [{ title, event_date, policy: [codes] }]
-function buildBody({ items, outOfScope, clarification }) {
+// unusable: attachment names we couldn't use ('' entries = name unknown, e.g. the 24h rebuild)
+function buildBody({ items, outOfScope, clarification, unusable = [] }) {
   const parts = [fill('greeting')];
   if (items.length === 1) parts.push(fill('ack_one', { title: items[0].title }));
   else if (items.length > 1) parts.push(fill('ack_many', { titles: items.map((i) => `- ${i.title}`).join('\n') }));
   else parts.push(fill('ack_none'));
 
   const notes = [];
+  if (unusable.length) {
+    const names = unique(unusable.filter(Boolean));
+    notes.push(fill(UNUSABLE_CODE, {
+      files: names.length ? listJoin(names.map((n) => `"${n}"`)) : 'one of your attachments',
+    }));
+  }
   if (items.some((i) => i.policy.includes('after_deadline'))) notes.push(fill('after_deadline'));
   for (const i of items) {
     for (const code of ITEM_CODES) {
@@ -365,10 +376,13 @@ async function appendReply(ctx, row) {
 
 // Writes at most one Replies row for a message whose Pending rows have just been written.
 // ctx: { settings, holiday, replies (Replies table rows) }
-async function planReply({ msg, sourceName, result, rows, ctx }) {
+// unusable: attachment names images.js couldn't use (Word, Publisher, unreadable images).
+async function planReply({ msg, sourceName, result, rows, ctx, unusable = [] }) {
   const mode = repliesMode(ctx.settings);
   if (mode === 'off' || !isReplySource(ctx.settings, sourceName)) return null;
-  if (!rows.length && !result.outOfScope) return null; // nothing submitted (e.g. a conversation)
+  // Nothing submitted (e.g. a conversation). An unreadable attachment still gets a reply,
+  // since it was probably the submission.
+  if (!rows.length && !result.outOfScope && !unusable.length) return null;
   if (ctx.replies.some((r) => r.message_id === msg.id)) return null; // already planned
 
   const to = g.addressOf(msg.replyTo) || msg.fromAddress;
@@ -408,6 +422,7 @@ async function planReply({ msg, sourceName, result, rows, ctx }) {
     ...items.flatMap((i) => i.policy),
     result.outOfScope && 'out_of_scope',
     anonymous && 'anonymous',
+    unusable.length && UNUSABLE_CODE,
     overLimit && SENDER_LIMIT_CODE,
   ].filter(Boolean));
 
@@ -423,11 +438,12 @@ async function planReply({ msg, sourceName, result, rows, ctx }) {
     ...base,
     policy_codes: codes.join(','),
     subject: replySubject(msg.subject),
-    body: buildBody({ items, outOfScope: result.outOfScope, clarification }),
+    body: buildBody({ items, outOfScope: result.outOfScope, clarification, unusable }),
     status,
     notes: [
       overLimit ? `${limitNote}: clarification held for your Send/Skip, never sent automatically` : '',
       drafted ? '' : 'Clarification uses fallback wording (Claude draft unavailable)',
+      unusable.length ? `Couldn't use: ${unusable.join(', ')}` : '',
     ].filter(Boolean).join(' | '),
   });
 }
@@ -647,12 +663,19 @@ async function assertSendAs() {
   }
 }
 
-// Body without the clarification, rebuilt from the Pending rows (24h fallback).
+// Body without the clarification, rebuilt from the Pending rows (24h fallback). The
+// attachment names aren't stored, so the unusable note says "one of your attachments".
 function bodyWithoutQuestion(reply, pending) {
   const items = pending
     .filter((r) => r.message_id === reply.message_id)
     .map((r) => ({ title: r.title, event_date: r.event_date, policy: splitCodes(r.policy_flags) }));
-  return buildBody({ items, outOfScope: splitCodes(reply.policy_codes).includes('out_of_scope'), clarification: '' });
+  const codes = splitCodes(reply.policy_codes);
+  return buildBody({
+    items,
+    outOfScope: codes.includes('out_of_scope'),
+    clarification: '',
+    unusable: codes.includes(UNUSABLE_CODE) ? [''] : [],
+  });
 }
 
 // Sends one Replies row. Returns true if sent. A failed send is marked "failed" and never
