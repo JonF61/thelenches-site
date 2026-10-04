@@ -1,1 +1,17 @@
-[]
+[
+  {
+    "slug": "rous-lench-img-3120",
+    "src": "/images/photos/rous-lench-img-3120.webp",
+    "jpg": "/images/photos/rous-lench-img-3120.jpg",
+    "width": 1600,
+    "height": 1067,
+    "alt": "Stone church doorway with ornate wooden door and ironwork, arched window, in Rous Lench",
+    "credit": "",
+    "village": "Rous Lench",
+    "subject": "",
+    "targets": [
+      "test"
+    ],
+    "taken": "2014-07-07"
+  }
+]
