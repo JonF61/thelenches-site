@@ -1,0 +1,56 @@
+name: Drive photos
+
+# Scans "Lenches Photos" in Drive into the Photos tab, drafts alt text with
+# Sonnet, and publishes rows marked approved to src/images/photos +
+# src/_data/photos.json. Commits only if something changed, then starts the
+# site build (a GITHUB_TOKEN push can't).
+on:
+  schedule:
+    - cron: '41 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: photos
+  cancel-in-progress: false
+
+jobs:
+  photos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Scan, describe and publish
+        run: node scripts/photos/index.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          PHOTOS_FOLDER_ID: 0BwdIG5DOmCgkT2thdWs2LTdIbzQ
+
+      - name: Commit and build
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add -A src/_data/photos.json src/images/photos
+          if git diff --cached --quiet; then echo "No changes."; exit 0; fi
+          git config user.name "Lenches Pipeline"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Publish Drive photos"
+          git pull --rebase
+          git push
+          gh workflow run build.yml --ref main
