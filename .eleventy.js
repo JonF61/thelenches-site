@@ -47,6 +47,10 @@ module.exports = async function (eleventyConfig) {
   const { tileSvg } = require("./lib/tiles.js");
   eleventyConfig.addFilter("tileSvg", tileSvg);
 
+  // True for items in the five Lenches ("Lenches" badge on Events; lib/lenches.js)
+  const { inLenches } = require("./lib/lenches.js");
+  eleventyConfig.addFilter("inLenches", inLenches);
+
   // Drop pipeline news/notices past their expiry date (between publish runs)
   eleventyConfig.addFilter("current", (items) => {
     const now = today();

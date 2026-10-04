@@ -5,9 +5,11 @@ description: What's on across the Lenches villages — upcoming events from the 
 ---
 {#- Items come from whatson.json (hand-edited) and pipeline.json (written by scripts/publish). -#}
 {#- Thumbnail/tile floats right inside .item-body so the text wraps under it on phones (no blank space) -#}
+{#- "Lenches" badge marks items in the five Lenches (inLenches filter, lib/lenches.js); order stays by date -#}
 <style>
   .item-card .item-body{display:flow-root}
   .item-body > .thumb-link,.item-body > .tile{float:right;margin:0 0 .4rem .9rem}
+  .lenches-badge{display:inline-block;vertical-align:middle;margin-left:.35rem;padding:0 .45rem;border-radius:4px;background:#fbe6d6;color:#8a3e0c;font-size:.7rem;font-weight:600;line-height:1.6;white-space:nowrap}
 </style>
 <main class="container">
   <div class="page-head">
@@ -26,7 +28,7 @@ description: What's on across the Lenches villages — upcoming events from the 
       <div class="date"><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>
       <div class="item-body">
         {% if e.image %}<a class="thumb-link" href="{{ e.image.url | url }}" data-viewer aria-label="View full image"><img class="item-thumb" src="{{ e.image.url | url }}" alt="{{ e.image.alt | escape }}" loading="lazy"></a>{% else %}{{ e | tileSvg | safe }}{% endif %}
-        <h3>{{ e.title | escape }}</h3>
+        <h3>{{ e.title | escape }}{% if e | inLenches %} <span class="lenches-badge">Lenches</span>{% endif %}</h3>
         <p>{{ e.body | escape }}{% if e.link %} <a href="{{ e.link.url | escape }}" target="_blank" rel="noopener">{{ e.link.text | escape }} &rarr;</a>{% endif %}</p>
       </div>
     </div>
