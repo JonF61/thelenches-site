@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
-    "googleapis": "^181.0.0",
+    "googleapis": "^182.0.0",
     "heic-convert": "^2.1.0",
     "mupdf": "^1.27.0",
     "sharp": "^0.35.4"
