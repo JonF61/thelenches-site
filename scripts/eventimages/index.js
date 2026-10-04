@@ -1,6 +1,6 @@
 // scripts/eventimages/index.js
 // Event images from the web (agreed 4 Oct). Run by .github/workflows/eventimages.yml.
-// For upcoming events (whatson.json + pipeline.json, next 28 days) with a link but no
+// For upcoming events (whatson.json + pipeline.json, next 28 days) with a web link but no
 // image and no matching photos.json target, find the organiser's share image on the
 // linked page (find.js), check it with Sonnet (check.js) and add a row to the
 // "Image fetch" tab. Apps Script (image-fetch.gs) saves it to Drive; the Photos job
@@ -8,6 +8,7 @@
 // Nothing publishes until Jon sets the Photos row to approved.
 // Events that yield nothing are recorded as status "skipped" so they aren't retried:
 // delete the row to retry; for a skipped row that has a url, clear status to use it anyway.
+// Links that can never give an image (mailto:, PDFs) are left out without a row.
 'use strict';
 
 const fs = require('fs');
@@ -48,6 +49,8 @@ function normUrl(s) {
     return '';
   }
 }
+// A link that could lead to an image: http(s), not a PDF.
+const webLink = (u) => /^https?:\/\//i.test(String(u || '').trim()) && !/\.pdf(\?|#|$)/i.test(String(u));
 
 const keyOf = (e) => `${String(e.date).slice(0, 10)}|${oneLine(e.title, 200)}`;
 // Full title as the target, so a one-off image can't match other events. Commas and
@@ -56,7 +59,7 @@ const targetOf = (e) => `event:${oneLine(e.title, 200).toLowerCase().replace(/[,
 
 function villageFor(e) {
   const title = String(e.title || '');
-  const m = title.match(/\s[—–-]\s([^—–]+)$/);
+  const m = title.match(/\s[\u2014\u2013-]\s([^\u2014\u2013]+)$/);
   const tail = m ? m[1].trim().toLowerCase() : '';
   return PLACES.find((p) => p.toLowerCase() === tail)
     || PLACES.find((p) => new RegExp(`\\b${p}\\b`, 'i').test(`${title} ${e.body || ''}`))
@@ -64,7 +67,7 @@ function villageFor(e) {
 }
 
 function filenameFor(e, ext) {
-  const stem = oneLine(e.title, 200).replace(/[—–]/g, '-').replace(/[^\w .()&-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const stem = oneLine(e.title, 200).replace(/[\u2014\u2013]/g, '-').replace(/[^\w .()&-]+/g, ' ').replace(/\s+/g, ' ').trim();
   return `${String(e.date).slice(0, 10)} ${stem}`.slice(0, 90).trim() + `.${ext}`;
 }
 
@@ -78,8 +81,15 @@ function covered(e, photos) {
   }));
 }
 
+// Site names often carry a tagline ("Vale & Spa - Worcestershire's ... | Tourism ..."):
+// keep the part before the first " - " or " | ".
+function shortSite(siteName, host) {
+  const s = oneLine(siteName, 100).split(/\s+[-|\u2013\u2014]\s+/)[0].trim();
+  return s || host.replace(/^www\./, '');
+}
+
 function creditFor(organiser, siteName, host) {
-  const site = siteName || host.replace(/^www\./, '');
+  const site = shortSite(siteName, host);
   if (!organiser) return site;
   const a = squash(organiser);
   const b = squash(site);
@@ -113,7 +123,7 @@ async function main() {
   const events = [...(whatson.events || []), ...(pipeline.events || [])]
     .filter((e) => e && e.title && /^\d{4}-\d{2}-\d{2}/.test(String(e.date || '')))
     .filter((e) => { const d = String(e.date).slice(0, 10); return d >= from && d <= to; })
-    .filter((e) => e.link && e.link.url && !covered(e, photos))
+    .filter((e) => e.link && webLink(e.link.url) && !covered(e, photos))
     .filter((e) => !doneEvents.has(keyOf(e)) && !donePages.has(normUrl(e.link.url)))
     .filter((e) => { const k = keyOf(e); if (seen.has(k)) return false; seen.add(k); return true; })
     .sort((a, b) => String(a.date).localeCompare(String(b.date)));
