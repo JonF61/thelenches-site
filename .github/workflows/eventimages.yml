@@ -1,0 +1,46 @@
+name: Event images
+
+# Finds share images for upcoming events that have a link but no image and adds
+# them to the Sheet's "Image fetch" tab. Apps Script saves them to Drive and the
+# Drive photos run (05:41 UTC) describes them; nothing publishes until a Photos
+# row is approved. Writes to the Sheet only: no commit.
+on:
+  schedule:
+    - cron: '47 3 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: log what would be added, write nothing'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eventimages
+  cancel-in-progress: false
+
+jobs:
+  find:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Find event images
+        run: node scripts/eventimages/index.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          DRY_RUN: ${{ inputs.dry_run }}
