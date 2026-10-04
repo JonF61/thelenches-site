@@ -1,19 +1,20 @@
 // scripts/photos/describe.js
 // One Sonnet call per new photo (on a 1024px thumbnail): draft alt text, a note
-// for the editor, and a people/children check that gates publishing.
+// for the editor, a people/children check that gates publishing, and a stock check.
 'use strict';
 
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5';
 
 const SYSTEM = `You look at photos for The Lenches, a group of villages in Worcestershire, England, before they go on the community website.
 Reply with one JSON object and nothing else:
-{"alt_text": "...", "description": "...", "people": "none|distant|identifiable", "children": false, "kind": "photo|screenshot|document|graphic"}
+{"alt_text": "...", "description": "...", "people": "none|distant|identifiable", "children": false, "kind": "photo|screenshot|document|graphic", "stock": "likely|possible|unlikely"}
 
 alt_text: at most 125 characters, British English, saying what is visible for someone using a screen reader. Don't start with "Image of" or "Photo of". You may use the village name from the folder hint, but don't name a specific building, business or person unless the name is legible in the image.
 description: one plain sentence for the editor, mentioning anything that matters for publishing (blur, poor light, text in the image, season, a recognisable car number plate).
 people: "none" if nobody is visible; "distant" if people are visible but too small, blurred or turned away to be recognised; "identifiable" if anyone's face could be recognised.
 children: true if anyone visible appears to be under 18.
-kind: "screenshot" for captures of screens, maps or web pages; "document" for flyers, posters or text-heavy images; "graphic" for logos and illustrations; otherwise "photo".`;
+kind: "screenshot" for captures of screens, maps or web pages; "document" for flyers, posters or text-heavy images; "graphic" for logos and illustrations; otherwise "photo".
+stock: "likely" if there is a stock-library watermark or credit, or it looks like a generic studio or model shot rather than a real local scene, event or act; "possible" if it might be; otherwise "unlikely".`;
 
 let clientCache;
 function claude() {
@@ -52,6 +53,7 @@ async function describePhoto(jpeg, { village, subject }) {
     description: oneLine(d.description, 300),
     people: d.children === true ? 'children' : people,
     kind: ['photo', 'screenshot', 'document', 'graphic'].includes(d.kind) ? d.kind : 'photo',
+    stock: ['likely', 'possible', 'unlikely'].includes(d.stock) ? d.stock : 'unlikely',
   };
 }
 

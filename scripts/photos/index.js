@@ -3,7 +3,9 @@
 //  1. Scan "Lenches Photos": new files become Photos rows. The folder path carries
 //     meaning: <Village or General>/<Subject>/file; any "Rejected" folder = never
 //     use; folders starting "_" are ignored. A file that disappears = missing.
-//  2. Describe new rows: dHash (duplicates), Sonnet alt text, note and people check.
+//     Files saved by the Image fetch tab (event images from the web) get target,
+//     credit and, for performer promo shots, people_ok pre-filled from that row.
+//  2. Describe new rows: dHash (duplicates), Sonnet alt text, note, people and stock check.
 //  3. Publish rows with status "approved": 1400px WebP + JPEG, all metadata
 //     (GPS, EXIF) stripped, to src/images/photos/<slug>; anything else that is
 //     live is removed. People/children/unknown need people_ok (yes/TRUE).
@@ -19,6 +21,7 @@ const drive = require('./drive');
 const { describePhoto } = require('./describe');
 
 const TAB = 'Photos';
+const WEB_TAB = 'Image fetch';
 const REQUIRED = ['drive_id', 'path', 'village', 'subject', 'filename', 'drive_link', 'status', 'target',
   'alt_text', 'credit', 'people', 'people_ok', 'description', 'duplicate_of', 'taken_at', 'width', 'height',
   'slug', 'image_url', 'published_at', 'drive_modified', 'first_seen', 'dhash', 'notes'];
@@ -104,6 +107,34 @@ function removeFiles(slug) {
   }
 }
 
+// Image fetch rows saved to Drive, by Drive file ID. A missing tab only means no pre-fill.
+async function webRows() {
+  try {
+    const out = new Map();
+    for (const r of await g.readTable(WEB_TAB)) {
+      const id = String(r.drive_file_id || '').trim();
+      if (id && low(r.status) === 'saved') out.set(id, r);
+    }
+    return out;
+  } catch (err) {
+    console.log(`${WEB_TAB} tab not read (${err.message}): no pre-fill this run.`);
+    return new Map();
+  }
+}
+
+// Pre-fill for a new Photos row from its Image fetch row. Publishing still needs
+// status approved; performer promo shots (no children) get people_ok yes (agreed 4 Oct).
+function webPrefill(w) {
+  const check = String(w.check || '');
+  const performer = /performer=yes/.test(check) && !/people=children/.test(check);
+  return {
+    target: String(w.suggested_target || '').trim(),
+    credit: String(w.credit || '').trim(),
+    people_ok: performer ? 'yes' : '',
+    notes: `From the web: ${check}`.slice(0, 300),
+  };
+}
+
 // Sheet writes, one row per call, paced.
 const pending = new Map();
 function set(row, fields) {
@@ -135,6 +166,7 @@ async function main() {
   const files = await drive.walk(root);
   const byId = new Map(files.map((f) => [f.id, f]));
   let rows = await g.readTable(TAB);
+  const web = await webRows();
   console.log(`Drive: ${files.length} file(s). Sheet: ${rows.length} row(s).`);
 
   // A failed or partial listing must never unpublish the library.
@@ -156,6 +188,8 @@ async function main() {
       continue;
     }
     const meta = f.imageMediaMetadata || {};
+    const w = web.get(f.id);
+    const pre = w ? webPrefill(w) : {};
     added.push({
       drive_id: f.id,
       path: m.path,
@@ -169,7 +203,8 @@ async function main() {
       height: meta.height || '',
       drive_modified: f.modifiedTime || '',
       first_seen: now(),
-      notes: heic ? "iPhone HEIC can't be read yet: save a JPEG copy into the same folder" : '',
+      ...pre,
+      notes: heic ? "iPhone HEIC can't be read yet: save a JPEG copy into the same folder" : (pre.notes || ''),
     });
   }
   if (added.length) {
@@ -228,11 +263,19 @@ async function main() {
         .toBuffer();
       try {
         const d = await describePhoto(thumb, { village: row.village, subject: row.subject });
-        Object.assign(fields, {
-          description: d.description,
-          people: d.people,
-          notes: d.kind === 'photo' ? '' : `Looks like a ${d.kind}`,
-        });
+        const fromWeb = web.has(row.drive_id);
+        const notes = [
+          fromWeb ? 'From the web' : '',
+          d.kind === 'photo' ? '' : `Looks like a ${d.kind}`,
+          d.stock === 'likely' ? 'Likely a stock photo' : d.stock === 'possible' ? 'Possibly a stock photo' : '',
+        ];
+        Object.assign(fields, { description: d.description, people: d.people });
+        // Children always wait for Jon, even if people_ok was pre-filled for a performer.
+        if (fromWeb && d.people === 'children' && isTrue(row.people_ok)) {
+          fields.people_ok = '';
+          notes.push('people_ok cleared: children visible');
+        }
+        fields.notes = notes.filter(Boolean).join('; ');
         if (!String(row.alt_text || '').trim()) fields.alt_text = d.alt_text;
       } catch (err) {
         failures++;
