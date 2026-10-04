@@ -1,0 +1,43 @@
+name: Generate lockfile
+
+# TEMPORARY (image formats): regenerates package-lock.json on the
+# image-formats branch after mupdf and heic-convert were added.
+# Run once, then delete this file.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lockfile
+  cancel-in-progress: false
+
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: image-formats
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve dependencies into package-lock.json
+        run: npm install --package-lock-only --no-audit --no-fund
+
+      - name: Check the lockfile installs cleanly
+        run: npm ci --no-audit --no-fund
+
+      - name: Commit lockfile
+        run: |
+          git add package-lock.json
+          if git diff --cached --quiet; then echo "No changes."; exit 0; fi
+          git config user.name "Lenches Pipeline"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Update package-lock.json (mupdf, heic-convert)"
+          git pull --rebase
+          git push
