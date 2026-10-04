@@ -1,16 +1,121 @@
 [
   {
+    "slug": "harvington-screen-shot-2021-06-11-at-15-13-14",
+    "src": "/images/photos/harvington-screen-shot-2021-06-11-at-15-13-14.webp",
+    "jpg": "/images/photos/harvington-screen-shot-2021-06-11-at-15-13-14.jpg",
+    "width": 1052,
+    "height": 1400,
+    "alt": "Stone church with green spire and clock, pink rose bushes in foreground, Harvington",
+    "credit": "",
+    "village": "Harvington",
+    "subject": "",
+    "targets": [
+      "churches"
+    ],
+    "taken": ""
+  },
+  {
+    "slug": "rous-lench-img-3110",
+    "src": "/images/photos/rous-lench-img-3110.webp",
+    "jpg": "/images/photos/rous-lench-img-3110.jpg",
+    "width": 1400,
+    "height": 933,
+    "alt": "Wooden sign reading 'Rous Lench Village Hall' on a red brick gable with decorative ironwork",
+    "credit": "",
+    "village": "Rous Lench",
+    "subject": "",
+    "targets": [
+      "groups-rous-hall"
+    ],
+    "taken": "2014-07-07"
+  },
+  {
+    "slug": "rous-lench-img-3112",
+    "src": "/images/photos/rous-lench-img-3112.webp",
+    "jpg": "/images/photos/rous-lench-img-3112.jpg",
+    "width": 1400,
+    "height": 933,
+    "alt": "Victorian brick cottages with tall chimneys and gables along a quiet lane in Rous Lench",
+    "credit": "",
+    "village": "Rous Lench",
+    "subject": "",
+    "targets": [
+      "home-banner"
+    ],
+    "taken": "2014-07-07"
+  },
+  {
+    "slug": "rous-lench-img-3113",
+    "src": "/images/photos/rous-lench-img-3113.webp",
+    "jpg": "/images/photos/rous-lench-img-3113.jpg",
+    "width": 1400,
+    "height": 933,
+    "alt": "Rous Lench Village Hall, a red brick building with a gothic window and arched wooden doors, surrounded by hedges",
+    "credit": "",
+    "village": "Rous Lench",
+    "subject": "",
+    "targets": [
+      "groups-rous-hall"
+    ],
+    "taken": "2014-07-07"
+  },
+  {
+    "slug": "rous-lench-img-3114",
+    "src": "/images/photos/rous-lench-img-3114.webp",
+    "jpg": "/images/photos/rous-lench-img-3114.jpg",
+    "width": 1400,
+    "height": 933,
+    "alt": "Victorian brick cottages with ornate gables and a tall chimney on a village road in Rous Lench",
+    "credit": "",
+    "village": "Rous Lench",
+    "subject": "",
+    "targets": [
+      "home-banner"
+    ],
+    "taken": "2014-07-07"
+  },
+  {
+    "slug": "rous-lench-img-3115",
+    "src": "/images/photos/rous-lench-img-3115.webp",
+    "jpg": "/images/photos/rous-lench-img-3115.jpg",
+    "width": 1400,
+    "height": 933,
+    "alt": "Tall pine tree on a grassy triangle at a road junction in Rous Lench, with a parked car nearby",
+    "credit": "",
+    "village": "Rous Lench",
+    "subject": "",
+    "targets": [
+      "home-banner"
+    ],
+    "taken": "2014-07-07"
+  },
+  {
+    "slug": "rous-lench-img-3117",
+    "src": "/images/photos/rous-lench-img-3117.webp",
+    "jpg": "/images/photos/rous-lench-img-3117.jpg",
+    "width": 1400,
+    "height": 933,
+    "alt": "Stone church with bell turret and surrounding churchyard gravestones in Rous Lench",
+    "credit": "",
+    "village": "Rous Lench",
+    "subject": "",
+    "targets": [
+      "churches"
+    ],
+    "taken": "2014-07-07"
+  },
+  {
     "slug": "rous-lench-img-3120",
     "src": "/images/photos/rous-lench-img-3120.webp",
     "jpg": "/images/photos/rous-lench-img-3120.jpg",
-    "width": 1600,
-    "height": 1067,
+    "width": 1400,
+    "height": 933,
     "alt": "Stone church doorway with ornate wooden door and ironwork, arched window, in Rous Lench",
     "credit": "",
     "village": "Rous Lench",
     "subject": "",
     "targets": [
-      "test"
+      "churches"
     ],
     "taken": "2014-07-07"
   }
