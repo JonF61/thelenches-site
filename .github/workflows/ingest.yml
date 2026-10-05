@@ -2,8 +2,8 @@ name: Ingest Pipeline label
 
 on:
   schedule:
-    # Every hour at :17 from 05:17 to 22:17 UTC. The gate step below keeps only
-    # the even UK hours 06–22, so BST/GMT changes need no edits.
+    # Backup only: GitHub often starts this hours late. The Cloudflare Worker fires
+    # the real runs (repository_dispatch "ingest") at :17 past even UK hours 06–22.
     - cron: "17 5-22 * * *"
   workflow_dispatch:
     inputs:
@@ -11,6 +11,8 @@ on:
         description: "Override start date (YYYY-MM-DD) for testing; blank = Settings F3"
         required: false
         default: ""
+  repository_dispatch:
+    types: [ingest]
 
 permissions:
   contents: read   # ingestion never commits; images are committed on approval (step 5)
@@ -27,7 +29,7 @@ jobs:
       - name: Gate on UK time
         id: gate
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ github.event_name }}" = "repository_dispatch" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"; exit 0
           fi
           H=$(TZ=Europe/London date +%-H)
