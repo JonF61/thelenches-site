@@ -1,0 +1,106 @@
+{
+  "source": "ARCH Messenger, October 2026",
+  "midweek": "A midweek Eucharist is held every Wednesday at 11am at St James the Great, Harvington.",
+  "dates": [
+    {
+      "date": "2026-10-04",
+      "name": "18th Sunday after Trinity",
+      "services": [
+        { "time": "10am", "village": "Norton", "service": "Harvest Eucharist" },
+        { "time": "10am", "village": "Harvington", "service": "Church @10" },
+        { "time": "11am", "village": "Church Lench", "service": "Harvest Eucharist" },
+        { "time": "11am", "village": "Abbots Morton", "service": "Church @11" },
+        { "time": "6.30pm", "village": "Harvington", "service": "Holy Communion (traditional language)" }
+      ]
+    },
+    {
+      "date": "2026-10-11",
+      "name": "19th Sunday after Trinity",
+      "services": [
+        { "time": "8.30am", "village": "Rous Lench", "service": "Holy Communion" },
+        { "time": "10am", "village": "Norton", "service": "Church @10" },
+        { "time": "11am", "village": "Harvington", "service": "Harvest Eucharist", "note": "followed by bring-and-share lunch" },
+        { "time": "11am", "village": "Church Lench", "service": "Church @11 (lay led)" }
+      ]
+    },
+    {
+      "date": "2026-10-18",
+      "name": "20th Sunday after Trinity",
+      "services": [
+        { "time": "10am", "village": "Norton", "service": "Eucharist" },
+        { "time": "10am", "village": "Harvington", "service": "Church @10" },
+        { "time": "11am", "village": "Church Lench", "service": "Holy Communion" },
+        { "time": "11am", "village": "Abbots Morton", "service": "Harvest service" }
+      ]
+    },
+    {
+      "date": "2026-10-25",
+      "name": "Last Sunday after Trinity",
+      "services": [
+        { "time": "10am", "village": "Norton", "service": "Church @10" },
+        { "time": "10am", "village": "Harvington", "service": "Eucharist" },
+        { "time": "10am", "village": "Rous Lench", "service": "Harvest Eucharist" },
+        { "time": "11am", "village": "Church Lench", "service": "Church @11" },
+        { "time": "3.30pm", "village": "Harvington", "service": "Messy Church", "note": "at the village hall" }
+      ]
+    },
+    {
+      "date": "2026-11-01",
+      "name": "All Saints",
+      "services": [
+        { "time": "10am", "village": "Harvington", "service": "Church @10" },
+        { "time": "11am", "village": "Church Lench", "service": "Eucharist" },
+        { "time": "11am", "village": "Abbots Morton", "service": "Church @11" },
+        { "time": "3pm", "village": "Norton", "service": "All Souls service" },
+        { "time": "6.30pm", "village": "Harvington", "service": "Holy Communion (BCP)" }
+      ]
+    },
+    {
+      "date": "2026-11-02",
+      "name": "All Souls' Day",
+      "services": [
+        { "time": "6.30pm", "village": "Harvington", "service": "Tree of Light service" }
+      ]
+    },
+    {
+      "date": "2026-11-08",
+      "name": "Remembrance Sunday",
+      "services": [
+        { "time": "10am", "village": "Norton", "service": "Remembrance Eucharist" },
+        { "time": "10.30am", "village": "Harvington", "service": "Remembrance" },
+        { "time": "10.45am", "village": "Abbots Morton", "service": "Remembrance" },
+        { "time": "10.50am", "village": "Church Lench", "service": "Remembrance" },
+        { "time": "4pm", "village": "Norton", "service": "Benefice Eucharist" }
+      ]
+    },
+    {
+      "date": "2026-11-15",
+      "name": "Safeguarding Sunday",
+      "services": [
+        { "time": "10am", "village": "Norton", "service": "Church @10" },
+        { "time": "10am", "village": "Harvington", "service": "Church @10" },
+        { "time": "11am", "village": "Church Lench", "service": "Holy Communion (BCP)" }
+      ]
+    },
+    {
+      "date": "2026-11-22",
+      "name": "Christ the King",
+      "services": [
+        { "time": "8.30am", "village": "Rous Lench", "service": "Holy Communion (BCP)" },
+        { "time": "10am", "village": "Norton", "service": "Eucharist" },
+        { "time": "10am", "village": "Harvington", "service": "Eucharist" },
+        { "time": "11am", "village": "Church Lench", "service": "Church @11" }
+      ]
+    },
+    {
+      "date": "2026-11-29",
+      "name": "Advent Sunday",
+      "services": [
+        { "time": "10am", "village": "Norton", "service": "Eucharist" },
+        { "time": "10am", "village": "Harvington", "service": "Eucharist" },
+        { "time": "11am", "village": "Church Lench", "service": "Eucharist" },
+        { "time": "6.30pm", "village": "Rous Lench", "service": "Advent reflection", "note": "cakes and hot drinks at the village hall from 5.30pm" }
+      ]
+    }
+  ]
+}

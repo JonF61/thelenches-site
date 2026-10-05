@@ -1,17 +1,20 @@
 ---
 layout: base.njk
 title: Churches
-description: Churches serving the Lenches, Harvington and Abbots Morton — the ARCH Benefice, plus Unitarian and Methodist congregations in Evesham.
+description: Churches serving the Lenches, Harvington and Abbots Morton — the ARCH Benefice and its service times, plus Unitarian and Methodist congregations in Evesham.
 ---
 <main class="container">
 
-  <div class="page-head">
+  {%- set churchNames = { "Rous Lench": "St Peter's, Rous Lench", "Church Lench": "All Saints', Church Lench", "Harvington": "St James the Great, Harvington", "Abbots Morton": "St Peter's, Abbots Morton", "Norton": "St Egwin's, Norton" } %}
+
+  <div class="page-head" id="arch">
     <h1>Churches</h1>
-    <p class="page-intro">The parish churches of the ARCH Benefice serve the Lenches and their neighbours, with several other congregations a short drive away in Evesham.</p>
+    <p class="page-intro">The Lenches and their neighbours are served by the ARCH Benefice, named after the parishes of <strong>A</strong>bbots Morton, <strong>R</strong>ous Lench, <strong>C</strong>hurch Lench and <strong>H</strong>arvington, which were brought together in 2001 within the Diocese of Worcester. Its churches are All Saints', Church Lench; St Peter's, Rous Lench; St James the Great, Harvington; St Peter's, Abbots Morton; and St Egwin's at Norton &amp; Lenchwick, which shares the rota though the parish formally sits in the Evesham benefice. Several other congregations are a short drive away in Evesham.</p>
+    <p>All Saints' stands at the top of the hill with one of the best views in Worcestershire, looking west towards the Malverns. St Peter's at Rous Lench is unusual in having two pulpits and no fixed pews, so the space can be used flexibly.</p>
+    <p class="small"><a href="https://www.archbenefice.org.uk/" target="_blank" rel="noopener">ARCH Benefice website &rarr;</a> &middot; <a href="https://www.archbenefice.org.uk/information/arch-messenger" target="_blank" rel="noopener">Read the ARCH Messenger &rarr;</a></p>
   </div>
 
   {#- Photos come from src/_data/photos.json (Photos tab, target "churches"). Caption = church name by village. -#}
-  {%- set churchNames = { "Rous Lench": "St Peter's, Rous Lench", "Church Lench": "All Saints', Church Lench", "Harvington": "St James the Great, Harvington", "Abbots Morton": "St Peter's, Abbots Morton" } %}
   <div class="gallery">
   {%- for p in photos %}{% if "churches" in p.targets %}
     <figure style="margin:0">
@@ -21,31 +24,36 @@ description: Churches serving the Lenches, Harvington and Abbots Morton — the 
   {%- endif %}{% endfor %}
   </div>
 
-  <section id="arch">
-    <h2>The ARCH Benefice</h2>
-    <div class="card">
-      <p class="mt0">The parishes of <strong>A</strong>bbots Morton, <strong>R</strong>ous Lench, <strong>C</strong>hurch Lench and <strong>H</strong>arvington — which give the benefice its name — were brought together in 2001, within the Diocese of Worcester.</p>
-      <p>St Egwin's at Norton &amp; Lenchwick is also listed among the benefice churches, though Church of England records still place that parish formally within the Evesham benefice.</p>
+  {#- Service times come from src/_data/services.json (typed from the ARCH Messenger rota). Past dates drop off at the nightly rebuild. -#}
+  <section id="services">
+    <h2>Service times</h2>
+    <p>Services rotate around the churches, so the pattern changes from week to week. {{ services.midweek }} <span class="small muted">From the {{ services.source }}.</span></p>
 
-      <table class="contacts" style="margin:1rem 0">
-        <caption>Churches of the benefice</caption>
-        <thead><tr><th scope="col">Church</th><th scope="col">Village</th></tr></thead>
-        <tbody>
-          <tr><th scope="row">All Saints'</th><td>Church Lench</td></tr>
-          <tr><th scope="row">St Peter's</th><td>Rous Lench</td></tr>
-          <tr><th scope="row">St James the Great</th><td>Harvington</td></tr>
-          <tr><th scope="row">St Peter's</th><td>Abbots Morton</td></tr>
-          <tr><th scope="row">St Egwin's</th><td>Norton &amp; Lenchwick</td></tr>
-        </tbody>
-      </table>
-
-      <p><a class="btn btn-outline" href="https://www.archbenefice.org.uk/" target="_blank" rel="noopener">Visit the ARCH Benefice website</a></p>
+    {%- set svc = services.dates | upcoming %}
+    {%- if svc.length %}
+    {%- for g in svc | byMonth %}
+    <h3>{{ g.label }}</h3>
+    <div class="grid">
+      {%- for d in g.items %}
+      <div class="card">
+        <h4 class="mt0" style="margin-bottom:0.15rem">{{ d.date | longDate }}</h4>
+        {% if d.name %}<p class="small muted mt0">{{ d.name }}</p>{% endif %}
+        <div style="overflow-x:auto">
+          <table class="contacts" style="margin:0.5rem 0 0">
+            <tbody>
+              {%- for s in d.services %}
+              <tr><th scope="row" style="white-space:nowrap">{{ s.time }}</th><td>{{ churchNames[s.village] or s.village }}</td><td>{{ s.service }}{% if s.note %} <span class="small muted">({{ s.note }})</span>{% endif %}</td></tr>
+              {%- endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {%- endfor %}
     </div>
-
-    <p>All Saints' stands at the top of the hill with one of the best views in Worcestershire, looking west towards the Malverns. St Peter's at Rous Lench is unusual in having two pulpits and no fixed pews, so the space can be used flexibly.</p>
-
-    <p>Services rotate around the churches rather than following the same pattern every week, so it's worth checking before you set out. The current month's times are listed in the <em>ARCH Messenger</em>, the benefice's own newsletter.</p>
-    <p><a href="https://www.archbenefice.org.uk/information/arch-messenger" target="_blank" rel="noopener">Read the ARCH Messenger &rarr;</a></p>
+    {%- endfor %}
+    {%- else %}
+    <p>No service times are listed for the coming weeks yet; please check the ARCH Messenger.</p>
+    {%- endif %}
   </section>
 
   <section id="evesham">
