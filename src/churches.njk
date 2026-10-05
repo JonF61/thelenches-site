@@ -38,13 +38,14 @@ description: Churches serving the Lenches, Harvington and Abbots Morton — the 
       <div class="card">
         <h4 class="mt0" style="margin-bottom:0.15rem">{{ d.date | longDate }}</h4>
         {% if d.name %}<p class="small muted mt0">{{ d.name }}</p>{% endif %}
-        <table class="contacts" style="margin:0.5rem 0 0">
-          <tbody>
-            {%- for s in d.services %}
-            <tr><th scope="row" style="white-space:nowrap">{{ s.time }}</th><td>{{ churchNames[s.village] or s.village }}</td><td>{{ s.service }}{% if s.note %} <span class="small muted">({{ s.note }})</span>{% endif %}</td></tr>
-            {%- endfor %}
-          </tbody>
-        </table>
+        <div class="svc-list">
+          {%- for s in d.services %}
+          <div class="svc">
+            <div class="svc-head"><span class="svc-time">{{ s.time }}</span> <span class="svc-church">{{ churchNames[s.village] or s.village }}</span></div>
+            <p class="svc-detail">{{ s.service }}{% if s.note %} <span class="small muted">({{ s.note }})</span>{% endif %}</p>
+          </div>
+          {%- endfor %}
+        </div>
       </div>
       {%- endfor %}
     </div>
