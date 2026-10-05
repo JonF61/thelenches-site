@@ -11,6 +11,8 @@
 //                       and 17:00 reminders. A failed dispatch raises a watchdog alert.
 //   cron NIGHTLY_CRON   00:10 UK every night: fires repository_dispatch "rebuild" so
 //                       build.yml rebuilds the site and yesterday's events drop off.
+//   cron INGEST_CRON    :17 past even UK hours 06-22: fires repository_dispatch "ingest"
+//                       (GitHub's own cron ran hours late; it stays in ingest.yml as a backup).
 // Actions: approve/reject (Pending items), send/skip (submitter replies), nlsend/nlbuild
 // (newsletter Send and Rebuild buttons). Single use and every send safeguard are enforced
 // downstream: the Worker only passes signed requests on to GitHub.
@@ -20,13 +22,15 @@
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
-const INGEST_STALE_HOURS = 9;        // ingestion pauses overnight for about 7 hours
+const INGEST_STALE_HOURS = 9;        // ingestion pauses overnight for about 8 hours
 const DIAGNOSTIC_STALE_HOURS = 30;   // daily run, plus slack for GitHub cron delays
 const ISSUE_TITLE = 'Watchdog alert';
 const WATCHDOG_CRON = '23 */3 * * *';
 const SCHEDULE_CRON = '0,30 * * * 3,4';
 const NIGHTLY_CRON = '10 23,0 * * *';
 const NIGHTLY_HM = '00:10';          // UK time; BST fires on the 23:10 UTC slot, GMT on 00:10
+const INGEST_CRON = '17 * * * *';
+const INGEST_HOURS = [6, 8, 10, 12, 14, 16, 18, 20, 22]; // UK hours, as ingest.yml's gate
 const NL_MODES = ['shadow', 'canary', 'live'];
 
 // UK times. payload(date) gets the UK date (YYYY-MM-DD) of the slot.
@@ -284,7 +288,15 @@ function ukNow(ms) {
     timeZone: 'Europe/London', weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
   }).formatToParts(ms)) p[x.type] = x.value;
-  return { dow: p.weekday, date: `${p.year}-${p.month}-${p.day}`, hm: `${p.hour}:${p.minute}` };
+  return { dow: p.weekday, date: `${p.year}-${p.month}-${p.day}`, hm: `${p.hour}:${p.minute}`, hour: Number(p.hour) };
+}
+
+async function alertDispatchFailed(env, what) {
+  try {
+    await report(env, [what]);
+  } catch (e) {
+    console.error(`Reporting failed: ${e.message}`);
+  }
 }
 
 async function runSchedule(env, ms) {
@@ -298,11 +310,8 @@ async function runSchedule(env, ms) {
     const ok = await dispatch(env, s.event, payload, 3);
     console.log(`${uk.dow} ${uk.hm} UK: ${s.event} ${JSON.stringify(payload)} ${ok ? 'dispatched' : 'FAILED'}`);
     if (!ok) {
-      try {
-        await report(env, [`Scheduled ${s.event}${payload.action ? ` (${payload.action})` : ''} at ${uk.hm} UK could not be sent to GitHub`]);
-      } catch (e) {
-        console.error(`Reporting failed: ${e.message}`);
-      }
+      await alertDispatchFailed(env,
+        `Scheduled ${s.event}${payload.action ? ` (${payload.action})` : ''} at ${uk.hm} UK could not be sent to GitHub`);
     }
   }
 }
@@ -318,30 +327,47 @@ async function runNightly(env, ms) {
   if (uk.hm !== NIGHTLY_HM) return;
   const ok = await dispatch(env, 'rebuild', { date: uk.date }, 3);
   console.log(`${uk.date} ${uk.hm} UK: nightly rebuild ${ok ? 'dispatched' : 'FAILED'}`);
-  if (!ok) {
-    try {
-      await report(env, [`Nightly site rebuild at ${uk.hm} UK could not be sent to GitHub`]);
-    } catch (e) {
-      console.error(`Reporting failed: ${e.message}`);
-    }
+  if (!ok) await alertDispatchFailed(env, `Nightly site rebuild at ${uk.hm} UK could not be sent to GitHub`);
+}
+
+// Ingestion at :17 past the even UK hours 06-22. ingest.yml treats the dispatch like a
+// scheduled run (RSS only on its feed hours). A late GitHub cron run as well is harmless:
+// the concurrency group queues it and the Log tab stops anything being processed twice.
+async function runIngest(env, ms) {
+  if (String(env.INGEST || 'on').toLowerCase() !== 'on') {
+    console.log('Worker-fired ingestion is switched off (wrangler.toml INGEST).');
+    return;
   }
+  const uk = ukNow(ms);
+  if (!INGEST_HOURS.includes(uk.hour)) return;
+  const ok = await dispatch(env, 'ingest', { date: uk.date, hm: uk.hm }, 3);
+  console.log(`${uk.date} ${uk.hm} UK: ingest ${ok ? 'dispatched' : 'FAILED'}`);
+  if (!ok) await alertDispatchFailed(env, `Ingestion run at ${uk.hm} UK could not be sent to GitHub`);
 }
 
 /* ------------------------------------------------------------- watchdog -- */
 
+// Latest run of a workflow for one trigger event, or null.
+async function latestRun(env, workflow, event) {
+  const r = await github(env, `/repos/${env.REPO}/actions/workflows/${workflow}/runs?event=${event}&per_page=1`);
+  if (!r.ok) throw new Error(`GitHub API returned HTTP ${r.status} when checking ${workflow} ${event} runs (token revoked or expired?)`);
+  return ((await r.json()).workflow_runs || [])[0] || null;
+}
+
+// Counts both Worker-fired (repository_dispatch) and GitHub-cron (schedule) runs;
+// manual runs don't count, so a forgotten schedule can't hide behind testing.
 async function checkIngestion(env, problems) {
   try {
-    const r = await github(env, `/repos/${env.REPO}/actions/workflows/ingest.yml/runs?event=schedule&per_page=1`);
-    if (!r.ok) {
-      problems.push(`GitHub API returned HTTP ${r.status} when checking ingestion runs (token revoked or expired?)`);
-      return;
-    }
-    const run = ((await r.json()).workflow_runs || [])[0];
-    const hours = run ? (Date.now() - Date.parse(run.created_at)) / 3600000 : Infinity;
+    const runs = (await Promise.all([
+      latestRun(env, 'ingest.yml', 'repository_dispatch'),
+      latestRun(env, 'ingest.yml', 'schedule'),
+    ])).filter(Boolean);
+    const newest = runs.length ? Math.max(...runs.map((x) => Date.parse(x.created_at))) : 0;
+    const hours = newest ? (Date.now() - newest) / 3600000 : Infinity;
     if (hours > INGEST_STALE_HOURS) {
-      problems.push(run
-        ? `No scheduled ingestion run for ${Math.floor(hours)} hours (GitHub may have paused the schedule)`
-        : 'No scheduled ingestion run found at all');
+      problems.push(newest
+        ? `No automatic ingestion run for ${Math.floor(hours)} hours (Worker dispatch and GitHub schedule both quiet)`
+        : 'No automatic ingestion run found at all');
     }
   } catch (e) {
     problems.push(`Ingestion check failed: ${e.message}`);
@@ -446,6 +472,7 @@ export default {
   async scheduled(event, env, ctx) {
     if (event.cron === SCHEDULE_CRON) ctx.waitUntil(runSchedule(env, event.scheduledTime));
     else if (event.cron === NIGHTLY_CRON) ctx.waitUntil(runNightly(env, event.scheduledTime));
+    else if (event.cron === INGEST_CRON) ctx.waitUntil(runIngest(env, event.scheduledTime));
     else ctx.waitUntil(watchdog(env));
   },
 };
