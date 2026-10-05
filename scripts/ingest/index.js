@@ -1,7 +1,8 @@
 // scripts/ingest/index.js
 // Ingestion run: Gmail "Pipeline" label -> Claude extraction -> Pending tab.
 // Then RSS feeds (rss.js, Settings source rows whose match is a URL) -> Pending,
-// on the 06:00, 14:00 and 20:00 UK scheduled runs and every manual run.
+// on the 06:00, 14:00 and 20:00 UK automatic runs (GitHub cron or Worker dispatch)
+// and every manual run.
 // Gmail is read-only; processed messages and feed items are recorded in the Log tab.
 // Nothing is committed to the repo. Email sent from here: the per-run alert to jon@
 // (urgent.js) and submitter replies (replies.js, per Settings replies_mode).
@@ -22,6 +23,8 @@ const LOW_CONFIDENCE = 0.5;       // auto sources below this go to approval (exc
 // UK hours whose scheduled run also reads feeds (next hour included, in case GitHub
 // starts the run late). Fewer, larger batches make the prompt cache pay off.
 const RSS_HOURS = [6, 7, 14, 15, 20, 21];
+// Automatic runs: GitHub's cron, or the Cloudflare Worker's "ingest" dispatch.
+const AUTO_EVENTS = ['schedule', 'repository_dispatch'];
 const TZ = 'Europe/London';
 
 /* ---------------------------------------------------------------- dates -- */
@@ -310,8 +313,8 @@ async function main() {
   // RSS feeds: signpost items, approval by source mode, no replies. Before the urgent
   // alert so an urgent feed item is flagged in the same run. A feed that can't be
   // fetched only warns; an item that fails MAX_RETRIES times fails the run.
-  const scheduled = process.env.GITHUB_EVENT_NAME === 'schedule';
-  if (!scheduled || RSS_HOURS.includes(londonHour(Date.now()))) {
+  const automatic = AUTO_EVENTS.includes(process.env.GITHUB_EVENT_NAME);
+  if (!automatic || RSS_HOURS.includes(londonHour(Date.now()))) {
     try {
       const r = await rss.run(ctx, logById, londonMidnightEpoch(startYmd) * 1000,
         { londonDateTime, findRepeat, decideStatus });
