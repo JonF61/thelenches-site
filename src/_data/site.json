@@ -7,6 +7,7 @@
   "ogImage": "https://thelenches.org.uk/images/lenches-aerial.jpg",
   "ogImageAlt": "The Lenches villages in Worcestershire, seen from the air",
   "noindex": false,
+  "teamUrl": "https://script.google.com/a/macros/thelenches.org.uk/s/AKfycby0WxHnJdf4oDImgTd9e0D7iuW1sKuq1jD5SiQEtacO1Xa47GFQV9VxHQ06W8tgRRZzGg/exec",
   "nav": [
     { "title": "Home", "url": "/" },
     { "title": "Events", "url": "/events/" },
