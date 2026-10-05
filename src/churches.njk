@@ -61,7 +61,7 @@ description: Churches serving the Lenches, Harvington and Abbots Morton — the 
         <h4 class="svc-date">{{ d.date | longDate }}</h4>
         {% if d.name %}<p class="small muted mt0">{{ d.name }}</p>{% endif %}
         {%- if d.readings %}
-        <p class="svc-readings"><span class="muted">Readings:</span> {{ refs(d.readings) }}{% if d.harvest %}<br><span class="muted">Or, for Harvest:</span> {{ refs(d.harvest) }}{% endif %}</p>
+        <p class="svc-readings"><span class="muted">Readings and notes:</span> {{ refs(d.readings) }}{% if d.harvest %}<br><span class="muted">Or, for Harvest:</span> {{ refs(d.harvest) }}{% endif %}</p>
         {%- endif %}
         <div class="svc-list">
           {%- for s in d.services %}
