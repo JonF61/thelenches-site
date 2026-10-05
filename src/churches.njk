@@ -36,7 +36,7 @@ description: Churches serving the Lenches, Harvington and Abbots Morton — the 
   {%- endif %}{% endfor %}
   </div>
 
-  {#- Service times come from src/_data/services.json (typed from the ARCH Messenger rota). Past dates drop off at the nightly rebuild. -#}
+  {#- Service times come from src/_data/services.json (typed from the ARCH Messenger rota). Past dates drop off at the nightly rebuild. A trailing "@10"/"@11" on a service name is stripped when rendering. -#}
   <section id="services">
     <h2>Service times</h2>
     <p>Services rotate around the churches, so the pattern changes from week to week. {{ services.midweek }} <span class="small muted">From the {{ services.source }}.</span></p>
@@ -54,7 +54,7 @@ description: Churches serving the Lenches, Harvington and Abbots Morton — the 
           {%- for s in d.services %}
           <div class="svc">
             <div class="svc-head"><span class="svc-time">{{ s.time }}</span> <span class="svc-church">{{ churchNames[s.village] or s.village }}</span></div>
-            <p class="svc-detail">{{ s.service }}{% if s.note %} <span class="small muted">({{ s.note }})</span>{% endif %}</p>
+            <p class="svc-detail">{{ s.service | replace(r/\s*@\s*\d+\s*$/, "") }}{% if s.note %} <span class="small muted">({{ s.note }})</span>{% endif %}</p>
           </div>
           {%- endfor %}
         </div>
