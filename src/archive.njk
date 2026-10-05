@@ -1,18 +1,17 @@
 ---
-layout: base.njk
-title: Newsletter Archive
-description: Every edition of The Lenches weekly newsletter, newest first.
+permalink: /archive/
+eleventyExcludeFromCollections: true
 ---
-<main class="container">
-  <section>
-    <h1>Newsletter Archive</h1>
-    <p class="lead">Every edition, newest first. Each one opens in your browser exactly as it appeared in the email.</p>
-    <div class="card">
-      <ul class="newsletter-archive mt0">
-        {% for item in newsletters %}
-        <li><a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.label }}</a></li>
-        {% endfor %}
-      </ul>
-    </div>
-  </section>
-</main>
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex">
+  <meta http-equiv="refresh" content="0; url={{ '/' | url }}">
+  <link rel="canonical" href="{{ site.url }}/">
+  <title>Moved — The Lenches</title>
+</head>
+<body>
+  <p>The newsletter archive has been retired. Go to the <a href="{{ '/' | url }}">home page</a>.</p>
+</body>
+</html>

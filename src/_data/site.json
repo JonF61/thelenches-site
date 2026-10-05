@@ -16,7 +16,6 @@
     { "title": "Village Halls", "url": "/halls/" },
     { "title": "Churches", "url": "/churches/" },
     { "title": "Bins", "url": "/bins/" },
-    { "title": "Archive", "url": "/archive/" },
     { "title": "Contact", "url": "/contact/" }
   ]
 }
