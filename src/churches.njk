@@ -4,7 +4,9 @@ title: Churches
 description: Churches serving the Lenches, Harvington and Abbots Morton — the ARCH Benefice and its service times, plus Unitarian and Methodist congregations in Evesham.
 ---
 <style>
-  /* Service times — stacked list */
+  /* Service times — single column of date cards, stacked list inside */
+  .svc-col{display:flex;flex-direction:column;gap:1rem;max-width:680px}
+  .svc-col .card{margin:0}
   .svc-list{margin:.5rem 0 0}
   .svc{padding:.55rem 0;border-bottom:1px solid var(--line)}
   .svc:last-child{border-bottom:0;padding-bottom:0}
@@ -43,7 +45,7 @@ description: Churches serving the Lenches, Harvington and Abbots Morton — the 
     {%- if svc.length %}
     {%- for g in svc | byMonth %}
     <h3>{{ g.label }}</h3>
-    <div class="grid">
+    <div class="svc-col">
       {%- for d in g.items %}
       <div class="card">
         <h4 class="mt0" style="margin-bottom:0.15rem">{{ d.date | longDate }}</h4>
