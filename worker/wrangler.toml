@@ -10,14 +10,19 @@ workers_dev = true
 # 1. Watchdog every 3 hours (UTC).
 # 2. Every 30 min on Wed/Thu (UTC): the Worker converts to UK time and fires the
 #    digest (Wed 18:30) and newsletter build/auto-send/reminders (Thu 06:30, 08:00,
-#    12:00, 17:00). Keep both strings identical to WATCHDOG_CRON / SCHEDULE_CRON in src.
-crons = ["23 */3 * * *", "0,30 * * * 3,4"]
+#    12:00, 17:00).
+# 3. 23:10 and 00:10 UTC daily: the Worker keeps whichever is 00:10 UK and fires a
+#    site rebuild, so finished events and expired notices drop off overnight.
+# Keep all strings identical to WATCHDOG_CRON / SCHEDULE_CRON / NIGHTLY_CRON in src.
+crons = ["23 */3 * * *", "0,30 * * * 3,4", "10 23,0 * * *"]
 
 [vars]
 REPO = "JonF61/thelenches-site"
 SITE_URL = "https://thelenches.org.uk/"
 # Kill switch for the Wed/Thu schedule: set to "off" and commit to pause it.
 SCHEDULE = "on"
+# Kill switch for the nightly rebuild: set to "off" and commit to pause it.
+NIGHTLY = "on"
 
 [observability]
 enabled = true

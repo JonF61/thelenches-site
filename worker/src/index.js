@@ -9,6 +9,8 @@
 //   cron SCHEDULE_CRON  UK-time schedule: Wed 18:30 digest; Thu 06:30 newsletter build,
 //                       08:00 auto-send (does nothing unless holiday mode + live), 12:00
 //                       and 17:00 reminders. A failed dispatch raises a watchdog alert.
+//   cron NIGHTLY_CRON   00:10 UK every night: fires repository_dispatch "rebuild" so
+//                       build.yml rebuilds the site and yesterday's events drop off.
 // Actions: approve/reject (Pending items), send/skip (submitter replies), nlsend/nlbuild
 // (newsletter Send and Rebuild buttons). Single use and every send safeguard are enforced
 // downstream: the Worker only passes signed requests on to GitHub.
@@ -23,6 +25,8 @@ const DIAGNOSTIC_STALE_HOURS = 30;   // daily run, plus slack for GitHub cron de
 const ISSUE_TITLE = 'Watchdog alert';
 const WATCHDOG_CRON = '23 */3 * * *';
 const SCHEDULE_CRON = '0,30 * * * 3,4';
+const NIGHTLY_CRON = '10 23,0 * * *';
+const NIGHTLY_HM = '00:10';          // UK time; BST fires on the 23:10 UTC slot, GMT on 00:10
 const NL_MODES = ['shadow', 'canary', 'live'];
 
 // UK times. payload(date) gets the UK date (YYYY-MM-DD) of the slot.
@@ -303,6 +307,26 @@ async function runSchedule(env, ms) {
   }
 }
 
+// Nightly site rebuild. Two UTC slots cover BST and GMT; only the one landing on
+// 00:10 UK fires. The build itself works out "today" in UK time (.eleventy.js).
+async function runNightly(env, ms) {
+  if (String(env.NIGHTLY || 'on').toLowerCase() !== 'on') {
+    console.log('Nightly rebuild is switched off (wrangler.toml NIGHTLY).');
+    return;
+  }
+  const uk = ukNow(ms);
+  if (uk.hm !== NIGHTLY_HM) return;
+  const ok = await dispatch(env, 'rebuild', { date: uk.date }, 3);
+  console.log(`${uk.date} ${uk.hm} UK: nightly rebuild ${ok ? 'dispatched' : 'FAILED'}`);
+  if (!ok) {
+    try {
+      await report(env, [`Nightly site rebuild at ${uk.hm} UK could not be sent to GitHub`]);
+    } catch (e) {
+      console.error(`Reporting failed: ${e.message}`);
+    }
+  }
+}
+
 /* ------------------------------------------------------------- watchdog -- */
 
 async function checkIngestion(env, problems) {
@@ -421,6 +445,7 @@ export default {
 
   async scheduled(event, env, ctx) {
     if (event.cron === SCHEDULE_CRON) ctx.waitUntil(runSchedule(env, event.scheduledTime));
+    else if (event.cron === NIGHTLY_CRON) ctx.waitUntil(runNightly(env, event.scheduledTime));
     else ctx.waitUntil(watchdog(env));
   },
 };
