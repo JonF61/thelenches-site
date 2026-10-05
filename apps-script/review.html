@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<!-- REFERENCE COPY of the "review" HTML file in the Lenches backup Apps Script. -->
+<style>
+:root{--g:#3F5233;--cream:#F6F1E4;--or:#C0703A;--ink:#222;--mut:#5f5a4e;--line:#ddd5c2}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.5 "Work Sans",system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--cream);color:var(--ink)}
+header{background:var(--g);color:#fff;padding:12px 16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:2}
+header h1{font-size:1.15rem;margin:0;font-weight:600}
+.bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+header button{font:inherit;font-size:14px;padding:5px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.6);background:transparent;color:#fff;cursor:pointer}
+header button.on{background:#fff;color:var(--g)}
+#stat{font-size:13px;opacity:.9}
+main{max-width:1200px;margin:0 auto;padding:16px}
+#note{color:var(--mut);margin:0 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.card.done{opacity:.55}
+.pic{display:block;height:180px;background:#ece6d6}
+.pic img{width:100%;height:100%;object-fit:contain}
+.b{padding:10px 12px 12px;display:flex;flex-direction:column;gap:7px;font-size:14px}
+.meta{color:var(--mut);font-size:12.5px}
+.tag{align-self:flex-start;font-size:12px;padding:2px 8px;border-radius:6px}
+.warn{background:#fbecd2;color:#6e420c}
+.del{background:#f6dcdc;color:#7a1e1e}
+label{font-size:12.5px;color:var(--mut);display:flex;flex-direction:column;gap:2px}
+select,input{width:100%;font:inherit;font-size:14px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)}
+.acts{display:flex;gap:6px;margin-top:2px}
+.acts button{flex:1;padding:7px;border-radius:8px;border:1px solid var(--g);background:#fff;color:var(--g);font:inherit;font-size:14px;cursor:pointer}
+.acts .mv{background:var(--g);color:#fff}
+.acts .dl{border-color:#a33;color:#a33}
+.acts button:disabled{opacity:.5;cursor:wait}
+.msg{font-size:13px;min-height:1em}
+.msg.err{color:#a33}.msg.ok{color:var(--g)}
+#more{display:block;margin:20px auto;font:inherit;padding:8px 18px;border-radius:8px;border:1px solid var(--g);background:#fff;color:var(--g);cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <h1>Image review</h1>
+  <div class="bar" id="tabs">
+    <button data-f="review" class="on">To review</button>
+    <button data-f="moved">Moved</button>
+    <button data-f="deleted">Deleted</button>
+  </div>
+  <div class="bar"><span id="stat"></span><button id="run" hidden>Run import</button></div>
+</header>
+<main>
+  <p id="note">Loading…</p>
+  <div class="grid" id="grid"></div>
+  <button id="more" hidden>Show more</button>
+</main>
+<datalist id="subjects"></datalist>
+<script>
+var filter = 'review', offset = 0, villages = [];
+function $(s) { return document.querySelector(s); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+function load(reset) {
+  if (reset) { offset = 0; $('#grid').innerHTML = ''; }
+  $('#note').textContent = 'Loading…';
+  $('#more').hidden = true;
+  google.script.run.withSuccessHandler(show).withFailureHandler(function (e) {
+    $('#note').textContent = 'Could not load: ' + (e && e.message || e);
+  }).reviewPage(filter, offset);
+}
+
+function show(d) {
+  villages = d.villages;
+  $('#subjects').innerHTML = d.subjects.map(function (s) { return '<option value="' + esc(s) + '">'; }).join('');
+  var c = d.counts;
+  $('#stat').textContent = c.review + ' to review · ' + c.moved + ' moved · ' + c.deleted + ' deleted' +
+    (c.queued ? ' · ' + c.queued + ' still importing' : '');
+  $('#run').hidden = d.running || !c.queued;
+  d.items.forEach(add);
+  offset += d.items.length;
+  $('#more').hidden = offset >= d.total;
+  if (d.total) $('#note').textContent = filter === 'review' ? 'Suggested deletions are shown first.' : '';
+  else if (filter !== 'review') $('#note').textContent = 'None yet.';
+  else if (c.queued || d.running) $('#note').textContent = 'Nothing ready yet: the import is still working. Check back in a few minutes.';
+  else $('#note').textContent = 'All sorted.';
+}
+
+function add(it) {
+  var el = document.createElement('div');
+  el.className = 'card';
+  var tags = '';
+  if (it.people === 'identifiable' || it.people === 'children')
+    tags += '<span class="tag warn">' + (it.people === 'children' ? 'Children in image' : 'People in image') + '</span>';
+  if (it.suggestDelete) tags += '<span class="tag del">Suggest delete' + (it.reason ? ': ' + esc(it.reason) : '') + '</span>';
+  var body = '<div>' + esc(it.description || 'No description') + '</div>' +
+    '<div class="meta">' + esc(it.campaign) + (it.sent ? ' · ' + esc(it.sent) : '') + '</div>' + tags;
+  if (filter === 'review') {
+    var opts = villages.map(function (v) { return '<option' + (v === it.village ? ' selected' : '') + '>' + esc(v) + '</option>'; }).join('');
+    body += '<label>Village<select class="v">' + opts + '</select></label>' +
+      '<label>Subject<input class="s" list="subjects" value="' + esc(it.subject) + '"></label>' +
+      (it.notes && /^no suggestion/.test(it.notes) ? '<div class="meta">' + esc(it.notes) + '</div>' : '') +
+      '<div class="acts"><button class="mv" data-a="move">Move</button><button class="dl" data-a="delete">Delete</button></div>';
+  } else {
+    body += '<div class="meta">' + esc(it.notes) + (it.decided ? ' · ' + esc(it.decided) : '') + '</div>' +
+      '<div class="acts"><button data-a="undo">Undo</button></div>';
+  }
+  el.innerHTML = '<a class="pic" href="https://drive.google.com/file/d/' + encodeURIComponent(it.id) + '/view" target="_blank" rel="noopener">' +
+    (it.thumb ? '<img alt="" src="' + it.thumb + '">' : '') + '</a><div class="b">' + body + '<div class="msg"></div></div>';
+  el.querySelectorAll('.acts button').forEach(function (b) {
+    b.onclick = function () { act(el, it, b.getAttribute('data-a')); };
+  });
+  var s = el.querySelector('.s');
+  if (s) s.oninput = function () { el.querySelector('.msg').textContent = ''; };
+  $('#grid').appendChild(el);
+}
+
+function act(el, it, action) {
+  var msg = el.querySelector('.msg');
+  var v = el.querySelector('.v'), s = el.querySelector('.s');
+  if (action === 'move' && (!v.value || !s.value.trim())) {
+    msg.className = 'msg err'; msg.textContent = 'Choose a village and a subject first'; return;
+  }
+  var btns = el.querySelectorAll('.acts button');
+  btns.forEach(function (b) { b.disabled = true; });
+  msg.className = 'msg'; msg.textContent = 'Working…';
+  google.script.run.withSuccessHandler(function (r) {
+    msg.className = 'msg ok';
+    msg.textContent = action === 'move' ? 'Moved to ' + r.where : action === 'delete' ? 'Sent to Drive bin (30 days to undo)' : 'Back in To review';
+    el.querySelector('.acts').remove();
+    el.classList.add('done');
+    offset--;
+  }).withFailureHandler(function (e) {
+    btns.forEach(function (b) { b.disabled = false; });
+    msg.className = 'msg err'; msg.textContent = (e && e.message) || String(e);
+  }).reviewDecide(it.id, action, v ? v.value : '', s ? s.value.trim() : '');
+}
+
+$('#tabs').addEventListener('click', function (e) {
+  var b = e.target.closest('button');
+  if (!b) return;
+  filter = b.getAttribute('data-f');
+  document.querySelectorAll('#tabs button').forEach(function (x) { x.classList.toggle('on', x === b); });
+  load(true);
+});
+$('#more').onclick = function () { load(false); };
+$('#run').onclick = function () {
+  $('#run').hidden = true;
+  google.script.run.withSuccessHandler(function () { $('#note').textContent = 'Import scheduled: it runs every few minutes until finished.'; }).reviewStartImport();
+};
+load(true);
+</script>
+</body>
+</html>

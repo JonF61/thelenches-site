@@ -66,6 +66,8 @@
       </div>
       <div>
         {% for item in site.nav %}{% if not loop.first %} &middot; {% endif %}<a href="{{ item.url | url }}">{{ item.title }}</a>{% endfor %} &middot; <a href="{{ '/privacy/' | url }}">Privacy</a>
+        {#- Team-only tools (Google sign-in required); hidden until site.json has teamUrl. -#}
+        {% if site.teamUrl %} &middot; <a href="{{ site.teamUrl }}" rel="nofollow">Team</a>{% endif %}
       </div>
     </div>
     <div class="container">
