@@ -3,6 +3,16 @@ layout: base.njk
 title: Churches
 description: Churches serving the Lenches, Harvington and Abbots Morton — the ARCH Benefice and its service times, plus Unitarian and Methodist congregations in Evesham.
 ---
+<style>
+  /* Service times — stacked list */
+  .svc-list{margin:.5rem 0 0}
+  .svc{padding:.55rem 0;border-bottom:1px solid var(--line)}
+  .svc:last-child{border-bottom:0;padding-bottom:0}
+  .svc-head{display:flex;flex-wrap:wrap;gap:.1rem .6rem;align-items:baseline}
+  .svc-time{font-weight:700;color:var(--green-dark);white-space:nowrap}
+  .svc-church{font-weight:600}
+  .svc-detail{margin:.1rem 0 0}
+</style>
 <main class="container">
 
   {%- set churchNames = { "Rous Lench": "St Peter's, Rous Lench", "Church Lench": "All Saints', Church Lench", "Harvington": "St James the Great, Harvington", "Abbots Morton": "St Peter's, Abbots Morton", "Norton": "St Egwin's, Norton" } %}
