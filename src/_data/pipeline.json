@@ -93,50 +93,6 @@
         "text": "one.network alert",
         "url": "https://one.network?GB152409652"
       }
-    },
-    {
-      "id": "1a0a34217c6f856a-1",
-      "title": "Road Closure — Atch Lench Road, Church Lench",
-      "body": "Atch Lench Road closed 21 September to 16 October for streetworks (National Grid utility works), delays likely, with signed diversion route via Diversion 1.",
-      "date": "2026-09-21",
-      "expires": "2026-10-06",
-      "link": {
-        "text": "Roadworks details",
-        "url": "https://one.network?GBTMI44667901"
-      }
-    },
-    {
-      "id": "1a0a34217c6f856a-2",
-      "title": "Road Closure — Low Road, Church Lench",
-      "body": "Low Road, Church Lench closed 21 September to 16 October for streetworks (National Grid), delays likely, with a signed diversion route (Diversion 2).",
-      "date": "2026-09-21",
-      "expires": "2026-10-06",
-      "link": {
-        "text": "Roadworks details",
-        "url": "https://one.network?GBTMI44667903"
-      }
-    },
-    {
-      "id": "1a0a34217c6f856a-3",
-      "title": "Village Street Works — Harvington",
-      "body": "Severn Trent Water carrying out works on Village Street, Harvington, 16-17 September; delays possible with give & take traffic control.",
-      "date": "2026-09-16",
-      "expires": "2026-10-06",
-      "link": {
-        "text": "Roadworks details",
-        "url": "https://one.network?GB152347409"
-      }
-    },
-    {
-      "id": "1a0a34217c6f856a-4",
-      "title": "A46 Lane Closures near Harvington",
-      "body": "National Highways lane closures on the A46 between Harvington, Salford Priors and Twyford for electrical and horticultural maintenance works, various dates 15-19 September; delays possible.",
-      "date": "2026-09-15",
-      "expires": "2026-10-06",
-      "link": {
-        "text": "Roadworks details",
-        "url": "https://one.network?GB151873881"
-      }
     }
   ]
 }
