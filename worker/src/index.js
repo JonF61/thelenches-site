@@ -26,7 +26,8 @@ const INGEST_STALE_HOURS = 9;        // ingestion pauses overnight for about 8 h
 const DIAGNOSTIC_STALE_HOURS = 30;   // daily run, plus slack for GitHub cron delays
 const ISSUE_TITLE = 'Watchdog alert';
 const WATCHDOG_CRON = '23 */3 * * *';
-const SCHEDULE_CRON = '0,30 * * * 3,4';
+// Day names, not numbers: Cloudflare counts 1=Sunday..7=Saturday, so '3,4' was Tue/Wed (8 Oct 2026).
+const SCHEDULE_CRON = '0,30 * * * WED,THU';
 const NIGHTLY_CRON = '10 23,0 * * *';
 const NIGHTLY_HM = '00:10';          // UK time; BST fires on the 23:10 UTC slot, GMT on 00:10
 const INGEST_CRON = '17 * * * *';

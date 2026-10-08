@@ -10,13 +10,14 @@ workers_dev = true
 # 1. Watchdog every 3 hours (UTC).
 # 2. Every 30 min on Wed/Thu (UTC): the Worker converts to UK time and fires the
 #    digest (Wed 18:30) and newsletter build/auto-send/reminders (Thu 06:30, 08:00,
-#    12:00, 17:00).
+#    12:00, 17:00). Day NAMES on purpose: Cloudflare numbers days 1=Sunday..7=Saturday,
+#    so "3,4" meant Tue/Wed and Thursday never fired (8 Oct 2026).
 # 3. 23:10 and 00:10 UTC daily: the Worker keeps whichever is 00:10 UK and fires a
 #    site rebuild, so finished events and expired notices drop off overnight.
 # 4. Hourly at :17 (UTC): the Worker keeps the even UK hours 06-22 and fires an
 #    ingestion run (GitHub's own cron in ingest.yml ran hours late; it stays as a backup).
 # Keep all strings identical to WATCHDOG_CRON / SCHEDULE_CRON / NIGHTLY_CRON / INGEST_CRON in src.
-crons = ["23 */3 * * *", "0,30 * * * 3,4", "10 23,0 * * *", "17 * * * *"]
+crons = ["23 */3 * * *", "0,30 * * * WED,THU", "10 23,0 * * *", "17 * * * *"]
 
 [vars]
 REPO = "JonF61/thelenches-site"
