@@ -43,6 +43,16 @@ module.exports = async function (eleventyConfig) {
   // Join two lists, e.g. hand-written whatson.json items plus pipeline.json items
   eleventyConfig.addFilter("merge", (a, b) => [...(a || []), ...(b || [])]);
 
+  // Split a body into paragraphs at blank lines ("\n\n" in the JSON). Returns plain strings,
+  // so templates still escape each one; always at least one (possibly empty) paragraph.
+  eleventyConfig.addFilter("paras", (text) => {
+    const out = String(text || "")
+      .split(/\r?\n\s*\r?\n/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+    return out.length ? out : [""];
+  });
+
   // Illustrated fallback tile for an event with no image (Events page only; lib/tiles.js)
   const { tileSvg } = require("./lib/tiles.js");
   eleventyConfig.addFilter("tileSvg", tileSvg);

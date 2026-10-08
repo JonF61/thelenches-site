@@ -5,7 +5,8 @@ description: News and notices from across the Lenches villages.
 ---
 {#- Items come from whatson.json (hand-edited) and pipeline.json (written by scripts/publish).
     Page-specific newspaper styling lives here rather than in style.css; ids on stories are
-    linked from the home page's "more" links, so keep ('news-' + title) | slugify in step. -#}
+    linked from the home page's "more" links, so keep ('news-' + title) | slugify in step.
+    Bodies may hold paragraphs separated by a blank line ("\n\n"); the paras filter splits them. -#}
 <style>
 .np-head{border-bottom:1px solid var(--line);padding-bottom:.6rem;margin-bottom:1.5rem}
 .np-head h1{font-size:1.6rem;margin:0}
@@ -26,6 +27,8 @@ description: News and notices from across the Lenches villages.
 .np-cols img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:8px;margin-bottom:.6rem}
 .np-notice{padding:.6rem 0;border-top:1px solid var(--line);font-size:.95rem;scroll-margin-top:1.5rem}
 .np-notice:last-of-type{border-bottom:1px solid var(--line)}
+.np-notice p{margin:0 0 .45rem}
+.np-notice p:last-child{margin-bottom:0}
 .np-notice strong{color:var(--green-dark)}
 .np-notice:target{background:#FDEBD8;box-shadow:0 0 0 3px var(--accent);border-radius:var(--radius);padding:.6rem .75rem}
 @media (prefers-reduced-motion:reduce){.story:target{animation:none}}
@@ -43,7 +46,7 @@ description: News and notices from across the Lenches villages.
   <article class="story np-lead{% if not lead.image %} no-img{% endif %}" id="{{ ('news-' + lead.title) | slugify }}">
     <div>
       <h2 class="np-serif">{{ lead.title | escape }}</h2>
-      <p>{{ lead.body | escape }}{% if lead.link %} <a href="{{ lead.link.url | escape }}" target="_blank" rel="noopener">{{ lead.link.text | escape }} &rarr;</a>{% endif %}</p>
+      {% for p in lead.body | paras %}<p>{{ p | escape }}{% if loop.last and lead.link %} <a href="{{ lead.link.url | escape }}" target="_blank" rel="noopener">{{ lead.link.text | escape }} &rarr;</a>{% endif %}</p>{% endfor %}
     </div>
     {% if lead.image %}<a href="{{ lead.image.url | url }}" data-viewer aria-label="View full image"><img src="{{ lead.image.url | url }}" alt="{{ lead.image.alt | escape }}" loading="lazy"></a>{% endif %}
   </article>
@@ -54,7 +57,7 @@ description: News and notices from across the Lenches villages.
     <article class="story" id="{{ ('news-' + n.title) | slugify }}">
       {% if n.image %}<a href="{{ n.image.url | url }}" data-viewer aria-label="View full image"><img src="{{ n.image.url | url }}" alt="{{ n.image.alt | escape }}" loading="lazy"></a>{% endif %}
       <h3 class="np-serif">{{ n.title | escape }}</h3>
-      <p>{{ n.body | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}</p>
+      {% for p in n.body | paras %}<p>{{ p | escape }}{% if loop.last and n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}</p>{% endfor %}
     </article>
     {% endif %}{% endfor %}
   </div>
@@ -67,7 +70,7 @@ description: News and notices from across the Lenches villages.
     <h2 class="list-label">Notices</h2>
     {% for n in pipeline.notices | current | merge(whatson.notices) %}
     <div class="np-notice" id="{{ ('notice-' + n.title) | slugify }}">
-      <strong>{{ n.title | escape }}:</strong> {{ n.body | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ (n.image.alt or n.title) | escape }}">(image)</a>{% endif %}
+      {% for p in n.body | paras %}<p>{% if loop.first %}<strong>{{ n.title | escape }}:</strong> {% endif %}{{ p | escape }}{% if loop.last %}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ (n.image.alt or n.title) | escape }}">(image)</a>{% endif %}{% endif %}</p>{% endfor %}
     </div>
     {% else %}
     <p class="muted">No notices at the moment.</p>
