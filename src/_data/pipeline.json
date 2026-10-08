@@ -12,18 +12,7 @@
       }
     }
   ],
-  "news": [
-    {
-      "id": "1a0d2b4e10e7be31-1",
-      "title": "New Website and Board Update — The Lenches Club",
-      "body": "The Lenches Club has launched a members' website (www.thelenchesclub.co.uk) for checking membership and renewals, booking the club, and seeing what's on. The letter also introduces new board members following recent departures.",
-      "expires": "2026-10-08",
-      "link": {
-        "text": "The Lenches Club website",
-        "url": "https://www.thelenchesclub.co.uk"
-      }
-    }
-  ],
+  "news": [],
   "notices": [
     {
       "id": "1a0c74f0c5e08c85-1",

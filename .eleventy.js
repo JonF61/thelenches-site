@@ -53,6 +53,13 @@ module.exports = async function (eleventyConfig) {
     return out.length ? out : [""];
   });
 
+  // Road closures and roadworks (News page's own section): "roads": true in whatson.json,
+  // or any item linking to one.network (all pipeline roadworks alerts do).
+  const isRoad = (i) =>
+    !!i && (i.roads === true || /one\.network/i.test(String((i.link && i.link.url) || "")));
+  eleventyConfig.addFilter("roadItems", (items) => (items || []).filter(isRoad));
+  eleventyConfig.addFilter("notRoadItems", (items) => (items || []).filter((i) => !isRoad(i)));
+
   // Illustrated fallback tile for an event with no image (Events page only; lib/tiles.js)
   const { tileSvg } = require("./lib/tiles.js");
   eleventyConfig.addFilter("tileSvg", tileSvg);

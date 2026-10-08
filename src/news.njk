@@ -6,7 +6,9 @@ description: News and notices from across the Lenches villages.
 {#- Items come from whatson.json (hand-edited) and pipeline.json (written by scripts/publish).
     Page-specific newspaper styling lives here rather than in style.css; ids on stories are
     linked from the home page's "more" links, so keep ('news-' + title) | slugify in step.
-    Bodies may hold paragraphs separated by a blank line ("\n\n"); the paras filter splits them. -#}
+    Bodies may hold paragraphs separated by a blank line ("\n\n"); the paras filter splits them.
+    Road closures and roadworks (roadItems filter: "roads": true, or a one.network link) go in
+    their own section at the bottom; everything else stays under Notices. -#}
 <style>
 .np-head{border-bottom:1px solid var(--line);padding-bottom:.6rem;margin-bottom:1.5rem}
 .np-head h1{font-size:1.6rem;margin:0}
@@ -25,6 +27,7 @@ description: News and notices from across the Lenches villages.
 .np-cols h3{font-size:1.1rem;line-height:1.2;margin:0 0 .3rem}
 .np-cols p{font-size:.95rem;line-height:1.55}
 .np-cols img{width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:8px;margin-bottom:.6rem}
+.np-section{margin-bottom:2rem}
 .np-notice{padding:.6rem 0;border-top:1px solid var(--line);font-size:.95rem;scroll-margin-top:1.5rem}
 .np-notice:last-of-type{border-bottom:1px solid var(--line)}
 .np-notice p{margin:0 0 .45rem}
@@ -34,6 +37,11 @@ description: News and notices from across the Lenches villages.
 @media (prefers-reduced-motion:reduce){.story:target{animation:none}}
 @media (max-width:640px){.np-lead,.np-cols{grid-template-columns:1fr}.np-lead h2{font-size:1.35rem}}
 </style>
+{% macro noticeItem(n) %}
+    <div class="np-notice" id="{{ ('notice-' + n.title) | slugify }}">
+      {% for p in n.body | paras %}<p>{% if loop.first %}<strong>{{ n.title | escape }}:</strong> {% endif %}{{ p | escape }}{% if loop.last %}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ (n.image.alt or n.title) | escape }}">(image)</a>{% endif %}{% endif %}</p>{% endfor %}
+    </div>
+{% endmacro %}
 <main class="container">
   <div class="np-head">
     <h1>News</h1>
@@ -66,16 +74,23 @@ description: News and notices from across the Lenches villages.
   <p class="muted">No news at the moment.</p>
   {% endif %}
 
-  <section>
+  {% set allNotices = pipeline.notices | current | merge(whatson.notices) %}
+  {% set otherNotices = allNotices | notRoadItems %}
+  {% set roadNotices = allNotices | roadItems %}
+
+  <section class="np-section">
     <h2 class="list-label">Notices</h2>
-    {% for n in pipeline.notices | current | merge(whatson.notices) %}
-    <div class="np-notice" id="{{ ('notice-' + n.title) | slugify }}">
-      {% for p in n.body | paras %}<p>{% if loop.first %}<strong>{{ n.title | escape }}:</strong> {% endif %}{{ p | escape }}{% if loop.last %}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ (n.image.alt or n.title) | escape }}">(image)</a>{% endif %}{% endif %}</p>{% endfor %}
-    </div>
-    {% else %}
+    {% for n in otherNotices %}{{ noticeItem(n) }}{% else %}
     <p class="muted">No notices at the moment.</p>
     {% endfor %}
   </section>
+
+  {% if roadNotices | length %}
+  <section class="np-section" id="roads">
+    <h2 class="list-label">Road closures and roadworks</h2>
+    {% for n in roadNotices %}{{ noticeItem(n) }}{% endfor %}
+  </section>
+  {% endif %}
 
   <div class="notice submit-note">Got something to include? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a> by 6pm on Wednesday. See our <a href="{{ '/contact/' | url }}#submit">submission guidelines</a>.</div>
 </main>
