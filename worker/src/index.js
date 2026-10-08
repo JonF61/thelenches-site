@@ -5,7 +5,9 @@
 //   GET  /u?t=TOKEN  unsubscribe confirm page (people clicking the footer link)
 //   POST /u?t=TOKEN  one-click unsubscribe (RFC 8058: mail providers POST here) or the
 //                    confirm page's button; fires repository_dispatch "unsubscribe"
-//   cron WATCHDOG_CRON  ingestion and daily diagnostic still running, site up; alerts via GitHub
+//   cron WATCHDOG_CRON  ingestion and daily diagnostic still running, site up, and on
+//                       Thursdays from 07:30 UK that the newsletter build has started;
+//                       alerts via GitHub
 //   cron SCHEDULE_CRON  UK-time schedule: Wed 18:30 digest; Thu 06:30 newsletter build,
 //                       08:00 auto-send (does nothing unless holiday mode + live), 12:00
 //                       and 17:00 reminders. A failed dispatch raises a watchdog alert.
@@ -24,6 +26,7 @@ const dec = new TextDecoder();
 
 const INGEST_STALE_HOURS = 9;        // ingestion pauses overnight for about 8 hours
 const DIAGNOSTIC_STALE_HOURS = 30;   // daily run, plus slack for GitHub cron delays
+const NEWSLETTER_DUE_HM = '07:30';   // UK, Thursdays: the 06:30 build should have started
 const ISSUE_TITLE = 'Watchdog alert';
 const WATCHDOG_CRON = '23 */3 * * *';
 // Day names, not numbers: Cloudflare counts 1=Sunday..7=Saturday, so '3,4' was Tue/Wed (8 Oct 2026).
@@ -375,6 +378,32 @@ async function checkIngestion(env, problems) {
   }
 }
 
+// Thursdays from 07:30 UK: a newsletter.yml run has started today. Catches a schedule
+// that never wakes (8 Oct 2026: wrong cron day numbers, so nothing ran and nothing
+// alerted). A manual build counts too, so the alert clears once the issue is built by
+// hand. Skipped when the Wed/Thu schedule is switched off. Off Thursdays it never
+// reports, so an open alert closes itself at the first check on Friday.
+async function checkNewsletterBuild(env, problems) {
+  if (String(env.SCHEDULE || 'on').toLowerCase() !== 'on') return;
+  const uk = ukNow(Date.now());
+  if (uk.dow !== 'Thu' || uk.hm < NEWSLETTER_DUE_HM) return;
+  try {
+    const runs = (await Promise.all([
+      latestRun(env, 'newsletter.yml', 'repository_dispatch'),
+      latestRun(env, 'newsletter.yml', 'workflow_dispatch'),
+    ])).filter(Boolean);
+    const startedToday = runs.some((r) => {
+      const t = ukNow(Date.parse(r.created_at));
+      return t.date === uk.date && t.hm >= '06:00';
+    });
+    if (!startedToday) {
+      problems.push(`No newsletter build has started today (${uk.date}); the 06:30 UK build was not dispatched. Run "Newsletter build and send" by hand (build).`);
+    }
+  } catch (e) {
+    problems.push(`Newsletter build check failed: ${e.message}`);
+  }
+}
+
 // Tolerates diagnostic.yml not existing yet (404 = not deployed, no alert), and a
 // newly added workflow with no scheduled run yet (measured from its creation time).
 async function checkDiagnostic(env, problems) {
@@ -451,7 +480,10 @@ async function report(env, problems) {
 
 async function watchdog(env) {
   const problems = [];
-  await Promise.all([checkIngestion(env, problems), checkDiagnostic(env, problems), checkSite(env, problems)]);
+  await Promise.all([
+    checkIngestion(env, problems), checkDiagnostic(env, problems),
+    checkSite(env, problems), checkNewsletterBuild(env, problems),
+  ]);
   console.log(problems.length ? `Problems: ${problems.join(' | ')}` : 'All checks passed.');
   try {
     await report(env, problems);
