@@ -117,7 +117,7 @@
     {
       "date": "2026-10-10",
       "title": "Glo-Quiz — The Lenches Club",
-      "body": "Glo-Quiz night at The Lenches Club, Church Lench, from 8pm to 11pm.",
+      "body": "Gather a team for a live, hosted Glo-Quiz trivia night at The Lenches Club, Church Lench, from 8pm to 11pm, with a jackpot of at least £270 to win.",
       "link": {
         "text": "The Lenches Club",
         "url": "https://thelenchesclub.co.uk/"
@@ -311,6 +311,11 @@
     },
     {
       "date": "2026-11-07",
+      "title": "The Lenches Fireworks Night — The Lenches Club",
+      "body": "Wrap up warm for an evening of fireworks, food and dancing at The Lenches Club, Church Lench: the display starts at 7.30pm, with food stalls and a disco until late. Entry is free for everyone. Via The Lenches Community Facebook group."
+    },
+    {
+      "date": "2026-11-07",
       "title": "Bonfire and Fireworks Night — Bishampton",
       "body": "The Vale Golf & Country Club, Bishampton, lights its bonfire and fireworks for an evening out from 5pm.",
       "link": {
@@ -327,6 +332,14 @@
       "link": {
         "text": "South Lenches Neighbourhood Plan on Wychavon",
         "url": "https://www.wychavon.gov.uk/planning/planning-policy/neighbourhood-planning/south-lenches-neighbourhood-plan"
+      }
+    },
+    {
+      "title": "Pre-school's outdoor hut is back",
+      "body": "The Lenches Pre-school has its woodland hut back in action and has thanked everyone involved in the project. The restored hut gives the children a versatile space for outdoor learning, complete with nature charts for spotting birds and wildlife. Via The Lenches Community Facebook group.",
+      "image": {
+        "url": "/images/items/preschool-hut.webp",
+        "alt": "The Lenches Pre-school's restored eight-sided wooden hut among autumn trees, with nature charts on its back wall"
       }
     },
     {
