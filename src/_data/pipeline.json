@@ -5,6 +5,7 @@
       "title": "Peter Pandemonium by GLADS — The Lenches Club",
       "body": "GLADS present their pirate-themed show Peter Pandemonium at The Lenches Club on Friday 16 and Saturday 17 October, starting at 7.30pm. Tickets £10 per person, available at the bar or from any GLADS member.",
       "date": "2026-10-16",
+      "village": "Church Lench",
       "expires": "2026-10-16",
       "image": {
         "url": "/images/items/1a0cd84404be1268-3.webp",
@@ -19,6 +20,7 @@
       "title": "Road Closure — Evesham Road, Church Lench",
       "body": "Evesham Road in Church Lench will be closed on Tuesday 29 September for streetworks, with a signed diversion route in place. Delays likely for local traffic.",
       "date": "2026-09-29",
+      "village": "Church Lench",
       "expires": "2026-10-13",
       "link": {
         "text": "one.network alert",
@@ -30,6 +32,7 @@
       "title": "Roadworks — Radford Road, Rous Lench",
       "body": "Openreach works on Radford Road, Rous Lench from Tuesday 29 September to Thursday 1 October, with multi-way traffic signals in place. Delays possible for road users.",
       "date": "2026-09-29",
+      "village": "Rous Lench",
       "expires": "2026-10-13",
       "link": {
         "text": "one.network alert",
@@ -41,6 +44,7 @@
       "title": "Roadworks — Hipton Hill, Lenchwick",
       "body": "Openreach roadworks will close Hipton Hill, Lenchwick on Tuesday 29 September. Delays are likely; drivers should plan alternative routes.",
       "date": "2026-09-29",
+      "village": "Harvington",
       "expires": "2026-10-13",
       "link": {
         "text": "one.network alert",
@@ -52,6 +56,7 @@
       "title": "Roadworks — Evesham Road, Inkberrow",
       "body": "Openreach traffic signals will be in place on Evesham Road, Inkberrow from Wednesday 30 September to Friday 2 October, with possible delays for road users.",
       "date": "2026-09-30",
+      "village": "Inkberrow",
       "expires": "2026-10-13",
       "link": {
         "text": "one.network alert",
@@ -63,6 +68,7 @@
       "title": "Roadworks — Gooms Hill, Abbots Morton",
       "body": "Two phases of roadworks are planned on Gooms Hill, Abbots Morton: Severn Trent Water on 24 September and Openreach from 29 September to 1 October, both using two-way traffic signals.",
       "date": "2026-09-24",
+      "village": "Abbots Morton",
       "expires": "2026-10-13",
       "link": {
         "text": "one.network alert",
