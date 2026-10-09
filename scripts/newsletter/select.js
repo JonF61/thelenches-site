@@ -12,6 +12,9 @@
 //               or new as for News (once).
 //   Bins        each area's next collection on or after the issue date, within 7 days.
 //   Elsewhere   RSS signposts, new as for News, links only, once.
+//   Site        src/_data/siteupdates.json: a linked line under the header from its
+//               "from" date (to "until", if set) until one issue carrying it is sent
+//               live. Shadow, canary and test copies don't count, so it stays due.
 //   Images      Pending and whatson items: the JPEG copy of an /images/items/*.webp
 //               (publish.js makes it; classic Outlook can't show WebP), else text only.
 //   Wording     item text is the rewrite or the submitter's own wording (lib/wording.js).
@@ -21,6 +24,7 @@
 //               A Rebuild passes no cutoff, so late items can be let in deliberately.
 // "Shown" counts come from Issues rows with status sent or shadow dated before this
 // issue, and for Pending rows also from newsletter_count / flyer_count (whichever is higher).
+// Site update keys (s:<key>) count from status sent only.
 'use strict';
 
 const crypto = require('crypto');
@@ -33,6 +37,7 @@ const MAX_IMAGE = 2;
 const BINS_DAYS = 7;
 const DEADLINE_HM = '18:00'; // Wednesday before the issue, UK time (submission guidelines)
 const COUNTED = new Set(['sent', 'shadow']);
+const SITE_KEY_RE = /^[a-z0-9][a-z0-9-]{0,60}$/i;
 const LIVE = new Set(['approved', 'auto']);
 const WYCHAVON_LOOKUP = 'https://selfservice.wychavon.gov.uk/wdcroundlookup/';
 
@@ -125,7 +130,29 @@ function binsFor(bins, issueDate) {
   };
 }
 
-function select({ issueDate, pending, whatson, bins, issues, settings, sources, jpegFor, cutoff }) {
+// Due site updates: key s:<key>, never in an earlier issue sent live.
+function siteUpdatesFor(siteupdates, issues, issueDate) {
+  const sent = new Set();
+  for (const r of issues || []) {
+    if (str(r.status).toLowerCase() !== 'sent' || !ymd(r.issue_date) || ymd(r.issue_date) >= issueDate) continue;
+    for (const k of str(r.item_keys).split(/\s+/)) if (k) sent.add(k);
+  }
+  const out = [];
+  for (const e of (siteupdates && siteupdates.entries) || []) {
+    const from = ymd(e.from);
+    const until = ymd(e.until);
+    const url = safeUrl(e.link);
+    if (!SITE_KEY_RE.test(str(e.key)) || !from || !str(e.text) || !url) continue;
+    const key = `s:${str(e.key)}`;
+    if (from > issueDate || (until && until < issueDate) || sent.has(key)) continue;
+    if (out.some((x) => x.key === key)) continue;
+    out.push({ key, text: str(e.text), url, from });
+  }
+  out.sort((a, b) => cmp(a.from, b.from) || cmp(a.key, b.key));
+  return out.map(({ from, ...rest }) => rest);
+}
+
+function select({ issueDate, pending, whatson, bins, siteupdates, issues, settings, sources, jpegFor, cutoff }) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate || '')) throw new Error(`Bad issue date "${issueDate}"`);
   const deadline = str(cutoff);
   if (deadline && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(deadline)) throw new Error(`Bad cutoff "${cutoff}"`);
@@ -250,7 +277,9 @@ function select({ issueDate, pending, whatson, bins, issues, settings, sources, 
   elsewhere.sort((a, b) => cmp(a.source, b.source) || cmp(a.title, b.title) || cmp(a.key, b.key));
 
   const all = [...events, ...news, ...notices, ...roads, ...elsewhere];
-  const keys = all.map((x) => x.key);
+  const siteUpdates = siteUpdatesFor(siteupdates, issues, issueDate);
+  // Site update keys ride in item_keys (Issues tab) so a live send retires them.
+  const keys = [...all.map((x) => x.key), ...siteUpdates.map((x) => x.key)];
   const imageKeys = all.filter((x) => x.image).map((x) => x.key);
   const strip = (x) => {
     const { sortStart, ...rest } = x;
@@ -260,6 +289,7 @@ function select({ issueDate, pending, whatson, bins, issues, settings, sources, 
   return {
     issueDate,
     holiday,
+    siteUpdates,
     lastIssue,
     cutoff: deadline,
     held,
@@ -272,7 +302,7 @@ function select({ issueDate, pending, whatson, bins, issues, settings, sources, 
     elsewhere,
     keys,
     imageKeys,
-    empty: keys.length === 0,
+    empty: all.length === 0,
   };
 }
 

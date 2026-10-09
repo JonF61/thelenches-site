@@ -108,10 +108,11 @@ async function main() {
     issueDate, pending, issues, settings, sources, jpegFor, cutoff,
     whatson: readJson('src/_data/whatson.json'),
     bins: readJson('src/_data/bins.json'),
+    siteupdates: readJson('src/_data/siteupdates.json'),
   });
   const issue = render(model);
   console.log(`Issue ${issueDate}: ${model.keys.length} items (${model.events.length} events, ${model.news.length} news, `
-    + `${model.notices.length} notices, ${model.roads.length} roads, ${model.elsewhere.length} elsewhere), `
+    + `${model.notices.length} notices, ${model.roads.length} roads, ${model.elsewhere.length} elsewhere, ${(model.siteUpdates || []).length} site updates), `
     + `${model.imageKeys.length} images, hash ${issue.hash.slice(0, 12)}${model.holiday ? ', holiday mode' : ''}.`);
   console.log(cutoff
     ? `Deadline ${cutoff} UK: ${model.held} late item(s) held for next week (Rebuild lets them in).`

@@ -1,0 +1,11 @@
+{
+  "_help": "Lines shown under the newsletter header. Each entry: key (unique, letters/numbers/hyphens, never reused), from (first issue date it can appear, YYYY-MM-DD), optional until (last date), text, link. Shown in one issue that is sent live, then retired automatically.",
+  "entries": [
+    {
+      "key": "site-catchup-2026-10",
+      "from": "2026-10-22",
+      "link": "https://thelenches.org.uk/",
+      "text": "New on the website: a fresh look, events and news from around the Lenches updated daily, church service times with links to each Sunday's Bible readings, and your bin days. Have a look at thelenches.org.uk."
+    }
+  ]
+}

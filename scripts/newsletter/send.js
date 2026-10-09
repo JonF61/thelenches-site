@@ -44,6 +44,8 @@ const TIME_BUDGET_MS = 50 * 60 * 1000; // workflow timeout is 60 min
 const CANARY_DOMAINS = ['thelenches.org.uk', 'alphaquad.co.uk'];
 const MODES = ['off', 'shadow', 'canary', 'live'];
 const COUNTED = ['sent', 'shadow'];
+// Site update keys (s:..., in item_keys) are retired by select.js only once an issue is
+// "sent": shadow keeps its status, canary leaves the status alone, so neither uses them up.
 const SENDS_HEADERS = ['issue_id', 'email', 'status', 'started_at', 'sent_at', 'gmail_id', 'run_id', 'notes'];
 const ISSUES_HEADERS = ['issue_id', 'issue_date', 'status', 'content_hash', 'item_keys', 'image_keys',
   'subject', 'sent_at', 'recipients', 'notes', 'send_run', 'counts_applied_at', 'snapshot'];

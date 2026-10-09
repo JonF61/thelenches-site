@@ -170,6 +170,14 @@ function renderHtml(m, subject) {
     + `<div style="font-family:${SANS};font-size:12px;color:${C.muted};">Church · Rous · Ab · Atch · Sheriffs · Harvington</div>`
     + `<div style="font-family:${SANS};font-size:13px;color:${C.accentText};margin-top:8px;">${esc(p.long)} · ${a(LINKS.site, 'thelenches.org.uk', C.accentText)}</div>`
     + `</td></tr>`);
+  // "New on the website" intro (select.js siteUpdates); no row at all when there are none,
+  // so older snapshots render exactly as before.
+  const site = m.siteUpdates || [];
+  if (site.length) {
+    rows.push(`<tr><td class="px" style="background:${C.cream};padding:10px 24px;border-bottom:1px solid ${C.line};font-family:${SANS};font-size:13px;line-height:1.5;">`
+      + site.map((u) => `<div style="margin:2px 0;">${a(u.url, u.text, C.accentText)}</div>`).join('')
+      + `</td></tr>`);
+  }
   rows.push(`<tr><td class="px" style="padding:16px 24px 0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${C.ink};">${esc(summaryLine(m))}</td></tr>`);
 
   if (m.events.length || m.regulars) {
@@ -230,7 +238,9 @@ function renderText(m) {
     out.push('');
   };
 
-  out.push('THE LENCHES NEWSLETTER', 'Church · Rous · Ab · Atch · Sheriffs · Harvington', `${p.long} · ${LINKS.site}`, '', summaryLine(m));
+  out.push('THE LENCHES NEWSLETTER', 'Church · Rous · Ab · Atch · Sheriffs · Harvington', `${p.long} · ${LINKS.site}`, '');
+  for (const u of m.siteUpdates || []) out.push(u.text, u.url, '');
+  out.push(summaryLine(m));
   if (m.events.length || m.regulars) {
     head('Coming up');
     for (const ev of m.events) item(`${dateParts(ev.date).short} · ${ev.title}${ev.lenches ? ' [Lenches]' : ''}`, ev.meta, ev.body, ev.link);
