@@ -12,6 +12,8 @@
 //               or new as for News (once).
 //   Bins        each area's next collection on or after the issue date, within 7 days.
 //   Elsewhere   RSS signposts, new as for News, links only, once.
+//   Images      Pending and whatson items: the JPEG copy of an /images/items/*.webp
+//               (publish.js makes it; classic Outlook can't show WebP), else text only.
 //   Holiday     items flagged people_in_image or political_commercial are left out.
 //   Deadline    with a cutoff (the scheduled Thursday build: Wednesday 18:00 UK), Pending
 //               rows received after it are held for next week, automated ones included.
@@ -21,6 +23,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const { inLenches } = require('../../lib/lenches');
 
 const WINDOW_DAYS = 14;
 const MAX_APPEARANCES = 3;
@@ -157,13 +160,14 @@ function select({ issueDate, pending, whatson, bins, issues, settings, sources, 
   const roads = [];
   const elsewhere = [];
 
-  function imageFor(row, key) {
-    const url = str(row.image_url);
-    if (!/^\/images\/items\/[A-Za-z0-9_-]{1,100}\.webp$/.test(url)) return null;
-    if (Math.max(num(row.flyer_count), imaged.get(key) || 0) >= MAX_IMAGE) return null;
-    const src = jpegFor ? jpegFor(url) : '';
-    return src ? { src, alt: str(row.alt_text) } : null;
+  function emailImage(url, alt, key, flyerCount) {
+    if (!/^\/images\/items\/[A-Za-z0-9_-]{1,100}\.webp$/.test(str(url))) return null;
+    if (Math.max(num(flyerCount), imaged.get(key) || 0) >= MAX_IMAGE) return null;
+    const src = jpegFor ? jpegFor(str(url)) : '';
+    return src ? { src, alt: str(alt) } : null;
   }
+  const imageFor = (row, key) => emailImage(row.image_url, row.alt_text, key, row.flyer_count);
+  const whatsonImage = (it, key) => (it.image ? emailImage(it.image.url, it.image.alt, key, 0) : null);
 
   // ---- Pending: approved/auto rows; later rows win, as on the site.
   const byKey = new Map();
@@ -202,7 +206,8 @@ function select({ issueDate, pending, whatson, bins, issues, settings, sources, 
     }
     if (cat === 'event' && date) {
       if (inWindow(date) && count < MAX_APPEARANCES) {
-        events.push({ ...base, image: imageFor(row, key) });
+        const lenches = inLenches({ title: row.title, body: row.summary, village: row.village });
+        events.push({ ...base, lenches, image: imageFor(row, key) });
         pendingEvents.add(`${normTitle(row.title)}|${date}`);
       }
       continue;
@@ -210,7 +215,7 @@ function select({ issueDate, pending, whatson, bins, issues, settings, sources, 
     if (isNew) (cat === 'notice' ? notices : news).push({ ...base, image: imageFor(row, key) });
   }
 
-  // ---- whatson.json (hand-edited, no images).
+  // ---- whatson.json (hand-edited).
   const w = whatson || {};
   for (const ev of w.events || []) {
     const date = ymd(ev.date);
@@ -218,19 +223,19 @@ function select({ issueDate, pending, whatson, bins, issues, settings, sources, 
     if (pendingEvents.has(`${normTitle(ev.title)}|${date}`)) continue;
     const key = whatsonKey('events', ev);
     if ((shown.get(key) || 0) >= MAX_APPEARANCES) continue;
-    events.push({ key, title: str(ev.title), body: str(ev.body), meta: '', link: linkOf(ev.link && ev.link.text, ev.link && ev.link.url), date, sortStart: '', image: null });
+    events.push({ key, title: str(ev.title), body: str(ev.body), meta: '', link: linkOf(ev.link && ev.link.text, ev.link && ev.link.url), date, sortStart: '', lenches: inLenches(ev), image: whatsonImage(ev, key) });
   }
   for (const it of w.news || []) {
     if (!str(it.title)) continue;
     const key = whatsonKey('news', it);
     if (shown.get(key)) continue;
-    news.push({ key, title: str(it.title), body: str(it.body), meta: '', link: linkOf(it.link && it.link.text, it.link && it.link.url), date: '', sortStart: '', image: null });
+    news.push({ key, title: str(it.title), body: str(it.body), meta: '', link: linkOf(it.link && it.link.text, it.link && it.link.url), date: '', sortStart: '', image: whatsonImage(it, key) });
   }
   for (const it of w.notices || []) {
     if (!str(it.title)) continue;
     const key = whatsonKey('notices', it);
     if ((shown.get(key) || 0) >= MAX_APPEARANCES) continue;
-    notices.push({ key, title: str(it.title), body: str(it.body), meta: '', link: linkOf(it.link && it.link.text, it.link && it.link.url), date: '', sortStart: '', image: null });
+    notices.push({ key, title: str(it.title), body: str(it.body), meta: '', link: linkOf(it.link && it.link.text, it.link && it.link.url), date: '', sortStart: '', image: whatsonImage(it, key) });
   }
 
   // ---- Deterministic order.

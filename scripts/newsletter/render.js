@@ -8,12 +8,12 @@
 'use strict';
 
 const crypto = require('crypto');
+const { anchorUrl } = require('../../lib/anchors');
 
 const SITE = 'https://thelenches.org.uk';
 const UNSUB_MARK = '%%UNSUBSCRIBE_URL%%';
 const LINKS = {
   site: `${SITE}/`,
-  archive: `${SITE}/archive/`,
   privacy: `${SITE}/privacy/`,
   bins: `${SITE}/bins/`,
   submit: 'website@thelenches.org.uk',
@@ -32,7 +32,10 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
 const esc = (s) => String(s ?? '')
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-const para = (s) => esc(s).replace(/\r?\n+/g, '<br>');
+// Paragraphs at blank lines ("\n\n"), as the site's paras filter (.eleventy.js).
+const paras = (s) => String(s ?? '').split(/\r?\n\s*\r?\n/).map((p) => p.trim()).filter(Boolean);
+const para = (s) => paras(s)
+  .map((p, i) => `<p style="margin:${i ? '8px' : '0'} 0 0;">${esc(p)}</p>`).join('');
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 function dateParts(ymd) {
@@ -84,9 +87,23 @@ function sectionHead(title) {
     + `</td></tr>`;
 }
 
-function imageRow(img, width) {
-  return `<img src="${esc(img.src)}" width="${width}" alt="${esc(img.alt)}" `
+// The picture links to the item on the site (lib/anchors.js), when there is one.
+function imageRow(img, width, href) {
+  const tag = `<img src="${esc(img.src)}" width="${width}" alt="${esc(img.alt)}" `
     + `style="display:block;width:100%;max-width:${width}px;height:auto;border:0;outline:none;text-decoration:none;">`;
+  return href ? `<a href="${esc(href)}" style="display:block;text-decoration:none;">${tag}</a>` : tag;
+}
+
+// "Lenches" badge (site: .lenches-badge in src/events.njk). A table cell, not a styled
+// span, so classic Outlook keeps the padding and background.
+function titleWithBadge(titleHtml, style) {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>`
+    + `<td valign="middle" style="${style}">${titleHtml}</td>`
+    + `<td valign="middle" style="padding-left:6px;">`
+    + `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>`
+    + `<td bgcolor="#fbe6d6" style="background:#fbe6d6;color:#8a3e0c;font-family:${SANS};font-size:11px;font-weight:bold;`
+    + `line-height:16px;mso-line-height-rule:exactly;padding:1px 7px;border-radius:4px;white-space:nowrap;">Lenches</td>`
+    + `</tr></table></td></tr></table>`;
 }
 
 function linkLine(link) {
@@ -104,19 +121,22 @@ function eventCard(ev) {
   const meta = ev.meta ? `<div style="font-family:${SANS};font-size:12px;color:${C.muted};margin-top:2px;">${esc(ev.meta)}</div>` : '';
   const body = ev.body ? `<div style="margin-top:4px;">${para(ev.body)}</div>` : '';
   const img = ev.image
-    ? `<tr><td colspan="2" style="padding:0 12px 12px;">${imageRow(ev.image, 528)}</td></tr>`
+    ? `<tr><td colspan="2" style="padding:0 12px 12px;">${imageRow(ev.image, 528, anchorUrl('event', ev))}</td></tr>`
     : '';
+  const titleStyle = `font-family:${SANS};font-weight:bold;font-size:15px;`;
+  const title = ev.lenches
+    ? titleWithBadge(esc(ev.title), `${titleStyle}color:${C.ink};`)
+    : `<div style="${titleStyle}">${esc(ev.title)}</div>`;
   return `<tr><td class="px" style="padding:10px 24px 0;">`
     + `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.card};">`
     + `<tr><td width="62" valign="top" style="padding:12px 0 12px 12px;">${tile}</td>`
     + `<td valign="top" style="padding:12px;font-family:${SERIF};font-size:14px;line-height:1.5;color:${C.ink};">`
-    + `<div style="font-family:${SANS};font-weight:bold;font-size:15px;">${esc(ev.title)}</div>`
-    + `${meta}${body}${linkLine(ev.link)}</td></tr>${img}</table></td></tr>`;
+    + `${title}${meta}${body}${linkLine(ev.link)}</td></tr>${img}</table></td></tr>`;
 }
 
-function storyBlock(it, titleSize) {
+function storyBlock(it, titleSize, kind) {
   const meta = it.meta ? `<div style="font-family:${SANS};font-size:12px;color:${C.muted};">${esc(it.meta)}</div>` : '';
-  const img = it.image ? `<div style="margin-top:8px;">${imageRow(it.image, 552)}</div>` : '';
+  const img = it.image ? `<div style="margin-top:8px;">${imageRow(it.image, 552, anchorUrl(kind, it))}</div>` : '';
   return `<tr><td class="px" style="padding:12px 24px 0;font-family:${SERIF};font-size:14px;line-height:1.55;color:${C.ink};">`
     + `<div style="font-weight:bold;font-size:${titleSize}px;">${esc(it.title)}</div>${meta}`
     + (it.body ? `<div style="margin-top:4px;">${para(it.body)}</div>` : '')
@@ -129,8 +149,8 @@ function roadsAndBins(m) {
     const when = r.date ? ` (from ${dateParts(r.date).short})` : '';
     lines.push(`<div style="margin-bottom:8px;"><span style="color:${C.accentText};">Roadworks</span> · `
       + `<strong>${esc(r.title)}</strong>${esc(when)}`
-      + (r.body ? `<br>${para(r.body)}` : '')
-      + (r.link ? `<br>${a(r.link.url, r.link.text, C.accentText)}` : '') + `</div>`);
+      + (r.body ? para(r.body) : '')
+      + (r.link ? `<div>${a(r.link.url, r.link.text, C.accentText)}</div>` : '') + `</div>`);
   }
   const bl = binLines(m.bins);
   if (bl.length) {
@@ -161,11 +181,11 @@ function renderHtml(m, subject) {
   }
   if (m.news.length) {
     rows.push(sectionHead('News'));
-    for (const it of m.news) rows.push(storyBlock(it, 16));
+    for (const it of m.news) rows.push(storyBlock(it, 16, 'news'));
   }
   if (m.notices.length) {
     rows.push(sectionHead('Notices'));
-    for (const it of m.notices) rows.push(storyBlock(it, 15));
+    for (const it of m.notices) rows.push(storyBlock(it, 15, 'notice'));
   }
   rows.push(sectionHead('Roads and bins'));
   rows.push(roadsAndBins(m));
@@ -181,7 +201,7 @@ function renderHtml(m, subject) {
   rows.push(`<tr><td class="px" style="background:${C.greenDark};color:${cream};padding:16px 24px;font-family:${SANS};font-size:12px;line-height:1.6;">`
     + `Got news for next week? Email ${a(`mailto:${LINKS.submit}`, LINKS.submit, cream)} by 6pm Wednesday.<br>`
     + `To stop receiving this newsletter, ${a(UNSUB_MARK, 'unsubscribe here', cream)} or reply with UNSUBSCRIBE.<br>`
-    + `${a(LINKS.site, 'thelenches.org.uk', cream)} · ${a(LINKS.archive, 'Past issues', cream)} · ${a(LINKS.privacy, 'Privacy', cream)}`
+    + `${a(LINKS.site, 'thelenches.org.uk', cream)} · ${a(LINKS.privacy, 'Privacy', cream)}`
     + `</td></tr>`);
 
   return '<!DOCTYPE html>\n<html lang="en-GB"><head><meta charset="utf-8">'
@@ -205,7 +225,7 @@ function renderText(m) {
   const item = (title, meta, body, link) => {
     out.push(title);
     if (meta) out.push(meta);
-    if (body) out.push(body);
+    if (body) out.push(paras(body).join('\n\n'));
     if (link) out.push(`${link.text}: ${link.url.replace(/^mailto:/i, '')}`);
     out.push('');
   };
@@ -213,8 +233,8 @@ function renderText(m) {
   out.push('THE LENCHES NEWSLETTER', 'Church · Rous · Ab · Atch · Sheriffs · Harvington', `${p.long} · ${LINKS.site}`, '', summaryLine(m));
   if (m.events.length || m.regulars) {
     head('Coming up');
-    for (const ev of m.events) item(`${dateParts(ev.date).short} · ${ev.title}`, ev.meta, ev.body, ev.link);
-    if (m.regulars) out.push(m.regulars, '');
+    for (const ev of m.events) item(`${dateParts(ev.date).short} · ${ev.title}${ev.lenches ? ' [Lenches]' : ''}`, ev.meta, ev.body, ev.link);
+    if (m.regulars) out.push(paras(m.regulars).join('\n\n'), '');
   }
   if (m.news.length) {
     head('News');
@@ -235,7 +255,7 @@ function renderText(m) {
   }
   out.push('', '--', `Got news for next week? Email ${LINKS.submit} by 6pm Wednesday.`,
     `To unsubscribe: ${UNSUB_MARK} (or reply with UNSUBSCRIBE).`,
-    `Website: ${LINKS.site}`, `Past issues: ${LINKS.archive}`, `Privacy: ${LINKS.privacy}`, '');
+    `Website: ${LINKS.site}`, `Privacy: ${LINKS.privacy}`, '');
   return out.join('\n').replace(/\n{3,}/g, '\n\n');
 }
 
