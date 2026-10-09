@@ -45,4 +45,6 @@ Only send photos you have permission to share. Everyone pictured should be happy
 
 We'll acknowledge your email. If any details are missing we'll ask for them; if we don't hear back by Wednesday 6pm we'll go ahead with the details we have.
 
+If you'd like your item published exactly as you wrote it, say "please use my wording" in your email. We'll only correct obvious typos and broken links.
+
 The team may edit items for length and style, and decides what is included.

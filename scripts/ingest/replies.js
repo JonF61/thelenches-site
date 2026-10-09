@@ -177,6 +177,7 @@ function buildBody({ items, outOfScope, clarification, unusable = [] }) {
   else parts.push(fill('ack_none'));
 
   const notes = [];
+  let ownNotes = 0;
   if (unusable.length) {
     const names = unique(unusable.filter(Boolean));
     notes.push(fill(UNUSABLE_CODE, {
@@ -188,6 +189,7 @@ function buildBody({ items, outOfScope, clarification, unusable = [] }) {
     for (const code of ITEM_CODES) {
       if (!i.policy.includes(code)) continue;
       if (OPTIONAL_CODES.includes(code) && templates()[code] === undefined) continue;
+      if (code === 'own_wording') ownNotes += 1;
       notes.push(fill(code, {
         title: i.title,
         show_from: i.event_date ? longDate(addDays(i.event_date, -EARLY_DAYS)) : '',
@@ -198,7 +200,8 @@ function buildBody({ items, outOfScope, clarification, unusable = [] }) {
   parts.push(...notes);
 
   if (clarification) parts.push(clarification, fill('clarify_deadline'));
-  if (notes.length || clarification) parts.push(fill('guidelines', { guidelines_url: GUIDELINES_URL }));
+  // The guidelines link goes with notes about a problem; "use my wording" isn't one.
+  if (notes.length > ownNotes || clarification) parts.push(fill('guidelines', { guidelines_url: GUIDELINES_URL }));
   parts.push(fill('signature'));
   return parts.filter(Boolean).join('\n\n');
 }
