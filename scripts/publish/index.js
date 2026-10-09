@@ -5,7 +5,9 @@
 // images.toRaster() turns it into a picture first (PDF = page 1).
 // Each WebP also gets a JPEG copy (same name, .jpg) for the email newsletter:
 // classic Outlook can't show WebP. Missing JPEGs are made from the WebP, so
-// existing items are backfilled on the next run.
+// existing items are backfilled on the next run, including images used in whatson.json.
+// Each item carries "village" from the Pending village column, so the site's
+// inLenches filter (lib/lenches.js) doesn't have to guess from the text.
 // Idempotent: safe to run as often as you like; the workflow commits only if files changed.
 // Edits made in the Sheet to a live row (title, summary, link, dates) flow through on the next run.
 // Image overrides in the image_url cell: "none" = no image; clear a "failed: ..." cell to retry.
@@ -20,6 +22,7 @@ const { toRaster } = require('../ingest/images');
 const TZ = 'Europe/London';
 const ROOT = path.join(__dirname, '..', '..');
 const DATA_FILE = path.join(ROOT, 'src', '_data', 'pipeline.json');
+const WHATSON_FILE = path.join(ROOT, 'src', '_data', 'whatson.json');
 const IMAGE_DIR = path.join(ROOT, 'src', 'images', 'items');
 const IMAGE_URL = '/images/items';
 const IMAGE_EDGE = 1200;  // longest side, px
@@ -142,6 +145,8 @@ async function main() {
 
     const item = { id: row.id, title: str(row.title), body: str(row.summary) };
     if (date) item.date = date;
+    const village = str(row.village);
+    if (village) item.village = village;
     item.expires = expires;
     const url = safeUrl(row.link_url);
     if (url) item.link = { text: str(row.link_text) || 'More details', url };
@@ -161,6 +166,14 @@ async function main() {
     news: out.news.map((x) => x.item),
     notices: out.notices.map((x) => x.item),
   };
+
+  // JPEG copies for hand-added whatson.json images too (the newsletter uses them).
+  const whatson = fs.existsSync(WHATSON_FILE) ? JSON.parse(fs.readFileSync(WHATSON_FILE, 'utf8')) : {};
+  for (const list of ['events', 'news', 'notices']) {
+    for (const it of whatson[list] || []) {
+      if (it && it.image && it.image.url) await ensureJpeg(it.image.url, `whatson: ${str(it.title)}`, failures);
+    }
+  }
 
   const json = `${JSON.stringify(data, null, 2)}\n`;
   const old = fs.existsSync(DATA_FILE) ? fs.readFileSync(DATA_FILE, 'utf8') : '';
