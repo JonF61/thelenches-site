@@ -7,8 +7,8 @@ description: News and notices from across the Lenches villages.
     Page-specific newspaper styling lives here rather than in style.css; ids on stories are
     linked from the home page's "more" links, so keep ('news-' + title) | slugify in step.
     Bodies may hold paragraphs separated by a blank line ("\n\n"); the paras filter splits them.
-    Column stories with an image show a small thumbnail floated left of the text, under the
-    heading (option B, 9 Oct); on phones it stacks full width above the text.
+    Column stories with an image show a small thumbnail floated right of the text, under the
+    heading (9 Oct); on phones it stacks full width above the text.
     Road closures and roadworks (roadItems filter: "roads": true, or a one.network link) go in
     their own section at the bottom; everything else stays under Notices. -#}
 <style>
@@ -29,7 +29,7 @@ description: News and notices from across the Lenches villages.
 .np-cols h3{font-size:1.1rem;line-height:1.2;margin:0 0 .3rem}
 .np-cols p{font-size:.95rem;line-height:1.55}
 .np-cols .story::after{content:"";display:block;clear:both}
-.np-thumb{float:left;width:42%;max-width:170px;margin:.25rem .9rem .3rem 0}
+.np-thumb{float:right;width:42%;max-width:170px;margin:.25rem 0 .3rem .9rem}
 .np-thumb img{display:block;width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:6px}
 .np-section{margin-bottom:2rem}
 .np-notice{padding:.6rem 0;border-top:1px solid var(--line);font-size:.95rem;scroll-margin-top:1.5rem}
