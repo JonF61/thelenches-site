@@ -14,6 +14,7 @@
 //   Elsewhere   RSS signposts, new as for News, links only, once.
 //   Images      Pending and whatson items: the JPEG copy of an /images/items/*.webp
 //               (publish.js makes it; classic Outlook can't show WebP), else text only.
+//   Wording     item text is the rewrite or the submitter's own wording (lib/wording.js).
 //   Holiday     items flagged people_in_image or political_commercial are left out.
 //   Deadline    with a cutoff (the scheduled Thursday build: Wednesday 18:00 UK), Pending
 //               rows received after it are held for next week, automated ones included.
@@ -24,6 +25,7 @@
 
 const crypto = require('crypto');
 const { inLenches } = require('../../lib/lenches');
+const { bodyOf } = require('../../lib/wording');
 
 const WINDOW_DAYS = 14;
 const MAX_APPEARANCES = 3;
@@ -192,7 +194,7 @@ function select({ issueDate, pending, whatson, bins, issues, settings, sources, 
     const isNew = count === 0 && start >= newFrom && start <= issueDate;
     const meta = [str(row.village), str(row.event_time), str(row.cost)].filter(Boolean).join(' · ');
     const base = {
-      key, title: str(row.title), body: str(row.summary), meta,
+      key, title: str(row.title), body: bodyOf(row), meta,
       link: linkOf(row.link_text, row.link_url), date, sortStart: start,
     };
 
@@ -206,7 +208,7 @@ function select({ issueDate, pending, whatson, bins, issues, settings, sources, 
     }
     if (cat === 'event' && date) {
       if (inWindow(date) && count < MAX_APPEARANCES) {
-        const lenches = inLenches({ title: row.title, body: row.summary, village: row.village });
+        const lenches = inLenches({ title: row.title, body: base.body, village: row.village });
         events.push({ ...base, lenches, image: imageFor(row, key) });
         pendingEvents.add(`${normTitle(row.title)}|${date}`);
       }

@@ -6,11 +6,14 @@
 // Signpost mode (RSS, via rss.js): one feed item in, at most one item out, written in
 // Claude's own words from the feed text only; link, link text and blanks set in code.
 // The system prompt (with tools) is cached for 5 minutes, so later calls in a run are cheap.
+// "Use my wording": per-item own_text (the submitter's words, only obvious typos and broken
+// links fixed), official and verbatim_requested; lib/wording.js decides which is published.
 'use strict';
 
 const fs = require('fs');
 const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk');
+const { tidyText } = require('../../lib/wording');
 
 // Model name overridable via env, so a model change needs no code edit.
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5';
@@ -86,6 +89,9 @@ const TOOL = {
             image_index: { type: 'integer', description: 'Number of the image belonging to this item, or -1 if none' },
             people_in_image: { type: 'boolean', description: 'True if that image shows identifiable people or any children' },
             alt_text: { type: 'string', description: 'Concise alt text for that image; empty if no image' },
+            official: { type: 'boolean', description: 'True if this is a notice issued by an official body for publication (see OWN WORDING in the rules)' },
+            verbatim_requested: { type: 'boolean', description: 'True if the submitter asks for their own wording to be used for this item' },
+            own_text: { type: 'string', description: "The submitter's own text for this item, only obvious typos and broken links fixed; paragraphs separated by a blank line. Empty unless official or verbatim_requested" },
             notes: { type: 'string', description: 'For the editor: missing details, doubts, reasons for flags' },
           },
           required: ['title', 'village', 'category', 'summary', 'confidence', 'urgent',
@@ -198,6 +204,10 @@ function normalise(items, imageCount) {
       // Fail safe: if unsure whether an image shows people, treat it as if it does.
       people_in_image: idx >= 0 ? it.people_in_image !== false : false,
       alt_text: idx >= 0 ? str(it.alt_text) : '',
+      official: it.official === true,
+      verbatim_requested: it.verbatim_requested === true,
+      // Kept only when it can be used: no length cap, paragraphs preserved.
+      own_text: it.official === true || it.verbatim_requested === true ? tidyText(it.own_text) : '',
       notes: str(it.notes),
     };
   }).filter((it) => it.title);
@@ -216,6 +226,10 @@ function toSignpost(items, sourceName, link) {
     image_index: -1,
     people_in_image: false,
     alt_text: '',
+    // Feed text is never republished in its own words.
+    official: false,
+    verbatim_requested: false,
+    own_text: '',
   }));
 }
 
@@ -228,7 +242,7 @@ async function extract(input) {
   const images = signpost ? [] : input.images || [];
   const res = await client.messages.create({
     model: MODEL,
-    max_tokens: 8000,
+    max_tokens: 16000, // own_text has no length cap
     system: [{
       type: 'text',
       text: signpost ? `${SYSTEM}\n\n${SIGNPOST}` : SYSTEM,

@@ -11,6 +11,7 @@
 // Idempotent: safe to run as often as you like; the workflow commits only if files changed.
 // Edits made in the Sheet to a live row (title, summary, link, dates) flow through on the next run.
 // Image overrides in the image_url cell: "none" = no image; clear a "failed: ..." cell to retry.
+// Body: the rewrite (summary) or the submitter's own wording (own_text), per lib/wording.js.
 'use strict';
 
 const fs = require('fs');
@@ -18,6 +19,7 @@ const path = require('path');
 const sharp = require('sharp');
 const g = require('../ingest/google');
 const { toRaster } = require('../ingest/images');
+const { bodyOf } = require('../../lib/wording');
 
 const TZ = 'Europe/London';
 const ROOT = path.join(__dirname, '..', '..');
@@ -143,7 +145,7 @@ async function main() {
     }
     if (expires < today) continue;
 
-    const item = { id: row.id, title: str(row.title), body: str(row.summary) };
+    const item = { id: row.id, title: str(row.title), body: bodyOf(row) };
     if (date) item.date = date;
     const village = str(row.village);
     if (village) item.village = village;

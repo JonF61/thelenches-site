@@ -31,7 +31,7 @@ description: What's on across the Lenches villages — upcoming events from the 
       <div class="item-body">
         {% if img %}<a class="thumb-link" href="{{ img.url | url }}" data-viewer aria-label="View full image"><img class="item-thumb" src="{{ img.url | url }}" alt="{{ img.alt | escape }}" loading="lazy"></a>{% else %}{{ e | tileSvg | safe }}{% endif %}
         <h3>{{ e.title | escape }}{% if e | inLenches %} <span class="lenches-badge">Lenches</span>{% endif %}</h3>
-        <p>{{ e.body | escape }}{% if e.link %} <a href="{{ e.link.url | escape }}" target="_blank" rel="noopener">{{ e.link.text | escape }} &rarr;</a>{% endif %}</p>
+        {% for p in e.body | paras %}<p>{{ p | escape }}{% if loop.last and e.link %} <a href="{{ e.link.url | escape }}" target="_blank" rel="noopener">{{ e.link.text | escape }} &rarr;</a>{% endif %}</p>{% endfor %}
       </div>
     </div>
     {% endfor %}

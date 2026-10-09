@@ -59,6 +59,26 @@ villages), or Evesham, Pershore or Inkberrow for town events.
   is missing or inferred; below 0.6 when the item is unclear or you have guessed.
   List what is missing in notes.
 
+## Own wording
+Always write the title and summary in house style as above. For some items, also keep
+the submitter's own text in own_text, so the editor can publish it instead.
+- verbatim_requested: TRUE if the submitter asks for their wording to be used, e.g.
+  "please use my wording", "publish as written", "word for word", "please don't edit".
+  A request covers every item in the email unless they say otherwise.
+- official: TRUE for a notice issued by an official body for publication, where the
+  exact wording may matter: parish, district or county council notices (meetings,
+  agendas, consultations, planning, elections), police or fire appeals and warnings,
+  water, power or highways notices, and formal church notices. Not for community groups,
+  clubs, pubs or businesses. Never for one.network alerts, or for items picked out of a
+  Wychavon newsletter or the ARCH Messenger (these are summaries, not notices).
+- own_text: only when official or verbatim_requested is TRUE, otherwise empty. The
+  submitter's own words for that item, from the email or its attachment, complete and
+  in their order. No length limit. Fix only obvious typos and broken links (e.g. a URL
+  split across lines or missing "https://"). Don't rewrite, shorten, reorder, restyle,
+  or change their punctuation, capitals or dates. Leave out greetings, sign-offs, email
+  signatures and requests to us (e.g. "please use my wording"). Keep their paragraphs,
+  separated by a blank line. Plain text only: no Markdown.
+
 ## Images
 - Assign an image to an item only if it plainly belongs to it (its poster or photo).
 - Posters: extract all details from the poster itself, as well as the email text.

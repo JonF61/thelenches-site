@@ -20,6 +20,9 @@ Thank you for sending us the following. We've received them and will consider th
 ## ack_none
 Thank you for your email.
 
+## own_wording
+You asked us to use your own wording for "{title}", so we'll publish it as you wrote it, correcting only obvious typos and broken links.
+
 ## attachment_unusable
 We couldn't open {files}. We can use photos (JPEG, PNG or straight from an iPhone) and PDF flyers, so if it contains anything we need, please send it again in one of those formats or paste the details into an email.
 

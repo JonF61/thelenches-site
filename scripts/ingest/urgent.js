@@ -2,6 +2,9 @@
 // The per-run "action needed" email to jon@. One email per run at most, covering:
 //   - urgent items (cancellation, emergency road closure): SUGGESTS a one-off extra send;
 //     nothing ever goes to subscribers from here, including in holiday mode
+//   - official notices awaiting a decision: their wording and our rewrite, with "Approve
+//     with their wording" / "Approve with rewrite" buttons (wordingview.js). Urgent items
+//     that offer the choice (official or "use my wording") show it too.
 //   - follow-ups needing a human (a question or new issue on a thread we've replied to),
 //     submitter replies awaiting a decision (Send/Skip), shadow-mode drafts, and replies
 //     stuck at "sending" (never resent automatically)
@@ -14,6 +17,8 @@
 const g = require('./google');
 const { signedLink, linksEnabled, LINK_DAYS } = require('./links');
 const replies = require('./replies');
+const { offersChoice, isOfficial } = require('../../lib/wording');
+const wv = require('./wordingview');
 
 const TZ = 'Europe/London';
 const DEFAULT_WINDOW_DAYS = 7; // override with Settings key urgent_window_days
@@ -119,19 +124,26 @@ function heading(text, colour) {
   return `<tr><td style="padding:8px 0 10px 0;font-family:Arial,Helvetica,sans-serif;font-size:19px;font-weight:bold;color:${colour};">${esc(text)}</td></tr>`;
 }
 
-function itemHtml(row, rowUrl, buttons) {
+function itemHtml(row, rowUrl, buttons, border = C.orange) {
   const meta = [whenOf(row), row.village, row.category].filter(Boolean).join(' · ');
   const showButtons = buttons && row.status === 'pending';
+  const choice = offersChoice(row);
+  let buttonRow = '';
+  if (showButtons) {
+    buttonRow = choice
+      ? `<div>${wv.buttonsHtml(row, button, C)}</div><div style="color:${C.grey};font-size:12px;margin-top:4px;">${esc(wv.defaultLine(row))}</div>`
+      : `<div>${button(signedLink(row, 'approve'), 'Approve', C.green)}${button(signedLink(row, 'reject'), 'Reject', C.red)}</div>`;
+  }
   return card(`
       <div style="font-size:18px;font-weight:bold;color:${C.green};margin-bottom:4px;">${esc(row.title || '(no title)')}</div>
       ${meta ? `<div style="color:${C.grey};font-size:14px;margin-bottom:8px;">${esc(meta)}</div>` : ''}
-      ${row.summary ? `<div style="margin-bottom:8px;">${esc(row.summary)}</div>` : ''}
+      ${choice ? wv.versionsHtml(row, C) : (row.summary ? `<div style="margin-bottom:8px;">${esc(row.summary)}</div>` : '')}
       ${row.contact ? `<div style="margin-bottom:8px;font-size:14px;"><b>Contact:</b> ${esc(row.contact)}</div>` : ''}
       <div style="color:${C.grey};font-size:12px;margin-bottom:8px;">From ${esc(row.source)} · received ${esc(row.received)}${row.notes ? ` · ${esc(row.notes)}` : ''}</div>
       <div style="font-weight:bold;font-size:14px;margin-bottom:6px;">${esc(statusLine(row, buttons))}</div>
-      ${showButtons ? `<div>${button(signedLink(row, 'approve'), 'Approve', C.green)}${button(signedLink(row, 'reject'), 'Reject', C.red)}</div>` : ''}
+      ${buttonRow}
       <div style="margin-top:6px;">${textLink(rowUrl(row), 'Edit in Sheet')}${row.gmail_link ? textLink(row.gmail_link, 'Original email') : ''}</div>`,
-  C.orange);
+  border);
 }
 
 function replyHtml(r, ctx) {
@@ -160,7 +172,7 @@ const SUGGESTION = 'Suggested: a one-off extra send to subscribers. There is no 
   + 'so send it yourself if it is worth it. Extra sends are never automatic, including in holiday mode.';
 
 function buildHtml(ctx) {
-  const { items, drafts, stuck, holiday, rowUrl, buttons } = ctx;
+  const { items, choices, drafts, stuck, holiday, rowUrl, buttons } = ctx;
   const followups = drafts.filter((r) => r.status === 'awaiting' && isFollowup(r));
   const awaiting = drafts.filter((r) => r.status === 'awaiting' && !isFollowup(r));
   const shadow = drafts.filter((r) => r.status === 'shadow');
@@ -179,6 +191,7 @@ function buildHtml(ctx) {
         <div style="font-size:15px;color:#2b2b2b;background:#ffffff;border-left:4px solid ${C.orange};padding:10px 12px;">${esc(SUGGESTION)}</div>
       </td></tr>
       ${items.map((r) => itemHtml(r, rowUrl, buttons)).join('')}` : ''}
+      ${choices.length ? `${heading('Choose the wording', C.green)}${choices.map((r) => itemHtml(r, rowUrl, buttons, C.green)).join('')}` : ''}
       ${stuck.length ? `${heading('Replies stuck at "sending"', C.red)}${stuck.map((r) => replyHtml(r, ctx)).join('')}` : ''}
       ${followups.length ? `${heading('Follow-ups needing a human', C.orange)}${followups.map((r) => replyHtml(r, ctx)).join('')}` : ''}
       ${awaiting.length ? `${heading('Replies needing your decision', C.green)}${awaiting.map((r) => replyHtml(r, ctx)).join('')}` : ''}
@@ -192,28 +205,39 @@ function buildHtml(ctx) {
 </body></html>`;
 }
 
+function itemText(r, out, rowUrl, buttons) {
+  const choice = offersChoice(r);
+  out.push(r.title || '(no title)');
+  const meta = [whenOf(r), r.village, r.category].filter(Boolean).join(' · ');
+  if (meta) out.push(meta);
+  if (choice) out.push(...wv.versionsText(r));
+  else if (r.summary) out.push(r.summary);
+  if (r.contact) out.push(`Contact: ${r.contact}`);
+  out.push(`From ${r.source}, received ${r.received}`);
+  out.push(statusLine(r, buttons));
+  if (buttons && r.status === 'pending') {
+    if (choice) out.push(...wv.linksText(r));
+    else {
+      out.push(`Approve: ${signedLink(r, 'approve')}`);
+      out.push(`Reject: ${signedLink(r, 'reject')}`);
+    }
+  }
+  out.push(`Edit: ${rowUrl(r)}`);
+  if (r.gmail_link) out.push(`Original: ${r.gmail_link}`);
+  out.push('');
+}
+
 function buildText(ctx) {
-  const { items, drafts, stuck, holiday, rowUrl, buttons } = ctx;
+  const { items, choices, drafts, stuck, holiday, rowUrl, buttons } = ctx;
   const out = [ctx.title, ''];
   if (holiday) out.push('Holiday mode is ON.', '');
   if (items.length) {
     out.push('URGENT ITEMS', SUGGESTION, '');
-    for (const r of items) {
-      out.push(r.title || '(no title)');
-      const meta = [whenOf(r), r.village, r.category].filter(Boolean).join(' · ');
-      if (meta) out.push(meta);
-      if (r.summary) out.push(r.summary);
-      if (r.contact) out.push(`Contact: ${r.contact}`);
-      out.push(`From ${r.source}, received ${r.received}`);
-      out.push(statusLine(r, buttons));
-      if (buttons && r.status === 'pending') {
-        out.push(`Approve: ${signedLink(r, 'approve')}`);
-        out.push(`Reject: ${signedLink(r, 'reject')}`);
-      }
-      out.push(`Edit: ${rowUrl(r)}`);
-      if (r.gmail_link) out.push(`Original: ${r.gmail_link}`);
-      out.push('');
-    }
+    for (const r of items) itemText(r, out, rowUrl, buttons);
+  }
+  if (choices.length) {
+    out.push('CHOOSE THE WORDING', '');
+    for (const r of choices) itemText(r, out, rowUrl, buttons);
   }
   const section = (label, list) => {
     if (!list.length) return;
@@ -241,11 +265,16 @@ function buildText(ctx) {
   return out.join('\n');
 }
 
-function subjectFor(items, drafts, stuck) {
+function subjectFor(items, choices, drafts, stuck) {
   if (items.length) {
     return items.length === 1
       ? `URGENT: ${items[0].title || 'new item'} (Lenches)`
       : `URGENT: ${items.length} items (Lenches)`;
+  }
+  if (choices.length) {
+    return choices.length === 1
+      ? `Choose the wording: ${choices[0].title || 'new item'} (Lenches)`
+      : `Choose the wording: ${choices.length} items (Lenches)`;
   }
   if (stuck.length) return `Action needed: ${stuck.length} reply(ies) stuck (Lenches)`;
   const follow = drafts.filter((r) => r.status === 'awaiting' && isFollowup(r)).length;
@@ -285,6 +314,11 @@ async function sendUrgentAlerts(settings, holiday) {
     else await g.updateRow('Pending', r._row, { alerted_at: c });
   }
 
+  // Official notices awaiting a decision (urgent ones are above). "Use my wording" items
+  // default to their wording, so they wait for the digest.
+  const choices = rows.filter((r) => r.id && r.status === 'pending' && offersChoice(r) && isOfficial(r)
+    && !truthy(r.urgent) && !String(r.alerted_at).trim() && String(r.received).slice(0, 10) >= since);
+
   // Replies.
   const mode = replies.repliesMode(settings);
   let drafts = [];
@@ -296,19 +330,20 @@ async function sendUrgentAlerts(settings, holiday) {
     }
     ({ drafts, stuck } = replies.rowsForAlert(replyRows));
   }
-  if (!items.length && !drafts.length && !stuck.length) return 0;
+  if (!items.length && !choices.length && !drafts.length && !stuck.length) return 0;
 
   const buttons = linksEnabled();
   if (!buttons) console.warn('WORKER_URL or APPROVAL_SIGNING_KEY not set: email sent without buttons.');
   const gmailByMessage = new Map(rows.map((r) => [r.message_id, r.gmail_link]));
   const ctx = {
     items,
+    choices,
     drafts,
     stuck,
     holiday,
     buttons,
     liveButtons: buttons && mode === 'live',
-    rowUrl: items.length ? await sheetUrl('Pending') : null,
+    rowUrl: items.length || choices.length ? await sheetUrl('Pending') : null,
     replyUrl: drafts.length || stuck.length ? await sheetUrl('Replies') : null,
     // Follow-ups have no Pending row, so fall back to a link built from the message id.
     gmailFor: (r) => gmailByMessage.get(r.message_id)
@@ -318,18 +353,18 @@ async function sendUrgentAlerts(settings, holiday) {
 
   const id = await g.sendMail({
     to: process.env.ALERT_TO || process.env.GMAIL_USER,
-    subject: subjectFor(items, drafts, stuck),
+    subject: subjectFor(items, choices, drafts, stuck),
     text: buildText(ctx),
     html: buildHtml(ctx),
     fromName: g.fromNameFor(settings),
   });
 
   const stamp = londonDateTime(Date.now());
-  for (const r of items) await g.updateRow('Pending', r._row, { alerted_at: stamp });
+  for (const r of [...items, ...choices]) await g.updateRow('Pending', r._row, { alerted_at: stamp });
   for (const r of drafts) await g.updateRow('Replies', r._row, { alerted_at: stamp });
   for (const r of stuck) await g.updateRow('Replies', r._row, { alerted_at: `stuck-flagged ${stamp}` });
-  console.log(`Action email sent: ${items.length} urgent, ${drafts.length} draft(s), ${stuck.length} stuck. Gmail id ${id}.`);
-  return items.length + drafts.length + stuck.length;
+  console.log(`Action email sent: ${items.length} urgent, ${choices.length} wording choice(s), ${drafts.length} draft(s), ${stuck.length} stuck. Gmail id ${id}.`);
+  return items.length + choices.length + drafts.length + stuck.length;
 }
 
 module.exports = { sendUrgentAlerts };
