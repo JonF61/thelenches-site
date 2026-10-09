@@ -4,12 +4,16 @@
 // Sheet row and a link to the original email. Also lists items auto-published this week.
 // Signed links come from scripts/ingest/links.js (shared with the per-run action email);
 // the sender display name comes from Settings from_name.
+// "Use my wording": official and verbatim items show both versions, with "Approve with
+// their wording" and "Approve with rewrite" buttons (wordingview.js).
 // Step 7D: a one-line pipeline status from the latest Health row (daily diagnostic),
 // listing any problems and flagging the row if it is older than HEALTH_STALE_HOURS.
 'use strict';
 
 const g = require('../ingest/google');
 const { signedLink, linksEnabled, LINK_DAYS } = require('../ingest/links');
+const { offersChoice } = require('../../lib/wording');
+const wv = require('../ingest/wordingview');
 
 const TZ = 'Europe/London';
 const AUTO_LOOKBACK_DAYS = 7;  // "auto-published this week" window
@@ -111,6 +115,7 @@ function healthHtml(h) {
 
 function itemHtml(item, sheetRowUrl) {
   const flags = flagsOf(item);
+  const choice = offersChoice(item);
   const meta = [whenOf(item), item.village, item.category].filter(Boolean).join(' · ');
   const details = [
     item.cost && `<b>Cost:</b> ${esc(item.cost)}`,
@@ -124,10 +129,11 @@ function itemHtml(item, sheetRowUrl) {
       ${flags.length ? `<div style="color:${C.orange};font-weight:bold;font-size:13px;margin-bottom:6px;">${esc(flags.join(' · '))}</div>` : ''}
       <div style="font-size:18px;font-weight:bold;color:${C.green};margin-bottom:4px;">${esc(item.title || '(no title)')}</div>
       ${meta ? `<div style="color:${C.grey};font-size:14px;margin-bottom:8px;">${esc(meta)}</div>` : ''}
-      ${item.summary ? `<div style="margin-bottom:8px;">${esc(item.summary)}</div>` : ''}
+      ${choice ? wv.versionsHtml(item, C) : (item.summary ? `<div style="margin-bottom:8px;">${esc(item.summary)}</div>` : '')}
       ${details ? `<div style="margin-bottom:8px;font-size:14px;">${details}</div>` : ''}
       <div style="color:${C.grey};font-size:12px;margin-bottom:10px;">From ${esc(item.source)} · received ${esc(item.received)}${item.notes ? ` · ${esc(item.notes)}` : ''}</div>
-      <div>${button(signedLink(item, 'approve'), 'Approve', C.green)}${button(signedLink(item, 'reject'), 'Reject', C.red)}</div>
+      <div>${choice ? wv.buttonsHtml(item, button, C) : `${button(signedLink(item, 'approve'), 'Approve', C.green)}${button(signedLink(item, 'reject'), 'Reject', C.red)}`}</div>
+      ${choice ? `<div style="color:${C.grey};font-size:12px;margin-top:4px;">${esc(wv.defaultLine(item))}</div>` : ''}
       <div style="margin-top:6px;">${textLink(sheetRowUrl, 'Edit in Sheet')}${item.gmail_link ? textLink(item.gmail_link, 'Original email') : ''}</div>
     </td></tr>
   </table>
@@ -180,13 +186,18 @@ function buildText({ pending, auto, holiday, rowUrl, dateLabel, health }) {
     out.push(i.title || '(no title)');
     const meta = [whenOf(i), i.village, i.category].filter(Boolean).join(' · ');
     if (meta) out.push(meta);
-    if (i.summary) out.push(i.summary);
+    const choice = offersChoice(i);
+    if (choice) out.push(...wv.versionsText(i));
+    else if (i.summary) out.push(i.summary);
     if (i.cost) out.push(`Cost: ${i.cost}`);
     if (i.contact) out.push(`Contact: ${i.contact}`);
     if (i.link_url) out.push(`Link: ${i.link_url}`);
     out.push(`From ${i.source}, received ${i.received}`);
-    out.push(`Approve: ${signedLink(i, 'approve')}`);
-    out.push(`Reject: ${signedLink(i, 'reject')}`);
+    if (choice) out.push(...wv.linksText(i));
+    else {
+      out.push(`Approve: ${signedLink(i, 'approve')}`);
+      out.push(`Reject: ${signedLink(i, 'reject')}`);
+    }
     out.push(`Edit: ${rowUrl(i)}`);
     if (i.gmail_link) out.push(`Original: ${i.gmail_link}`);
     out.push('');

@@ -15,6 +15,7 @@ const { prepareAttachments, hashDistance } = require('./images');
 const { sendUrgentAlerts } = require('./urgent');
 const replies = require('./replies');
 const rss = require('./rss');
+const { offersChoice } = require('../../lib/wording');
 
 const MAX_RETRIES = 3;            // after this, a failing message is left for the diagnostic
 const MAX_MESSAGES_PER_RUN = 25;  // caps run time and spend; the rest wait for the next run
@@ -97,6 +98,8 @@ function findRepeat(item, hash, existing) {
 function decideStatus(item, mode, holiday) {
   if (item.people_in_image || item.political_commercial) return 'pending'; // always a human decision
   if (holiday) return 'auto';
+  // Official notices: Jon picks their wording or our rewrite (digest / action email).
+  if (item.official && item.own_text) return 'pending';
   if (mode === 'auto' && item.confidence >= LOW_CONFIDENCE) return 'auto';
   return 'pending';
 }
@@ -200,6 +203,12 @@ async function processMessage(id, ctx) {
       notes: noteParts.filter(Boolean).join(' | '),
       thread_id: msg.threadId,
       missing: item.missing.join(','),
+      // "Use my wording" columns (lib/wording.js); ignored if the Sheet lacks them.
+      official: item.official,
+      verbatim_requested: item.verbatim_requested,
+      own_text: item.own_text,
+      // Holiday mode: nobody is choosing, so official and verbatim items use their words.
+      wording: ctx.holiday && offersChoice(item) ? 'own' : '',
     };
     const flags = replies.itemPolicy({ ...row, classified: item.classified }, msg.internalDate);
     if (result.anonymous) flags.push('anonymous');

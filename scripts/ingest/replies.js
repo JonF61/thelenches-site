@@ -62,8 +62,10 @@ const FOLLOWUP_EXCERPT = 400;    // chars of their message shown to Jon in notes
 // Statuses that count as "we have replied / will reply".
 const ACTIVE = ['shadow', 'queued', 'awaiting', 'sending', 'sent'];
 // Item-level policy notes, in the order they appear in a reply.
-const ITEM_CODES = ['too_early', 'flyer_limit', 'newsletter_limit', 'people_in_image',
+const ITEM_CODES = ['own_wording', 'too_early', 'flyer_limit', 'newsletter_limit', 'people_in_image',
   'classified', 'political_commercial'];
+// Codes whose template may be absent from templates.md (added later): skipped, not fatal.
+const OPTIONAL_CODES = ['own_wording'];
 // Pending field that answers each missing-detail code.
 const FIELD_FOR = { where: 'village', date: 'event_date', time: 'event_time', cost: 'cost', contact: 'contact' };
 const FIELD_WORDS = {
@@ -185,6 +187,7 @@ function buildBody({ items, outOfScope, clarification, unusable = [] }) {
   for (const i of items) {
     for (const code of ITEM_CODES) {
       if (!i.policy.includes(code)) continue;
+      if (OPTIONAL_CODES.includes(code) && templates()[code] === undefined) continue;
       notes.push(fill(code, {
         title: i.title,
         show_from: i.event_date ? longDate(addDays(i.event_date, -EARLY_DAYS)) : '',
@@ -324,6 +327,7 @@ async function draftClarification(needs, anonymous) {
 function itemPolicy(row, receivedMs) {
   const codes = [];
   const recv = londonDate(receivedMs);
+  if (row.verbatim_requested === true || truthy(row.verbatim_requested)) codes.push('own_wording');
   if (row.event_date && row.event_date > addDays(recv, EARLY_DAYS)) codes.push('too_early');
   if (isLate(receivedMs)) codes.push('after_deadline');
   if (row.image_hash && Number(row.flyer_count) >= FLYER_LIMIT) codes.push('flyer_limit');

@@ -15,7 +15,8 @@
 //                       build.yml rebuilds the site and yesterday's events drop off.
 //   cron INGEST_CRON    :17 past even UK hours 06-22: fires repository_dispatch "ingest"
 //                       (GitHub's own cron ran hours late; it stays in ingest.yml as a backup).
-// Actions: approve/reject (Pending items), send/skip (submitter replies), nlsend/nlbuild
+// Actions: approve/reject (Pending items), approve_own/approve_rewrite (approve with the
+// submitter's own wording or our rewrite), send/skip (submitter replies), nlsend/nlbuild
 // (newsletter Send and Rebuild buttons). Single use and every send safeguard are enforced
 // downstream: the Worker only passes signed requests on to GitHub.
 // The Rebuild button's build carries rebuild: true, which lifts the Wednesday 18:00
@@ -50,6 +51,8 @@ const SLOTS = [
 const ACTIONS = {
   approve: ['Approve', 'Approved', 'approve'],
   reject: ['Reject', 'Rejected', 'reject'],
+  approve_own: ['Approve with their wording', 'Approved with their wording', 'approve'],
+  approve_rewrite: ['Approve with rewrite', 'Approved with our rewrite', 'approve'],
   send: ['Send reply', 'Reply queued to send', 'approve'],
   skip: ['Skip reply', 'Reply skipped', 'reject'],
   nlsend: ['Send newsletter', 'Send started', 'approve'],
