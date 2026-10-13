@@ -4,6 +4,9 @@
 //   approve_own / approve_rewrite
 //                     Approve, publishing the submitter's own wording or our rewrite
 //                     (Pending "wording" column, lib/wording.js). Same rule as approve.
+//   trust             "Trust this source" (daily approvals email): adds the item's sender
+//                     address or feed URL to the Trusted tab (once), then approves that
+//                     item as "approve" does. Never touches the source's other items.
 //   send / skip       Submitter replies (Replies tab). Only rows still "awaiting" change;
 //                     Send uses the body cell as it is now (see scripts/ingest/replies.js).
 // Replayed or duplicate clicks therefore do nothing.
@@ -11,6 +14,7 @@
 
 const g = require('../ingest/google');
 const replies = require('../ingest/replies');
+const trust = require('../ingest/trusted');
 
 const TZ = 'Europe/London';
 const WORDING = { approve_own: 'own', approve_rewrite: 'rewrite' };
@@ -52,12 +56,24 @@ async function decideItem(id, action) {
   console.log(`Item ${id} ("${row.title}") marked ${status}${fields.wording ? ` (${fields.wording} wording)` : ''}.`);
 }
 
+async function trustSource(id) {
+  const [rows, { sources }] = await Promise.all([g.readTable('Pending'), g.readSettings()]);
+  const row = rows.find((r) => r.id === id);
+  if (!row) throw new Error(`Item ${id} not found in Pending`);
+  const src = trust.sourceKeyFor(row, sources);
+  if (!src) throw new Error(`Item ${id} has no trustable source (not Gmail or a Settings feed)`);
+  const added = await trust.addTrusted(src, id, londonDateTime(Date.now()));
+  console.log(added ? `Trusted ${src.type} ${src.key} (${src.label}).` : `${src.key} was already trusted.`);
+  await decideItem(id, 'approve');
+}
+
 async function main() {
   const id = String(process.env.ITEM_ID || '').trim();
   const action = String(process.env.ACTION || '').trim();
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) throw new Error(`Bad id "${id}"`);
 
   if (ITEM_ACTIONS.includes(action)) return decideItem(id, action);
+  if (action === 'trust') return trustSource(id);
   if (['send', 'skip'].includes(action)) return replies.decideReply(id, action);
   throw new Error(`Bad action "${action}"`);
 }

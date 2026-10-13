@@ -393,6 +393,28 @@ async function getSheetGid(tab) {
   return s ? s.properties.sheetId : null;
 }
 
+// Creates a tab with the given header row if it doesn't exist yet (a tab that exists
+// is never touched). New tabs go at the end, so no existing tab moves.
+async function ensureTab(tab, headers) {
+  const res = await sheets().spreadsheets.get({
+    spreadsheetId: spreadsheetId(),
+    fields: 'sheets.properties(title)',
+  });
+  if ((res.data.sheets || []).some((x) => x.properties.title === tab)) return false;
+  await sheets().spreadsheets.batchUpdate({
+    spreadsheetId: spreadsheetId(),
+    requestBody: { requests: [{ addSheet: { properties: { title: tab } } }] },
+  });
+  await sheets().spreadsheets.values.update({
+    spreadsheetId: spreadsheetId(),
+    range: `'${tab}'!A1`,
+    valueInputOption: 'RAW',
+    requestBody: { values: [headers] },
+  });
+  headerCache[tab] = headers.slice();
+  return true;
+}
+
 // RAW input: nothing from an email can ever be evaluated as a formula.
 async function appendRows(tab, objects) {
   if (!objects.length) return;
@@ -435,6 +457,7 @@ module.exports = {
   readSettings,
   fromNameFor,
   getSheetGid,
+  ensureTab,
   appendRows,
   updateRow,
   spreadsheetId,

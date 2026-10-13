@@ -9,6 +9,7 @@ const crypto = require('crypto');
 const g = require('./google');
 const { extract } = require('./extract');
 const replies = require('./replies');
+const trust = require('./trusted');
 
 const MAX_FEED_ITEMS_PER_RUN = 10; // across all feeds; the rest wait for the next run
 const MAX_RETRIES = 3;
@@ -126,6 +127,10 @@ async function processItem(entry, ctx, h) {
     const repeat = h.findRepeat(it, '', ctx.existing);
     const noteParts = [it.notes];
     if (repeat) noteParts.push(`Possible repeat of ${repeat.row.id} (same title/date)`);
+    // Trusted feed (Settings URL): published without approval unless a human is needed.
+    const decided = trust.applyTrust(h.decideStatus(it, feed.mode, ctx.holiday), it,
+      feed.match, ctx.trusted, { anonymous: false, outOfScope: result.outOfScope });
+    if (decided.byTrust) noteParts.push('trusted');
     const row = {
       id: `${id}-${n + 1}`,
       received,
@@ -153,7 +158,7 @@ async function processItem(entry, ctx, h) {
       alt_text: '',
       image_url: '',
       gmail_link: link, // "Original" in the digest opens the article
-      status: h.decideStatus(it, feed.mode, ctx.holiday),
+      status: decided.status,
       newsletter_count: repeat ? Number(repeat.row.newsletter_count) || 0 : 0,
       flyer_count: 0,
       message_id: key,

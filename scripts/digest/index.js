@@ -8,10 +8,20 @@
 // their wording" and "Approve with rewrite" buttons (wordingview.js).
 // Step 7D: a one-line pipeline status from the latest Health row (daily diagnostic),
 // listing any problems and flagging the row if it is older than HEALTH_STALE_HOURS.
+//
+// Daily mode (DIGEST_MODE=daily, Worker cron 07:00 UK every day): only the Pending items
+// still "pending" that arrived since the last daily email, plus the items auto-published
+// by a trusted source (Trusted tab, scripts/ingest/trusted.js) in that time. Same cards,
+// plus "Trust this source" on Gmail and RSS items. Nothing is sent if there is nothing to
+// list. Each sent email adds a row to the "Daily" tab (created if missing); its sent_at
+// is the next email's cutoff. "Arrived" is the Log tab's processed_at for the item's
+// message (falling back to Pending received), so a feed item published days before it
+// was read still counts. The weekly digest is unchanged.
 'use strict';
 
 const g = require('../ingest/google');
-const { signedLink, linksEnabled, LINK_DAYS } = require('../ingest/links');
+const { signedLink, trustLink, linksEnabled, LINK_DAYS } = require('../ingest/links');
+const trust = require('../ingest/trusted');
 const { offersChoice } = require('../../lib/wording');
 const wv = require('../ingest/wordingview');
 
@@ -19,6 +29,9 @@ const TZ = 'Europe/London';
 const AUTO_LOOKBACK_DAYS = 7;  // "auto-published this week" window
 const LOW_CONFIDENCE = 0.5;
 const HEALTH_STALE_HOURS = 30; // diagnostic runs daily ~05:40 UK; digest 07:03
+const DAILY_TAB = 'Daily';
+const DAILY_HEADERS = ['sent_at', 'cutoff', 'pending_count', 'trusted_count', 'gmail_id'];
+const DAILY_FIRST_HOURS = 24;  // first daily email: look back this far
 
 const C = { green: '#3F5233', cream: '#F6F1E4', orange: '#C0703A', red: '#A33B2B', grey: '#666666' };
 
@@ -113,7 +126,7 @@ function healthHtml(h) {
     + `border-radius:4px;font-size:13px;color:#2b2b2b;"><span style="color:${colour};font-weight:bold;">${esc(h.line)}</span>${list}</div>`;
 }
 
-function itemHtml(item, sheetRowUrl) {
+function itemHtml(item, sheetRowUrl, trustSrc) {
   const flags = flagsOf(item);
   const choice = offersChoice(item);
   const meta = [whenOf(item), item.village, item.category].filter(Boolean).join(' · ');
@@ -133,20 +146,22 @@ function itemHtml(item, sheetRowUrl) {
       ${details ? `<div style="margin-bottom:8px;font-size:14px;">${details}</div>` : ''}
       <div style="color:${C.grey};font-size:12px;margin-bottom:10px;">From ${esc(item.source)} · received ${esc(item.received)}${item.notes ? ` · ${esc(item.notes)}` : ''}</div>
       <div>${choice ? wv.buttonsHtml(item, button, C) : `${button(signedLink(item, 'approve'), 'Approve', C.green)}${button(signedLink(item, 'reject'), 'Reject', C.red)}`}</div>
-      ${choice ? `<div style="color:${C.grey};font-size:12px;margin-top:4px;">${esc(wv.defaultLine(item))}</div>` : ''}
+      ${choice ? `<div style="color:${C.grey};font-size:12px;margin-top:4px;">${esc(wv.defaultLine(item))}</div>` : ''}${trustSrc ? `
+      <div style="margin-top:6px;">${button(trustLink(item, trustSrc.key), 'Trust this source', C.orange)}</div>
+      <div style="color:${C.grey};font-size:12px;margin-top:2px;">Approves this item and publishes future items from ${esc(trustSrc.key)} without asking (except people in images, political/commercial, official, anonymous, out of scope, classified or low confidence).</div>` : ''}
       <div style="margin-top:6px;">${textLink(sheetRowUrl, 'Edit in Sheet')}${item.gmail_link ? textLink(item.gmail_link, 'Original email') : ''}</div>
     </td></tr>
   </table>
 </td></tr>`;
 }
 
-function buildHtml({ pending, auto, holiday, rowUrl, dateLabel, health }) {
+function buildHtml({ pending, auto, holiday, rowUrl, dateLabel, health, daily, trustFor }) {
   const intro = pending.length
     ? `${pending.length} item${pending.length === 1 ? '' : 's'} to review. Each button opens a confirm page; nothing changes until you confirm.`
-    : 'Nothing awaiting approval this week.';
+    : (daily ? 'Nothing new awaiting approval.' : 'Nothing awaiting approval this week.');
   const autoList = auto.length
     ? `<tr><td style="padding:8px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#2b2b2b;">
-        <div style="font-weight:bold;color:${C.green};margin-bottom:6px;">Auto-published in the last ${AUTO_LOOKBACK_DAYS} days</div>
+        <div style="font-weight:bold;color:${C.green};margin-bottom:6px;">${daily ? 'Auto-published from trusted sources since the last email' : `Auto-published in the last ${AUTO_LOOKBACK_DAYS} days`}</div>
         ${auto.map((i) => `<div style="margin-bottom:4px;">${esc(i.title)}${whenOf(i) ? ` <span style="color:${C.grey};">(${esc(whenOf(i))})</span>` : ''} ${textLink(rowUrl(i), 'Sheet')}</div>`).join('')}
       </td></tr>`
     : '';
@@ -157,13 +172,13 @@ function buildHtml({ pending, auto, holiday, rowUrl, dateLabel, health }) {
   <tr><td align="center" style="padding:20px 12px;">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
       <tr><td style="padding:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;">
-        <div style="font-size:22px;font-weight:bold;color:${C.green};">Lenches digest</div>
+        <div style="font-size:22px;font-weight:bold;color:${C.green};">${daily ? 'Lenches daily approvals' : 'Lenches digest'}</div>
         <div style="font-size:14px;color:${C.grey};">${esc(dateLabel)}</div>
-        ${healthHtml(health)}
+        ${health ? healthHtml(health) : ''}
         ${holiday ? `<div style="margin-top:8px;font-size:14px;color:${C.orange};font-weight:bold;">Holiday mode is ON: only items that always need a human decision are listed.</div>` : ''}
         <div style="margin-top:10px;font-size:15px;color:#2b2b2b;">${esc(intro)}</div>
       </td></tr>
-      ${pending.map((i) => itemHtml(i, rowUrl(i))).join('')}
+      ${pending.map((i) => itemHtml(i, rowUrl(i), trustFor ? trustFor(i) : null)).join('')}
       ${autoList}
       <tr><td style="padding:16px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:${C.grey};">
         Links expire after ${LINK_DAYS} days and each item can only be decided once.
@@ -174,12 +189,16 @@ function buildHtml({ pending, auto, holiday, rowUrl, dateLabel, health }) {
 </body></html>`;
 }
 
-function buildText({ pending, auto, holiday, rowUrl, dateLabel, health }) {
-  const out = [`Lenches digest, ${dateLabel}`, '', health.line];
-  health.problems.forEach((p) => out.push(`- ${p}`));
-  out.push('');
+function buildText({ pending, auto, holiday, rowUrl, dateLabel, health, daily, trustFor }) {
+  const out = [`${daily ? 'Lenches daily approvals' : 'Lenches digest'}, ${dateLabel}`, ''];
+  if (health) {
+    out.push(health.line);
+    health.problems.forEach((p) => out.push(`- ${p}`));
+    out.push('');
+  }
   if (holiday) out.push('Holiday mode is ON: only items that always need a human decision are listed.', '');
-  out.push(pending.length ? `${pending.length} item(s) to review.` : 'Nothing awaiting approval this week.', '');
+  out.push(pending.length ? `${pending.length} item(s) to review.`
+    : (daily ? 'Nothing new awaiting approval.' : 'Nothing awaiting approval this week.'), '');
   for (const i of pending) {
     const flags = flagsOf(i);
     if (flags.length) out.push(`[${flags.join(', ')}]`);
@@ -198,12 +217,14 @@ function buildText({ pending, auto, holiday, rowUrl, dateLabel, health }) {
       out.push(`Approve: ${signedLink(i, 'approve')}`);
       out.push(`Reject: ${signedLink(i, 'reject')}`);
     }
+    const src = trustFor ? trustFor(i) : null;
+    if (src) out.push(`Trust this source (${src.key}): ${trustLink(i, src.key)}`);
     out.push(`Edit: ${rowUrl(i)}`);
     if (i.gmail_link) out.push(`Original: ${i.gmail_link}`);
     out.push('');
   }
   if (auto.length) {
-    out.push(`Auto-published in the last ${AUTO_LOOKBACK_DAYS} days:`);
+    out.push(daily ? 'Auto-published from trusted sources since the last email:' : `Auto-published in the last ${AUTO_LOOKBACK_DAYS} days:`);
     auto.forEach((i) => out.push(`- ${i.title}${whenOf(i) ? ` (${whenOf(i)})` : ''}`));
     out.push('');
   }
@@ -212,6 +233,73 @@ function buildText({ pending, auto, holiday, rowUrl, dateLabel, health }) {
 }
 
 /* ----------------------------------------------------------------- main -- */
+
+const sortPending = (a, b) => (truthy(b.urgent) - truthy(a.urgent))
+  || String(a.event_date || '9999').localeCompare(String(b.event_date || '9999'));
+
+const sheetRowUrl = (gid) => {
+  const base = `https://docs.google.com/spreadsheets/d/${g.spreadsheetId()}/edit`;
+  return (i) => (gid === null ? base : `${base}#gid=${gid}&range=A${i._row}`);
+};
+
+// Daily mode: pure selection, so it can be tested offline.
+// arrivedAt(row) -> "YYYY-MM-DD HH:MM" UK. Returns { pending, auto }.
+function selectDaily(rows, cutoff, arrivedAt) {
+  const fresh = rows.filter((r) => r.id && arrivedAt(r) >= cutoff);
+  return {
+    pending: fresh.filter((r) => r.status === 'pending').sort(sortPending),
+    auto: fresh.filter((r) => r.status === 'auto'
+      && String(r.notes || '').split(' | ').some((n) => n.trim() === 'trusted')),
+  };
+}
+
+async function mainDaily() {
+  if (!linksEnabled()) throw new Error('APPROVAL_SIGNING_KEY or WORKER_URL is not set');
+  const to = process.env.DIGEST_TO || process.env.GMAIL_USER;
+  const startedAt = londonStamp(Date.now());
+
+  await Promise.all([g.ensureTab(DAILY_TAB, DAILY_HEADERS), g.ensureTab(trust.TAB, trust.HEADERS)]);
+  const [rows, logRows, dailyRows, { settings, sources }, gid] = await Promise.all([
+    g.readTable('Pending'),
+    g.readTable('Log'),
+    g.readTable(DAILY_TAB),
+    g.readSettings(),
+    g.getSheetGid('Pending'),
+  ]);
+  const last = dailyRows.map((r) => String(r.sent_at || '').trim())
+    .filter((d) => /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(d)).sort().pop();
+  const cutoff = last || londonStamp(Date.now() - DAILY_FIRST_HOURS * 3600000);
+  const processed = new Map(logRows.map((r) => [r.message_id, String(r.processed_at || '')]));
+  const arrivedAt = (r) => processed.get(r.message_id) || String(r.received || '');
+
+  const { pending, auto } = selectDaily(rows, cutoff, arrivedAt);
+  if (!pending.length && !auto.length) {
+    console.log(`Daily approvals: nothing since ${cutoff}; no email sent.`);
+    return;
+  }
+
+  const dateLabel = longDate(londonDate(Date.now()));
+  const subject = pending.length
+    ? `Lenches daily approvals: ${pending.length} to review (${dateLabel})`
+    : `Lenches daily approvals: ${auto.length} auto-published (${dateLabel})`;
+  const ctx = {
+    pending,
+    auto,
+    holiday: truthy(settings.holiday_mode),
+    rowUrl: sheetRowUrl(gid),
+    dateLabel,
+    health: null,
+    daily: true,
+    trustFor: (i) => trust.sourceKeyFor(i, sources),
+  };
+  const id = await g.sendMail({
+    to, subject, text: buildText(ctx), html: buildHtml(ctx), fromName: g.fromNameFor(settings),
+  });
+  await g.appendRows(DAILY_TAB, [{
+    sent_at: startedAt, cutoff, pending_count: pending.length, trusted_count: auto.length, gmail_id: id,
+  }]);
+  console.log(`Daily approvals sent to ${to}: ${pending.length} to review, ${auto.length} trusted auto-published since ${cutoff}. Gmail id ${id}.`);
+}
 
 async function main() {
   if (!linksEnabled()) throw new Error('APPROVAL_SIGNING_KEY or WORKER_URL is not set');
@@ -253,7 +341,12 @@ async function main() {
   console.log(`Digest sent to ${to}: ${pending.length} to review, ${auto.length} auto-published. ${health.line} Gmail id ${id}.`);
 }
 
-main().catch((err) => {
-  console.error('Fatal:', err && err.stack ? err.stack : err);
-  process.exit(1);
-});
+if (require.main === module) {
+  const daily = String(process.env.DIGEST_MODE || '').toLowerCase() === 'daily';
+  (daily ? mainDaily() : main()).catch((err) => {
+    console.error('Fatal:', err && err.stack ? err.stack : err);
+    process.exit(1);
+  });
+}
+
+module.exports = { buildHtml, buildText, selectDaily };

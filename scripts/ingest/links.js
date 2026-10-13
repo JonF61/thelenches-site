@@ -31,4 +31,16 @@ function signedLink(item, action) {
   });
 }
 
-module.exports = { signedLink, signToken, linksEnabled, workerUrl, LINK_DAYS };
+// "Trust this source" (daily approvals email). k is the sender address or feed URL,
+// shown on the Worker's confirm page; scripts/approve works it out again from the row.
+function trustLink(item, sourceKey) {
+  return signToken({
+    i: item.id,
+    a: 'trust',
+    t: String(item.title || '').slice(0, 80),
+    k: String(sourceKey || '').slice(0, 300),
+    e: Math.floor(Date.now() / 1000) + LINK_DAYS * 86400,
+  });
+}
+
+module.exports = { signedLink, trustLink, signToken, linksEnabled, workerUrl, LINK_DAYS };

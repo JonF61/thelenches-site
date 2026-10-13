@@ -1,0 +1,3 @@
+# Local install and build output (CI rebuilds both)
+node_modules/
+_site/

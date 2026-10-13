@@ -7,6 +7,8 @@
 // Nothing is committed to the repo. Email sent from here: the per-run alert to jon@
 // (urgent.js) and submitter replies (replies.js, per Settings replies_mode).
 // Nothing ever goes to subscribers from here.
+// Trusted senders and feeds (Trusted tab, trusted.js) go straight to "auto" unless the
+// item needs a human anyway; such rows carry "trusted" in notes.
 'use strict';
 
 const g = require('./google');
@@ -15,6 +17,7 @@ const { prepareAttachments, hashDistance } = require('./images');
 const { sendUrgentAlerts } = require('./urgent');
 const replies = require('./replies');
 const rss = require('./rss');
+const trust = require('./trusted');
 const { offersChoice } = require('../../lib/wording');
 
 const MAX_RETRIES = 3;            // after this, a failing message is left for the diagnostic
@@ -168,6 +171,10 @@ async function processMessage(id, ctx) {
     if (repeat) {
       noteParts.push(`Possible repeat of ${repeat.row.id} (${repeat.byImage ? 'same image' : 'same title/date'})`);
     }
+    // Trusted sender: published without approval unless the item needs a human anyway.
+    const decided = trust.applyTrust(decideStatus(item, source.mode, ctx.holiday), item,
+      msg.fromAddress, ctx.trusted, { anonymous: result.anonymous, outOfScope: result.outOfScope });
+    if (decided.byTrust) noteParts.push('trusted');
     const row = {
       id: `${msg.id}-${n + 1}`,
       received,
@@ -195,7 +202,7 @@ async function processMessage(id, ctx) {
       alt_text: item.alt_text,
       image_url: '',
       gmail_link: link,
-      status: decideStatus(item, source.mode, ctx.holiday),
+      status: decided.status,
       // Resubmitting doesn't reset limits: carry counts over from the earlier item.
       newsletter_count: repeat ? Number(repeat.row.newsletter_count) || 0 : 0,
       flyer_count: repeat && repeat.byImage ? Number(repeat.row.flyer_count) || 0 : 0,
@@ -255,6 +262,13 @@ async function main() {
   const logById = new Map(logRows.map((r) => [r.message_id, r]));
   const existing = await g.readTable('Pending');
   const replyRows = replyMode === 'off' ? [] : await g.readTable('Replies');
+  // Fails safe: without the Trusted tab nothing is auto-published by trust.
+  let trusted = new Set();
+  try {
+    trusted = await trust.loadTrusted();
+  } catch (err) {
+    console.warn(`Trusted tab unreadable, trust ignored this run: ${(err && err.message) || err}`);
+  }
 
   const ids = (await g.listMessageIds(process.env.GMAIL_LABEL || 'Pipeline', londonMidnightEpoch(startYmd)))
     .reverse(); // oldest first
@@ -264,13 +278,14 @@ async function main() {
   });
   const batch = todo.slice(0, MAX_MESSAGES_PER_RUN);
 
-  console.log(`Start ${startYmd}${override ? ' (override)' : ''}, holiday mode ${holiday ? 'ON' : 'off'}, replies ${replyMode}.`);
+  console.log(`Start ${startYmd}${override ? ' (override)' : ''}, holiday mode ${holiday ? 'ON' : 'off'}, replies ${replyMode}, ${trusted.size} trusted source(s).`);
   console.log(`${ids.length} labelled, ${todo.length} to process, ${batch.length} this run.`);
 
   const ctx = {
     sources,
     settings,
     holiday,
+    trusted,
     existing,
     replies: replyRows,
     replyErrors: 0,
