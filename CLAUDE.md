@@ -8,6 +8,7 @@ Read this first in every session. The full Project Plan is a Claude Doc you can'
 - Key code: `scripts/ingest` (Gmail + RSS ingestion, extract.js, replies.js = "Holly" submitter replies, rules.md), `scripts/newsletter` (select, render, index, send), `scripts/digest`, `scripts/approve`, `scripts/publish`, `lib/` (lenches.js, anchors.js), `src/_data/` (whatson.json, siteupdates.json, services.json, bins.json, site.json), `.eleventy.js`, `src/_includes/base.njk`.
 
 ## Working with Jon
+- Names (after Red Dwarf): you, Claude Code, are **Kryten**; the claude.ai Project chat is **Holly** (replies.js is also nicknamed Holly; its emails sign as "Lenches website assistant"). "Report back to Holly" means the PR description.
 - British English. Succinct. He is a GitHub novice: give exact click-by-click steps (direct links, which button, what he should see).
 - One step at a time: when you need him to do or check something, ask only that, then wait.
 - If this session is on Jon's PC without Git/Node, move to a cloud session straight away rather than asking to install anything.
