@@ -33,6 +33,8 @@ const CERT_WARN_DAYS = 14;
 const PENDING_STALE_DAYS = 8;
 const KEEPALIVE_DAYS = 50;           // GitHub pauses cron after 60 days without activity
 const LOG_MAX_RETRIES = 3;           // matches ingest MAX_RETRIES
+const GH_GET_ATTEMPTS = 3;           // GitHub GETs retried on 5xx / network errors (12 Oct: one 502 crashed Workflows)
+const GH_RETRY_WAIT_MS = 10000;      // 10s, then 20s
 
 const EXCLUDE = ['watchdog-alert.yml', 'diagnostic.yml'];
 const RERUNNABLE = ['ingest.yml', 'publish.yml', 'build.yml', 'deploy-worker.yml', 'approval.yml'];
@@ -80,7 +82,7 @@ async function safe(name, fn) {
   }
 }
 
-function gh(path, { token = process.env.GITHUB_TOKEN, method = 'GET', body } = {}) {
+function ghOnce(path, { token = process.env.GITHUB_TOKEN, method = 'GET', body } = {}) {
   return fetch(`https://api.github.com${path}`, {
     method,
     headers: {
@@ -92,6 +94,26 @@ function gh(path, { token = process.env.GITHUB_TOKEN, method = 'GET', body } = {
     },
     body: body ? JSON.stringify(body) : undefined,
   });
+}
+
+// GETs are retried on GitHub 5xx or a network error (transient on GitHub's side);
+// anything else (PUT/POST/PATCH) is sent once, as before.
+async function gh(path, opts = {}) {
+  const attempts = (opts.method || 'GET') === 'GET' ? GH_GET_ATTEMPTS : 1;
+  for (let i = 1; ; i += 1) {
+    try {
+      const r = await ghOnce(path, opts);
+      if (r.status < 500 || i >= attempts) {
+        if (i > 1) notes.push(`GitHub GET ${path.split('?')[0]}: HTTP ${r.status} after ${i} attempts`);
+        return r;
+      }
+      console.warn(`GitHub GET ${path}: HTTP ${r.status}, retrying (${i}/${attempts})`);
+    } catch (e) {
+      if (i >= attempts) throw e;
+      console.warn(`GitHub GET ${path}: ${errText(e)}, retrying (${i}/${attempts})`);
+    }
+    await new Promise((ok) => setTimeout(ok, GH_RETRY_WAIT_MS * i));
+  }
 }
 
 async function ghJson(path, opts = {}) {
