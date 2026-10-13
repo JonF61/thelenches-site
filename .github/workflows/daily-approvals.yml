@@ -1,0 +1,39 @@
+name: Daily approvals
+
+# 07:00 UK every day, fired by the Cloudflare Worker's cron (repository_dispatch
+# "daily-approvals"). Lists items awaiting approval that arrived since the last daily
+# email, plus items auto-published from trusted sources. Sends nothing if there's nothing.
+# Run workflow kept for manual runs.
+on:
+  repository_dispatch:
+    types: [daily-approvals]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-approvals
+  cancel-in-progress: false
+
+jobs:
+  daily:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Send daily approvals email
+        run: node scripts/digest/index.js
+        env:
+          DIGEST_MODE: daily
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: jon@thelenches.org.uk
+          DIGEST_TO: jon@thelenches.org.uk
+          WORKER_URL: https://approvals.lenches.workers.dev
