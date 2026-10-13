@@ -14,10 +14,12 @@ workers_dev = true
 #    so "3,4" meant Tue/Wed and Thursday never fired (8 Oct 2026).
 # 3. 23:10 and 00:10 UTC daily: the Worker keeps whichever is 00:10 UK and fires a
 #    site rebuild, so finished events and expired notices drop off overnight.
-# 4. Hourly at :17 (UTC): the Worker keeps the even UK hours 06-22 and fires an
-#    ingestion run (GitHub's own cron in ingest.yml ran hours late; it stays as a backup).
-# Keep all strings identical to WATCHDOG_CRON / SCHEDULE_CRON / NIGHTLY_CRON / INGEST_CRON in src.
-crons = ["23 */3 * * *", "0,30 * * * WED,THU", "10 23,0 * * *", "17 * * * *"]
+# 4. Hourly at :00 and :17 (UTC, every day): at :17 the Worker keeps the even UK hours
+#    06-22 and fires an ingestion run (GitHub's own cron in ingest.yml ran hours late; it
+#    stays as a backup); at :00 it keeps 07:00 UK and fires the daily approvals email.
+#    Shared with ingestion so the Worker stays within 5 crons (Cloudflare free limit).
+# Keep all strings identical to WATCHDOG_CRON / SCHEDULE_CRON / NIGHTLY_CRON / HOURLY_CRON in src.
+crons = ["23 */3 * * *", "0,30 * * * WED,THU", "10 23,0 * * *", "0,17 * * * *"]
 
 [vars]
 REPO = "JonF61/thelenches-site"
@@ -28,6 +30,8 @@ SCHEDULE = "on"
 NIGHTLY = "on"
 # Kill switch for Worker-fired ingestion (GitHub's cron still runs): "off" to pause.
 INGEST = "on"
+# Kill switch for the 07:00 UK daily approvals email: "off" to pause.
+DAILY = "on"
 
 [observability]
 enabled = true

@@ -13,10 +13,14 @@
 //                       and 17:00 reminders. A failed dispatch raises a watchdog alert.
 //   cron NIGHTLY_CRON   00:10 UK every night: fires repository_dispatch "rebuild" so
 //                       build.yml rebuilds the site and yesterday's events drop off.
-//   cron INGEST_CRON    :17 past even UK hours 06-22: fires repository_dispatch "ingest"
+//   cron HOURLY_CRON    :17 past even UK hours 06-22: fires repository_dispatch "ingest"
 //                       (GitHub's own cron ran hours late; it stays in ingest.yml as a backup).
+//                       07:00 UK every day: fires "daily-approvals" (daily approvals email).
+//                       One cron string for both keeps the Worker within Cloudflare's
+//                       5-cron-per-account free limit.
 // Actions: approve/reject (Pending items), approve_own/approve_rewrite (approve with the
-// submitter's own wording or our rewrite), send/skip (submitter replies), nlsend/nlbuild
+// submitter's own wording or our rewrite), trust (add the item's sender or feed to the
+// Trusted tab and approve that item), send/skip (submitter replies), nlsend/nlbuild
 // (newsletter Send and Rebuild buttons). Single use and every send safeguard are enforced
 // downstream: the Worker only passes signed requests on to GitHub.
 // The Rebuild button's build carries rebuild: true, which lifts the Wednesday 18:00
@@ -34,7 +38,10 @@ const WATCHDOG_CRON = '23 */3 * * *';
 const SCHEDULE_CRON = '0,30 * * * WED,THU';
 const NIGHTLY_CRON = '10 23,0 * * *';
 const NIGHTLY_HM = '00:10';          // UK time; BST fires on the 23:10 UTC slot, GMT on 00:10
-const INGEST_CRON = '17 * * * *';
+// Minutes only, every hour and day ("*"): never day numbers here.
+const HOURLY_CRON = '0,17 * * * *';
+const INGEST_MINUTE = '17';
+const DAILY_HM = '07:00';            // UK time, every day: daily approvals email
 const INGEST_HOURS = [6, 8, 10, 12, 14, 16, 18, 20, 22]; // UK hours, as ingest.yml's gate
 const NL_MODES = ['shadow', 'canary', 'live'];
 
@@ -53,6 +60,7 @@ const ACTIONS = {
   reject: ['Reject', 'Rejected', 'reject'],
   approve_own: ['Approve with their wording', 'Approved with their wording', 'approve'],
   approve_rewrite: ['Approve with rewrite', 'Approved with our rewrite', 'approve'],
+  trust: ['Trust this source', 'Source trusted', 'approve'],
   send: ['Send reply', 'Reply queued to send', 'approve'],
   skip: ['Skip reply', 'Reply skipped', 'reject'],
   nlsend: ['Send newsletter', 'Send started', 'approve'],
@@ -78,6 +86,10 @@ function validPayload(p) {
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(String(p.i || ''))) return false;
   if (p.a === 'nlsend' || p.a === 'nlbuild') {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(p.i)) return false;
+  }
+  if (p.a === 'trust') {
+    const k = String(p.k || '');
+    if (k.length > 300 || !(/^[^\s@<>]+@[^\s@<>]+$/.test(k) || /^https?:\/\/\S+$/i.test(k))) return false;
   }
   if (p.a === 'nlsend') {
     if (!/^[0-9a-f]{12,64}$/.test(String(p.h || ''))) return false;
@@ -192,6 +204,11 @@ function dispatchFor(p) {
 /* ------------------------------------------------------------ approvals -- */
 
 function confirmExtra(p) {
+  if (p.a === 'trust') {
+    const what = /^https?:/i.test(p.k) ? 'the feed' : 'the email address';
+    return `<p>This trusts ${what} <strong>${esc(p.k)}</strong> and approves this item.</p>`
+      + '<p class="muted">Future items from it are published without asking, except anything with people in images, political or commercial content, official notices, anonymous or out-of-scope mail, classified ads or low confidence. Its other items already waiting are not approved. To undo, delete its row in the Trusted tab.</p>';
+  }
   if (p.a === 'nlsend' && p.m === 'live') {
     return '<p class="warn">This emails every subscriber. It cannot be undone.</p>';
   }
@@ -203,6 +220,7 @@ function confirmExtra(p) {
 function doneText(p) {
   if (p.a === 'nlsend') return 'Started. GitHub emails you if any safety check refuses it; the Issues and Sends tabs show progress.';
   if (p.a === 'nlbuild') return 'Started. A new test copy and preview should arrive in a few minutes.';
+  if (p.a === 'trust') return `Recorded. ${p.k} is added to the Trusted tab (once) and this item is approved if it was still waiting.`;
   return 'Recorded. If this had already been decided, nothing changes.';
 }
 
@@ -337,15 +355,29 @@ async function runNightly(env, ms) {
   if (!ok) await alertDispatchFailed(env, `Nightly site rebuild at ${uk.hm} UK could not be sent to GitHub`);
 }
 
+// Daily approvals email at 07:00 UK every day (scripts/digest, DIGEST_MODE=daily).
+async function runDaily(env, ms) {
+  const uk = ukNow(ms);
+  if (uk.hm !== DAILY_HM) return;
+  if (String(env.DAILY || 'on').toLowerCase() !== 'on') {
+    console.log('Daily approvals email is switched off (wrangler.toml DAILY).');
+    return;
+  }
+  const ok = await dispatch(env, 'daily-approvals', { date: uk.date }, 3);
+  console.log(`${uk.date} ${uk.hm} UK: daily approvals ${ok ? 'dispatched' : 'FAILED'}`);
+  if (!ok) await alertDispatchFailed(env, `Daily approvals email at ${uk.hm} UK could not be sent to GitHub`);
+}
+
 // Ingestion at :17 past the even UK hours 06-22. ingest.yml treats the dispatch like a
 // scheduled run (RSS only on its feed hours). A late GitHub cron run as well is harmless:
 // the concurrency group queues it and the Log tab stops anything being processed twice.
 async function runIngest(env, ms) {
+  const uk = ukNow(ms);
+  if (!uk.hm.endsWith(`:${INGEST_MINUTE}`)) return;
   if (String(env.INGEST || 'on').toLowerCase() !== 'on') {
     console.log('Worker-fired ingestion is switched off (wrangler.toml INGEST).');
     return;
   }
-  const uk = ukNow(ms);
   if (!INGEST_HOURS.includes(uk.hour)) return;
   const ok = await dispatch(env, 'ingest', { date: uk.date, hm: uk.hm }, 3);
   console.log(`${uk.date} ${uk.hm} UK: ingest ${ok ? 'dispatched' : 'FAILED'}`);
@@ -508,7 +540,10 @@ export default {
   async scheduled(event, env, ctx) {
     if (event.cron === SCHEDULE_CRON) ctx.waitUntil(runSchedule(env, event.scheduledTime));
     else if (event.cron === NIGHTLY_CRON) ctx.waitUntil(runNightly(env, event.scheduledTime));
-    else if (event.cron === INGEST_CRON) ctx.waitUntil(runIngest(env, event.scheduledTime));
+    else if (event.cron === HOURLY_CRON) {
+      ctx.waitUntil(runIngest(env, event.scheduledTime));
+      ctx.waitUntil(runDaily(env, event.scheduledTime));
+    }
     else ctx.waitUntil(watchdog(env));
   },
 };
