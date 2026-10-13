@@ -252,9 +252,15 @@ async function processMessage(id, ctx) {
 
 async function main() {
   const { sources, settings } = await g.readSettings();
-  const override = process.env.START_DATE_OVERRIDE || '';
+  // Run workflow's start date box: "2026-10-08" overrides Gmail and feeds;
+  // "rss:2026-10-08" overrides feeds only (Gmail keeps Settings start_date).
+  const rawOverride = String(process.env.START_DATE_OVERRIDE || '').trim();
+  const rssOnly = /^rss:/i.test(rawOverride);
+  const override = rssOnly ? '' : rawOverride;
   const startYmd = parseYmd(override) || parseYmd(settings.start_date);
   if (!startYmd) throw new Error(`Invalid start date: "${override || settings.start_date}"`);
+  const rssStartYmd = rssOnly ? parseYmd(rawOverride.slice(4)) : startYmd;
+  if (!rssStartYmd) throw new Error(`Invalid feed start date: "${rawOverride}"`);
   const holiday = String(settings.holiday_mode || '').toUpperCase() === 'TRUE';
   const replyMode = replies.repliesMode(settings);
 
@@ -278,7 +284,7 @@ async function main() {
   });
   const batch = todo.slice(0, MAX_MESSAGES_PER_RUN);
 
-  console.log(`Start ${startYmd}${override ? ' (override)' : ''}, holiday mode ${holiday ? 'ON' : 'off'}, replies ${replyMode}, ${trusted.size} trusted source(s).`);
+  console.log(`Start ${startYmd}${override ? ' (override)' : ''}${rssOnly ? `, feeds from ${rssStartYmd} (override)` : ''}, holiday mode ${holiday ? 'ON' : 'off'}, replies ${replyMode}, ${trusted.size} trusted source(s).`);
   console.log(`${ids.length} labelled, ${todo.length} to process, ${batch.length} this run.`);
 
   const ctx = {
@@ -340,7 +346,7 @@ async function main() {
   const automatic = AUTO_EVENTS.includes(process.env.GITHUB_EVENT_NAME);
   if (!automatic || RSS_HOURS.includes(londonHour(Date.now()))) {
     try {
-      const r = await rss.run(ctx, logById, londonMidnightEpoch(startYmd) * 1000,
+      const r = await rss.run(ctx, logById, londonMidnightEpoch(rssStartYmd) * 1000,
         { londonDateTime, findRepeat, decideStatus });
       failed += r.failed;
       gaveUp += r.gaveUp;
