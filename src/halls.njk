@@ -48,10 +48,16 @@ description: Church Lench and Rous Lench village halls — history, hire charges
 
   <section id="rous-lench">
     <h2>Rous Lench Village Hall</h2>
-    <div class="card">
-      <p class="mt0">Built in 1885 and deeded to the village in 1947, Rous Lench Village Hall hosts public events and is available for hire.</p>
-      <p><a href="https://rouslench.com/" target="_blank" rel="noopener">Visit the Rous Lench website &rarr;</a></p>
+    {#- Jon's photos from photos.json (Photos tab): 3113 whole hall, plus 3110 (moved from Groups, 13 Oct) -#}
+    <div class="gallery">
+      {%- for p in photos %}{% if p.slug == "rous-lench-img-3113" or p.slug == "rous-lench-img-3110" %}
+      <img src="{{ p.src | url }}" alt="{{ p.alt | escape }}" width="{{ p.width }}" height="{{ p.height }}" loading="lazy">
+      {%- endif %}{% endfor %}
     </div>
+    <p>A characterful red-brick Victorian hall on the triangular village green. Built in 1885, it was known as Chafecote until its owner, Tom Burns, gave it to the village in 1947, and only later took the name Rous Lench Village Hall.</p>
+    <p>Today it's a registered charity run by volunteer trustees. It hosts public events through the year and is available for private hire.</p>
+    <p>To enquire about hiring, email <a href="mailto:info@rouslench.com">info@rouslench.com</a> or call 01386 896155.</p>
+    <p><a href="https://rouslench.com/" target="_blank" rel="noopener">Visit the Rous Lench website &rarr;</a></p>
   </section>
 
 </main>

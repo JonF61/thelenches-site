@@ -78,20 +78,18 @@ description: Groups and clubs across the Lenches villages, including pages we ho
       </div>
 
       <div class="card">
-        {#- Local copy from photos.json (Photos tab, chosen 4 Oct: IMG_3113, whole hall) -#}
-        {%- for p in photos %}{% if p.slug == "rous-lench-img-3113" %}
-        <img class="thumb" src="{{ p.src | url }}" alt="{{ p.alt | escape }}" width="{{ p.width }}" height="{{ p.height }}" loading="lazy">
-        {%- endif %}{% endfor %}
-        <h3 class="mt0">Rous Lench Village Hall</h3>
-        <p>A characterful Victorian hall opposite the village green — events and hall hire in Rous Lench.</p>
-        <p><a href="https://rouslench.com/" target="_blank" rel="noopener">Visit &rarr;</a></p>
-      </div>
-
-      <div class="card">
         <img class="thumb" src="{{ '/images/lenches-preschool.jpg' | url }}" alt="The Lenches Pre-school" loading="lazy">
         <h3 class="mt0">The Lenches Pre-school</h3>
         <p>Outdoor-focused early years care for 2–4 year olds, with Forest School at the community orchard.</p>
         <p><a href="https://thelenchespreschool.org.uk/" target="_blank" rel="noopener">Visit &rarr;</a></p>
+      </div>
+
+      <div class="card" id="first-school">
+        {#- Jon's photo IMG_1685 (13 Oct); a newer one is on the Todoist list -#}
+        <img class="thumb" src="{{ '/images/IMG_1685.JPG' | url }}" alt="Church Lench CofE First School building and sign on Main Street" loading="lazy">
+        <h3 class="mt0">Church Lench CofE First School</h3>
+        <p>A small Church of England first school on Main Street for children aged 5–10, part of New Education Trust. Pupils use the community orchard for Forest School.</p>
+        <p><a href="http://www.churchlench.worcs.sch.uk/" target="_blank" rel="noopener">Visit the school &rarr;</a></p>
       </div>
 
     </div>
