@@ -13,6 +13,18 @@
       }
     }
   ],
-  "news": [],
+  "news": [
+    {
+      "id": "rss-e4a400ac6e0db9ea-1",
+      "title": "Worcestershire County Council faces £85m budget gap",
+      "body": "Worcestershire County Council has begun setting its 2027/28 budget, warning of tough choices ahead as it works to close an £85m funding gap.",
+      "village": "Lenches",
+      "expires": "2026-10-28",
+      "link": {
+        "text": "Read more at Evesham Journal",
+        "url": "https://www.eveshamjournal.co.uk/news/26624053.worcestershire-county-council-faces-85m-budget-gap/"
+      }
+    }
+  ],
   "notices": []
 }
