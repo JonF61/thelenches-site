@@ -2,6 +2,12 @@
   "_help": "Lines shown under the newsletter header. Each entry: key (unique, letters/numbers/hyphens, never reused), from (first issue date it can appear, YYYY-MM-DD), optional until (last date), text, link. Shown in one issue that is sent live, then retired automatically.",
   "entries": [
     {
+      "key": "add-to-contacts-2026-10",
+      "from": "2026-10-15",
+      "link": "mailto:website@thelenches.org.uk",
+      "text": "This newsletter now comes from website@thelenches.org.uk. To make sure it keeps reaching your inbox, please add that address to your contacts."
+    },
+    {
       "key": "site-catchup-2026-10",
       "from": "2026-10-22",
       "link": "https://thelenches.org.uk/",
