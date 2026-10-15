@@ -5,6 +5,8 @@
 // Rules (plan: "Newsletter send", agreed 2 Oct 2026):
 //   Events      every event dated issue date to +13 days (approved/auto Pending + whatson),
 //               each at most 3 issues; a flyer image at most 2 issues, then text only.
+//               A whatson event with "saveTheDate": "YYYY-MM-DD" also appears early, once,
+//               in that one issue (after the in-window events, as its date is later).
 //   News        Pending: never shown and live since the day before the last issue, once.
 //               whatson news: once.
 //   Notices     as News. whatson notices: up to 3 issues.
@@ -248,7 +250,9 @@ function select({ issueDate, pending, whatson, bins, siteupdates, issues, settin
   const w = whatson || {};
   for (const ev of w.events || []) {
     const date = ymd(ev.date);
-    if (!inWindow(date) || !str(ev.title)) continue;
+    // Save the date: one early appearance in the named issue only.
+    const early = ymd(ev.saveTheDate) === issueDate && date > windowEnd;
+    if ((!inWindow(date) && !early) || !str(ev.title)) continue;
     if (pendingEvents.has(`${normTitle(ev.title)}|${date}`)) continue;
     const key = whatsonKey('events', ev);
     if ((shown.get(key) || 0) >= MAX_APPEARANCES) continue;
