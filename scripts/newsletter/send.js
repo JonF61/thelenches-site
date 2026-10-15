@@ -33,7 +33,7 @@ const { personalise } = require('./unsub');
 
 const TZ = 'Europe/London';
 const FROM = 'website@thelenches.org.uk';
-const LIVE_FROM = '2026-10-22';
+const LIVE_FROM = '2026-10-15'; // brought forward from 22 Oct (MailerLite login lost 15 Oct)
 const DAY_LIMIT = 1500;
 const MAX_DROP = 0.10;
 const BATCH = 10;
