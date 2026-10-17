@@ -1,18 +1,5 @@
 {
-  "events": [
-    {
-      "id": "1a0cd84404be1268-3",
-      "title": "Peter Pandemonium by GLADS — The Lenches Club",
-      "body": "GLADS present their pirate-themed show Peter Pandemonium at The Lenches Club on Friday 16 and Saturday 17 October, starting at 7.30pm. Tickets £10 per person, available at the bar or from any GLADS member.",
-      "date": "2026-10-16",
-      "village": "Church Lench",
-      "expires": "2026-10-16",
-      "image": {
-        "url": "/images/items/1a0cd84404be1268-3.webp",
-        "alt": "AI-generated poster for GLADS production Peter Pandemonium featuring pirates and a mermaid"
-      }
-    }
-  ],
+  "events": [],
   "news": [
     {
       "id": "rss-d327801516f9111b-1",
