@@ -15,6 +15,17 @@
   ],
   "news": [
     {
+      "id": "rss-33730ff885264367-1",
+      "title": "Police appeal after night burglaries in Inkberrow area",
+      "body": "Police have issued an appeal for information following a series of burglaries in Inkberrow and Bradley Green, in which windows were smashed to gain entry overnight.",
+      "village": "Inkberrow",
+      "expires": "2026-10-31",
+      "link": {
+        "text": "Read more at Evesham Journal",
+        "url": "https://www.eveshamjournal.co.uk/news/26646396.burglaries-inkberrow-bradley-green-police-warning/"
+      }
+    },
+    {
       "id": "rss-d327801516f9111b-1",
       "title": "Worcestershire stockpiles salt for winter gritting",
       "body": "Worcestershire is stockpiling 17,000 tonnes of salt and has a fleet of 36 gritters ready as highways bosses prepare for winter storms.",
@@ -37,17 +48,5 @@
       }
     }
   ],
-  "notices": [
-    {
-      "id": "rss-33730ff885264367-1",
-      "title": "Police appeal after night burglaries in Inkberrow area",
-      "body": "Police have issued an appeal for information following a series of burglaries in Inkberrow and Bradley Green, in which windows were smashed to gain entry overnight.",
-      "village": "Inkberrow",
-      "expires": "2026-11-07",
-      "link": {
-        "text": "Read more at Evesham Journal",
-        "url": "https://www.eveshamjournal.co.uk/news/26646396.burglaries-inkberrow-bradley-green-police-warning/"
-      }
-    }
-  ]
+  "notices": []
 }
