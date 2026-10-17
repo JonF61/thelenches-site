@@ -1,5 +1,18 @@
 {
-  "events": [],
+  "events": [
+    {
+      "id": "rss-4b3e37ba34618472-1",
+      "title": "Christmas Market — Spetchley Park Gardens",
+      "body": "Spetchley Park Gardens will host a free Christmas market on 14 and 15 November, with a mix of indoor and outdoor stalls.",
+      "date": "2026-11-14",
+      "village": "Evesham",
+      "expires": "2026-11-14",
+      "link": {
+        "text": "Read more at Evesham Journal",
+        "url": "https://www.eveshamjournal.co.uk/news/26642458.spetchley-park-gardens-host-artisan-christmas-market/"
+      }
+    }
+  ],
   "news": [
     {
       "id": "rss-d327801516f9111b-1",
