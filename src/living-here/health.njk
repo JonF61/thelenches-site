@@ -11,72 +11,34 @@ description: Emergency numbers, defibrillators, GP surgeries, pharmacies and min
 .he-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.75rem}
 .he-grid .card{margin:0}
 .he-grid h3{margin:0 0 .25rem}
-.he-num{display:block;font-size:1.35rem;font-weight:700;color:#b5471b;text-decoration:none}
-.he-urgent{background:#fcebeb;border:1px solid #a32d2d}
-.he-urgent h3,.he-urgent p{color:#791f1f}
-.he-urgent .he-num{color:#791f1f;font-size:1.75rem}
+.he-nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));background:#fff;border:1px solid #e5e0d8;border-radius:10px;overflow:hidden}
+.he-nums a{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;padding:.45rem .8rem;border-bottom:1px solid #e5e0d8;color:inherit;text-decoration:none}
+.he-nums a b{color:#b5471b;white-space:nowrap}
+.he-nums a.he-urgent{background:#fcebeb;color:#791f1f}
+.he-nums a.he-urgent b{color:#791f1f}
+.he-bar{display:block;margin:.75rem 0 .5rem;padding:.7rem 1rem;border-radius:10px;background:#a32d2d;color:#fff;font-weight:700;text-decoration:none}
+.he-bar:hover,.he-bar:focus{background:#791f1f;color:#fff}
 .he-muted{color:#666;font-size:.92rem}
 .he-loc{display:block;font-size:.92rem;margin-top:.15rem}
 .he-list{margin:0;padding:0;list-style:none}
 .he-list li+li{margin-top:.5rem}
-.he-howto,.he-locate{margin:.75rem 0}
-.he-howto h3,.he-locate h3{margin:0 0 .35rem}
+.he-howto{margin:.75rem 0}
+.he-howto h3{margin:0 0 .35rem}
 .he-howto ol{margin:0;padding-left:1.3rem}
 .he-howto li+li{margin-top:.3rem}
+#defibrillators{scroll-margin-top:1rem}
 </style>
 <main class="container">
 
   <section>
     <h1>Health &amp; emergencies</h1>
-    <p class="lead">Who to call, where to go, and the nearest defibrillator in each village. Check opening times before you travel.</p>
-  </section>
-
-  <section>
-    <div class="he-grid">
+    <div class="he-nums">
       {%- for n in h.numbers %}
-      <div class="card{% if n.urgent %} he-urgent{% endif %}">
-        <h3>{{ n.label }}</h3>
-        <a class="he-num" href="tel:{{ n.number | replace(' ', '') }}">{{ n.number }}</a>
-        {%- if n.note %}<p class="he-muted mt0">{% if n.url %}<a href="{{ n.url }}" target="_blank" rel="noopener">{{ n.note }}</a>{% else %}{{ n.note }}{% endif %}</p>{% endif %}
-      </div>
+      <a{% if n.urgent %} class="he-urgent"{% endif %} href="tel:{{ n.number | replace(' ', '') }}"><span>{{ n.label }}</span><b>{{ n.number }}</b></a>
       {%- endfor %}
     </div>
-    {%- set lc = h.locate %}
-    <div class="card he-locate" id="location">
-      <h3>{{ lc.title }}</h3>
-      <p class="mt0">{{ lc.text }}</p>
-      <p class="he-muted">{% for l in lc.links %}<a href="{{ l.url }}" target="_blank" rel="noopener">{{ l.text }}</a>{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
-    </div>
-  </section>
-
-  <section id="defibrillators">
-    <h2>Defibrillators</h2>
-    {%- set ht = h.defibs.howto %}
-    <div class="card he-howto" id="how-to-use">
-      <h3>{{ ht.title }}</h3>
-      <ol>
-        {%- for s in ht.steps %}
-        <li><strong>{{ s.lead }}</strong> {{ s.text }}</li>
-        {%- endfor %}
-      </ol>
-      <p class="he-muted">{{ ht.footer }} <a href="{{ ht.guideUrl }}" target="_blank" rel="noopener">{{ ht.guideText }}</a></p>
-    </div>
-    <p>{{ h.defibs.intro }} <a href="{{ h.defibs.findUrl }}" target="_blank" rel="noopener">Find others on a map</a>.</p>
-    <div class="he-grid">
-      {%- for v in h.defibs.villages %}
-      <div class="card">
-        <h3>{{ v.name }}</h3>
-        {%- if v.sites.length %}
-        <ul class="he-list">
-          {%- for s in v.sites %}
-          <li>{{ s.name }}<br><span class="he-muted">{{ s.address }}{% if s.spot %} &middot; {{ s.spot }}{% endif %}</span>{{ place(s) }}</li>
-          {%- endfor %}
-        </ul>
-        {%- endif %}
-        {%- if v.note %}<p class="he-muted mt0">{{ v.note }}</p>{% endif %}
-      </div>
-      {%- endfor %}
-    </div>
+    <a class="he-bar" href="#defibrillators">{{ h.defibs.barText }}</a>
+    <p class="he-muted mt0">{% for l in h.locate %}{{ l.pre }}<a href="{{ l.url }}" target="_blank" rel="noopener">{{ l.text }}</a>{{ l.post }} {% endfor %}</p>
   </section>
 
   <section id="injuries">
@@ -113,6 +75,36 @@ description: Emergency numbers, defibrillators, GP surgeries, pharmacies and min
       <div class="card">
         <h3>{{ p.name }}</h3>
         <p class="mt0">{{ p.address }}<br><a href="tel:{{ p.phone | replace(' ', '') }}">{{ p.phone }}</a>{{ place(p) }}</p>
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="defibrillators">
+    <h2>Defibrillators</h2>
+    {%- set ht = h.defibs.howto %}
+    <div class="card he-howto" id="how-to-use">
+      <h3>{{ ht.title }}</h3>
+      <ol>
+        {%- for s in ht.steps %}
+        <li><strong>{{ s.lead }}</strong> {{ s.text }}</li>
+        {%- endfor %}
+      </ol>
+      <p class="he-muted">{{ ht.footer }} <a href="{{ ht.guideUrl }}" target="_blank" rel="noopener">{{ ht.guideText }}</a></p>
+    </div>
+    <p>{{ h.defibs.intro }} <a href="{{ h.defibs.findUrl }}" target="_blank" rel="noopener">Find others on a map</a>.</p>
+    <div class="he-grid">
+      {%- for v in h.defibs.villages %}
+      <div class="card">
+        <h3>{{ v.name }}</h3>
+        {%- if v.sites.length %}
+        <ul class="he-list">
+          {%- for s in v.sites %}
+          <li>{{ s.name }}<br><span class="he-muted">{{ s.address }}{% if s.spot %} &middot; {{ s.spot }}{% endif %}</span>{{ place(s) }}</li>
+          {%- endfor %}
+        </ul>
+        {%- endif %}
+        {%- if v.note %}<p class="he-muted mt0">{{ v.note }}</p>{% endif %}
       </div>
       {%- endfor %}
     </div>

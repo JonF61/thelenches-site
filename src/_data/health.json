@@ -1,22 +1,19 @@
 {
   "checked": "October 2026",
   "numbers": [
-    { "label": "Life-threatening emergency", "number": "999", "note": "Ambulance, police, fire. They'll also give you the code for the nearest defibrillator.", "urgent": true },
-    { "label": "Urgent but not an emergency", "number": "111", "note": "NHS 111, or online at 111.nhs.uk", "url": "https://111.nhs.uk/" },
+    { "label": "Emergency", "number": "999", "urgent": true },
+    { "label": "NHS, urgent not emergency", "number": "111" },
     { "label": "Police, non-emergency", "number": "101" },
     { "label": "Power cut", "number": "105" },
     { "label": "Smell gas", "number": "0800 111 999" },
-    { "label": "Water leak or sewer flooding", "number": "0800 783 4444", "note": "Severn Trent, 24 hours" }
+    { "label": "Water leak (Severn Trent)", "number": "0800 783 4444" }
   ],
-  "locate": {
-    "title": "Telling 999 where you are",
-    "text": "Smartphones usually send your location to 999 automatically when you call. Out in the lanes or fields, the what3words app gives three words for your exact 3-metre square, and most UK emergency services accept them. Can't speak on the phone? Register for emergencySMS so you can text 999.",
-    "links": [
-      { "text": "what3words", "url": "https://what3words.com/" },
-      { "text": "emergencySMS", "url": "https://www.emergencysms.net/" }
-    ]
-  },
+  "locate": [
+    { "pre": "Out in the fields? Give 999 your ", "text": "what3words", "url": "https://what3words.com/", "post": "." },
+    { "pre": "Can't speak? ", "text": "emergencySMS", "url": "https://www.emergencysms.net/", "post": "." }
+  ],
   "defibs": {
+    "barText": "Someone collapsed? Nearest defibrillators and how to use one ↓",
     "howto": {
       "title": "If someone collapses and isn't breathing normally",
       "steps": [
