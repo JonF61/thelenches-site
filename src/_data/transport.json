@@ -1,0 +1,62 @@
+{
+  "checked": "20 October 2026",
+  "intro": "Buses are few, so it pays to plan ahead. Timetables change, so the links below go to live times rather than copying them here.",
+  "quick": [
+    { "label": "Plan a journey", "sub": "Traveline", "url": "https://www.traveline.info/" },
+    { "label": "Live bus times", "sub": "bustimes.org", "url": "https://bustimes.org/" },
+    { "label": "Trains", "sub": "National Rail", "url": "https://www.nationalrail.co.uk/" },
+    { "label": "Roadworks", "sub": "This week's closures", "url": "/news/#roads", "local": true }
+  ],
+  "buses": {
+    "items": [
+      {
+        "name": "564 family (LMS Travel)",
+        "route": "Inkberrow, Radford, Rous Lench, Church Lench and Norton to Evesham railway station and bus station; some journeys run via Pershore.",
+        "days": "Monday to Saturday, a few journeys a day.",
+        "stops": "Rous Lench (church); Church Lench (Beehive Cottage, Low Road, Handgate Farm).",
+        "url": "https://bustimes.org/services/564-pershore-evesham"
+      },
+      {
+        "name": "28 (Stagecoach)",
+        "route": "Harvington to Evesham, and the other way to Bidford and Stratford-upon-Avon.",
+        "days": "About hourly through the day.",
+        "stops": "Harvington (Golden Cross, Coach & Horses, First School, Brickyard Cottages).",
+        "url": "https://bustimes.org/services/28-stratford-evesham"
+      }
+    ],
+    "note": "Ab Lench, Atch Lench and Sheriffs Lench have no bus stop; the nearest are in Church Lench."
+  },
+  "ondemand": {
+    "name": "Worcestershire on Demand",
+    "text": "A bookable minibus run by the county council. Book by app or phone up to five days ahead; it picks up from set points. Monday to Saturday, 7am to 7pm; £2.50 a journey, free with a bus pass.",
+    "phone": "01905 846180",
+    "check": "Check the zone map to see whether your address is covered.",
+    "url": "https://www.worcestershire.gov.uk/WOD",
+    "appUrl": "https://city.ridewithvia.com/worcestershire"
+  },
+  "community": {
+    "intro": "Volunteer drivers, door to door, for appointments, shopping and visits. No age limit; register first, and book ahead.",
+    "items": [
+      { "name": "Evesham Volunteer Centre", "phone": "01386 450035" },
+      { "name": "Pershore Plus Volunteer Centre", "phone": "01386 554299", "note": "Has wheelchair-accessible vehicles.", "url": "https://pershorevolunteers.org.uk/community-transport/" }
+    ],
+    "hospital": { "text": "Hospital trips: NHS patient transport and help with travel costs", "url": "https://www.worcestershire.gov.uk/council-services/adult-social-care/support-stay-independent-and-living-home/travel-and-community-transport" }
+  },
+  "trains": {
+    "intro": "Evesham is the nearest station.",
+    "items": [
+      { "name": "Evesham", "address": "High Street, Evesham WR11 4EQ", "url": "https://www.nationalrail.co.uk/stations/evesham/" },
+      { "name": "Pershore", "address": "Station Road, Pinvin WR10 6FG", "url": "https://www.nationalrail.co.uk/stations/pershore/" },
+      { "name": "Honeybourne", "address": "Station Road, Honeybourne WR11 7GN", "url": "https://www.nationalrail.co.uk/stations/honeybourne/" },
+      { "name": "Worcestershire Parkway", "address": "Whittington Road, Norton WR7 4RD", "url": "https://www.nationalrail.co.uk/stations/worcestershire-parkway/" }
+    ]
+  },
+  "roads": {
+    "text": "Road closures and roadworks near the villages are listed on the News page and updated automatically.",
+    "url": "/news/#roads"
+  },
+  "passes": {
+    "text": "Older person's and disabled bus passes, and other bus information, come from Worcestershire County Council.",
+    "url": "https://www.worcestershire.gov.uk/council-services/travel-and-highways/bus-travel-worcestershire"
+  }
+}

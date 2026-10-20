@@ -1,0 +1,93 @@
+---
+layout: base.njk
+title: Getting around
+description: Buses, on-demand transport, community transport, trains and roadworks for the Lenches villages.
+---
+{%- set t = transport -%}
+<style>
+.ga-quick{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin:.5rem 0 1rem}
+@media (min-width:700px){.ga-quick{grid-template-columns:repeat(4,1fr)}}
+.ga-quick a{display:block;padding:.6rem .8rem;border-radius:10px;background:#b5471b;color:#fff;text-decoration:none;font-weight:700;line-height:1.3}
+.ga-quick a span{display:block;font-weight:400;font-size:.88rem}
+.ga-quick a:hover,.ga-quick a:focus{background:#8f3714;color:#fff}
+.ga-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.75rem}
+.ga-grid .card{margin:0}
+.ga-grid h3,.ga-card h3{margin:0 0 .25rem}
+.ga-muted{color:#666;font-size:.92rem}
+.ga-list{margin:0;padding:0;list-style:none}
+.ga-list li+li{margin-top:.5rem}
+</style>
+<main class="container">
+
+  <section>
+    <h1>Getting around</h1>
+    <p class="mt0">{{ t.intro }}</p>
+    <div class="ga-quick">
+      {%- for q in t.quick %}
+      <a href="{{ q.url }}"{% if not q.local %} target="_blank" rel="noopener"{% endif %}>{{ q.label }}<span>{{ q.sub }}</span></a>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="buses">
+    <h2>Buses</h2>
+    <div class="ga-grid">
+      {%- for b in t.buses.items %}
+      <div class="card">
+        <h3>{{ b.name }}</h3>
+        <p class="mt0">{{ b.route }} {{ b.days }} <a href="{{ b.url }}" target="_blank" rel="noopener">Timetable</a></p>
+        <p class="ga-muted">Stops: {{ b.stops }}</p>
+      </div>
+      {%- endfor %}
+    </div>
+    <p class="ga-muted">{{ t.buses.note }}</p>
+  </section>
+
+  <section id="on-demand">
+    {%- set o = t.ondemand %}
+    <div class="card ga-card">
+      <h3>{{ o.name }}</h3>
+      <p class="mt0">{{ o.text }} Phone <a href="tel:{{ o.phone | replace(' ', '') }}">{{ o.phone }}</a> or <a href="{{ o.appUrl }}" target="_blank" rel="noopener">get the app</a>.</p>
+      <p class="ga-muted">{{ o.check }} <a href="{{ o.url }}" target="_blank" rel="noopener">Zone map and details</a></p>
+    </div>
+  </section>
+
+  <section id="community-transport">
+    <h2>Community transport</h2>
+    <p class="mt0">{{ t.community.intro }}</p>
+    <div class="ga-grid">
+      {%- for c in t.community.items %}
+      <div class="card">
+        <h3>{{ c.name }}</h3>
+        <p class="mt0"><a href="tel:{{ c.phone | replace(' ', '') }}">{{ c.phone }}</a>{% if c.url %} &middot; <a href="{{ c.url }}" target="_blank" rel="noopener">Website</a>{% endif %}</p>
+        {%- if c.note %}<p class="ga-muted">{{ c.note }}</p>{% endif %}
+      </div>
+      {%- endfor %}
+    </div>
+    <p class="ga-muted"><a href="{{ t.community.hospital.url }}" target="_blank" rel="noopener">{{ t.community.hospital.text }}</a></p>
+  </section>
+
+  <section id="trains">
+    <h2>Trains</h2>
+    <p class="mt0">{{ t.trains.intro }}</p>
+    <div class="ga-grid">
+      {%- for s in t.trains.items %}
+      <div class="card">
+        <h3>{{ s.name }}</h3>
+        <p class="mt0">{{ s.address }}<br><a href="https://www.google.com/maps/search/?api=1&query={{ (s.name + ' station, ' + s.address) | urlencode }}" target="_blank" rel="noopener">Map</a> &middot; <a href="{{ s.url }}" target="_blank" rel="noopener">Station details</a></p>
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="roads">
+    <h2>Roads and bus passes</h2>
+    <ul class="ga-list">
+      <li>{{ t.roads.text }} <a href="{{ t.roads.url }}">See road closures</a></li>
+      <li>{{ t.passes.text }} <a href="{{ t.passes.url }}" target="_blank" rel="noopener">Bus travel in Worcestershire</a></li>
+    </ul>
+  </section>
+
+  <p class="ga-muted">Last checked {{ t.checked }}. Spotted something out of date? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+
+</main>
