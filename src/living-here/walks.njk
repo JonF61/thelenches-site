@@ -1,0 +1,87 @@
+---
+layout: base.njk
+title: Walks & footpaths
+description: Circular walks from the Lenches villages, the Wychavon Way, maps, walking groups and how to report a footpath problem.
+---
+{%- set w = walks -%}
+<style>
+.wk-quick{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin:.5rem 0 1rem}
+@media (min-width:700px){.wk-quick{grid-template-columns:repeat(4,1fr)}}
+.wk-quick a{display:block;padding:.6rem .8rem;border-radius:10px;background:#b5471b;color:#fff;text-decoration:none;font-weight:700;line-height:1.3}
+.wk-quick a span{display:block;font-weight:400;font-size:.88rem}
+.wk-quick a:hover,.wk-quick a:focus{background:#8f3714;color:#fff}
+.wk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.75rem}
+.wk-grid .card{margin:0}
+.wk-grid h3,.wk-card h3{margin:0 0 .25rem}
+.wk-muted{color:#666;font-size:.92rem}
+.wk-tag{display:inline-block;background:#fdf0dc;color:#7a4a06;font-size:.88rem;padding:.1rem .5rem;border-radius:6px;margin:0 .3rem .4rem 0}
+.wk-img{display:block;width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:8px;margin-bottom:.5rem}
+</style>
+<main class="container">
+
+  <section>
+    <h1>Walks &amp; footpaths</h1>
+    <p class="mt0">{{ w.intro }}</p>
+    <div class="wk-quick">
+      {%- for q in w.quick %}
+      <a href="{{ q.url }}"{% if q.url.startsWith('http') %} target="_blank" rel="noopener"{% endif %}>{{ q.label }}<span>{{ q.sub }}</span></a>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="walks">
+    <h2>Walks from the villages</h2>
+    <div class="wk-grid">
+      {%- for r in w.walks %}
+      <div class="card">
+        {%- if r.image %}<img class="wk-img" src="{{ r.image }}" alt="{{ r.imageAlt or r.name }}" loading="lazy">{% endif %}
+        <h3>{{ r.name }}</h3>
+        <p class="wk-muted mt0">Start: {{ r.start }}</p>
+        <div>{% for t in r.tags %}<span class="wk-tag">{{ t }}</span>{% endfor %}</div>
+        <p>{{ r.text }}</p>
+        <p><a href="{{ r.link.url }}" target="_blank" rel="noopener">{{ r.link.text }}</a></p>
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="wychavon-way">
+    <h2>The Wychavon Way</h2>
+    {%- set ww = w.wychavonWay %}
+    <div class="card wk-card">
+      <p class="mt0">{{ ww.text }}</p>
+      <p class="wk-muted">{{ ww.guide }} <a href="mailto:{{ ww.email }}">{{ ww.email }}</a> &middot; <a href="{{ ww.url }}" target="_blank" rel="noopener">About the route</a></p>
+    </div>
+  </section>
+
+  <section id="maps">
+    <h2>Maps, groups and the Countryside Code</h2>
+    <div class="wk-grid">
+      {%- for i in w.info %}
+      <div class="card">
+        <h3>{{ i.title }}</h3>
+        <p class="wk-muted mt0">{{ i.html | safe }}</p>
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="report">
+    <h2>Report a path problem</h2>
+    {%- set rp = w.report %}
+    <div class="card wk-card">
+      <p class="mt0">{{ rp.text }}</p>
+      <p><a href="{{ rp.url }}" target="_blank" rel="noopener">Report it online</a> &middot; <a href="tel:{{ rp.phone | replace(' ', '') }}">{{ rp.phone }}</a></p>
+      <p class="wk-muted">If there’s a risk to life, call 999.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="card wk-card">
+      <p class="mt0">Got a favourite local walk, or a photo of one? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a> and we may add it here.</p>
+    </div>
+  </section>
+
+  <p class="wk-muted">Last checked {{ w.checked }}. Spotted something out of date? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+
+</main>

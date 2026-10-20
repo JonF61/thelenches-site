@@ -1,0 +1,58 @@
+{
+  "checked": "20 October 2026",
+  "intro": "The Lenches sit on a ridge above the Vale of Evesham, with woods, field paths and the Wychavon Way linking the villages. Routes below link to their publishers, who keep the directions up to date.",
+  "quick": [
+    { "label": "Local walks", "sub": "Loops from the villages", "url": "#walks" },
+    { "label": "Wychavon Way", "sub": "Through the Lenches", "url": "#wychavon-way" },
+    { "label": "Report a path", "sub": "Blocked, broken, overgrown", "url": "#report" },
+    { "label": "Countryside Code", "sub": "Gates, dogs, livestock", "url": "https://www.gov.uk/government/publications/the-countryside-code" }
+  ],
+  "walks": [
+    {
+      "name": "Circuit of the Lenches",
+      "start": "By the church, Church Lench (WR11 4UQ)",
+      "tags": ["7.3 mi · 11.7 km", "Moderate"],
+      "text": "Farmland, woodland and the villages of Church Lench, Atch Lench and Rous Lench. Mostly good paths and tracks, with few stiles.",
+      "link": { "text": "Route and map (Evesham Ramblers)", "url": "https://ramblers.org.uk/go-walking/group-walks/circuit-round-lenches" }
+    },
+    {
+      "name": "Yeald Wood and Rous Lench",
+      "start": "Church Lench",
+      "tags": ["5.3 mi · 8.5 km", "About 2h 20"],
+      "text": "Along the Wychavon Way between Yeald Wood and Old Yew Hill Wood to Rous Lench church, and back.",
+      "link": { "text": "Route (Komoot)", "url": "https://www.komoot.com/highlight/2968987" }
+    },
+    {
+      "name": "Rous, Atch, Sheriffs and Church Lench",
+      "start": "Rous Lench church",
+      "tags": ["Stiles"],
+      "text": "Past Rous Lench Court to Atch Lench and Sheriffs Lench, then back along the Wychavon Way, with views of the Malvern Hills from the ridge.",
+      "link": { "text": "Directions (AA walks)", "url": "https://www.ratedtrips.com/walks/worcestershire/the-lenches" }
+    }
+  ],
+  "wychavonWay": {
+    "text": "A waymarked 40-mile path from Droitwich Spa to Broadway, passing through Rous Lench, Church Lench and Sheriffs Lench. Locally it follows a fenced woodland path between Yeald Wood and Old Yew Hill Wood for about a mile.",
+    "guide": "The walkers’ guide is £5 plus postage from the county countryside team.",
+    "email": "countryside@worcestershire.gov.uk",
+    "url": "https://www.worcestershire.gov.uk/council-services/travel-and-highways/walking-wheeling-and-cycling/walks-worcestershire/wychavon-way"
+  },
+  "info": [
+    {
+      "title": "Maps",
+      "html": "OS Explorer 205 (Stratford-upon-Avon &amp; Evesham) shows every footpath and bridleway. The county’s rights of way map is on its <a href=\"https://www.worcestershire.gov.uk/council-services/travel-and-highways/report-road-or-path-issue/report-problem-public-right-way\" target=\"_blank\" rel=\"noopener\">report a path page</a>."
+    },
+    {
+      "title": "Walk with a group",
+      "html": "Evesham Ramblers and Worcester Ramblers both lead walks around the Lenches. See <a href=\"https://www.ramblers.org.uk\" target=\"_blank\" rel=\"noopener\">ramblers.org.uk</a> for upcoming walks."
+    },
+    {
+      "title": "Countryside Code",
+      "html": "Leave gates as you find them, keep dogs on a lead near livestock, and take litter home. <a href=\"https://www.gov.uk/government/publications/the-countryside-code\" target=\"_blank\" rel=\"noopener\">Read the code</a>."
+    }
+  ],
+  "report": {
+    "text": "Worcestershire County Council looks after public rights of way. Drop a pin on its map to report a blocked path, broken stile or gate, or a missing sign.",
+    "url": "https://www.worcestershire.gov.uk/council-services/travel-and-highways/report-road-or-path-issue/report-problem-public-right-way",
+    "phone": "01905 765765"
+  }
+}
