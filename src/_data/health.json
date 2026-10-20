@@ -33,24 +33,24 @@
     },
     "intro": "All available 24/7. Call 999 first and the call handler will direct you to the nearest one.",
     "findUrl": "https://www.defibfinder.uk/",
-    "fieldsNote": "Optional per site: spot (where on the building), w3w (three words, no slashes), lat and lng (exact map pin). Fill from the photo walk.",
+    "fieldsNote": "lat/lng are the cabinet pins registered on The Circuit (read from DefibFinder 20 Oct). Optional per site: spot (where on the building), w3w (three words, no slashes). Confirm on the photo walk.",
     "villages": [
       { "name": "Church Lench", "sites": [
-        { "name": "Church Lench CofE First School", "address": "Church Lench" },
-        { "name": "Lenches Lakes", "address": "Evesham Rd, Church Lench WR11 4UB" },
-        { "name": "Lenches Sports and Rec Club", "address": "Church Lench" }
+        { "name": "Church Lench CofE First School", "address": "Main Street, Church Lench WR11 4UE", "lat": 52.158821, "lng": -1.966129 },
+        { "name": "Lenches Lakes", "address": "Evesham Rd, Church Lench WR11 4UB", "lat": 52.155437, "lng": -1.966349 },
+        { "name": "Lenches Sports and Rec Club", "address": "Ab Lench Road, Church Lench WR11 4UQ", "lat": 52.158799, "lng": -1.970010 }
       ] },
       { "name": "Rous Lench", "sites": [
-        { "name": "Rous Lench Village Hall", "address": "Rous Lench" }
+        { "name": "Rous Lench Village Hall", "address": "The Green, Rous Lench WR11 4UN", "lat": 52.177499, "lng": -1.981989 }
       ] },
       { "name": "Ab, Atch and Sheriffs Lench", "sites": [], "note": "None registered. Nearest: Church Lench or Rous Lench." },
       { "name": "Harvington", "sites": [
-        { "name": "Golden Cross Inn", "address": "97 Village St, Harvington WR11 8PQ" },
-        { "name": "Grass verge opposite Leysfield Rd", "address": "2 Leys Rd, Harvington WR11 8NA" }
+        { "name": "Golden Cross Inn", "address": "97 Village St, Harvington WR11 8PQ", "lat": 52.143000, "lng": -1.924989 },
+        { "name": "Grass verge opposite Leysfield Rd", "address": "2 Leys Rd, Harvington WR11 8NA", "lat": 52.144210, "lng": -1.930198 }
       ] },
       { "name": "Salford Priors", "sites": [
-        { "name": "Rushford Cottages", "address": "7 Salford Rd, Salford Priors WR11 8SL" },
-        { "name": "Jutexpo", "address": "Lauriston Business Park, Salford Priors WR11 8SN" }
+        { "name": "Rushford Cottages", "address": "7 Salford Rd, Salford Priors WR11 8SL", "lat": 52.163778, "lng": -1.919593 },
+        { "name": "Jutexpo", "address": "Lauriston Business Park, Salford Priors WR11 8SN", "lat": 52.163370, "lng": -1.924399 }
       ] }
     ]
   },
