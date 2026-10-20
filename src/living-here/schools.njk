@@ -1,0 +1,89 @@
+---
+layout: base.njk
+title: Schools
+description: Pre-school, first, middle and high schools for the Lenches villages, with catchment, applying, school transport and term dates.
+---
+{%- set s = schools -%}
+<style>
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.75rem}
+.sc-grid .card{margin:0}
+.sc-grid h3,.sc-card h3{margin:0 0 .25rem}
+.sc-muted{color:#666;font-size:.92rem}
+.sc-stages{display:flex;flex-wrap:wrap;gap:.4rem;margin:.5rem 0 1rem;padding:0;list-style:none}
+.sc-stages li{background:#fdf0dc;color:#7a4a06;font-size:.88rem;padding:.15rem .6rem;border-radius:6px}
+.sc-terms{width:100%;border-collapse:collapse}
+.sc-terms td{padding:.4rem 0;border-bottom:1px solid #eee;vertical-align:top}
+.sc-terms td:last-child{text-align:right}
+.sc-terms tr:last-child td{border-bottom:0}
+.sc-next{display:inline-block;background:#fdf0dc;color:#7a4a06;font-size:.8rem;padding:0 .4rem;border-radius:6px;margin-left:.3rem}
+</style>
+<main class="container">
+
+  <section>
+    <h1>Schools</h1>
+    <p class="mt0">{{ s.intro }}</p>
+    <ul class="sc-stages">{% for st in s.stages %}<li>{{ st }}</li>{% endfor %}</ul>
+  </section>
+
+  <section id="local">
+    <h2>In the village</h2>
+    <div class="sc-grid">
+      {%- for p in s.local %}
+      <div class="card">
+        <h3>{{ p.name }}</h3>
+        <p class="sc-muted mt0">{{ p.where }}</p>
+        <p>{{ p.text }}</p>
+        <p><a href="tel:{{ p.phone | replace(' ', '') }}">{{ p.phone }}</a>{% if p.email %} &middot; <a href="mailto:{{ p.email }}">Email</a>{% endif %} &middot; <a href="https://www.google.com/maps/search/?api=1&query={{ p.map | urlencode }}" target="_blank" rel="noopener">Map</a></p>
+        <p class="sc-muted">{% for l in p.links %}<a href="{{ l.url }}" target="_blank" rel="noopener">{{ l.text }}</a>{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="middle-high">
+    <h2>Middle and high schools</h2>
+    <p class="mt0">{{ s.catchmentText }} <a href="{{ s.catchmentUrl }}" target="_blank" rel="noopener">Check your address with the county</a>.</p>
+    <div class="sc-grid">
+      {%- for o in s.onward %}
+      <div class="card">
+        <h3>{{ o.name }}</h3>
+        <p class="sc-muted mt0">{{ o.where }}</p>
+        <p>{% if o.phone %}<a href="tel:{{ o.phone | replace(' ', '') }}">{{ o.phone }}</a> &middot; {% endif %}<a href="{{ o.url }}" target="_blank" rel="noopener">{{ o.urlText }}</a></p>
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="applying">
+    <h2>Applying for a place</h2>
+    <div class="card sc-card">
+      <p class="mt0">{{ s.apply.text }}</p>
+      <p>{% for l in s.apply.links %}<a href="{{ l.url }}" target="_blank" rel="noopener">{{ l.text }}</a>{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
+    </div>
+  </section>
+
+  <section id="transport">
+    <h2>Getting to school</h2>
+    <div class="card sc-card">
+      <p class="mt0">{{ s.travel.text }}</p>
+      <p>{% for l in s.travel.links %}<a href="{{ l.url }}"{% if l.url.startsWith('http') %} target="_blank" rel="noopener"{% endif %}>{{ l.text }}</a>{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
+    </div>
+  </section>
+
+  <section id="term-dates">
+    <h2>School holidays</h2>
+    <div class="card sc-card">
+      {%- if termdates.length %}
+      <table class="sc-terms">
+        {%- for t in termdates %}
+        <tr><td>{{ t.name }}{% if t.on %}<span class="sc-next">Now</span>{% elif t.next %}<span class="sc-next">Next</span>{% endif %}</td><td>{% if t.reopens %}Closes {{ t.closes }}<br>Back {{ t.reopens }}{% else %}{{ t.closes }}{% endif %}</td></tr>
+        {%- endfor %}
+      </table>
+      {%- endif %}
+      <p class="sc-muted">{{ s.terms.note }} <a href="{{ s.terms.source }}" target="_blank" rel="noopener">County term dates</a> &middot; <a href="{{ s.terms.closures }}" target="_blank" rel="noopener">Closures (snow etc.)</a></p>
+    </div>
+  </section>
+
+  <p class="sc-muted">Last checked {{ s.checked }}. Spotted something out of date? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+
+</main>

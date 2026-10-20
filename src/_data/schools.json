@@ -1,0 +1,68 @@
+{
+  "checked": "20 October 2026",
+  "intro": "The Lenches are in Worcestershire's three-tier system: first school (Reception to Year 5), middle school (Years 6 to 8) and high school (Years 9 to 13).",
+  "stages": ["Pre-school 2–5", "First 4–10", "Middle 10–13", "High 13–18"],
+  "local": [
+    {
+      "name": "The Lenches Pre-school",
+      "where": "Church Lench Village Hall · ages 2–5",
+      "text": "A charity run by a parent committee. Term time, Monday to Friday 8.30am–3.30pm, all-day or half-day sessions. Funded hours for 2, 3 and 4-year-olds. Ofsted: Good (July 2025).",
+      "phone": "07933 779918",
+      "email": "info@thelenchespreschool.org.uk",
+      "links": [{"text": "Website", "url": "https://thelenchespreschool.org.uk/"}, {"text": "Ofsted report", "url": "https://reports.ofsted.gov.uk/provider/16/EY377612"}],
+      "map": "Church Lench Village Hall, Main Street, Church Lench, WR11 4UE"
+    },
+    {
+      "name": "Church Lench CofE First School",
+      "where": "Main Street, Church Lench · ages 4–10",
+      "text": "Church of England academy, part of New Education Trust since February 2025. 15 places a year in Reception. Ofsted: Good (October 2023).",
+      "phone": "01386 870297",
+      "links": [{"text": "Website", "url": "https://www.churchlench.worcs.sch.uk/"}, {"text": "Admissions policy 2026–27", "url": "https://www.worcestershire.gov.uk/sites/default/files/2025-07/church_lench_ce_first_school_admissions_policy_2026.pdf"}, {"text": "Ofsted report", "url": "https://reports.ofsted.gov.uk/provider/21/151572"}],
+      "map": "Church Lench CofE First School, Main Street, Church Lench, WR11 4UE"
+    }
+  ],
+  "catchmentText": "Which middle and high school is your catchment school depends on your address.",
+  "catchmentUrl": "https://capublic.worcestershire.gov.uk/FindASchoolPublic/",
+  "onward": [
+    {"name": "St Egwin's CofE Middle School", "where": "Worcester Road, Evesham · ages 10–13", "phone": "01386 446924", "url": "https://get-information-schools.service.gov.uk/Establishments/Establishment/Details/116984", "urlText": "School details"},
+    {"name": "Blackminster Middle School", "where": "Station Road, South Littleton · ages 10–13", "phone": "01386 830311", "url": "http://www.blackminster.worcs.sch.uk/", "urlText": "Website"},
+    {"name": "The De Montfort School", "where": "Four Pools Road, Evesham · ages 10–18, all-through", "url": "https://get-information-schools.service.gov.uk/Establishments/Establishment/Details/148338", "urlText": "School details"},
+    {"name": "Prince Henry's High School", "where": "Victoria Avenue, Evesham · ages 13–18, with sixth form", "phone": "01386 765588", "url": "https://get-information-schools.service.gov.uk/Establishments/Establishment/Details/136469", "urlText": "School details"}
+  ],
+  "apply": {
+    "text": "Apply to Worcestershire County Council online for all state schools, academies included.",
+    "links": [
+      {"text": "First school", "url": "https://www.worcestershire.gov.uk/council-services/schools-education-and-learning/apply-school-place/apply-primary-or-first-school-place"},
+      {"text": "Middle school", "url": "https://www.worcestershire.gov.uk/council-services/schools-education-and-learning/apply-school-place/apply-middle-school-place"},
+      {"text": "High school", "url": "https://www.worcestershire.gov.uk/council-services/schools-education-and-learning/apply-school-place/apply-secondary-or-high-school-school-place"},
+      {"text": "Changing schools mid-year", "url": "https://www.worcestershire.gov.uk/council-services/schools-education-and-learning/apply-school-place/changing-schools-year-applications"},
+      {"text": "Admissions policies", "url": "https://www.worcestershire.gov.uk/council-services/schools-education-and-learning/apply-school-place/school-admissions-policies"}
+    ]
+  },
+  "travel": {
+    "text": "Free travel may be available to your designated or nearest school if it is more than 2 miles away (children up to 8) or 3 miles (over 8), by the shortest walking route.",
+    "links": [
+      {"text": "Eligibility and how to apply", "url": "https://www.worcestershire.gov.uk/council-services/schools-education-and-learning/school-and-college-travel/mainstream-school-and-college-travel-assistance/eligibility-school-and"},
+      {"text": "Local buses", "url": "/living-here/getting-around/"}
+    ]
+  },
+  "terms": {
+    "note": "County dates for council-run schools (including St Egwin's and Blackminster). Academies set their own, so check with Church Lench, De Montfort or Prince Henry's.",
+    "source": "https://www.worcestershire.gov.uk/council-services/schools-education-and-learning/apply-school-place/school-term-dates",
+    "closures": "http://capublic.worcestershire.gov.uk/WCC_SchoolClosure/TomorrowSchoolClosures.aspx",
+    "breaks": [
+      {"name": "October half term", "closes": "2026-10-23", "reopens": "2026-11-02"},
+      {"name": "Christmas", "closes": "2026-12-18", "reopens": "2027-01-04"},
+      {"name": "February half term", "closes": "2027-02-12", "reopens": "2027-02-22"},
+      {"name": "Easter", "closes": "2027-03-25", "reopens": "2027-04-12"},
+      {"name": "May half term", "closes": "2027-05-28", "reopens": "2027-06-07"},
+      {"name": "Summer holidays", "closes": "2027-07-21", "reopens": "2027-09-02"},
+      {"name": "October half term", "closes": "2027-10-22", "reopens": "2027-11-01"},
+      {"name": "Christmas", "closes": "2027-12-17", "reopens": "2028-01-04"},
+      {"name": "February half term", "closes": "2028-02-11", "reopens": "2028-02-21"},
+      {"name": "Easter", "closes": "2028-04-07", "reopens": "2028-04-24"},
+      {"name": "May half term", "closes": "2028-05-26", "reopens": "2028-06-05"},
+      {"name": "Summer term ends", "closes": "2028-07-21"}
+    ]
+  }
+}
