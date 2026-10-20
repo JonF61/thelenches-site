@@ -1,0 +1,23 @@
+{
+  "intro": "Five villages and hamlets on the higher ground north of Evesham, all recorded in the Domesday Book. Church, Ab, Atch and Sheriffs Lench make up South Lenches parish; Rous Lench has its own parish council.",
+  "banner": { "src": "/images/lenches-aerial.jpg", "alt": "The Lenches villages in Worcestershire, seen from the air" },
+  "villages": [
+    { "name": "Church Lench", "text": "The largest of the Lenches, with All Saints' church, the First School and Pre-school, the village hall, and the sports and members' clubs.", "image": "", "imageAlt": "" },
+    { "name": "Rous Lench", "text": "Named after the Rous family, with the Grade I listed Norman church of St Peter, 16th-century Rous Lench Court and a village hall built in 1885.", "image": "", "imageAlt": "" },
+    { "name": "Ab Lench", "text": "A hamlet west of Church Lench that shares All Saints' as its parish church.", "image": "", "imageAlt": "" },
+    { "name": "Atch Lench", "text": "A hamlet south-east of Church Lench, whose red-brick Baptist chapel of 1829 is now a house.", "image": "", "imageAlt": "" },
+    { "name": "Sheriffs Lench", "text": "A hamlet south-west of Church Lench, named after the Sheriffs of Worcestershire who held it for three centuries after the Norman Conquest.", "image": "", "imageAlt": "" }
+  ],
+  "checklist": [
+    { "label": "Get the Thursday newsletter", "url": "#signup" },
+    { "label": "Join the community Facebook group", "url": "https://www.facebook.com/groups/thelenchescommunity/" },
+    { "label": "Check your bin day", "url": "/bins/" },
+    { "label": "Register with a GP", "url": "/living-here/health/" },
+    { "label": "Tell Wychavon you've moved in, for council tax", "url": "https://wychavon.gov.uk/benefits-and-council-tax/council-tax/moving-house" },
+    { "label": "Register to vote", "url": "https://www.gov.uk/register-to-vote" },
+    { "label": "School places and term dates", "url": "/living-here/schools/" },
+    { "label": "Buses and stations", "url": "/living-here/getting-around/" },
+    { "label": "Meet people: groups, halls and churches", "url": "/community/" }
+  ],
+  "sponsors": []
+}
