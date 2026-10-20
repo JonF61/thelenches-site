@@ -1,0 +1,96 @@
+---
+layout: base.njk
+title: Council & planning
+description: Parish council meetings, district and county councillors, planning applications and reporting problems for the Lenches villages.
+---
+{%- set c = council -%}
+<style>
+.cp-quick{display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin:.5rem 0 1rem}
+@media (min-width:700px){.cp-quick{grid-template-columns:repeat(4,1fr)}}
+.cp-quick a{display:block;padding:.6rem .8rem;border-radius:10px;background:#b5471b;color:#fff;text-decoration:none;font-weight:700;line-height:1.3}
+.cp-quick a span{display:block;font-weight:400;font-size:.88rem}
+.cp-quick a:hover,.cp-quick a:focus{background:#8f3714;color:#fff}
+.cp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.75rem}
+.cp-grid .card{margin:0}
+.cp-grid h3,.cp-card h3{margin:0 0 .25rem}
+.cp-muted{color:#666;font-size:.92rem}
+.cp-next{display:inline-block;background:#fdf0dc;color:#7a4a06;font-size:.88rem;padding:.1rem .5rem;border-radius:6px;margin:.2rem 0 .4rem}
+</style>
+<main class="container">
+
+  <section>
+    <h1>Council &amp; planning</h1>
+    <p class="mt0">{{ c.intro }}</p>
+    <div class="cp-quick">
+      {%- for q in c.quick %}
+      <a href="{{ q.url }}">{{ q.label }}<span>{{ q.sub }}</span></a>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="parish">
+    <h2>Parish councils</h2>
+    <div class="cp-grid">
+      {%- for p in c.parishes %}
+      <div class="card">
+        <h3>{{ p.name }}</h3>
+        <p class="cp-muted mt0">{{ p.covers }}</p>
+        <p>{{ p.meets }}</p>
+        <span class="cp-next">{% if p.next %}Next: {{ p.next }}{% else %}Next date: see the meetings page{% endif %}</span>
+        <p>Clerk: {% if p.email %}<a href="mailto:{{ p.email }}">{{ p.email }}</a>{% else %}{{ p.clerk }}{% endif %}{% if p.phone %} &middot; <a href="tel:{{ p.phone | replace(' ', '') }}">{{ p.phone }}</a>{% endif %}{% if p.contactUrl %} &middot; <a href="{{ p.contactUrl }}" target="_blank" rel="noopener">Contact form</a>{% endif %}</p>
+        <p class="cp-muted">{% for l in p.links %}<a href="{{ l.url }}" target="_blank" rel="noopener">{{ l.text }}</a>{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="who-does-what">
+    <h2>Who does what</h2>
+    <div class="cp-grid">
+      {%- for r in c.roles %}
+      <div class="card">
+        <h3>{{ r.title }}</h3>
+        <p class="cp-muted mt0">{{ r.text }}</p>
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="councillors">
+    <h2>Your councillors</h2>
+    <div class="cp-grid">
+      {%- for g in c.councillors %}
+      <div class="card">
+        <h3>{{ g.area }}</h3>
+        <p class="mt0">{% for person in g.people %}<a href="{{ person.url }}" target="_blank" rel="noopener">{{ person.name }}</a>{% if not loop.last %}<br>{% endif %}{% endfor %}</p>
+        <p class="cp-muted">Contact details on {{ 'each profile' if g.people.length > 1 else 'the profile' }}.</p>
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="planning">
+    <h2>Planning applications</h2>
+    {%- set pl = c.planning %}
+    <div class="card cp-card">
+      <p class="mt0">{{ pl.text }}</p>
+      <p><a href="{{ pl.commentUrl }}" target="_blank" rel="noopener">Search and comment</a> &middot; <a href="{{ pl.weeklyUrl }}" target="_blank" rel="noopener">Weekly list (email sign-up)</a> &middot; Planning: <a href="tel:{{ pl.phone | replace(' ', '') }}">{{ pl.phone }}</a></p>
+    </div>
+  </section>
+
+  <section id="report">
+    <h2>Report a problem</h2>
+    <div class="cp-grid">
+      {%- for r in c.report %}
+      <div class="card">
+        <h3>{{ r.title }}</h3>
+        <p class="cp-muted mt0">{{ r.org }}</p>
+        <p>{% if r.url %}<a href="{{ r.url }}" target="_blank" rel="noopener">Report it online</a> &middot; {% endif %}<a href="tel:{{ r.phone | replace(' ', '') }}">{{ r.phone }}</a></p>
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <p class="cp-muted">Last checked {{ c.checked }}. Spotted something out of date? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+
+</main>

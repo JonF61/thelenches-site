@@ -1,5 +1,64 @@
 {
-  "note": "For the Living here Council & planning page (not built yet). Moved from health.json 20 Oct.",
+  "checked": "20 October 2026",
+  "intro": "Who looks after what in the Lenches, when the parish councils meet, and how to find or comment on planning applications.",
+  "quick": [
+    { "label": "Report a problem", "sub": "Potholes, lights, drains", "url": "#report" },
+    { "label": "Planning", "sub": "Search and comment", "url": "#planning" },
+    { "label": "Councillors", "sub": "District and county", "url": "#councillors" },
+    { "label": "Parish meetings", "sub": "Dates and minutes", "url": "#parish" }
+  ],
+  "parishes": [
+    {
+      "name": "South Lenches Parish Council",
+      "covers": "Church Lench, Ab Lench, Atch Lench, Sheriffs Lench",
+      "meets": "Meets the second Monday of January, March, May, July, September and November, Church Lench Village Hall. Everyone welcome; public questions at the start.",
+      "next": "Monday 9 November 2026",
+      "clerk": "Kate Lee",
+      "email": "clerk@southlenchesparishcouncil.org",
+      "phone": "07835 620613",
+      "links": [
+        { "text": "Agendas and minutes", "url": "https://www.southlenchesparishcouncil.org/your-council/agendas-and-minutes/" },
+        { "text": "Neighbourhood Plan", "url": "https://www.southlenchesparishcouncil.org/neighbourhood-plan/" }
+      ]
+    },
+    {
+      "name": "Rous Lench Parish Council",
+      "covers": "Rous Lench and Radford",
+      "meets": "Meets every other month at 7pm, Rous Lench Village Hall. Open forum at the start of each meeting.",
+      "next": "",
+      "clerk": "Michelle Marriner",
+      "contactUrl": "https://www.rouslenchparishcouncil.gov.uk/contact-us",
+      "links": [
+        { "text": "Meetings, agendas and minutes", "url": "https://www.rouslenchparishcouncil.gov.uk/meetings/" }
+      ]
+    }
+  ],
+  "roles": [
+    { "title": "Parish council", "text": "Comments on planning, local open spaces, noticeboards, the Neighbourhood Plan." },
+    { "title": "Wychavon District", "text": "Planning decisions, bins, council tax, housing, licensing." },
+    { "title": "Worcestershire County", "text": "Roads, potholes, streetlights, footpaths, schools, libraries, social care." }
+  ],
+  "councillors": [
+    {
+      "area": "Wychavon, Inkberrow ward",
+      "people": [
+        { "name": "Ben Hurdman", "url": "https://mgov.wychavon.gov.uk/mgUserInfo.aspx?UID=6371" },
+        { "name": "Nick Dawkes", "url": "https://mgov.wychavon.gov.uk/mgUserInfo.aspx?UID=6370" }
+      ]
+    },
+    {
+      "area": "Worcestershire, Harvington division",
+      "people": [
+        { "name": "Satinder Bell", "url": "https://worcestershire.moderngov.co.uk/mgUserInfo.aspx?UID=1878" }
+      ]
+    }
+  ],
+  "planning": {
+    "text": "Search applications and comment online on Wychavon's planning site. The parish council is consulted on applications in its area and can comment on your behalf.",
+    "commentUrl": "https://wychavon.gov.uk/planning/commenting-on-a-planning-application",
+    "weeklyUrl": "https://wychavon.gov.uk/planning/other-planning-services/planning-weekly-list",
+    "phone": "01386 565565"
+  },
   "report": [
     { "title": "Potholes, streetlights, blocked drains", "org": "Worcestershire County Council", "url": "https://www.worcestershire.gov.uk/reportit", "phone": "01905 765765" },
     { "title": "Water and sewers", "org": "Severn Trent", "phone": "0800 783 4444" }
