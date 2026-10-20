@@ -1,0 +1,111 @@
+---
+layout: base.njk
+title: Health & emergencies
+description: Emergency numbers, defibrillators, GP surgeries, pharmacies and minor injuries for the Lenches villages.
+---
+{%- set h = health -%}
+<style>
+.he-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.75rem}
+.he-grid .card{margin:0}
+.he-grid h3{margin:0 0 .25rem}
+.he-num{display:block;font-size:1.35rem;font-weight:700;color:#b5471b;text-decoration:none}
+.he-urgent{background:#fcebeb;border:1px solid #a32d2d}
+.he-urgent h3,.he-urgent p{color:#791f1f}
+.he-urgent .he-num{color:#791f1f;font-size:1.75rem}
+.he-muted{color:#666;font-size:.92rem}
+.he-list{margin:0;padding:0;list-style:none}
+.he-list li+li{margin-top:.35rem}
+</style>
+<main class="container">
+
+  <section>
+    <h1>Health &amp; emergencies</h1>
+    <p class="lead">Who to call, where to go, and the nearest defibrillator in each village. Check opening times before you travel.</p>
+  </section>
+
+  <section>
+    <div class="he-grid">
+      {%- for n in h.numbers %}
+      <div class="card{% if n.urgent %} he-urgent{% endif %}">
+        <h3>{{ n.label }}</h3>
+        <a class="he-num" href="tel:{{ n.number | replace(' ', '') }}">{{ n.number }}</a>
+        {%- if n.note %}<p class="he-muted mt0">{% if n.url %}<a href="{{ n.url }}" target="_blank" rel="noopener">{{ n.note }}</a>{% else %}{{ n.note }}{% endif %}</p>{% endif %}
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="defibrillators">
+    <h2>Defibrillators</h2>
+    <p>{{ h.defibs.intro }} <a href="{{ h.defibs.findUrl }}" target="_blank" rel="noopener">Find others on a map</a>.</p>
+    <div class="he-grid">
+      {%- for v in h.defibs.villages %}
+      <div class="card">
+        <h3>{{ v.name }}</h3>
+        {%- if v.sites.length %}
+        <ul class="he-list">
+          {%- for s in v.sites %}
+          <li>{{ s.name }}{% if s.address %}<br><span class="he-muted">{{ s.address }}</span>{% endif %}</li>
+          {%- endfor %}
+        </ul>
+        {%- endif %}
+        {%- if v.note %}<p class="he-muted mt0">{{ v.note }}</p>{% endif %}
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="injuries">
+    <h2>Injuries and A&amp;E</h2>
+    <div class="he-grid">
+      {%- for u in h.injuries %}
+      <div class="card">
+        <h3>{% if u.url %}<a href="{{ u.url }}" target="_blank" rel="noopener">{{ u.name }}</a>{% else %}{{ u.name }}{% endif %}</h3>
+        <p class="mt0">{{ u.address }}<br>{{ u.hours }}</p>
+        {%- if u.note %}<p class="he-muted">{{ u.note }}</p>{% endif %}
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="gp">
+    <h2>GP surgeries</h2>
+    <p>{{ h.gps.intro }} <a href="{{ h.gps.findUrl }}" target="_blank" rel="noopener">Check with NHS Find a GP</a>.</p>
+    <div class="he-grid">
+      {%- for g in h.gps.items %}
+      <div class="card">
+        <h3>{{ g.name }}</h3>
+        <p class="mt0">{{ g.address }}<br><a href="tel:{{ g.phone | replace(' ', '') }}">{{ g.phone }}</a></p>
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="pharmacies">
+    <h2>Pharmacies</h2>
+    <p>{{ h.pharmacies.intro }} <a href="{{ h.pharmacies.findUrl }}" target="_blank" rel="noopener">Find a pharmacy open now</a>.</p>
+    <div class="he-grid">
+      {%- for p in h.pharmacies.items %}
+      <div class="card">
+        <h3>{{ p.name }}</h3>
+        <p class="mt0">{{ p.address }}<br><a href="tel:{{ p.phone | replace(' ', '') }}">{{ p.phone }}</a></p>
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="report">
+    <h2>Report a problem</h2>
+    <div class="he-grid">
+      {%- for r in h.report %}
+      <div class="card">
+        <h3>{{ r.title }}</h3>
+        <p class="mt0">{{ r.org }}<br>{% if r.url %}<a href="{{ r.url }}" target="_blank" rel="noopener">Report online</a> &middot; {% endif %}<a href="tel:{{ r.phone | replace(' ', '') }}">{{ r.phone }}</a></p>
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <p class="he-muted">Last checked {{ h.checked }}. Spotted something out of date? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+
+</main>

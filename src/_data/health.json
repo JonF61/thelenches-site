@@ -1,0 +1,64 @@
+{
+  "checked": "October 2026",
+  "numbers": [
+    { "label": "Life-threatening emergency", "number": "999", "note": "Ambulance, police, fire. They'll also give you the code for the nearest defibrillator.", "urgent": true },
+    { "label": "Urgent but not an emergency", "number": "111", "note": "NHS 111, or online at 111.nhs.uk", "url": "https://111.nhs.uk/" },
+    { "label": "Police, non-emergency", "number": "101" },
+    { "label": "Power cut", "number": "105" },
+    { "label": "Smell gas", "number": "0800 111 999" },
+    { "label": "Water leak or sewer flooding", "number": "0800 783 4444", "note": "Severn Trent, 24 hours" }
+  ],
+  "defibs": {
+    "intro": "All available 24/7. Call 999 first and the call handler will direct you to the nearest one.",
+    "findUrl": "https://www.defibfinder.uk/",
+    "villages": [
+      { "name": "Church Lench", "sites": [
+        { "name": "Church Lench CofE First School" },
+        { "name": "Lenches Lakes", "address": "Evesham Rd, WR11 4UB" },
+        { "name": "Lenches Sports and Rec Club" }
+      ] },
+      { "name": "Rous Lench", "sites": [
+        { "name": "Rous Lench Village Hall" }
+      ] },
+      { "name": "Ab, Atch and Sheriffs Lench", "sites": [], "note": "None registered. Nearest: Church Lench or Rous Lench." },
+      { "name": "Harvington", "sites": [
+        { "name": "Golden Cross Inn", "address": "97 Village St, WR11 8PQ" },
+        { "name": "Grass verge opposite Leysfield Rd", "address": "2 Leys Rd, WR11 8NA" }
+      ] },
+      { "name": "Salford Priors", "sites": [
+        { "name": "Rushford Cottages", "address": "7 Salford Rd, WR11 8SL" },
+        { "name": "Jutexpo", "address": "Lauriston Business Park, WR11 8SN" }
+      ] }
+    ]
+  },
+  "injuries": [
+    { "name": "Evesham Minor Injury Unit", "address": "Evesham Community Hospital, Waterside, WR11 1JT", "hours": "9am to 9pm every day, including bank holidays (last patient 8.30pm)", "note": "Cuts, sprains, minor burns. Not illnesses.", "url": "https://www.hacw.nhs.uk/miu" },
+    { "name": "Worcestershire Royal A&E", "address": "Charles Hastings Way, Worcester WR5 1DD", "hours": "24 hours" },
+    { "name": "Alexandra Hospital A&E", "address": "Woodrow Drive, Redditch B98 7UB", "hours": "24 hours" }
+  ],
+  "gps": {
+    "intro": "Which surgery you can join depends on your postcode.",
+    "findUrl": "https://www.nhs.uk/service-search/find-a-gp",
+    "items": [
+      { "name": "Grey Gable Surgery", "address": "High St, Inkberrow WR7 4BW", "phone": "01386 793007" },
+      { "name": "Demontfort Medical Centre", "address": "Burford Rd, Evesham WR11 3HD", "phone": "01386 443333" },
+      { "name": "Merstow Green Medical Practice", "address": "Evesham Medical Centre, Abbey Lane WR11 4BS", "phone": "01386 765600" },
+      { "name": "Abbey Medical Practice", "address": "Evesham Medical Centre, Abbey Lane WR11 4BS", "phone": "01386 761111" }
+    ]
+  },
+  "pharmacies": {
+    "intro": "Opening hours change, especially on bank holidays.",
+    "findUrl": "https://www.nhs.uk/service-search/pharmacy/find-a-pharmacy",
+    "items": [
+      { "name": "Boots", "address": "Evesham Retail Park", "phone": "01386 48665" },
+      { "name": "Boots", "address": "Bridge St, Evesham", "phone": "01386 765252" },
+      { "name": "Evesham Pharmacy", "address": "30-36 High St, Evesham", "phone": "01386 48899" },
+      { "name": "Vale Pharmacy", "address": "Evesham Medical Centre, Abbey Lane", "phone": "01386 47613" },
+      { "name": "Colin Harris", "address": "Bidford-on-Avon", "phone": "01789 772433" }
+    ]
+  },
+  "report": [
+    { "title": "Potholes, streetlights, blocked drains", "org": "Worcestershire County Council", "url": "https://www.worcestershire.gov.uk/reportit", "phone": "01905 765765" },
+    { "title": "Water and sewers", "org": "Severn Trent", "phone": "0800 783 4444" }
+  ]
+}
