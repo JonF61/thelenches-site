@@ -1,0 +1,7 @@
+{
+  "note": "For the Living here Council & planning page (not built yet). Moved from health.json 20 Oct.",
+  "report": [
+    { "title": "Potholes, streetlights, blocked drains", "org": "Worcestershire County Council", "url": "https://www.worcestershire.gov.uk/reportit", "phone": "01905 765765" },
+    { "title": "Water and sewers", "org": "Severn Trent", "phone": "0800 783 4444" }
+  ]
+}

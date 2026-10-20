@@ -4,6 +4,9 @@ title: Health & emergencies
 description: Emergency numbers, defibrillators, GP surgeries, pharmacies and minor injuries for the Lenches villages.
 ---
 {%- set h = health -%}
+{%- macro place(p) -%}
+<span class="he-loc"><a href="https://www.google.com/maps/search/?api=1&query={% if p.lat and p.lng %}{{ p.lat }},{{ p.lng }}{% else %}{{ (p.name + ', ' + p.address) | urlencode }}{% endif %}" target="_blank" rel="noopener">Map</a>{% if p.w3w %} &middot; <a href="https://what3words.com/{{ p.w3w }}" target="_blank" rel="noopener">///{{ p.w3w }}</a>{% endif %}</span>
+{%- endmacro -%}
 <style>
 .he-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.75rem}
 .he-grid .card{margin:0}
@@ -13,10 +16,11 @@ description: Emergency numbers, defibrillators, GP surgeries, pharmacies and min
 .he-urgent h3,.he-urgent p{color:#791f1f}
 .he-urgent .he-num{color:#791f1f;font-size:1.75rem}
 .he-muted{color:#666;font-size:.92rem}
+.he-loc{display:block;font-size:.92rem;margin-top:.15rem}
 .he-list{margin:0;padding:0;list-style:none}
-.he-list li+li{margin-top:.35rem}
-.he-howto{margin-bottom:.75rem}
-.he-howto h3{margin:0 0 .35rem}
+.he-list li+li{margin-top:.5rem}
+.he-howto,.he-locate{margin:.75rem 0}
+.he-howto h3,.he-locate h3{margin:0 0 .35rem}
 .he-howto ol{margin:0;padding-left:1.3rem}
 .he-howto li+li{margin-top:.3rem}
 </style>
@@ -36,6 +40,12 @@ description: Emergency numbers, defibrillators, GP surgeries, pharmacies and min
         {%- if n.note %}<p class="he-muted mt0">{% if n.url %}<a href="{{ n.url }}" target="_blank" rel="noopener">{{ n.note }}</a>{% else %}{{ n.note }}{% endif %}</p>{% endif %}
       </div>
       {%- endfor %}
+    </div>
+    {%- set lc = h.locate %}
+    <div class="card he-locate" id="location">
+      <h3>{{ lc.title }}</h3>
+      <p class="mt0">{{ lc.text }}</p>
+      <p class="he-muted">{% for l in lc.links %}<a href="{{ l.url }}" target="_blank" rel="noopener">{{ l.text }}</a>{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
     </div>
   </section>
 
@@ -59,7 +69,7 @@ description: Emergency numbers, defibrillators, GP surgeries, pharmacies and min
         {%- if v.sites.length %}
         <ul class="he-list">
           {%- for s in v.sites %}
-          <li>{{ s.name }}{% if s.address %}<br><span class="he-muted">{{ s.address }}</span>{% endif %}</li>
+          <li>{{ s.name }}<br><span class="he-muted">{{ s.address }}{% if s.spot %} &middot; {{ s.spot }}{% endif %}</span>{{ place(s) }}</li>
           {%- endfor %}
         </ul>
         {%- endif %}
@@ -75,7 +85,7 @@ description: Emergency numbers, defibrillators, GP surgeries, pharmacies and min
       {%- for u in h.injuries %}
       <div class="card">
         <h3>{% if u.url %}<a href="{{ u.url }}" target="_blank" rel="noopener">{{ u.name }}</a>{% else %}{{ u.name }}{% endif %}</h3>
-        <p class="mt0">{{ u.address }}<br>{{ u.hours }}</p>
+        <p class="mt0">{{ u.address }}<br>{{ u.hours }}{{ place(u) }}</p>
         {%- if u.note %}<p class="he-muted">{{ u.note }}</p>{% endif %}
       </div>
       {%- endfor %}
@@ -89,7 +99,7 @@ description: Emergency numbers, defibrillators, GP surgeries, pharmacies and min
       {%- for g in h.gps.items %}
       <div class="card">
         <h3>{{ g.name }}</h3>
-        <p class="mt0">{{ g.address }}<br><a href="tel:{{ g.phone | replace(' ', '') }}">{{ g.phone }}</a></p>
+        <p class="mt0">{{ g.address }}<br><a href="tel:{{ g.phone | replace(' ', '') }}">{{ g.phone }}</a>{{ place(g) }}</p>
       </div>
       {%- endfor %}
     </div>
@@ -102,19 +112,7 @@ description: Emergency numbers, defibrillators, GP surgeries, pharmacies and min
       {%- for p in h.pharmacies.items %}
       <div class="card">
         <h3>{{ p.name }}</h3>
-        <p class="mt0">{{ p.address }}<br><a href="tel:{{ p.phone | replace(' ', '') }}">{{ p.phone }}</a></p>
-      </div>
-      {%- endfor %}
-    </div>
-  </section>
-
-  <section id="report">
-    <h2>Report a problem</h2>
-    <div class="he-grid">
-      {%- for r in h.report %}
-      <div class="card">
-        <h3>{{ r.title }}</h3>
-        <p class="mt0">{{ r.org }}<br>{% if r.url %}<a href="{{ r.url }}" target="_blank" rel="noopener">Report online</a> &middot; {% endif %}<a href="tel:{{ r.phone | replace(' ', '') }}">{{ r.phone }}</a></p>
+        <p class="mt0">{{ p.address }}<br><a href="tel:{{ p.phone | replace(' ', '') }}">{{ p.phone }}</a>{{ place(p) }}</p>
       </div>
       {%- endfor %}
     </div>

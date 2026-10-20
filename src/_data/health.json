@@ -8,6 +8,14 @@
     { "label": "Smell gas", "number": "0800 111 999" },
     { "label": "Water leak or sewer flooding", "number": "0800 783 4444", "note": "Severn Trent, 24 hours" }
   ],
+  "locate": {
+    "title": "Telling 999 where you are",
+    "text": "Smartphones usually send your location to 999 automatically when you call. Out in the lanes or fields, the what3words app gives three words for your exact 3-metre square, and most UK emergency services accept them. Can't speak on the phone? Register for emergencySMS so you can text 999.",
+    "links": [
+      { "text": "what3words", "url": "https://what3words.com/" },
+      { "text": "emergencySMS", "url": "https://www.emergencysms.net/" }
+    ]
+  },
   "defibs": {
     "howto": {
       "title": "If someone collapses and isn't breathing normally",
@@ -25,23 +33,24 @@
     },
     "intro": "All available 24/7. Call 999 first and the call handler will direct you to the nearest one.",
     "findUrl": "https://www.defibfinder.uk/",
+    "fieldsNote": "Optional per site: spot (where on the building), w3w (three words, no slashes), lat and lng (exact map pin). Fill from the photo walk.",
     "villages": [
       { "name": "Church Lench", "sites": [
-        { "name": "Church Lench CofE First School" },
-        { "name": "Lenches Lakes", "address": "Evesham Rd, WR11 4UB" },
-        { "name": "Lenches Sports and Rec Club" }
+        { "name": "Church Lench CofE First School", "address": "Church Lench" },
+        { "name": "Lenches Lakes", "address": "Evesham Rd, Church Lench WR11 4UB" },
+        { "name": "Lenches Sports and Rec Club", "address": "Church Lench" }
       ] },
       { "name": "Rous Lench", "sites": [
-        { "name": "Rous Lench Village Hall" }
+        { "name": "Rous Lench Village Hall", "address": "Rous Lench" }
       ] },
       { "name": "Ab, Atch and Sheriffs Lench", "sites": [], "note": "None registered. Nearest: Church Lench or Rous Lench." },
       { "name": "Harvington", "sites": [
-        { "name": "Golden Cross Inn", "address": "97 Village St, WR11 8PQ" },
-        { "name": "Grass verge opposite Leysfield Rd", "address": "2 Leys Rd, WR11 8NA" }
+        { "name": "Golden Cross Inn", "address": "97 Village St, Harvington WR11 8PQ" },
+        { "name": "Grass verge opposite Leysfield Rd", "address": "2 Leys Rd, Harvington WR11 8NA" }
       ] },
       { "name": "Salford Priors", "sites": [
-        { "name": "Rushford Cottages", "address": "7 Salford Rd, WR11 8SL" },
-        { "name": "Jutexpo", "address": "Lauriston Business Park, WR11 8SN" }
+        { "name": "Rushford Cottages", "address": "7 Salford Rd, Salford Priors WR11 8SL" },
+        { "name": "Jutexpo", "address": "Lauriston Business Park, Salford Priors WR11 8SN" }
       ] }
     ]
   },
@@ -64,15 +73,11 @@
     "intro": "Opening hours change, especially on bank holidays.",
     "findUrl": "https://www.nhs.uk/service-search/pharmacy/find-a-pharmacy",
     "items": [
-      { "name": "Boots", "address": "Evesham Retail Park", "phone": "01386 48665" },
+      { "name": "Boots", "address": "Evesham Retail Park, Evesham", "phone": "01386 48665" },
       { "name": "Boots", "address": "Bridge St, Evesham", "phone": "01386 765252" },
       { "name": "Evesham Pharmacy", "address": "30-36 High St, Evesham", "phone": "01386 48899" },
-      { "name": "Vale Pharmacy", "address": "Evesham Medical Centre, Abbey Lane", "phone": "01386 47613" },
+      { "name": "Vale Pharmacy", "address": "Evesham Medical Centre, Abbey Lane, Evesham", "phone": "01386 47613" },
       { "name": "Colin Harris", "address": "Bidford-on-Avon", "phone": "01789 772433" }
     ]
-  },
-  "report": [
-    { "title": "Potholes, streetlights, blocked drains", "org": "Worcestershire County Council", "url": "https://www.worcestershire.gov.uk/reportit", "phone": "01905 765765" },
-    { "title": "Water and sewers", "org": "Severn Trent", "phone": "0800 783 4444" }
-  ]
+  }
 }
