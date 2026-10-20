@@ -33,10 +33,10 @@
     },
     "intro": "All available 24/7. Call 999 first and the call handler will direct you to the nearest one.",
     "findUrl": "https://www.defibfinder.uk/",
-    "fieldsNote": "lat/lng are the cabinet pins registered on The Circuit (read from DefibFinder 20 Oct). Optional per site: spot (where on the building), w3w (three words, no slashes). Confirm on the photo walk.",
+    "fieldsNote": "lat/lng are the cabinet pins registered on The Circuit (read from DefibFinder 20 Oct), which can be rough: the school's pin (52.158821, -1.966129) fell in the middle of the playing field, so it was removed and its Map link searches the address. Optional per site: spot (where on the building), w3w (three words, no slashes). Confirm on the photo walk.",
     "villages": [
       { "name": "Church Lench", "sites": [
-        { "name": "Church Lench CofE First School", "address": "Main Street, Church Lench WR11 4UE", "lat": 52.158821, "lng": -1.966129 },
+        { "name": "Church Lench CofE First School", "address": "Main Street, Church Lench WR11 4UE" },
         { "name": "Lenches Lakes", "address": "Evesham Rd, Church Lench WR11 4UB", "lat": 52.155437, "lng": -1.966349 },
         { "name": "Lenches Sports and Rec Club", "address": "Ab Lench Road, Church Lench WR11 4UQ", "lat": 52.158799, "lng": -1.970010 }
       ] },
