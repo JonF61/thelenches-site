@@ -11,7 +11,9 @@ description: Emergency numbers, defibrillators, GP surgeries, pharmacies and min
 .he-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.75rem}
 .he-grid .card{margin:0}
 .he-grid h3{margin:0 0 .25rem}
-.he-nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));background:#fff;border:1px solid #e5e0d8;border-radius:10px;overflow:hidden}
+.he-nums{display:grid;grid-template-columns:1fr;background:#fff;border:1px solid #e5e0d8;border-radius:10px;overflow:hidden}
+@media (min-width:560px){.he-nums{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:860px){.he-nums{grid-template-columns:repeat(3,1fr)}}
 .he-nums a{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;padding:.45rem .8rem;border-bottom:1px solid #e5e0d8;color:inherit;text-decoration:none}
 .he-nums a b{color:#b5471b;white-space:nowrap}
 .he-nums a.he-urgent{background:#fcebeb;color:#791f1f}
