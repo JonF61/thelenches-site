@@ -33,51 +33,52 @@
     },
     "intro": "All available 24/7. Call 999 first and the call handler will direct you to the nearest one.",
     "findUrl": "https://www.defibfinder.uk/",
-    "fieldsNote": "lat/lng are the cabinet pins registered on The Circuit (read from DefibFinder 20 Oct), which can be rough: the school's pin (52.158821, -1.966129) fell in the middle of the playing field, so it was removed and its Map link searches the address. Optional per site: spot (where on the building), w3w (three words, no slashes). Confirm on the photo walk.",
+    "fieldsNote": "Addresses omit the village (it's the card heading). lat/lng are the cabinet pins registered on The Circuit (read from DefibFinder 20 Oct), which can be rough: the school's pin (52.158821, -1.966129) fell in the middle of the playing field, so it was removed and its Map link searches the address. Optional per site: spot (where on the building), w3w (three words, no slashes). Add w3w and spots from the photo walk.",
     "villages": [
       { "name": "Church Lench", "sites": [
-        { "name": "Church Lench CofE First School", "address": "Main Street, Church Lench WR11 4UE" },
-        { "name": "Lenches Lakes", "address": "Evesham Rd, Church Lench WR11 4UB", "lat": 52.155437, "lng": -1.966349 },
-        { "name": "Lenches Sports and Rec Club", "address": "Ab Lench Road, Church Lench WR11 4UQ", "lat": 52.158799, "lng": -1.970010 }
+        { "name": "Church Lench CofE First School", "address": "Main Street, WR11 4UE" },
+        { "name": "Lenches Lakes", "address": "Evesham Rd, WR11 4UB", "lat": 52.155437, "lng": -1.966349 },
+        { "name": "Lenches Sports and Rec Club", "address": "Ab Lench Road, WR11 4UQ", "lat": 52.158799, "lng": -1.970010 }
       ] },
       { "name": "Rous Lench", "sites": [
-        { "name": "Rous Lench Village Hall", "address": "The Green, Rous Lench WR11 4UN", "lat": 52.177499, "lng": -1.981989 }
+        { "name": "Rous Lench Village Hall", "address": "The Green, WR11 4UN", "lat": 52.177499, "lng": -1.981989 }
       ] },
       { "name": "Ab, Atch and Sheriffs Lench", "sites": [], "note": "None registered. Nearest: Church Lench or Rous Lench." },
       { "name": "Harvington", "sites": [
-        { "name": "Golden Cross Inn", "address": "97 Village St, Harvington WR11 8PQ", "lat": 52.143000, "lng": -1.924989 },
-        { "name": "Grass verge opposite Leysfield Rd", "address": "2 Leys Rd, Harvington WR11 8NA", "lat": 52.144210, "lng": -1.930198 }
+        { "name": "Golden Cross Inn", "address": "97 Village St, WR11 8PQ", "lat": 52.143000, "lng": -1.924989 },
+        { "name": "Grass verge opposite Leysfield Rd", "address": "2 Leys Rd, WR11 8NA", "lat": 52.144210, "lng": -1.930198 }
       ] },
       { "name": "Salford Priors", "sites": [
-        { "name": "Rushford Cottages", "address": "7 Salford Rd, Salford Priors WR11 8SL", "lat": 52.163778, "lng": -1.919593 },
-        { "name": "Jutexpo", "address": "Lauriston Business Park, Salford Priors WR11 8SN", "lat": 52.163370, "lng": -1.924399 }
+        { "name": "Rushford Cottages", "address": "7 Salford Rd, WR11 8SL", "lat": 52.163778, "lng": -1.919593 },
+        { "name": "Jutexpo", "address": "Lauriston Business Park, WR11 8SN", "lat": 52.163370, "lng": -1.924399 }
       ] }
     ]
   },
   "injuries": [
     { "name": "Evesham Minor Injury Unit", "address": "Evesham Community Hospital, Waterside, WR11 1JT", "hours": "9am to 9pm every day, including bank holidays (last patient 8.30pm)", "note": "Cuts, sprains, minor burns. Not illnesses.", "url": "https://www.hacw.nhs.uk/miu" },
-    { "name": "Worcestershire Royal A&E", "address": "Charles Hastings Way, Worcester WR5 1DD", "hours": "24 hours" },
-    { "name": "Alexandra Hospital A&E", "address": "Woodrow Drive, Redditch B98 7UB", "hours": "24 hours" }
+    { "name": "Worcestershire Royal A&E", "address": "Charles Hastings Way, Worcester WR5 1DD", "hours": "24 hours", "url": "https://www.worcsacute.nhs.uk/our-hospitals/worcestershire-royal-hospital/" },
+    { "name": "Alexandra Hospital A&E", "address": "Woodrow Drive, Redditch B98 7UB", "hours": "24 hours", "url": "https://www.worcsacute.nhs.uk/our-hospitals/alexandra-hospital-redditch/" }
   ],
   "gps": {
     "intro": "Which surgery you can join depends on your postcode.",
     "findUrl": "https://www.nhs.uk/service-search/find-a-gp",
+    "linkNote": "url = the NHS profile (current hours, link to the practice's own site); swap for the practice site if preferred.",
     "items": [
-      { "name": "Grey Gable Surgery", "address": "High St, Inkberrow WR7 4BW", "phone": "01386 793007" },
-      { "name": "Demontfort Medical Centre", "address": "Burford Rd, Evesham WR11 3HD", "phone": "01386 443333" },
-      { "name": "Merstow Green Medical Practice", "address": "Evesham Medical Centre, Abbey Lane WR11 4BS", "phone": "01386 765600" },
-      { "name": "Abbey Medical Practice", "address": "Evesham Medical Centre, Abbey Lane WR11 4BS", "phone": "01386 761111" }
+      { "name": "Grey Gable Surgery", "address": "High St, Inkberrow WR7 4BW", "phone": "01386 793007", "url": "https://www.nhs.uk/services/gp-surgery/grey-gable-surgery/Y03602", "urlText": "Hours and details" },
+      { "name": "Demontfort Medical Centre", "address": "Burford Rd, Evesham WR11 3HD", "phone": "01386 443333", "url": "https://www.nhs.uk/services/gp-surgery/demontfort-medical-centre/M81627", "urlText": "Hours and details" },
+      { "name": "Merstow Green Medical Practice", "address": "Evesham Medical Centre, Abbey Lane WR11 4BS", "phone": "01386 765600", "url": "https://www.nhs.uk/services/gp-surgery/merstow-green-medical-practice/M81058", "urlText": "Hours and details" },
+      { "name": "Abbey Medical Practice", "address": "Evesham Medical Centre, Abbey Lane WR11 4BS", "phone": "01386 761111", "url": "https://www.nhs.uk/services/gp-surgery/abbey-medical-practice/M81094", "urlText": "Hours and details" }
     ]
   },
   "pharmacies": {
     "intro": "Opening hours change, especially on bank holidays.",
     "findUrl": "https://www.nhs.uk/service-search/pharmacy/find-a-pharmacy",
     "items": [
-      { "name": "Boots", "address": "Evesham Retail Park, Evesham", "phone": "01386 48665" },
-      { "name": "Boots", "address": "Bridge St, Evesham", "phone": "01386 765252" },
-      { "name": "Evesham Pharmacy", "address": "30-36 High St, Evesham", "phone": "01386 48899" },
-      { "name": "Vale Pharmacy", "address": "Evesham Medical Centre, Abbey Lane, Evesham", "phone": "01386 47613" },
-      { "name": "Colin Harris", "address": "Bidford-on-Avon", "phone": "01789 772433" }
+      { "name": "Boots", "address": "Evesham Retail Park, Worcester Rd, WR11 4AB", "phone": "01386 48665", "url": "https://www.nhs.uk/services/pharmacy/boots/FA227", "urlText": "Hours and details" },
+      { "name": "Boots", "address": "19-21 Bridge St, Evesham WR11 4SQ", "phone": "01386 765252", "url": "https://www.nhs.uk/services/pharmacy/boots/FLE44", "urlText": "Hours and details" },
+      { "name": "Evesham Pharmacy", "address": "30-36 High St, Evesham WR11 4HJ", "phone": "01386 48899", "url": "https://www.nhs.uk/services/pharmacy/evesham-pharmacy/FQR64", "urlText": "Hours and details" },
+      { "name": "Vale Pharmacy", "address": "Evesham Medical Centre, Abbey Lane WR11 4BS", "phone": "01386 47613", "url": "https://www.nhs.uk/services/pharmacy/vale-pharmacy/FLK28", "urlText": "Hours and details" },
+      { "name": "Colin Harris Chemists", "address": "17 High St, Bidford-on-Avon B50 4BQ", "phone": "01789 772433", "url": "https://www.nhs.uk/services/pharmacy/colin-harris-chemists/FND20", "urlText": "Hours and details" }
     ]
   }
 }
