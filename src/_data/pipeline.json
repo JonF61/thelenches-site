@@ -15,6 +15,28 @@
   ],
   "news": [
     {
+      "id": "rss-0ee972d7474044a6-1",
+      "title": "Five Worcestershire shops fail underage vape tests",
+      "body": "Trading standards teams found that five shops in Worcestershire failed underage sales tests when checked for vape purchases, leading to potential enforcement action.",
+      "village": "Lenches",
+      "expires": "2026-11-03",
+      "link": {
+        "text": "Read more at Evesham Journal",
+        "url": "https://www.eveshamjournal.co.uk/news/26644390.five-worcestershire-shops-fail-underage-vape-sales-tests/"
+      }
+    },
+    {
+      "id": "rss-3a00b5386aec60b1-1",
+      "title": "Developers may face 60 years of road maintenance costs",
+      "body": "Council cabinet members are due to discuss proposals that could require developers to pay towards decades of future maintenance costs for roads, street lighting, landscaping and other highway features.",
+      "village": "Lenches",
+      "expires": "2026-11-03",
+      "link": {
+        "text": "Read more at Evesham Journal",
+        "url": "https://www.eveshamjournal.co.uk/news/26650352.developers-pay-future-road-maintenance-costs/"
+      }
+    },
+    {
       "id": "rss-d74650da230223b8-1",
       "title": "Landline switch-off to affect parts of Worcestershire",
       "body": "Openreach has named eight Worcestershire areas affected by a nationwide shift from old copper landlines to full fibre broadband, as the UK moves towards digital phone services.",
