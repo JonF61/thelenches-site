@@ -9,6 +9,20 @@
     { "label": "Water leak or sewer flooding", "number": "0800 783 4444", "note": "Severn Trent, 24 hours" }
   ],
   "defibs": {
+    "howto": {
+      "title": "If someone collapses and isn't breathing normally",
+      "steps": [
+        { "lead": "Call 999", "text": "on speaker. They'll tell you where the nearest defibrillator is and give you the cabinet code." },
+        { "lead": "Start CPR.", "text": "Push hard and fast in the centre of the chest, about twice a second. Send someone else for the defibrillator; if you're alone, don't stop CPR to fetch it." },
+        { "lead": "Switch it on,", "text": "usually a green button, and do what it tells you." },
+        { "lead": "Bare the chest", "text": "and stick the pads on as the picture shows. There are scissors in the pack." },
+        { "lead": "Stand clear", "text": "while it checks the heart. It decides whether a shock is needed; press the button if told, or it does it for you." },
+        { "lead": "Keep going", "text": "with CPR until it tells you to stop, the person starts breathing normally, or the ambulance crew takes over." }
+      ],
+      "footer": "Anyone can use one; no training needed. It won't shock someone who doesn't need it.",
+      "guideText": "British Heart Foundation guide and video",
+      "guideUrl": "https://www.bhf.org.uk/how-you-can-help/how-to-save-a-life/defibrillators/how-to-use-a-defibrillator"
+    },
     "intro": "All available 24/7. Call 999 first and the call handler will direct you to the nearest one.",
     "findUrl": "https://www.defibfinder.uk/",
     "villages": [

@@ -15,6 +15,10 @@ description: Emergency numbers, defibrillators, GP surgeries, pharmacies and min
 .he-muted{color:#666;font-size:.92rem}
 .he-list{margin:0;padding:0;list-style:none}
 .he-list li+li{margin-top:.35rem}
+.he-howto{margin-bottom:.75rem}
+.he-howto h3{margin:0 0 .35rem}
+.he-howto ol{margin:0;padding-left:1.3rem}
+.he-howto li+li{margin-top:.3rem}
 </style>
 <main class="container">
 
@@ -37,6 +41,16 @@ description: Emergency numbers, defibrillators, GP surgeries, pharmacies and min
 
   <section id="defibrillators">
     <h2>Defibrillators</h2>
+    {%- set ht = h.defibs.howto %}
+    <div class="card he-howto" id="how-to-use">
+      <h3>{{ ht.title }}</h3>
+      <ol>
+        {%- for s in ht.steps %}
+        <li><strong>{{ s.lead }}</strong> {{ s.text }}</li>
+        {%- endfor %}
+      </ol>
+      <p class="he-muted">{{ ht.footer }} <a href="{{ ht.guideUrl }}" target="_blank" rel="noopener">{{ ht.guideText }}</a></p>
+    </div>
     <p>{{ h.defibs.intro }} <a href="{{ h.defibs.findUrl }}" target="_blank" rel="noopener">Find others on a map</a>.</p>
     <div class="he-grid">
       {%- for v in h.defibs.villages %}
