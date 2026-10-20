@@ -45,8 +45,12 @@
         <p class="brand-villages">Church &middot; Rous &middot; Ab &middot; Atch &middot; Sheriffs</p>
       </div>
       <nav class="nav" aria-label="Main">
+        {#- A nav item is active on its own URL, or on any page whose first path segment is in its match list (site.json). -#}
+        {% set navSeg = (page.url or '').split('/')[1] %}
         {% for item in site.nav %}
-        <a href="{{ item.url | url }}"{% if page.url == item.url %} class="active" aria-current="page"{% endif %}>{{ item.title }}</a>
+        {% set isHere = page.url == item.url %}
+        {% set inSection = item.match and item.match.includes(navSeg) %}
+        <a href="{{ item.url | url }}"{% if isHere %} class="active" aria-current="page"{% elif inSection %} class="active"{% endif %}>{{ item.title }}</a>
         {% endfor %}
       </nav>
     </div>
