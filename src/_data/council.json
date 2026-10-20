@@ -7,12 +7,15 @@
     { "label": "Councillors", "sub": "District and county", "url": "#councillors" },
     { "label": "Parish meetings", "sub": "Dates and minutes", "url": "#parish" }
   ],
+  "meetingsNote": "Next dates are worked out by src/_data/meetings.js from rule (weekday 0=Sun..6=Sat, nth, months 1-12). Set override to YYYY-MM-DD for a one-off moved meeting; it is ignored once past. No rule and no override = 'see the meetings page'.",
   "parishes": [
     {
+      "key": "south-lenches",
       "name": "South Lenches Parish Council",
       "covers": "Church Lench, Ab Lench, Atch Lench, Sheriffs Lench",
       "meets": "Meets the second Monday of January, March, May, July, September and November, Church Lench Village Hall. Everyone welcome; public questions at the start.",
-      "next": "Monday 9 November 2026",
+      "rule": { "weekday": 1, "nth": 2, "months": [1, 3, 5, 7, 9, 11] },
+      "override": "",
       "clerk": "Kate Lee",
       "email": "clerk@southlenchesparishcouncil.org",
       "phone": "07835 620613",
@@ -22,10 +25,12 @@
       ]
     },
     {
+      "key": "rous-lench",
       "name": "Rous Lench Parish Council",
       "covers": "Rous Lench and Radford",
       "meets": "Meets every other month at 7pm, Rous Lench Village Hall. Open forum at the start of each meeting.",
-      "next": "",
+      "rule": null,
+      "override": "",
       "clerk": "Michelle Marriner",
       "contactUrl": "https://www.rouslenchparishcouncil.gov.uk/contact-us",
       "links": [

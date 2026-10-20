@@ -32,11 +32,12 @@ description: Parish council meetings, district and county councillors, planning 
     <h2>Parish councils</h2>
     <div class="cp-grid">
       {%- for p in c.parishes %}
+      {%- set nx = meetings[p.key] %}
       <div class="card">
         <h3>{{ p.name }}</h3>
         <p class="cp-muted mt0">{{ p.covers }}</p>
         <p>{{ p.meets }}</p>
-        <span class="cp-next">{% if p.next %}Next: {{ p.next }}{% else %}Next date: see the meetings page{% endif %}</span>
+        <span class="cp-next">{% if nx %}Next: {{ nx }}{% else %}Next date: see the meetings page{% endif %}</span>
         <p>Clerk: {% if p.email %}<a href="mailto:{{ p.email }}">{{ p.email }}</a>{% else %}{{ p.clerk }}{% endif %}{% if p.phone %} &middot; <a href="tel:{{ p.phone | replace(' ', '') }}">{{ p.phone }}</a>{% endif %}{% if p.contactUrl %} &middot; <a href="{{ p.contactUrl }}" target="_blank" rel="noopener">Contact form</a>{% endif %}</p>
         <p class="cp-muted">{% for l in p.links %}<a href="{{ l.url }}" target="_blank" rel="noopener">{{ l.text }}</a>{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
       </div>
