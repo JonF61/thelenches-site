@@ -59,5 +59,78 @@
       }
     }
   ],
-  "notices": []
+  "notices": [
+    {
+      "id": "1a15780b0f8da7e1-1",
+      "title": "Road Closure — Ab Lench Road, Church Lench",
+      "body": "Ab Lench Road, Church Lench will be closed on Monday 26 October for Openreach streetworks, with a diversion route in place via Main Street.",
+      "date": "2026-10-26",
+      "village": "Church Lench",
+      "expires": "2026-11-10",
+      "link": {
+        "text": "Roadworks details",
+        "url": "https://one.network?GBTMI47131888"
+      }
+    },
+    {
+      "id": "1a15780b0f8da7e1-2",
+      "title": "Road Closure — Badgers Hill to Handgate Lane, Sheriffs Lench",
+      "body": "Badgers Hill to Handgate Lane, Sheriffs Lench, closed from Tuesday 27 October to Sunday 29 November for Severn Trent Water works, with a diversion via Handgate Lane, Church Lench.",
+      "date": "2026-10-27",
+      "village": "Sheriffs Lench",
+      "expires": "2026-11-10",
+      "link": {
+        "text": "Roadworks details",
+        "url": "https://one.network?GBTMI45377659"
+      }
+    },
+    {
+      "id": "1a15780b0f8da7e1-3",
+      "title": "Brookdale, Harvington — water works",
+      "body": "Severn Trent Water works at Brookdale, Harvington, from Wednesday 21 to Friday 23 October; no carriageway incursion expected and delays are unlikely.",
+      "date": "2026-10-21",
+      "village": "Harvington",
+      "expires": "2026-11-10",
+      "link": {
+        "text": "Roadworks details",
+        "url": "https://one.network?GB153078571"
+      }
+    },
+    {
+      "id": "1a15780b0f8da7e1-4",
+      "title": "Hughes Close, Harvington — Openreach works",
+      "body": "Openreach works at Hughes Close, Harvington, from Thursday 22 to Monday 26 October; some carriageway incursion but delays are unlikely.",
+      "date": "2026-10-22",
+      "village": "Harvington",
+      "expires": "2026-11-10",
+      "link": {
+        "text": "Roadworks details",
+        "url": "https://one.network?GB153082375"
+      }
+    },
+    {
+      "id": "1a15780b0f8da7e1-5",
+      "title": "Leys Road, Harvington — water works",
+      "body": "Severn Trent Water works at Leys Road, Harvington, from Wednesday 21 to Friday 23 October; no carriageway incursion expected.",
+      "date": "2026-10-21",
+      "village": "Harvington",
+      "expires": "2026-11-10",
+      "link": {
+        "text": "Roadworks details",
+        "url": "https://one.network?GB153074788"
+      }
+    },
+    {
+      "id": "1a15780b0f8da7e1-6",
+      "title": "Stratford Road, Harvington — water works",
+      "body": "Severn Trent Water works at Stratford Road, Harvington, from Wednesday 21 to Friday 23 October; some carriageway incursion but delays unlikely.",
+      "date": "2026-10-21",
+      "village": "Harvington",
+      "expires": "2026-11-10",
+      "link": {
+        "text": "Roadworks details",
+        "url": "https://one.network?GB153079789"
+      }
+    }
+  ]
 }
