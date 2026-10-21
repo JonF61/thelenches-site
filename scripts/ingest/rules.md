@@ -6,7 +6,7 @@ Scope must match the Submission Guidelines (src/_includes/guidelines.md).
 ## Scope
 - Covered area: the five Lenches (Church Lench, Rous Lench, Ab Lench, Atch Lench,
   Sheriffs Lench) and the nearby villages and hamlets of Harvington, Abbots Morton,
-  Lenchwick and Radford. Events, news and notices from anywhere in this area are in scope.
+  Lenchwick and Radford. Events and notices from anywhere in this area are in scope.
 - Towns: Evesham, Pershore and Inkberrow are in scope only for events of clear interest to
   residents of the covered area (e.g. a major show, fair or concert), not routine town news.
 - Everywhere else is out of scope, including other nearby villages (e.g. Bishampton,
@@ -19,9 +19,9 @@ Scope must match the Submission Guidelines (src/_includes/guidelines.md).
 
 ## Category (use exactly one)
 - event — has a date and something to attend.
-- news — community news without an attendable date.
-- notice — practical information: road closures and works, utilities, bins, council
-  notices, deadlines, safety.
+- notice — everything else: community news without an attendable date, and practical
+  information such as road closures and works, utilities, bins, council notices,
+  deadlines and safety. There is no "news" category.
 
 ## Village
 One of: Church Lench, Rous Lench, Ab Lench, Atch Lench, Sheriffs Lench, Harvington,
@@ -43,7 +43,7 @@ villages), or Evesham, Pershore or Inkberrow for town events.
 - event_date is YYYY-MM-DD, the first day for multi-day events. Mention the date range in the summary.
 - Resolve relative dates ("this Saturday") against the Received date. If no year is given,
   assume the next occurrence on or after the Received date.
-- News and notices usually have no event_date, but road works may use their start date.
+- Notices usually have no event_date, but road works may use their start date.
 
 ## Flags
 - urgent: TRUE only for cancellations or postponements of a local event within the next 7 days,
@@ -92,7 +92,10 @@ the submitter's own text in own_text, so the editor can publish it instead.
   main routes into it.
 - Wychavon newsletter: extract only items of practical use to Lenches residents (bin changes,
   consultations, grants, council tax, local events, fly-tipping etc.). Skip generic promotion.
-  Category news or notice.
+  Category notice (or event for something to attend).
+- Evesham Journal (RSS): only stories about Church, Rous, Ab, Atch or Sheriffs Lench or
+  Harvington; everything else is dropped (see LOCAL STORIES ONLY). Category notice, a
+  short headline and a one-sentence summary in our own words. Never official.
 - ARCH Messenger (PDF): extract special services and events at Harvington, Rous Lench,
   Church Lench and Abbots Morton churches (harvest, remembrance, carols, fundraisers). Skip
   the regular Sunday service rota, which the site covers in a standing footnote.

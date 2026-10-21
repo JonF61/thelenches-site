@@ -12,6 +12,10 @@
 // Edits made in the Sheet to a live row (title, summary, link, dates) flow through on the next run.
 // Image overrides in the image_url cell: "none" = no image; clear a "failed: ..." cell to retry.
 // Body: the rewrite (summary) or the submitter's own wording (own_text), per lib/wording.js.
+// Two lists only: events and notices. Rows still categorised "news" (before 21 Oct 2026)
+// are notices. Notices carry "added" (approval date, for the home page's "new this week"),
+// "official": true from the Pending official column (site badge), and "source" for
+// Evesham Journal signposts (lib/sources.js).
 'use strict';
 
 const fs = require('fs');
@@ -19,7 +23,8 @@ const path = require('path');
 const sharp = require('sharp');
 const g = require('../ingest/google');
 const { toRaster } = require('../ingest/images');
-const { bodyOf } = require('../../lib/wording');
+const { bodyOf, isOfficial } = require('../../lib/wording');
+const { localSource } = require('../../lib/sources');
 
 const TZ = 'Europe/London';
 const ROOT = path.join(__dirname, '..', '..');
@@ -28,7 +33,6 @@ const WHATSON_FILE = path.join(ROOT, 'src', '_data', 'whatson.json');
 const IMAGE_DIR = path.join(ROOT, 'src', 'images', 'items');
 const IMAGE_URL = '/images/items';
 const IMAGE_EDGE = 1200;  // longest side, px
-const NEWS_DAYS = 14;     // news shows for this long after publication
 const NOTICE_DAYS = 21;   // notices show until their date, and for at least this long
 const LIVE = new Set(['approved', 'auto']);
 
@@ -124,7 +128,7 @@ async function main() {
   const byKey = new Map();
   for (const r of rows) byKey.set(`${normTitle(r.title)}|${ymd(r.event_date)}`, r);
 
-  const out = { events: [], news: [], notices: [] };
+  const out = { events: [], notices: [] };
   const failures = [];
 
   for (const row of byKey.values()) {
@@ -136,12 +140,10 @@ async function main() {
     if (cat === 'event' && date) {
       list = 'events';
       expires = date;
-    } else if (cat === 'notice') {
+    } else {
+      // notice, the old "news", or an event with no date
       list = 'notices';
       expires = later(date, addDays(start, NOTICE_DAYS));
-    } else {
-      list = 'news';
-      expires = addDays(start, NEWS_DAYS);
     }
     if (expires < today) continue;
 
@@ -150,6 +152,12 @@ async function main() {
     const village = str(row.village);
     if (village) item.village = village;
     item.expires = expires;
+    if (list === 'notices') {
+      item.added = start;
+      if (isOfficial(row)) item.official = true;
+      const source = localSource(row);
+      if (source) item.source = source;
+    }
     const url = safeUrl(row.link_url);
     if (url) item.link = { text: str(row.link_text) || 'More details', url };
     const img = await imageFor(row, failures);
@@ -161,11 +169,9 @@ async function main() {
   }
 
   out.events.sort((a, b) => a.item.date.localeCompare(b.item.date) || a.item.title.localeCompare(b.item.title));
-  out.news.sort((a, b) => b.start.localeCompare(a.start));
   out.notices.sort((a, b) => b.start.localeCompare(a.start));
   const data = {
     events: out.events.map((x) => x.item),
-    news: out.news.map((x) => x.item),
     notices: out.notices.map((x) => x.item),
   };
 
@@ -180,7 +186,7 @@ async function main() {
   const json = `${JSON.stringify(data, null, 2)}\n`;
   const old = fs.existsSync(DATA_FILE) ? fs.readFileSync(DATA_FILE, 'utf8') : '';
   if (json !== old) fs.writeFileSync(DATA_FILE, json);
-  console.log(`${data.events.length} events, ${data.news.length} news, ${data.notices.length} notices`
+  console.log(`${data.events.length} events, ${data.notices.length} notices`
     + `${json === old ? ' (unchanged)' : ' (updated)'}.`);
 
   if (failures.length) {

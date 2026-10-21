@@ -3,6 +3,9 @@
 // Feeds are Settings source rows whose "match" is a URL; "mode" ignore disables a feed.
 // Never fetches articles or images: only the feed text is used. No submitter replies.
 // Each feed item is logged once in the Log tab as "rss:<hash of guid>".
+// Local-news feeds (Evesham Journal): only stories naming Church, Rous, Ab, Atch or Sheriffs
+// Lench or Harvington go to Claude (local mode: one-line notice); the rest are logged as
+// "skipped" without a Claude call, so the daily diagnostic still sees them as handled.
 'use strict';
 
 const crypto = require('crypto');
@@ -10,6 +13,7 @@ const g = require('./google');
 const { extract } = require('./extract');
 const replies = require('./replies');
 const trust = require('./trusted');
+const { LOCAL_FEED } = require('../../lib/sources');
 
 const MAX_FEED_ITEMS_PER_RUN = 10; // across all feeds; the rest wait for the next run
 const MAX_RETRIES = 3;
@@ -17,6 +21,11 @@ const FETCH_TIMEOUT_MS = 20000;
 const USER_AGENT = 'LenchesPipeline/1.0 (+https://thelenches.org.uk)';
 // Tracking parameters removed from article links (plus any utm_*).
 const TRACKING_PARAMS = ['fbclid', 'gclid', 'mc_cid', 'mc_eid', 'ref'];
+// Feeds kept to stories about our villages (Settings source name or feed URL).
+const PLACES = /\b(?:church|rous|ab|abbots|atch|sheriff'?s)\s+lench\b|\bharvington\b/i;
+
+const isLocalFeed = (feed) => LOCAL_FEED.test(`${feed.source} ${feed.match}`);
+const aboutPlaces = (item) => PLACES.test(`${item.title}\n${item.text}`);
 
 /* ------------------------------------------------------------- parsing -- */
 
@@ -114,6 +123,7 @@ async function processItem(entry, ctx, h) {
 
   const result = await extract({
     signpost: true,
+    local: isLocalFeed(feed),
     feedItem: { title: item.title, published: received, text: item.text, link },
     sourceName: feed.source,
     receivedIso: received,
@@ -183,13 +193,14 @@ async function processItem(entry, ctx, h) {
 }
 
 // h: helpers from index.js { londonDateTime, findRepeat, decideStatus }.
-// Returns { processed, failed, gaveUp, feedErrors }.
+// Returns { processed, failed, gaveUp, feedErrors, skipped }.
 async function run(ctx, logById, startMs, h) {
   const feeds = ctx.sources.filter((s) => /^https?:\/\//i.test(s.match) && s.mode !== 'ignore');
-  const out = { processed: 0, failed: 0, gaveUp: 0, feedErrors: 0 };
+  const out = { processed: 0, failed: 0, gaveUp: 0, feedErrors: 0, skipped: 0 };
   if (!feeds.length) return out;
 
   const todo = [];
+  const skipped = [];
   for (const feed of feeds) {
     let items;
     try {
@@ -206,10 +217,31 @@ async function run(ctx, logById, startMs, h) {
       const key = logKey(item.guid);
       const r = logById.get(key);
       if (r && !(r.status === 'error' && (Number(r.retries) || 0) < MAX_RETRIES)) continue;
+      if (isLocalFeed(feed) && !aboutPlaces(item)) {
+        if (!r) skipped.push({ feed, item, key });
+        continue;
+      }
       todo.push({ feed, item, key });
       fresh += 1;
     }
     console.log(`RSS ${feed.source}: ${items.length} in feed, ${fresh} to process.`);
+  }
+
+  // Not about our villages: one Log row each, no Claude call, nothing in Pending.
+  if (skipped.length) {
+    const now = h.londonDateTime(Date.now());
+    await g.appendRows('Log', skipped.map(({ feed, item, key }) => ({
+      message_id: key,
+      received: h.londonDateTime(item.publishedMs),
+      processed_at: now,
+      source: feed.source,
+      status: 'skipped',
+      items_created: 0,
+      error: `Not about the Lenches or Harvington: ${item.title}`.slice(0, 500),
+      retries: 0,
+    })));
+    out.skipped = skipped.length;
+    console.log(`RSS: ${skipped.length} local-news item(s) skipped (not about our villages).`);
   }
 
   todo.sort((a, b) => a.item.publishedMs - b.item.publishedMs); // oldest first
@@ -254,4 +286,4 @@ async function run(ctx, logById, startMs, h) {
   return out;
 }
 
-module.exports = { run, parseFeed, cleanLink, htmlToText };
+module.exports = { run, parseFeed, cleanLink, htmlToText, isLocalFeed, aboutPlaces };

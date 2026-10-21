@@ -111,7 +111,7 @@ async function main() {
     siteupdates: readJson('src/_data/siteupdates.json'),
   });
   const issue = render(model);
-  console.log(`Issue ${issueDate}: ${model.keys.length} items (${model.events.length} events, ${model.news.length} news, `
+  console.log(`Issue ${issueDate}: ${model.keys.length} items (${model.events.length} events, `
     + `${model.notices.length} notices, ${model.roads.length} roads, ${model.elsewhere.length} elsewhere, ${(model.siteUpdates || []).length} site updates), `
     + `${model.imageKeys.length} images, hash ${issue.hash.slice(0, 12)}${model.holiday ? ', holiday mode' : ''}.`);
   console.log(cutoff

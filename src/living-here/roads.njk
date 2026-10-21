@@ -1,0 +1,55 @@
+---
+layout: base.njk
+title: Roads
+description: Road closures and roadworks in and around the Lenches villages, on now and coming up, from one.network.
+---
+{#- Road items are the notices the roadItems filter picks ("roads": true in whatson.json, or a
+    one.network link; the pipeline's one.network alerts). Split by start date (roadSplit):
+    started or undated = On now, later = Coming up. The map slot is a placeholder for the
+    planned Road closures map. Report link: council.json "report" (first entry). -#}
+<style>
+.rd-map{display:flex;align-items:center;justify-content:center;min-height:220px;margin:1rem 0 1.75rem;border:2px dashed var(--line);border-radius:var(--radius);background:var(--cream);color:var(--muted);font-size:.9rem;text-align:center;padding:1rem}
+.rd-section{margin-bottom:2rem}
+.rd-item{padding:.7rem 0;border-top:1px solid var(--line);font-size:.95rem}
+.rd-item:last-of-type{border-bottom:1px solid var(--line)}
+.rd-item h3{margin:0;font-size:1.02rem}
+.rd-meta{margin:.15rem 0 .35rem;color:var(--muted);font-size:.88rem}
+.rd-item p{margin:0 0 .35rem}
+.rd-item p:last-child{margin-bottom:0}
+.rd-tag{display:inline-block;vertical-align:2px;margin-left:.4rem;padding:0 .45rem;border-radius:4px;font-size:.7rem;font-weight:600;line-height:1.6;white-space:nowrap}
+.rd-closure{background:#f6d9d3;color:#8a2d1d}
+.rd-works{background:#fbe6d6;color:#8a3e0c}
+</style>
+{% macro roadItem(r) %}
+    <div class="rd-item">
+      <h3>{{ r.title | roadTitle | escape }}{% set kind = r | roadKind %}<span class="rd-tag {{ 'rd-closure' if kind == 'Closure' else 'rd-works' }}">{{ kind }}</span></h3>
+      {% if r.village or r.date %}<p class="rd-meta">{{ r.village | escape }}{% if r.village and r.date %} &middot; {% endif %}{% if r.date %}From {{ r.date | shortDate }}{% endif %}</p>{% endif %}
+      {% for p in r.body | paras %}<p>{{ p | escape }}</p>{% endfor %}
+      {% if r.link %}<p><a href="{{ r.link.url | escape }}" target="_blank" rel="noopener">Details on one.network &rarr;</a></p>{% endif %}
+    </div>
+{% endmacro %}
+<main class="container">
+  <section>
+    <h1>Roads</h1>
+    <p class="mt0">Current and upcoming works in and around the Lenches, from one.network. Updated several times a day. Dates are the contractors' plans: works often start late and can finish early or late, so check one.network on the day before you travel.</p>
+    <div class="rd-map" aria-hidden="true">Map coming soon</div>
+  </section>
+
+  {% set roads = pipeline | allNotices(whatson) | roadItems | roadSplit %}
+  <section class="rd-section">
+    <h2 class="list-label">On now</h2>
+    {% for r in roads.now %}{{ roadItem(r) }}{% else %}
+    <p class="muted">No works listed.</p>
+    {% endfor %}
+  </section>
+
+  <section class="rd-section">
+    <h2 class="list-label">Coming up</h2>
+    {% for r in roads.soon %}{{ roadItem(r) }}{% else %}
+    <p class="muted">No works listed.</p>
+    {% endfor %}
+  </section>
+
+  {% set rep = council.report[0] %}
+  <div class="notice">Spotted a pothole or another problem on a road? <a href="{{ rep.url }}" target="_blank" rel="noopener">Report it to {{ rep.org }}</a>{% if rep.phone %} or call {{ rep.phone }}{% endif %}.</div>
+</main>

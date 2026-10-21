@@ -1,0 +1,38 @@
+{#- Grid of hub cards, shared by hub.njk and the home page. Needs cards (title, url, icon, text)
+    and, optionally, live: { url: "line" } for a computed line under a card's text (home page). -#}
+{%- set icons = {
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.8.3 5 2.6 5 5.8"/>',
+  hall: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/>',
+  church: '<path d="M12 2v5M10 4h4"/><path d="M6 21v-9l6-5 6 5v9"/><path d="M3 21h18"/><path d="M10 21v-4a2 2 0 0 1 4 0v4"/>',
+  key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3M14 9l2 2"/>',
+  health: '<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/>',
+  bus: '<rect x="4" y="3" width="16" height="15" rx="3"/><path d="M4 11h16"/><circle cx="8" cy="14.5" r="1"/><circle cx="16" cy="14.5" r="1"/><path d="M7 18v3M17 18v3"/>',
+  council: '<path d="M12 3l8 5H4z"/><path d="M4 10h16M4 18h16M3 21h18"/><path d="M6 10v8M10 10v8M14 10v8M18 10v8"/>',
+  school: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/><path d="M22 9v6"/>',
+  walk: '<path d="M12 3v18"/><path d="M5 6h11l3 2.5-3 2.5H5z"/><path d="M19 13H9l-3 2.5 3 2.5h10z"/>',
+  bins: '<path d="M4 7h16M10 3h4"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/>',
+  calendar: '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/><path d="M8 15h2v2H8z"/>',
+  notice: '<path d="M18 8a3 3 0 0 1 0 6"/><path d="M10 8v11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-5"/><path d="M12 8l4.5-3.8a.9.9 0 0 1 1.5.7v12.2a.9.9 0 0 1-1.5.7L12 14H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>',
+  road: '<path d="M4 19L8 5M16 5l4 14"/><path d="M12 6v2M12 11v2M12 16v2"/>',
+  home: '<path d="M5 12H3l9-9 9 9h-2"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M9 21v-6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6"/>'
+} -%}
+<style>
+.hub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem;margin-top:1rem}
+.hub-card{display:block;margin:0;text-decoration:none;color:inherit}
+.hub-card h2{display:flex;align-items:center;gap:.5rem;margin:0 0 .25rem;font-size:1.08rem}
+.hub-card svg{width:24px;height:24px;flex:none;color:#b5471b;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.hub-card p{margin:0;color:#666;font-size:.92rem}
+.hub-card .hub-live{margin:.45rem 0 0;color:#9A5312;font-weight:600;font-size:.88rem}
+.hub-card:hover h2,.hub-card:focus h2{text-decoration:underline}
+</style>
+<div class="hub-grid">
+  {%- for c in cards %}
+  <a class="card hub-card" href="{{ c.url | url }}">
+    <h2><svg viewBox="0 0 24 24" aria-hidden="true">{{ icons[c.icon] | safe }}</svg>{{ c.title }}</h2>
+    <p>{{ c.text }}</p>
+    {%- if live and live[c.url] %}
+    <p class="hub-live">{{ live[c.url] }}</p>
+    {%- endif %}
+  </a>
+  {%- endfor %}
+</div>

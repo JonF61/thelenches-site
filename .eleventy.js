@@ -53,12 +53,70 @@ module.exports = async function (eleventyConfig) {
     return out.length ? out : [""];
   });
 
-  // Road closures and roadworks (News page's own section): "roads": true in whatson.json,
-  // or any item linking to one.network (all pipeline roadworks alerts do).
+  // Road closures and roadworks (the Roads page; left off Notices): "roads": true in
+  // whatson.json, or any item linking to one.network (all pipeline roadworks alerts do).
   const isRoad = (i) =>
     !!i && (i.roads === true || /one\.network/i.test(String((i.link && i.link.url) || "")));
   eleventyConfig.addFilter("roadItems", (items) => (items || []).filter(isRoad));
   eleventyConfig.addFilter("notRoadItems", (items) => (items || []).filter((i) => !isRoad(i)));
+
+  // Roads page: "Closure" or "Roadworks" tag, and the title without a "Road closure —" prefix
+  eleventyConfig.addFilter("roadKind", (i) =>
+    /\bclos(ure|ures|ed|ing)\b/i.test(`${(i && i.title) || ""} ${(i && i.body) || ""}`) ? "Closure" : "Roadworks"
+  );
+  eleventyConfig.addFilter("roadTitle", (title) =>
+    String(title || "").replace(/^road\s*(closures?|works)\s*[—–-]\s*/i, "")
+  );
+  // Split road items by start date: { now: started or undated, soon: starting after today }
+  eleventyConfig.addFilter("roadSplit", (items) => {
+    const now = today();
+    const list = (items || []).slice().sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+    return {
+      now: list.filter((i) => !i.date || i.date <= now),
+      soon: list.filter((i) => i.date && i.date > now),
+    };
+  });
+
+  // All current notices, roads included: pipeline (newest first) then whatson.json.
+  // "news" lists are read as notices (the News page was retired 21 Oct 2026; pipeline.json
+  // drops "news" on its next publish run, whatson.json has none).
+  eleventyConfig.addFilter("allNotices", (pipeline, whatson) => {
+    const now = today();
+    const p = pipeline || {};
+    const w = whatson || {};
+    return [...(p.notices || []), ...(p.news || []), ...(w.notices || []), ...(w.news || [])]
+      .filter((i) => i && i.title && (!i.expires || i.expires >= now));
+  });
+
+  // Home page: notices added (approved) in the last 7 days. Pipeline items carry "added";
+  // hand-written whatson.json notices count only if given one.
+  eleventyConfig.addFilter("newThisWeek", (items) => {
+    const d = new Date(today() + "T12:00:00Z");
+    d.setUTCDate(d.getUTCDate() - 6);
+    const from = d.toISOString().slice(0, 10);
+    return (items || []).filter((i) => i.added && i.added >= from && i.added <= today()).length;
+  });
+
+  // Home page: next collection for the first area in bins.json, or null when the calendar
+  // has run out. { area, date, bins: ["green", "brown"] }
+  eleventyConfig.addFilter("nextBin", (bins) => {
+    const area = bins && bins.areas && bins.areas[0];
+    if (!area) return null;
+    const now = today();
+    for (const c of (bins.collections || []).slice().sort((a, b) => a.date.localeCompare(b.date))) {
+      const d = new Date(c.date + "T12:00:00Z");
+      d.setUTCDate(d.getUTCDate() + (Number(area.offset) || 0));
+      const date = d.toISOString().slice(0, 10);
+      if (date >= now) return { area: area.name, date, bins: c.bins || [] };
+    }
+    return null;
+  });
+
+  // "green and brown"
+  eleventyConfig.addFilter("andList", (list) => {
+    const l = (list || []).map(String);
+    return l.length > 1 ? l.slice(0, -1).join(", ") + " and " + l[l.length - 1] : l[0] || "";
+  });
 
   // Illustrated fallback tile for an event with no image (Events page only; lib/tiles.js)
   const { tileSvg } = require("./lib/tiles.js");
@@ -88,7 +146,7 @@ module.exports = async function (eleventyConfig) {
   const { inLenches } = require("./lib/lenches.js");
   eleventyConfig.addFilter("inLenches", inLenches);
 
-  // Drop pipeline news/notices past their expiry date (between publish runs)
+  // Drop pipeline notices past their expiry date (between publish runs)
   eleventyConfig.addFilter("current", (items) => {
     const now = today();
     return (items || []).filter((i) => !i.expires || i.expires >= now);
@@ -100,6 +158,11 @@ module.exports = async function (eleventyConfig) {
     day: fmt(iso, { day: "numeric" }),
     mon: fmt(iso, { month: "short" }),
   }));
+
+  // "Sat 24 Oct"
+  eleventyConfig.addFilter("shortDate", (iso) =>
+    fmt(iso, { weekday: "short", day: "numeric", month: "short" })
+  );
 
   // "Friday 31 July 2026"
   eleventyConfig.addFilter("longDate", (iso) =>

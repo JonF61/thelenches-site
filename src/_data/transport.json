@@ -5,7 +5,7 @@
     { "label": "Plan a journey", "sub": "Traveline", "url": "https://www.traveline.info/" },
     { "label": "Live bus times", "sub": "bustimes.org", "url": "https://bustimes.org/" },
     { "label": "Trains", "sub": "National Rail", "url": "https://www.nationalrail.co.uk/" },
-    { "label": "Roadworks", "sub": "This week's closures", "url": "/news/#roads", "local": true }
+    { "label": "Roadworks", "sub": "This week's closures", "url": "/living-here/roads/", "local": true }
   ],
   "buses": {
     "items": [
@@ -52,8 +52,8 @@
     ]
   },
   "roads": {
-    "text": "Road closures and roadworks near the villages are listed on the News page and updated automatically.",
-    "url": "/news/#roads"
+    "text": "Road closures and roadworks near the villages are listed on the Roads page and updated automatically.",
+    "url": "/living-here/roads/"
   },
   "passes": {
     "text": "Older person's and disabled bus passes, and other bus information, come from Worcestershire County Council.",

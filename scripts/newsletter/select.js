@@ -7,13 +7,17 @@
 //               each at most 3 issues; a flyer image at most 2 issues, then text only.
 //               A whatson event with "saveTheDate": "YYYY-MM-DD" also appears early, once,
 //               in that one issue (after the in-window events, as its date is later).
-//   News        Pending: never shown and live since the day before the last issue, once.
-//               whatson news: once.
-//   Notices     as News. whatson notices: up to 3 issues.
+//   Notices     Pending: never shown and live since the day before the last issue, once.
+//               whatson notices: up to 3 issues. There is no News section (21 Oct 2026):
+//               Pending rows categorised "news" and any whatson "news" are notices, and a
+//               whatson notice already shown once as news (old key) is not repeated.
+//               Evesham Journal signposts (lib/sources.js) are notices too: title, one
+//               line, link, and the source as meta.
+//   (model.news is always empty; render.js keeps it only so older snapshots still render.)
 //   Roads       one.network Pending rows starting in the 14-day window (up to 3 issues),
-//               or new as for News (once).
+//               or new as for Notices (once).
 //   Bins        each area's next collection on or after the issue date, within 7 days.
-//   Elsewhere   RSS signposts, new as for News, links only, once.
+//   Elsewhere   other RSS signposts, new as for Notices, links only, once.
 //   Site        src/_data/siteupdates.json: a linked line under the header from its
 //               "from" date (to "until", if set) until one issue carrying it is sent
 //               live. Shadow, canary and test copies don't count, so it stays due.
@@ -32,6 +36,7 @@
 const crypto = require('crypto');
 const { inLenches } = require('../../lib/lenches');
 const { bodyOf } = require('../../lib/wording');
+const { localSource } = require('../../lib/sources');
 
 const WINDOW_DAYS = 14;
 const MAX_APPEARANCES = 3;
@@ -186,7 +191,6 @@ function select({ issueDate, pending, whatson, bins, siteupdates, issues, settin
   const isRss = (row) => /^rss-/i.test(str(row.id)) || /^rss:/i.test(str(row.message_id));
 
   const events = [];
-  const news = [];
   const notices = [];
   const roads = [];
   const elsewhere = [];
@@ -227,6 +231,11 @@ function select({ issueDate, pending, whatson, bins, siteupdates, issues, settin
       link: linkOf(row.link_text, row.link_url), date, sortStart: start,
     };
 
+    const local = localSource(row);
+    if (local) {
+      if (isNew && base.link) notices.push({ ...base, meta: local, image: null });
+      continue;
+    }
     if (isRss(row)) {
       if (isNew && base.link) elsewhere.push({ key, title: base.title, link: base.link, source: str(row.from) });
       continue;
@@ -243,7 +252,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, issues, settin
       }
       continue;
     }
-    if (isNew) (cat === 'notice' ? notices : news).push({ ...base, image: imageFor(row, key) });
+    if (isNew) notices.push({ ...base, image: imageFor(row, key) });
   }
 
   // ---- whatson.json (hand-edited).
@@ -258,16 +267,13 @@ function select({ issueDate, pending, whatson, bins, siteupdates, issues, settin
     if ((shown.get(key) || 0) >= MAX_APPEARANCES) continue;
     events.push({ key, title: str(ev.title), body: str(ev.body), meta: '', link: linkOf(ev.link && ev.link.text, ev.link && ev.link.url), date, sortStart: '', lenches: inLenches(ev), image: whatsonImage(ev, key) });
   }
-  for (const it of w.news || []) {
-    if (!str(it.title)) continue;
-    const key = whatsonKey('news', it);
-    if (shown.get(key)) continue;
-    news.push({ key, title: str(it.title), body: str(it.body), meta: '', link: linkOf(it.link && it.link.text, it.link && it.link.url), date: '', sortStart: '', image: whatsonImage(it, key) });
-  }
-  for (const it of w.notices || []) {
+  for (const it of [...(w.notices || []), ...(w.news || [])]) {
     if (!str(it.title)) continue;
     const key = whatsonKey('notices', it);
     if ((shown.get(key) || 0) >= MAX_APPEARANCES) continue;
+    // Converted from news (shown once under its old key): not repeated.
+    if (shown.get(whatsonKey('news', it))) continue;
+    if (notices.some((x) => x.key === key)) continue;
     notices.push({ key, title: str(it.title), body: str(it.body), meta: '', link: linkOf(it.link && it.link.text, it.link && it.link.url), date: '', sortStart: '', image: whatsonImage(it, key) });
   }
 
@@ -275,12 +281,11 @@ function select({ issueDate, pending, whatson, bins, siteupdates, issues, settin
   events.sort((a, b) => cmp(a.date, b.date) || cmp(a.title, b.title) || cmp(a.key, b.key));
   // Newest Pending items first, then whatson items in title order.
   const newestFirst = (a, b) => cmp(b.sortStart, a.sortStart) || cmp(a.title, b.title) || cmp(a.key, b.key);
-  news.sort(newestFirst);
   notices.sort(newestFirst);
   roads.sort((a, b) => cmp(a.date || '9999', b.date || '9999') || cmp(a.title, b.title) || cmp(a.key, b.key));
   elsewhere.sort((a, b) => cmp(a.source, b.source) || cmp(a.title, b.title) || cmp(a.key, b.key));
 
-  const all = [...events, ...news, ...notices, ...roads, ...elsewhere];
+  const all = [...events, ...notices, ...roads, ...elsewhere];
   const siteUpdates = siteUpdatesFor(siteupdates, issues, issueDate);
   // Site update keys ride in item_keys (Issues tab) so a live send retires them.
   const keys = [...all.map((x) => x.key), ...siteUpdates.map((x) => x.key)];
@@ -299,7 +304,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, issues, settin
     held,
     events: events.map(strip),
     regulars: str(w.eventsFootnote),
-    news: news.map(strip),
+    news: [],
     notices: notices.map(strip),
     roads: roads.map(strip),
     bins: binsFor(bins, issueDate),

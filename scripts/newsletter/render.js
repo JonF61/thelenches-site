@@ -69,7 +69,7 @@ function binLines(bins) {
 function summaryLine(m) {
   const parts = [];
   if (m.events.length) parts.push(plural(m.events.length, 'event', 'events'));
-  if (m.news.length) parts.push(plural(m.news.length, 'news story', 'news stories'));
+  if ((m.news || []).length) parts.push(plural(m.news.length, 'news story', 'news stories'));
   if (m.notices.length) parts.push(plural(m.notices.length, 'notice', 'notices'));
   if (m.roads.length) parts.push(plural(m.roads.length, 'roadworks item', 'roadworks items'));
   if (!parts.length) return 'A quiet week: nothing new to report.';
@@ -187,7 +187,8 @@ function renderHtml(m, subject) {
       rows.push(`<tr><td class="px" style="padding:10px 24px 0;font-family:${SANS};font-size:13px;line-height:1.5;color:${C.muted};">${para(m.regulars)}</td></tr>`);
     }
   }
-  if (m.news.length) {
+  // No News section since 21 Oct 2026 (select.js gives news: []); kept for older snapshots.
+  if ((m.news || []).length) {
     rows.push(sectionHead('News'));
     for (const it of m.news) rows.push(storyBlock(it, 16, 'news'));
   }
@@ -246,7 +247,7 @@ function renderText(m) {
     for (const ev of m.events) item(`${dateParts(ev.date).short} · ${ev.title}${ev.lenches ? ' [Lenches]' : ''}`, ev.meta, ev.body, ev.link);
     if (m.regulars) out.push(paras(m.regulars).join('\n\n'), '');
   }
-  if (m.news.length) {
+  if ((m.news || []).length) {
     head('News');
     for (const it of m.news) item(it.title, it.meta, it.body, it.link);
   }

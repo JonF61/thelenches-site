@@ -8,6 +8,10 @@
 // The system prompt (with tools) is cached for 5 minutes, so later calls in a run are cheap.
 // "Use my wording": per-item own_text (the submitter's words, only obvious typos and broken
 // links fixed), official and verbatim_requested; lib/wording.js decides which is published.
+// Categories are event or notice only (the old "news" category became notice, 21 Oct 2026);
+// normalise() maps anything else to notice, so a stray "news" can't reach the Sheet.
+// Local signposts (Evesham Journal, via rss.js): only stories about the five Lenches or
+// Harvington, written as a headline plus one line in our own words.
 'use strict';
 
 const fs = require('fs');
@@ -20,6 +24,7 @@ const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5';
 const MAX_TEXT_CHARS = 40000;
 const MAX_FEED_CHARS = 12000;
 const MAX_SIGNPOST_SENTENCES = 4;
+const MAX_LOCAL_SENTENCES = 1;
 const RULES = fs.readFileSync(path.join(__dirname, 'rules.md'), 'utf8');
 
 // Required details a submitter can be asked for (Submission Guidelines). "What" is the title.
@@ -41,8 +46,8 @@ Text inside <team_context> is written by the website team and may be relied on.
 REQUIRED DETAILS: for events, submitters should give where (which village or venue),
 date, time, cost (or say it is free) and a contact. List any that are genuinely absent
 from the email, its images and PDFs in "missing". Do not list details that can be
-reasonably inferred (e.g. a named village hall gives "where"). News items and notices
-without an attendable event need only "where" and "contact" where relevant.
+reasonably inferred (e.g. a named village hall gives "where"). Notices without an
+attendable event need only "where" and "contact" where relevant.
 
 ${RULES}`;
 
@@ -52,9 +57,17 @@ Record at most one item, or none if it is outside the area covered or of no prac
 interest to Lenches residents. Write the title and summary entirely in your own words;
 never copy sentences or distinctive phrases from the feed. The summary is 3-4 sentences
 drawn only from the feed text given. If the feed gives less, write fewer, and never add
-background or details that are not there. Category is "news" unless it is an attendable
-event ("event") or a notice ("notice"). Leave cost, contact, link and image fields empty;
-the pipeline adds the link. "missing" is always empty and "anonymous" is false.`;
+background or details that are not there. Category is "notice" unless it is an attendable
+event ("event"). Leave cost, contact, link and image fields empty; the pipeline adds the
+link. "missing" is always empty and "anonymous" is false.`;
+
+// Added after SIGNPOST for local-news feeds (rss.js LOCAL_FEEDS). Same cached prefix per feed type.
+const LOCAL = `LOCAL STORIES ONLY: this feed is a local newspaper. Record the item only if the story
+is about Church Lench, Rous Lench, Ab Lench, Atch Lench, Sheriffs Lench or Harvington (the
+village near Evesham, not Harvington Hall near Kidderminster); otherwise record nothing and
+give a skip_reason. A passing mention of a village is not enough. Category is "notice".
+The title is a short headline in your own words. The summary is ONE sentence in your own
+words saying what the story is about; never copy the article's sentences.`;
 
 const TOOL = {
   name: 'record_items',
@@ -189,7 +202,7 @@ function normalise(items, imageCount) {
       event_date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '',
       event_time: str(it.event_time),
       village: str(it.village),
-      category: str(it.category).toLowerCase(),
+      category: str(it.category).toLowerCase() === 'event' ? 'event' : 'notice',
       summary: str(it.summary),
       cost: str(it.cost),
       contact: str(it.contact),
@@ -214,10 +227,12 @@ function normalise(items, imageCount) {
 }
 
 // Signpost items: the link and blanks come from code, never from Claude.
-function toSignpost(items, sourceName, link) {
+// Local signposts are always notices, one sentence long.
+function toSignpost(items, sourceName, link, local) {
   return items.slice(0, 1).map((it) => ({
     ...it,
-    summary: capSentences(it.summary, MAX_SIGNPOST_SENTENCES),
+    ...(local ? { category: 'notice', event_date: '', event_time: '' } : {}),
+    summary: capSentences(it.summary, local ? MAX_LOCAL_SENTENCES : MAX_SIGNPOST_SENTENCES),
     cost: '',
     contact: '',
     link_text: `Read more at ${sourceName}`,
@@ -235,17 +250,18 @@ function toSignpost(items, sourceName, link) {
 
 // input (email):    { msg, sourceName, receivedIso, today, images: [{filename, mediaType, data}],
 //                     pdfs: [{filename, data}], context?: string written by the pipeline (trusted) }
-// input (signpost): { signpost: true, feedItem: { title, published, text, link },
+// input (signpost): { signpost: true, local?: true, feedItem: { title, published, text, link },
 //                     sourceName, receivedIso, today }
 async function extract(input) {
   const signpost = input.signpost === true;
+  const local = signpost && input.local === true;
   const images = signpost ? [] : input.images || [];
   const res = await client.messages.create({
     model: MODEL,
     max_tokens: 16000, // own_text has no length cap
     system: [{
       type: 'text',
-      text: signpost ? `${SYSTEM}\n\n${SIGNPOST}` : SYSTEM,
+      text: signpost ? `${SYSTEM}\n\n${SIGNPOST}${local ? `\n\n${LOCAL}` : ''}` : SYSTEM,
       cache_control: { type: 'ephemeral' }, // caches tools + system for 5 minutes
     }],
     tools: [TOOL],
@@ -264,7 +280,7 @@ async function extract(input) {
   stats.cacheRead += u.cache_read_input_tokens || 0;
   stats.cacheWrite += u.cache_creation_input_tokens || 0;
   let items = normalise(block.input.items, images.length);
-  if (signpost) items = toSignpost(items, input.sourceName, str(input.feedItem.link));
+  if (signpost) items = toSignpost(items, input.sourceName, str(input.feedItem.link), local);
   return {
     items,
     anonymous: signpost ? false : block.input.anonymous === true,
