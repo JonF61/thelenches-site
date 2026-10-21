@@ -10,8 +10,9 @@
 // links fixed), official and verbatim_requested; lib/wording.js decides which is published.
 // Categories are event or notice only (the old "news" category became notice, 21 Oct 2026);
 // normalise() maps anything else to notice, so a stray "news" can't reach the Sheet.
-// Local signposts (Evesham Journal, via rss.js): only stories about the five Lenches or
-// Harvington, written as a headline plus one line in our own words.
+// Local signposts (Evesham Journal, via rss.js): only stories about the five Lenches, Harvington
+// and nearby places, or county-wide stories on a few practical topics (lib/sources.js
+// keepLocalStory filters first), written as a headline plus one line in our own words.
 // Road items (closures and roadworks) also give road, end_date and road_coords for the
 // Roads page map; their event_date is the works' start date (rules.md, Dates).
 'use strict';
@@ -64,10 +65,15 @@ event ("event"). Leave cost, contact, link and image fields empty; the pipeline 
 link. "missing" is always empty and "anonymous" is false.`;
 
 // Added after SIGNPOST for local-news feeds (rss.js LOCAL_FEEDS). Same cached prefix per feed type.
-const LOCAL = `LOCAL STORIES ONLY: this feed is a local newspaper. Record the item only if the story
-is about Church Lench, Rous Lench, Ab Lench, Atch Lench, Sheriffs Lench or Harvington (the
-village near Evesham, not Harvington Hall near Kidderminster); otherwise record nothing and
-give a skip_reason. A passing mention of a village is not enough. Category is "notice".
+const LOCAL = `LOCAL STORIES ONLY: this feed is a local newspaper. Record the item only if either:
+(a) the story is about Church Lench, Rous Lench, Ab Lench, Atch Lench, Sheriffs Lench,
+Harvington (the village near Evesham, not Harvington Hall near Kidderminster), Inkberrow,
+Abbots Morton, Lenchwick, Radford or Norton (near Evesham); or
+(b) it is a Worcestershire-wide or Wychavon-wide story on one of these topics: the landline or
+digital phone switchover, scam or fraud warnings, burglaries, flooding or flood warnings, or
+power cuts.
+Otherwise record nothing and give a skip_reason. A passing mention of a village is not
+enough, and a story only about Evesham town is not in scope. Category is "notice".
 The title is a short headline in your own words. The summary is ONE sentence in your own
 words saying what the story is about; never copy the article's sentences.`;
 

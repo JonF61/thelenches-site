@@ -8,23 +8,44 @@ description: Notices and news from across the Lenches villages, from parish coun
     Road closures and roadworks (roadItems) are on /living-here/roads/ instead.
     Ids are ('notice-' + title) | slugify: the newsletter (lib/anchors.js) and /news/ redirects
     link to them, so keep them in step.
-    "official": true (parish councils and other official bodies) shows an Official badge; those
-    items are printed in their own words. "source" (Evesham Journal signposts) shows a source tag,
-    and the link opens the article on the paper's site. -#}
+    Three sections: "official": true (parish councils and other official bodies, printed in their
+    own words) in boxed panels, first paragraph shown and the rest behind "Read the full statement";
+    "Around the villages" (everything else without a source), first paragraph shown and the rest
+    behind "More"; "Worth knowing" ("source": Evesham Journal signposts), title and link only.
+    The script at the end opens the <details> of a notice a URL hash points at. -#}
 <style>
 .np-head{border-bottom:1px solid var(--line);padding-bottom:.6rem;margin-bottom:1.5rem}
 .np-head h1{font-size:1.6rem;margin:0}
 .np-date{margin:.15rem 0 0;font-size:.85rem;color:var(--muted)}
 .np-section{margin-bottom:2rem}
-.np-notice{padding:.6rem 0;border-top:1px solid var(--line);font-size:.95rem;scroll-margin-top:1.5rem}
-.np-notice:last-of-type{border-bottom:1px solid var(--line)}
+.np-section>h2{font-size:1.2rem;margin:0 0 .5rem;color:var(--green-dark)}
+.np-notice{font-size:.95rem;scroll-margin-top:1.5rem}
 .np-notice p{margin:0 0 .45rem}
 .np-notice p:last-child{margin-bottom:0}
-.np-notice strong{color:var(--green-dark)}
-.np-notice:target{background:#FDEBD8;box-shadow:0 0 0 3px var(--accent);border-radius:var(--radius);padding:.6rem .75rem}
-.np-tag{display:inline-block;vertical-align:1px;margin-right:.35rem;padding:0 .45rem;border-radius:4px;font-size:.7rem;font-weight:600;line-height:1.6;white-space:nowrap}
-.np-official{background:var(--green-dark);color:#fff}
-.np-source{background:var(--green-light);color:var(--green-dark)}
+.np-notice:target{background:#FDEBD8;box-shadow:0 0 0 3px var(--accent);border-radius:var(--radius)}
+.np-notice details{margin:.35rem 0 0}
+.np-notice summary{cursor:pointer;color:var(--green-dark);font-weight:600;font-size:.9rem;padding:.55rem 0}
+.np-notice summary::marker,.np-notice summary::-webkit-details-marker{color:var(--accent-text)}
+.np-notice details[open] summary{padding-bottom:.35rem}
+.np-label{display:block;margin:0 0 .25rem;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--accent-text)}
+.np-official{background:var(--card);border:2px solid var(--green-dark);border-radius:var(--radius);padding:1rem 1.15rem;margin-bottom:1rem}
+.np-official:target{background:#FDEBD8;padding:1rem 1.15rem}
+.np-official h3{font-size:1.1rem;margin:0 0 .5rem;color:var(--green-dark);line-height:1.35}
+.np-official .np-link{margin-top:.5rem}
+.np-row{padding:.65rem 0;border-top:1px solid var(--line)}
+.np-row:last-child{border-bottom:1px solid var(--line)}
+.np-row:target{padding:.65rem .75rem}
+.np-row strong{color:var(--green-dark)}
+.np-meta{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin:0 0 .15rem}
+.np-meta .np-label{display:inline;margin:0}
+.np-new{display:inline-block;padding:0 .45rem;border-radius:4px;font-size:.7rem;font-weight:600;line-height:1.6;background:var(--accent);color:#fff}
+.np-worth{background:var(--green-light);border-radius:var(--radius);padding:.85rem 1.15rem;font-size:.92rem}
+.np-worth h2{font-size:1.05rem;margin:0;color:var(--green-dark)}
+.np-worth .np-caption{margin:0 0 .5rem;font-size:.8rem;color:var(--muted)}
+.np-worth ul{list-style:none;margin:0;padding:0}
+.np-worth li{padding:.4rem 0;border-top:1px solid var(--line)}
+.np-worth li:target{padding:.4rem .6rem}
+.np-worth a{white-space:nowrap}
 .np-roads{margin:0 0 1.5rem}
 </style>
 <main class="container">
@@ -34,17 +55,77 @@ description: Notices and news from across the Lenches villages, from parish coun
   </div>
 
   {% set notices = pipeline | allNotices(whatson) | notRoadItems %}
+  {% set officials = notices | selectattr("official") %}
+  {% set around = notices | rejectattr("official") | rejectattr("source") %}
+  {% set worth = notices | rejectattr("official") | selectattr("source") %}
+
+  {% if officials.length %}
   <section class="np-section">
-    {% for n in notices %}
-    <div class="np-notice" id="{{ ('notice-' + n.title) | slugify }}">
-      {% for p in n.body | paras %}<p>{% if loop.first %}{% if n.official %}<span class="np-tag np-official">Official</span>{% endif %}{% if n.source %}<span class="np-tag np-source">{{ n.source | escape }}</span>{% endif %}<strong>{{ n.title | escape }}:</strong> {% endif %}{{ p | escape }}{% if loop.last %}{% if n.link %} {% if n.source %}<a href="{{ n.link.url | escape }}" target="_blank" rel="noopener external">{{ n.link.text | escape }} &#8599;<span class="sr-only"> (opens the {{ n.source | escape }} website)</span></a>{% else %}<a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ (n.image.alt or n.title) | escape }}">(image)</a>{% endif %}{% endif %}</p>{% endfor %}
-    </div>
-    {% else %}
-    <p class="muted">No notices at the moment.</p>
+    <h2 class="sr-only">Official notices</h2>
+    {#- A short opening line ("Dear Parishioners") stays with the paragraph after it. -#}
+    {% for n in officials %}{% set ps = n.body | paras %}{% set lead = 2 if (ps.length > 2 and ps[0].length < 40) else 1 %}
+    <article class="np-notice np-official" id="{{ ('notice-' + n.title) | slugify }}">
+      <span class="np-label">{% if 'parish council' in (n.title + ' ' + n.body) | lower %}From the parish council{% else %}Official notice{% endif %}</span>
+      <h3>{{ n.title | escape }}</h3>
+      {% for p in ps %}{% if loop.index <= lead %}<p>{{ p | escape }}</p>{% endif %}{% endfor %}
+      {% if ps.length > lead %}<details>
+        <summary>Read the full statement</summary>
+        {% for p in ps %}{% if loop.index > lead %}<p>{{ p | escape }}</p>{% endif %}{% endfor %}
+      </details>{% endif %}
+      {% if n.link or n.image %}<p class="np-link">{% if n.link %}<a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ (n.image.alt or n.title) | escape }}">(image)</a>{% endif %}</p>{% endif %}
+    </article>
     {% endfor %}
   </section>
+  {% endif %}
+
+  {% if around.length %}
+  <section class="np-section">
+    <h2>Around the villages</h2>
+    {% for n in around %}{% set ps = n.body | paras %}{% set isNew = ([n] | newThisWeek) > 0 %}
+    <div class="np-notice np-row" id="{{ ('notice-' + n.title) | slugify }}">
+      {% if n.village or isNew %}<p class="np-meta">{% if n.village %}<span class="np-label">{{ n.village | escape }}</span>{% endif %}{% if isNew %}<span class="np-new">New</span>{% endif %}</p>{% endif %}
+      <p><strong>{{ n.title | escape }}:</strong> {{ ps[0] | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ (n.image.alt or n.title) | escape }}">(image)</a>{% endif %}</p>
+      {% if ps.length > 1 %}<details>
+        <summary>More</summary>
+        {% for p in ps %}{% if not loop.first %}<p>{{ p | escape }}</p>{% endif %}{% endfor %}
+      </details>{% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if not officials.length and not around.length and not worth.length %}
+  <p class="muted">No notices at the moment.</p>
+  {% endif %}
+
+  {% if worth.length %}
+  <section class="np-section np-worth">
+    <h2>Worth knowing</h2>
+    <p class="np-caption">From the Evesham Journal</p>
+    <ul>
+      {% for n in worth %}
+      <li class="np-notice" id="{{ ('notice-' + n.title) | slugify }}">{{ n.title | escape }}{% if n.link %}<br><a href="{{ n.link.url | escape }}" target="_blank" rel="noopener external">{{ n.link.text | escape }} &#8599;<span class="sr-only"> (opens the {{ n.source | escape }} website)</span></a>{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
 
   <p class="np-roads">Road closures and roadworks are on the <a href="{{ '/living-here/roads/' | url }}">Roads page</a>.</p>
 
   <div class="notice submit-note">Got something to include? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a> by 6pm on Wednesday. See our <a href="{{ '/contact/' | url }}#submit">submission guidelines</a>.</div>
 </main>
+<script>
+// Newsletter links point at a notice by id: open its folded text (and any <details> around it).
+(function () {
+  function openTarget() {
+    var id = decodeURIComponent(location.hash.slice(1));
+    var el = id && document.getElementById(id);
+    if (!el) return;
+    for (var p = el.parentElement; p; p = p.parentElement) if (p.tagName === 'DETAILS') p.open = true;
+    var inner = el.querySelectorAll('details');
+    for (var i = 0; i < inner.length; i++) inner[i].open = true;
+  }
+  openTarget();
+  window.addEventListener('hashchange', openTarget);
+})();
+</script>
