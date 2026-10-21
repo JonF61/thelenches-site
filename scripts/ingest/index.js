@@ -214,6 +214,10 @@ async function processMessage(id, ctx) {
       official: item.official,
       verbatim_requested: item.verbatim_requested,
       own_text: item.own_text,
+      // Road items (Roads page map; publish reads them); ignored if the Sheet lacks the columns.
+      road: item.road,
+      end_date: item.end_date,
+      road_coords: item.road_coords,
       // Holiday mode: nobody is choosing, so official and verbatim items use their words.
       wording: ctx.holiday && offersChoice(item) ? 'own' : '',
     };

@@ -43,7 +43,21 @@ villages), or Evesham, Pershore or Inkberrow for town events.
 - event_date is YYYY-MM-DD, the first day for multi-day events. Mention the date range in the summary.
 - Resolve relative dates ("this Saturday") against the Received date. If no year is given,
   assume the next occurrence on or after the Received date.
-- Notices usually have no event_date, but road works may use their start date.
+- Notices usually have no event_date, but road closures and roadworks always use their
+  start date as event_date.
+
+## Roads
+For road closures and roadworks (e.g. one.network alerts), also fill in:
+- road: the one road the works are on, named as it appears on a map, e.g. "Ab Lench Road",
+  "Main Street" or "A435". For "Badgers Hill to Handgate Lane" give the road being closed
+  ("Badgers Hill"); the other names describe the extent or the diversion.
+- end_date: YYYY-MM-DD, the last day of the works, from the text ("from 27 October to
+  29 November" gives 2026-11-29; a one-day closure gives the same day as event_date).
+  Empty if the text gives no end date. Never use a display or publication date.
+- road_coords: "lat,lon" only if the email or a link in it gives the location as
+  coordinates. Never work them out or guess them.
+- village: the village the road is in or nearest to.
+Leave all three empty for anything that is not a road closure or roadworks.
 
 ## Flags
 - urgent: TRUE only for cancellations or postponements of a local event within the next 7 days,

@@ -5,10 +5,37 @@ description: Road closures and roadworks in and around the Lenches villages, on 
 ---
 {#- Road items are the notices the roadItems filter picks ("roads": true on a src/items/ notice, or a
     one.network link; the pipeline's one.network alerts). Split by start date (roadSplit):
-    started or undated = On now, later = Coming up. The map slot is a placeholder for the
-    planned Road closures map. Report link: council.json "report" (first entry). -#}
+    started or undated = On now, later = Coming up. Report link: council.json "report" (first entry).
+    Map: roadMap (.eleventy.js, lib/roads.js) gives each item's dates and its road's line from
+    src/_data/roadgeo.json (else a pin at the village); the script below shows the works active
+    on the day picked with the slider, today to 8 weeks ahead. Leaflet from cdnjs, OpenStreetMap
+    tiles. Without JavaScript (or if Leaflet fails to load) the map stays hidden: lists only. -#}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" integrity="sha512-Zcn6bjR/8RZbLEpLIeOwNtzREBAJnUKESxces60Mpoj+2okopSAcSUIUOseddDm0cxnGQzxIR7vJgsLZbdLE3w==" crossorigin="anonymous" referrerpolicy="no-referrer">
 <style>
-.rd-map{display:flex;align-items:center;justify-content:center;min-height:220px;margin:1rem 0 1.75rem;border:2px dashed var(--line);border-radius:var(--radius);background:var(--cream);color:var(--muted);font-size:.9rem;text-align:center;padding:1rem}
+.rd-maparea{margin:1rem 0 1.75rem}
+.rd-maparea[hidden]{display:none}
+.rd-day{display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem}
+.rd-day label{flex:0 0 auto;font-weight:600;min-width:6.5rem}
+.rd-vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.rd-day input{flex:1 1 auto;min-width:0;accent-color:var(--green)}
+.rd-step{flex:0 0 auto;width:44px;height:44px;border:1px solid var(--line);border-radius:50%;background:var(--paper);color:var(--green-dark);font-size:1.3rem;line-height:1;cursor:pointer}
+.rd-step:disabled{opacity:.35;cursor:default}
+.rd-map{position:relative;z-index:0;height:360px;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper)}
+.rd-key{display:flex;flex-wrap:wrap;gap:.25rem 1rem;margin:.45rem 0 0;color:var(--muted);font-size:.85rem}
+.rd-line{display:inline-block;width:22px;height:5px;border-radius:3px;margin-right:.35rem;vertical-align:middle}
+.rd-line-closure{background:#c62828}
+.rd-line-works{background:#e08a00}
+.rd-daylist{list-style:none;margin:.8rem 0 0;padding:0;font-size:.93rem}
+.rd-daylist li{border-top:1px solid var(--line)}
+.rd-daylist li:last-child{border-bottom:1px solid var(--line)}
+.rd-daylist button,.rd-daylist span.rd-row{display:block;width:100%;padding:.5rem 0;border:0;background:none;font:inherit;color:inherit;text-align:left}
+.rd-daylist button{cursor:pointer}
+.rd-daylist button:hover strong{text-decoration:underline}
+.rd-daylist .rd-line{margin-right:.5rem}
+.rd-pop{font-family:inherit;font-size:.9rem;line-height:1.45}
+.rd-pop strong{font-size:1rem}
+.rd-pop p{margin:.2rem 0}
+@media (max-width:600px){.rd-map{height:300px}.rd-day{flex-wrap:wrap}.rd-day label{flex-basis:100%}}
 .rd-section{margin-bottom:2rem}
 .rd-item{padding:.7rem 0;border-top:1px solid var(--line);font-size:.95rem}
 .rd-item:last-of-type{border-bottom:1px solid var(--line)}
@@ -23,7 +50,7 @@ description: Road closures and roadworks in and around the Lenches villages, on 
 {% macro roadItem(r) %}
     <div class="rd-item">
       <h3>{{ r.title | roadTitle | escape }}{% set kind = r | roadKind %}<span class="rd-tag {{ 'rd-closure' if kind == 'Closure' else 'rd-works' }}">{{ kind }}</span></h3>
-      {% if r.village or r.date %}<p class="rd-meta">{{ r.village | escape }}{% if r.village and r.date %} &middot; {% endif %}{% if r.date %}From {{ r.date | shortDate }}{% endif %}</p>{% endif %}
+      {% set from = r.start or r.date %}{% if r.village or from %}<p class="rd-meta">{{ r.village | escape }}{% if r.village and from %} &middot; {% endif %}{% if from %}From {{ from | shortDate }}{% endif %}</p>{% endif %}
       {% for p in r.body | paras %}<p>{{ p | escape }}</p>{% endfor %}
       {% if r.link %}<p><a href="{{ r.link.url | escape }}" target="_blank" rel="noopener">Details on one.network &rarr;</a></p>{% endif %}
     </div>
@@ -32,7 +59,19 @@ description: Road closures and roadworks in and around the Lenches villages, on 
   <section>
     <h1>Roads</h1>
     <p class="mt0">Current and upcoming works in and around the Lenches, from one.network. Updated several times a day. Dates are the contractors' plans: works often start late and can finish early or late, so check one.network on the day before you travel.</p>
-    <div class="rd-map" aria-hidden="true">Map coming soon</div>
+    {% set roadmap = pipeline | roadMap(whatson, roadgeo) %}
+    <div class="rd-maparea" id="rd-maparea" hidden>
+      <div class="rd-day">
+        <label for="rd-day"><span class="rd-vh">Show works on </span><output id="rd-day-out" for="rd-day">Today</output></label>
+        <button type="button" class="rd-step" id="rd-prev" aria-label="Previous day">&lsaquo;</button>
+        <input type="range" id="rd-day" min="0" max="56" step="1" value="0">
+        <button type="button" class="rd-step" id="rd-next" aria-label="Next day">&rsaquo;</button>
+      </div>
+      <div class="rd-map" id="rd-map" role="region" aria-label="Map of road works on the chosen day"></div>
+      <p class="rd-key"><span><span class="rd-line rd-line-closure"></span>Closure</span><span><span class="rd-line rd-line-works"></span>Roadworks</span><span>Tap a line for details.</span></p>
+      <ul class="rd-daylist" id="rd-daylist" aria-live="polite"></ul>
+    </div>
+    <script type="application/json" id="rd-data">{{ roadmap | dump | replace("<", "\\u003c") | safe }}</script>
   </section>
 
   {% set roads = pipeline | allNotices(whatson) | roadItems | roadSplit %}
@@ -53,3 +92,119 @@ description: Road closures and roadworks in and around the Lenches villages, on 
   {% set rep = council.report[0] %}
   <div class="notice">Spotted a pothole or another problem on a road? <a href="{{ rep.url }}" target="_blank" rel="noopener">Report it to {{ rep.org }}</a>{% if rep.phone %} or call {{ rep.phone }}{% endif %}.</div>
 </main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" integrity="sha512-BwHfrr4c9kmRkLw6iXFdzcdWV/PGkVgiIyIWLLlTSXzWQzxuSg4DiQUCpauz/EWjgk5TYQqX/kvn9pG1NpYfqg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+(function () {
+  var area = document.getElementById('rd-maparea');
+  var dataEl = document.getElementById('rd-data');
+  if (!area || !dataEl || !window.L) return;
+  var data = JSON.parse(dataEl.textContent);
+  var DAYS = 56; // today to 8 weeks ahead
+  var COLOUR = { Closure: '#c62828', Roadworks: '#e08a00' };
+
+  function ukToday() {
+    try {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+    } catch (e) { return new Date().toISOString().slice(0, 10); }
+  }
+  function addDays(d, n) { var t = new Date(d + 'T12:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); }
+  var df = new Intl.DateTimeFormat('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' });
+  function fmt(d) { return df.format(new Date(d + 'T12:00:00Z')).replace(',', ''); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function when(w) {
+    if (w.endGiven) return w.start ? (w.start === w.end ? fmt(w.start) : fmt(w.start) + ' to ' + fmt(w.end)) : 'Until ' + fmt(w.end);
+    return w.start ? 'From ' + fmt(w.start) + ', end date not given' : 'End date not given';
+  }
+  function activeOn(w, d) { return (!w.start || w.start <= d) && (!w.end || w.end >= d); }
+
+  var today = ukToday();
+  var last = addDays(today, DAYS);
+  // Upcoming works only: nothing that has ended, nothing starting after the 8 weeks
+  var works = (data.works || []).filter(function (w) { return (!w.end || w.end >= today) && (!w.start || w.start <= last); });
+  // Roadworks drawn first, so closures sit on top
+  works.sort(function (a, b) { return (a.kind === 'Closure') - (b.kind === 'Closure') || String(a.start || '').localeCompare(String(b.start || '')); });
+
+  area.hidden = false;
+  var map = L.map('rd-map', {
+    scrollWheelZoom: false,       // the wheel scrolls the page
+    dragging: !L.Browser.mobile,  // on phones one finger scrolls the page; pinch to zoom
+  });
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  }).addTo(map);
+
+  var bounds = L.latLngBounds(data.home);
+  var entries = works.map(function (w) {
+    var col = COLOUR[w.kind] || COLOUR.Roadworks;
+    var layer = null;
+    if (w.geometry) {
+      var hit = L.geoJSON(w.geometry, {
+        style: { color: col, weight: 20, opacity: 0 },  // wider invisible line, easier to tap
+        pointToLayer: function (f, ll) { return L.circleMarker(ll, { radius: 14, opacity: 0, fillOpacity: 0 }); },
+      });
+      var line = L.geoJSON(w.geometry, {
+        style: { color: col, weight: 6, opacity: 0.9, lineCap: 'round' },
+        pointToLayer: function (f, ll) {
+          return L.circleMarker(ll, { radius: 9, color: '#fff', weight: 2, fillColor: col, fillOpacity: 1, dashArray: w.pinned ? '3 3' : null });
+        },
+      });
+      layer = L.featureGroup([line, hit]).bindPopup(
+        '<div class="rd-pop"><strong>' + esc(w.road || w.title) + '</strong>' +
+        (w.village ? '<p>' + esc(w.village) + '</p>' : '') +
+        '<p>' + esc(w.kind) + ' &middot; ' + esc(when(w)) + '</p>' +
+        (w.pinned ? '<p><em>Exact spot not known: shown at the village.</em></p>' : '') +
+        (w.url ? '<p><a href="' + esc(w.url) + '" target="_blank" rel="noopener">Details on one.network &rarr;</a></p>' : '') +
+        '</div>');
+      bounds.extend(line.getBounds());
+    }
+    return { w: w, layer: layer };
+  });
+
+  // Fit to the home frame and all works in the 8 weeks, centred on Church Lench
+  var c = L.latLng(data.centre);
+  [bounds.getNorthEast(), bounds.getSouthWest()].forEach(function (p) {
+    bounds.extend([2 * c.lat - p.lat, 2 * c.lng - p.lng]);
+  });
+  map.fitBounds(bounds, { padding: [10, 10], maxZoom: 15 });
+
+  var slider = document.getElementById('rd-day');
+  var out = document.getElementById('rd-day-out');
+  var list = document.getElementById('rd-daylist');
+  var prev = document.getElementById('rd-prev');
+  var next = document.getElementById('rd-next');
+
+  function show(i) {
+    var d = addDays(today, i);
+    out.textContent = i === 0 ? 'Today' : fmt(d);
+    slider.setAttribute('aria-valuetext', out.textContent);
+    prev.disabled = i <= 0;
+    next.disabled = i >= DAYS;
+    list.innerHTML = '';
+    var shown = 0;
+    entries.slice().reverse().forEach(function (e) {  // closures first
+      var on = activeOn(e.w, d);
+      if (e.layer) { if (on) e.layer.addTo(map); else map.removeLayer(e.layer); }
+      if (!on) return;
+      shown++;
+      var li = document.createElement('li');
+      var row = document.createElement(e.layer ? 'button' : 'span');
+      row.className = 'rd-row';
+      if (e.layer) row.type = 'button';
+      row.innerHTML = '<span class="rd-line ' + (e.w.kind === 'Closure' ? 'rd-line-closure' : 'rd-line-works') + '"></span>' +
+        '<strong>' + esc(e.w.road || e.w.title) + '</strong>' + (e.w.village ? ', ' + esc(e.w.village) : '') +
+        ' &middot; ' + esc(e.w.kind) + ' &middot; ' + esc(when(e.w));
+      if (e.layer) row.addEventListener('click', function () { e.layer.openPopup(); });
+      li.appendChild(row);
+      list.appendChild(li);
+    });
+    if (!shown) list.innerHTML = '<li><span class="rd-row muted">No works listed for this day.</span></li>';
+  }
+  function go(i) { i = Math.max(0, Math.min(DAYS, i)); slider.value = i; show(i); }
+  slider.addEventListener('input', function () { show(Number(slider.value)); });
+  prev.addEventListener('click', function () { go(Number(slider.value) - 1); });
+  next.addEventListener('click', function () { go(Number(slider.value) + 1); });
+  show(0);
+})();
+</script>
+

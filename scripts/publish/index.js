@@ -16,6 +16,11 @@
 // are notices. Notices carry "added" (approval date, for the home page's "new this week"),
 // "official": true from the Pending official column (site badge), and "source" for
 // Evesham Journal signposts (lib/sources.js).
+// Road items (one.network link, lib/roads.js) also carry "start" (event_date), "end" (Pending
+// end_date, the works' last day) and "road" (Pending road, else guessed from the title), and
+// stay listed until "end" if that is later than the usual expiry. Their roads are looked up
+// once for the Roads page map and cached in src/_data/roadgeo.json (roadgeo.js), with any
+// coordinates from Pending road_coords or the link used first.
 'use strict';
 
 const fs = require('fs');
@@ -26,6 +31,8 @@ const { toRaster } = require('../ingest/images');
 const { bodyOf, isOfficial } = require('../../lib/wording');
 const { localSource } = require('../../lib/sources');
 const { loadWhatson } = require('../../lib/whatson');
+const { isRoad, guessRoad, parseCoords, coordsFromUrl } = require('../../lib/roads');
+const { updateRoadGeo } = require('./roadgeo');
 
 const TZ = 'Europe/London';
 const ROOT = path.join(__dirname, '..', '..');
@@ -130,6 +137,7 @@ async function main() {
 
   const out = { events: [], notices: [] };
   const failures = [];
+  const roadsWanted = [];
 
   for (const row of byKey.values()) {
     const date = ymd(row.event_date);
@@ -145,12 +153,23 @@ async function main() {
       list = 'notices';
       expires = later(date, addDays(start, NOTICE_DAYS));
     }
+    const url = safeUrl(row.link_url);
+    const road = isRoad({ link: { url } });
+    const end = road ? ymd(row.end_date) : '';
+    if (end) expires = later(expires, end);
     if (expires < today) continue;
 
     const item = { id: row.id, title: str(row.title), body: bodyOf(row) };
     if (date) item.date = date;
     const village = str(row.village);
     if (village) item.village = village;
+    if (road) {
+      const name = str(row.road) || guessRoad(item.title);
+      if (date) item.start = date;
+      if (end) item.end = end;
+      if (name) item.road = name;
+      roadsWanted.push({ road: name, village, coords: parseCoords(row.road_coords) || coordsFromUrl(url) });
+    }
     item.expires = expires;
     if (list === 'notices') {
       item.added = start;
@@ -158,7 +177,6 @@ async function main() {
       const source = localSource(row);
       if (source) item.source = source;
     }
-    const url = safeUrl(row.link_url);
     if (url) item.link = { text: str(row.link_text) || 'More details', url };
     const img = await imageFor(row, failures);
     if (img) {
@@ -182,6 +200,17 @@ async function main() {
       if (it && it.image && it.image.url) await ensureJpeg(it.image.url, `whatson: ${str(it.title)}`, failures);
     }
   }
+
+  // Road geometry for the Roads page map, pipeline and hand-written road items alike.
+  // Lookup problems are logged for fixing by hand but never fail the run (village pins instead).
+  for (const it of loadWhatson().notices) {
+    if (!isRoad(it)) continue;
+    const name = str(it.road) || guessRoad(it.title);
+    roadsWanted.push({ road: name, village: str(it.village), coords: coordsFromUrl(it.link && it.link.url) });
+  }
+  const geo = await updateRoadGeo(roadsWanted);
+  if (geo.failed.length) console.warn(`Road map lookups to check by hand:\n${geo.failed.join('\n')}`);
+  if (geo.changed) console.log('src/_data/roadgeo.json updated.');
 
   const json = `${JSON.stringify(data, null, 2)}\n`;
   const old = fs.existsSync(DATA_FILE) ? fs.readFileSync(DATA_FILE, 'utf8') : '';

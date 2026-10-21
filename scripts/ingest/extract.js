@@ -12,6 +12,8 @@
 // normalise() maps anything else to notice, so a stray "news" can't reach the Sheet.
 // Local signposts (Evesham Journal, via rss.js): only stories about the five Lenches or
 // Harvington, written as a headline plus one line in our own words.
+// Road items (closures and roadworks) also give road, end_date and road_coords for the
+// Roads page map; their event_date is the works' start date (rules.md, Dates).
 'use strict';
 
 const fs = require('fs');
@@ -106,6 +108,9 @@ const TOOL = {
             verbatim_requested: { type: 'boolean', description: 'True if the submitter asks for their own wording to be used for this item' },
             own_text: { type: 'string', description: "The submitter's own text for this item, only obvious typos and broken links fixed; paragraphs separated by a blank line. Empty unless official or verbatim_requested" },
             notes: { type: 'string', description: 'For the editor: missing details, doubts, reasons for flags' },
+            road: { type: 'string', description: "Road items only (closures and roadworks, e.g. one.network alerts): the road's name as on a map, e.g. 'Ab Lench Road' or 'A435'; empty otherwise" },
+            end_date: { type: 'string', description: 'Road items only: YYYY-MM-DD, the last day of the works as given in the text; empty if not given' },
+            road_coords: { type: 'string', description: "Road items only: 'lat,lon' in decimal degrees if the email or a link in it gives the works' location as coordinates; never guess; empty otherwise" },
           },
           required: ['title', 'village', 'category', 'summary', 'confidence', 'urgent',
             'political_commercial', 'classified', 'missing', 'image_index', 'people_in_image'],
@@ -222,6 +227,10 @@ function normalise(items, imageCount) {
       // Kept only when it can be used: no length cap, paragraphs preserved.
       own_text: it.official === true || it.verbatim_requested === true ? tidyText(it.own_text) : '',
       notes: str(it.notes),
+      // Road items (Roads page map): start is event_date; see ROADS in rules.md
+      road: str(it.road),
+      end_date: /^\d{4}-\d{2}-\d{2}$/.test(str(it.end_date)) && (!date || str(it.end_date) >= date) ? str(it.end_date) : '',
+      road_coords: /^-?\d{1,2}\.\d+\s*,\s*-?\d{1,3}\.\d+$/.test(str(it.road_coords)) ? str(it.road_coords).replace(/\s+/g, '') : '',
     };
   }).filter((it) => it.title);
 }
@@ -245,6 +254,9 @@ function toSignpost(items, sourceName, link, local) {
     official: false,
     verbatim_requested: false,
     own_text: '',
+    road: '',
+    end_date: '',
+    road_coords: '',
   }));
 }
 
