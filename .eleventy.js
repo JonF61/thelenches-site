@@ -57,25 +57,43 @@ module.exports = async function (eleventyConfig) {
 
   // Road closures and roadworks (the Roads page; left off Notices): "roads": true on
   // a src/items/ notice, or any item linking to one.network (all pipeline roadworks alerts do).
-  const isRoad = (i) =>
-    !!i && (i.roads === true || /one\.network/i.test(String((i.link && i.link.url) || "")));
-  eleventyConfig.addFilter("roadItems", (items) => (items || []).filter(isRoad));
-  eleventyConfig.addFilter("notRoadItems", (items) => (items || []).filter((i) => !isRoad(i)));
+  // Shared with scripts/publish: lib/roads.js.
+  const roads = require("./lib/roads.js");
+  eleventyConfig.addFilter("roadItems", (items) => (items || []).filter(roads.isRoad));
+  eleventyConfig.addFilter("notRoadItems", (items) => (items || []).filter((i) => !roads.isRoad(i)));
 
   // Roads page: "Closure" or "Roadworks" tag, and the title without a "Road closure —" prefix
-  eleventyConfig.addFilter("roadKind", (i) =>
-    /\bclos(ure|ures|ed|ing)\b/i.test(`${(i && i.title) || ""} ${(i && i.body) || ""}`) ? "Closure" : "Roadworks"
-  );
-  eleventyConfig.addFilter("roadTitle", (title) =>
-    String(title || "").replace(/^road\s*(closures?|works)\s*[—–-]\s*/i, "")
-  );
-  // Split road items by start date: { now: started or undated, soon: starting after today }
+  eleventyConfig.addFilter("roadKind", roads.roadKind);
+  eleventyConfig.addFilter("roadTitle", roads.roadTitle);
+
+  // Roads page map data: one entry per current road item (pipeline, then src/items/), with its
+  // dates and cached geometry (src/_data/roadgeo.json; else a pin at the village). The page's
+  // script picks the works active on the chosen day. Plus the home frame and centre.
+  eleventyConfig.addFilter("roadMap", (pipeline, whatson, roadgeo) => {
+    const now = today();
+    const current = (i) => i && i.title && roads.isRoad(i);
+    const p = pipeline || {};
+    const w = whatson || {};
+    const works = [
+      ...[...(p.notices || []), ...(p.news || [])]
+        .filter((i) => current(i) && (!i.expires || i.expires >= now))
+        .map((i) => roads.mapEntry(i, roadgeo, true)),
+      ...[...(w.notices || []), ...(w.news || [])]
+        .filter(current)
+        .map((i) => roads.mapEntry(i, roadgeo, false)),
+    ];
+    return { home: roads.HOME_BOUNDS, centre: roads.HOME_CENTRE, works };
+  });
+
+  // Split road items by start date ("start", else "date"): { now: started or undated,
+  // soon: starting after today }
   eleventyConfig.addFilter("roadSplit", (items) => {
     const now = today();
-    const list = (items || []).slice().sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+    const from = (i) => i.start || i.date || "";
+    const list = (items || []).slice().sort((a, b) => from(a).localeCompare(from(b)));
     return {
-      now: list.filter((i) => !i.date || i.date <= now),
-      soon: list.filter((i) => i.date && i.date > now),
+      now: list.filter((i) => !from(i) || from(i) <= now),
+      soon: list.filter((i) => from(i) && from(i) > now),
     };
   });
 
