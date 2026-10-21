@@ -1,0 +1,41 @@
+{#- Illustrated antique-style map for Home (replaced the aerial banner, 21 Oct 2026).
+    Village positions are to scale from VILLAGES in lib/roads.js (x = 20 + (lon + 2.06) * 3556,
+    y = 15 + (52.196 - lat) * 5792); the lanes and the Avon are hand-sketched, not surveyed.
+    The five Lenches link to their cards on Moving to the Lenches (ids from slugified names). -#}
+{%- set mv = '/living-here/moving/' | url -%}
+<style>
+.lmap{display:block;width:100%;max-width:760px;height:auto;margin:1.5rem auto 0}
+.lmap text{font-family:Georgia,'Times New Roman',serif;font-style:italic;fill:#4a2f1a}
+.lmap .v{font-size:15px}.lmap .o{font-size:12px;fill:#5c4029}.lmap .d{font-size:11px;fill:#5c4029}
+.lmap a:hover text,.lmap a:focus text{fill:#b5471b;text-decoration:underline}
+</style>
+<svg class="lmap" viewBox="0 0 680 520" role="group" aria-labelledby="lmap-t">
+<title id="lmap-t">Illustrated map of the Lenches: Church, Rous, Ab, Atch and Sheriffs Lench, with Harvington, Abbots Morton, Lenchwick, Radford and the River Avon</title>
+<rect x="6" y="6" width="668" height="508" fill="#efe1bf" stroke="#6b4a2b" stroke-width="3"/>
+<rect x="16" y="16" width="648" height="488" fill="none" stroke="#6b4a2b"/>
+<g fill="none" stroke="#7d9db0" stroke-width="5" stroke-linecap="round"><path d="M664 285C610 315 560 340 540 385C522 425 505 470 482 504"/><path d="M418 504C405 480 385 470 345 472C285 476 235 462 185 472C125 484 70 470 17 488"/></g>
+<g fill="none" stroke="#a9c2cf"><path d="M664 293C612 322 566 348 548 390"/><path d="M345 480C285 484 235 470 185 480"/></g>
+<g fill="none" stroke="#7a5233" stroke-width="1.6" stroke-linecap="round"><path d="M294 197Q330 205 367 226"/><path d="M367 226L396 246"/><path d="M301 120Q285 160 294 197"/><path d="M301 120Q345 165 367 226"/><path d="M367 226Q360 285 332 337"/><path d="M396 246Q450 270 498 323"/><path d="M498 323Q500 390 476 437Q458 470 445 490"/><path d="M301 120Q250 105 199 104"/><path d="M301 120Q305 80 310 44"/><path d="M301 120Q350 85 395 60"/><path d="M294 197Q180 260 40 395"/></g>
+<g fill="#5f7a3e" opacity=".75"><circle cx="150" cy="200" r="5"/><circle cx="158" cy="206" r="4"/><circle cx="144" cy="208" r="4"/><circle cx="230" cy="300" r="5"/><circle cx="238" cy="306" r="4"/><circle cx="440" cy="150" r="5"/><circle cx="448" cy="156" r="4"/><circle cx="432" cy="157" r="4"/><circle cx="520" cy="205" r="5"/><circle cx="528" cy="211" r="4"/><circle cx="260" cy="410" r="5"/><circle cx="268" cy="404" r="4"/><circle cx="385" cy="395" r="5"/><circle cx="393" cy="401" r="4"/><circle cx="110" cy="330" r="5"/><circle cx="118" cy="336" r="4"/><circle cx="560" cy="160" r="5"/><circle cx="470" cy="105" r="4"/><circle cx="478" cy="111" r="5"/><circle cx="175" cy="160" r="4"/><circle cx="600" cy="230" r="5"/><circle cx="608" cy="236" r="4"/></g>
+<defs><path id="lmap-h" d="M-9 4v-6l4-4 4 4v6zM1 4v-5l4-4 4 4v5z"/></defs>
+<g fill="#8a5a3b"><use href="#lmap-h" x="367" y="226"/><use href="#lmap-h" x="301" y="120"/><use href="#lmap-h" x="294" y="197"/><use href="#lmap-h" x="396" y="246"/><use href="#lmap-h" x="332" y="337"/><use href="#lmap-h" x="498" y="323"/><circle cx="395" cy="60" r="3.5"/><circle cx="476" cy="437" r="3.5"/><circle cx="199" cy="104" r="3.5"/></g>
+<a href="{{ mv }}#church-lench"><text class="v" x="379" y="224">Church Lench</text></a>
+<a href="{{ mv }}#rous-lench"><text class="v" x="313" y="117">Rous Lench</text></a>
+<a href="{{ mv }}#ab-lench"><text class="v" x="282" y="201" text-anchor="end">Ab Lench</text></a>
+<a href="{{ mv }}#atch-lench"><text class="v" x="388" y="266">Atch Lench</text></a>
+<a href="{{ mv }}#sheriffs-lench"><text class="v" x="344" y="342">Sheriffs Lench</text></a>
+<text class="v" x="510" y="320" style="font-size:14px">Harvington</text>
+<text class="o" x="405" y="58">Abbots Morton</text>
+<text class="o" x="466" y="441" text-anchor="end">Lenchwick</text>
+<text class="o" x="199" y="124" text-anchor="middle">Radford</text>
+<text class="o" x="80" y="460" style="fill:#4f6f82;font-size:13px">River Avon</text>
+<text class="d" x="310" y="34" text-anchor="middle">to Inkberrow</text>
+<text class="d" x="440" y="498" text-anchor="end">to Evesham</text>
+<text class="d" x="44" y="388">to Pershore</text>
+<rect x="30" y="30" width="200" height="60" fill="#f6ebd0" stroke="#6b4a2b" stroke-width="1.2"/>
+<rect x="34" y="34" width="192" height="52" fill="none" stroke="#6b4a2b" stroke-width=".5"/>
+<text x="130" y="60" text-anchor="middle" style="font-style:normal;font-size:20px">The Lenches</text>
+<text class="d" x="130" y="77" text-anchor="middle">in the County of Worcester</text>
+<g transform="translate(610 92)"><circle r="30" fill="none" stroke="#6b4a2b" stroke-width=".8"/><circle r="22" fill="none" stroke="#6b4a2b" stroke-width=".5"/><path d="M0-34L5 0 0 34-5 0Z" fill="#6b4a2b"/><path d="M-34 0L0 5 34 0 0-5Z" fill="#a07850"/><path d="M0-34L5 0H0Z" fill="#efe1bf"/><text x="0" y="-38" text-anchor="middle" style="font-style:normal;font-size:12px">N</text></g>
+<g transform="translate(560 478)"><rect width="42" height="5" fill="#6b4a2b"/><rect x="42" width="42" height="5" fill="#efe1bf" stroke="#6b4a2b"/><text class="d" x="42" y="-5" text-anchor="middle">one mile</text></g>
+</svg>

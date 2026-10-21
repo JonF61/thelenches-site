@@ -7,7 +7,8 @@ description: A welcome for newcomers to Church, Rous, Ab, Atch and Sheriffs Lenc
 <style>
 .mv-banner{display:block;width:100%;aspect-ratio:3/1;object-fit:cover;border-radius:10px;margin:.75rem 0 0}
 .mv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem}
-.mv-grid .card{margin:0}
+.mv-grid .card{margin:0;scroll-margin-top:1rem}
+.mv-grid .card:target{outline:3px solid #e8892b;outline-offset:2px}
 .mv-grid h3{margin:0 0 .25rem}
 .mv-img,.mv-tile{display:block;width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:8px;margin-bottom:.5rem}
 .mv-tile{background:#fdf0dc;color:#7a4a06;display:flex;align-items:center;justify-content:center;font-family:'Source Serif 4',serif;font-weight:700}
@@ -29,7 +30,7 @@ description: A welcome for newcomers to Church, Rous, Ab, Atch and Sheriffs Lenc
     <h2>The villages</h2>
     <div class="mv-grid">
       {%- for v in m.villages %}
-      <div class="card">
+      <div class="card" id="{{ v.name | slugify }}">
         {%- if v.image %}<img class="mv-img" src="{{ v.image | url }}" alt="{{ v.imageAlt or v.name }}" loading="lazy">{% else %}<div class="mv-tile" aria-hidden="true">{{ v.name }}</div>{% endif %}
         <h3>{{ v.name }}</h3>
         <p class="mv-muted mt0">{{ v.text }}</p>
