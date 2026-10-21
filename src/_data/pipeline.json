@@ -13,13 +13,15 @@
       }
     }
   ],
-  "news": [
+  "notices": [
     {
       "id": "rss-0ee972d7474044a6-1",
       "title": "Five Worcestershire shops fail underage vape tests",
       "body": "Trading standards teams found that five shops in Worcestershire failed underage sales tests when checked for vape purchases, leading to potential enforcement action.",
       "village": "Lenches",
-      "expires": "2026-11-03",
+      "expires": "2026-11-10",
+      "added": "2026-10-20",
+      "source": "Evesham Journal",
       "link": {
         "text": "Read more at Evesham Journal",
         "url": "https://www.eveshamjournal.co.uk/news/26644390.five-worcestershire-shops-fail-underage-vape-sales-tests/"
@@ -30,58 +32,14 @@
       "title": "Developers may face 60 years of road maintenance costs",
       "body": "Council cabinet members are due to discuss proposals that could require developers to pay towards decades of future maintenance costs for roads, street lighting, landscaping and other highway features.",
       "village": "Lenches",
-      "expires": "2026-11-03",
+      "expires": "2026-11-10",
+      "added": "2026-10-20",
+      "source": "Evesham Journal",
       "link": {
         "text": "Read more at Evesham Journal",
         "url": "https://www.eveshamjournal.co.uk/news/26650352.developers-pay-future-road-maintenance-costs/"
       }
     },
-    {
-      "id": "rss-d74650da230223b8-1",
-      "title": "Landline switch-off to affect parts of Worcestershire",
-      "body": "Openreach has named eight Worcestershire areas affected by a nationwide shift from old copper landlines to full fibre broadband, as the UK moves towards digital phone services.",
-      "village": "Lenches",
-      "expires": "2026-11-01",
-      "link": {
-        "text": "Read more at Evesham Journal",
-        "url": "https://www.eveshamjournal.co.uk/news/26628510.eight-worcestershire-areas-affected-landline-changes/"
-      }
-    },
-    {
-      "id": "rss-33730ff885264367-1",
-      "title": "Police appeal after night burglaries in Inkberrow area",
-      "body": "Police have issued an appeal for information following a series of burglaries in Inkberrow and Bradley Green, in which windows were smashed to gain entry overnight.",
-      "village": "Inkberrow",
-      "expires": "2026-10-31",
-      "link": {
-        "text": "Read more at Evesham Journal",
-        "url": "https://www.eveshamjournal.co.uk/news/26646396.burglaries-inkberrow-bradley-green-police-warning/"
-      }
-    },
-    {
-      "id": "rss-d327801516f9111b-1",
-      "title": "Worcestershire stockpiles salt for winter gritting",
-      "body": "Worcestershire is stockpiling 17,000 tonnes of salt and has a fleet of 36 gritters ready as highways bosses prepare for winter storms.",
-      "village": "Lenches",
-      "expires": "2026-10-30",
-      "link": {
-        "text": "Read more at Evesham Journal",
-        "url": "https://www.eveshamjournal.co.uk/news/26639256.worcestershire-county-council-ready-winter-storms/"
-      }
-    },
-    {
-      "id": "rss-e4a400ac6e0db9ea-1",
-      "title": "Worcestershire County Council faces £85m budget gap",
-      "body": "Worcestershire County Council has begun setting its 2027/28 budget, warning of tough choices ahead as it works to close an £85m funding gap.",
-      "village": "Lenches",
-      "expires": "2026-10-28",
-      "link": {
-        "text": "Read more at Evesham Journal",
-        "url": "https://www.eveshamjournal.co.uk/news/26624053.worcestershire-county-council-faces-85m-budget-gap/"
-      }
-    }
-  ],
-  "notices": [
     {
       "id": "1a15780b0f8da7e1-1",
       "title": "Road Closure — Ab Lench Road, Church Lench",
@@ -89,6 +47,8 @@
       "date": "2026-10-26",
       "village": "Church Lench",
       "expires": "2026-11-10",
+      "added": "2026-10-20",
+      "official": true,
       "link": {
         "text": "Roadworks details",
         "url": "https://one.network?GBTMI47131888"
@@ -101,6 +61,8 @@
       "date": "2026-10-27",
       "village": "Sheriffs Lench",
       "expires": "2026-11-10",
+      "added": "2026-10-20",
+      "official": true,
       "link": {
         "text": "Roadworks details",
         "url": "https://one.network?GBTMI45377659"
@@ -113,6 +75,7 @@
       "date": "2026-10-21",
       "village": "Harvington",
       "expires": "2026-11-10",
+      "added": "2026-10-20",
       "link": {
         "text": "Roadworks details",
         "url": "https://one.network?GB153078571"
@@ -125,6 +88,7 @@
       "date": "2026-10-22",
       "village": "Harvington",
       "expires": "2026-11-10",
+      "added": "2026-10-20",
       "link": {
         "text": "Roadworks details",
         "url": "https://one.network?GB153082375"
@@ -137,6 +101,7 @@
       "date": "2026-10-21",
       "village": "Harvington",
       "expires": "2026-11-10",
+      "added": "2026-10-20",
       "link": {
         "text": "Roadworks details",
         "url": "https://one.network?GB153074788"
@@ -149,9 +114,62 @@
       "date": "2026-10-21",
       "village": "Harvington",
       "expires": "2026-11-10",
+      "added": "2026-10-20",
       "link": {
         "text": "Roadworks details",
         "url": "https://one.network?GB153079789"
+      }
+    },
+    {
+      "id": "rss-d74650da230223b8-1",
+      "title": "Landline switch-off to affect parts of Worcestershire",
+      "body": "Openreach has named eight Worcestershire areas affected by a nationwide shift from old copper landlines to full fibre broadband, as the UK moves towards digital phone services.",
+      "village": "Lenches",
+      "expires": "2026-11-08",
+      "added": "2026-10-18",
+      "source": "Evesham Journal",
+      "link": {
+        "text": "Read more at Evesham Journal",
+        "url": "https://www.eveshamjournal.co.uk/news/26628510.eight-worcestershire-areas-affected-landline-changes/"
+      }
+    },
+    {
+      "id": "rss-33730ff885264367-1",
+      "title": "Police appeal after night burglaries in Inkberrow area",
+      "body": "Police have issued an appeal for information following a series of burglaries in Inkberrow and Bradley Green, in which windows were smashed to gain entry overnight.",
+      "village": "Inkberrow",
+      "expires": "2026-11-07",
+      "added": "2026-10-17",
+      "source": "Evesham Journal",
+      "link": {
+        "text": "Read more at Evesham Journal",
+        "url": "https://www.eveshamjournal.co.uk/news/26646396.burglaries-inkberrow-bradley-green-police-warning/"
+      }
+    },
+    {
+      "id": "rss-d327801516f9111b-1",
+      "title": "Worcestershire stockpiles salt for winter gritting",
+      "body": "Worcestershire is stockpiling 17,000 tonnes of salt and has a fleet of 36 gritters ready as highways bosses prepare for winter storms.",
+      "village": "Lenches",
+      "expires": "2026-11-06",
+      "added": "2026-10-16",
+      "source": "Evesham Journal",
+      "link": {
+        "text": "Read more at Evesham Journal",
+        "url": "https://www.eveshamjournal.co.uk/news/26639256.worcestershire-county-council-ready-winter-storms/"
+      }
+    },
+    {
+      "id": "rss-e4a400ac6e0db9ea-1",
+      "title": "Worcestershire County Council faces £85m budget gap",
+      "body": "Worcestershire County Council has begun setting its 2027/28 budget, warning of tough choices ahead as it works to close an £85m funding gap.",
+      "village": "Lenches",
+      "expires": "2026-11-04",
+      "added": "2026-10-14",
+      "source": "Evesham Journal",
+      "link": {
+        "text": "Read more at Evesham Journal",
+        "url": "https://www.eveshamjournal.co.uk/news/26624053.worcestershire-county-council-faces-85m-budget-gap/"
       }
     }
   ]
