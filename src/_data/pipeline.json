@@ -46,6 +46,8 @@
       "body": "Ab Lench Road, Church Lench will be closed on Monday 26 October for Openreach streetworks, with a diversion route in place via Main Street.",
       "date": "2026-10-26",
       "village": "Church Lench",
+      "start": "2026-10-26",
+      "road": "Ab Lench Road",
       "expires": "2026-11-10",
       "added": "2026-10-20",
       "official": true,
@@ -60,6 +62,8 @@
       "body": "Badgers Hill to Handgate Lane, Sheriffs Lench, closed from Tuesday 27 October to Sunday 29 November for Severn Trent Water works, with a diversion via Handgate Lane, Church Lench.",
       "date": "2026-10-27",
       "village": "Sheriffs Lench",
+      "start": "2026-10-27",
+      "road": "Badgers Hill",
       "expires": "2026-11-10",
       "added": "2026-10-20",
       "official": true,
@@ -74,6 +78,8 @@
       "body": "Severn Trent Water works at Brookdale, Harvington, from Wednesday 21 to Friday 23 October; no carriageway incursion expected and delays are unlikely.",
       "date": "2026-10-21",
       "village": "Harvington",
+      "start": "2026-10-21",
+      "road": "Brookdale",
       "expires": "2026-11-10",
       "added": "2026-10-20",
       "link": {
@@ -87,6 +93,8 @@
       "body": "Openreach works at Hughes Close, Harvington, from Thursday 22 to Monday 26 October; some carriageway incursion but delays are unlikely.",
       "date": "2026-10-22",
       "village": "Harvington",
+      "start": "2026-10-22",
+      "road": "Hughes Close",
       "expires": "2026-11-10",
       "added": "2026-10-20",
       "link": {
@@ -100,6 +108,8 @@
       "body": "Severn Trent Water works at Leys Road, Harvington, from Wednesday 21 to Friday 23 October; no carriageway incursion expected.",
       "date": "2026-10-21",
       "village": "Harvington",
+      "start": "2026-10-21",
+      "road": "Leys Road",
       "expires": "2026-11-10",
       "added": "2026-10-20",
       "link": {
@@ -113,6 +123,8 @@
       "body": "Severn Trent Water works at Stratford Road, Harvington, from Wednesday 21 to Friday 23 October; some carriageway incursion but delays unlikely.",
       "date": "2026-10-21",
       "village": "Harvington",
+      "start": "2026-10-21",
+      "road": "Stratford Road",
       "expires": "2026-11-10",
       "added": "2026-10-20",
       "link": {
