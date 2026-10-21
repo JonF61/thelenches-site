@@ -45,7 +45,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git add src/_data/pipeline.json src/images
+          git add src/_data/pipeline.json src/_data/roadgeo.json src/images
           if git diff --cached --quiet; then echo "No changes."; exit 0; fi
           git config user.name "Lenches Pipeline"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
