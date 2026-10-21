@@ -5,6 +5,8 @@ module.exports = async function (eleventyConfig) {
 
   eleventyConfig.addPassthroughCopy("src/style.css");
   eleventyConfig.addPassthroughCopy("src/images");
+  // Hand-written items (src/items/, read by src/_data/whatson.js): rebuild on change when serving
+  eleventyConfig.addWatchTarget("src/items/");
 
   // Today in Europe/London as YYYY-MM-DD, so dates compare as plain strings
   const today = () =>
@@ -40,7 +42,7 @@ module.exports = async function (eleventyConfig) {
     return groups;
   });
 
-  // Join two lists, e.g. hand-written whatson.json items plus pipeline.json items
+  // Join two lists, e.g. hand-written src/items/ items plus pipeline.json items
   eleventyConfig.addFilter("merge", (a, b) => [...(a || []), ...(b || [])]);
 
   // Split a body into paragraphs at blank lines ("\n\n" in the JSON). Returns plain strings,
@@ -53,8 +55,8 @@ module.exports = async function (eleventyConfig) {
     return out.length ? out : [""];
   });
 
-  // Road closures and roadworks (the Roads page; left off Notices): "roads": true in
-  // whatson.json, or any item linking to one.network (all pipeline roadworks alerts do).
+  // Road closures and roadworks (the Roads page; left off Notices): "roads": true on
+  // a src/items/ notice, or any item linking to one.network (all pipeline roadworks alerts do).
   const isRoad = (i) =>
     !!i && (i.roads === true || /one\.network/i.test(String((i.link && i.link.url) || "")));
   eleventyConfig.addFilter("roadItems", (items) => (items || []).filter(isRoad));
@@ -77,9 +79,9 @@ module.exports = async function (eleventyConfig) {
     };
   });
 
-  // All current notices, roads included: pipeline (newest first) then whatson.json.
+  // All current notices, roads included: pipeline (newest first) then src/items/ (by "order").
   // "news" lists are read as notices (the News page was retired 21 Oct 2026; pipeline.json
-  // drops "news" on its next publish run, whatson.json has none).
+  // drops "news" on its next publish run, src/items/ has none).
   eleventyConfig.addFilter("allNotices", (pipeline, whatson) => {
     const now = today();
     const p = pipeline || {};
@@ -89,7 +91,7 @@ module.exports = async function (eleventyConfig) {
   });
 
   // Home page: notices added (approved) in the last 7 days. Pipeline items carry "added";
-  // hand-written whatson.json notices count only if given one.
+  // hand-written src/items/ notices count only if given one.
   eleventyConfig.addFilter("newThisWeek", (items) => {
     const d = new Date(today() + "T12:00:00Z");
     d.setUTCDate(d.getUTCDate() - 6);
