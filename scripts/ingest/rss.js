@@ -3,9 +3,11 @@
 // Feeds are Settings source rows whose "match" is a URL; "mode" ignore disables a feed.
 // Never fetches articles or images: only the feed text is used. No submitter replies.
 // Each feed item is logged once in the Log tab as "rss:<hash of guid>".
-// Local-news feeds (Evesham Journal): only stories naming Church, Rous, Ab, Atch or Sheriffs
-// Lench or Harvington go to Claude (local mode: one-line notice); the rest are logged as
-// "skipped" without a Claude call, so the daily diagnostic still sees them as handled.
+// Local-news feeds (Evesham Journal): only stories that pass lib/sources.js keepLocalStory
+// (naming our villages or nearby places, or a county-wide topic such as scams, burglaries,
+// flooding, power cuts or the landline switchover) go to Claude (local mode: one-line notice);
+// the rest are logged as "skipped" without a Claude call, so the daily diagnostic still sees
+// them as handled.
 'use strict';
 
 const crypto = require('crypto');
@@ -13,7 +15,7 @@ const g = require('./google');
 const { extract } = require('./extract');
 const replies = require('./replies');
 const trust = require('./trusted');
-const { LOCAL_FEED } = require('../../lib/sources');
+const { LOCAL_FEED, keepLocalStory } = require('../../lib/sources');
 
 const MAX_FEED_ITEMS_PER_RUN = 10; // across all feeds; the rest wait for the next run
 const MAX_RETRIES = 3;
@@ -21,11 +23,9 @@ const FETCH_TIMEOUT_MS = 20000;
 const USER_AGENT = 'LenchesPipeline/1.0 (+https://thelenches.org.uk)';
 // Tracking parameters removed from article links (plus any utm_*).
 const TRACKING_PARAMS = ['fbclid', 'gclid', 'mc_cid', 'mc_eid', 'ref'];
-// Feeds kept to stories about our villages (Settings source name or feed URL).
-const PLACES = /\b(?:church|rous|ab|abbots|atch|sheriff'?s)\s+lench\b|\bharvington\b/i;
 
 const isLocalFeed = (feed) => LOCAL_FEED.test(`${feed.source} ${feed.match}`);
-const aboutPlaces = (item) => PLACES.test(`${item.title}\n${item.text}`);
+const aboutPlaces = keepLocalStory;
 
 /* ------------------------------------------------------------- parsing -- */
 
@@ -237,11 +237,11 @@ async function run(ctx, logById, startMs, h) {
       source: feed.source,
       status: 'skipped',
       items_created: 0,
-      error: `Not about the Lenches or Harvington: ${item.title}`.slice(0, 500),
+      error: `Not about our area or a listed topic: ${item.title}`.slice(0, 500),
       retries: 0,
     })));
     out.skipped = skipped.length;
-    console.log(`RSS: ${skipped.length} local-news item(s) skipped (not about our villages).`);
+    console.log(`RSS: ${skipped.length} local-news item(s) skipped (not about our area or a listed topic).`);
   }
 
   todo.sort((a, b) => a.item.publishedMs - b.item.publishedMs); // oldest first

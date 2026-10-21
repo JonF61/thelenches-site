@@ -107,8 +107,10 @@ the submitter's own text in own_text, so the editor can publish it instead.
 - Wychavon newsletter: extract only items of practical use to Lenches residents (bin changes,
   consultations, grants, council tax, local events, fly-tipping etc.). Skip generic promotion.
   Category notice (or event for something to attend).
-- Evesham Journal (RSS): only stories about Church, Rous, Ab, Atch or Sheriffs Lench or
-  Harvington; everything else is dropped (see LOCAL STORIES ONLY). Category notice, a
+- Evesham Journal (RSS): only stories about Church, Rous, Ab, Atch or Sheriffs Lench,
+  Harvington, Inkberrow, Abbots Morton, Lenchwick, Radford or Norton, or county-wide stories
+  on the landline switchover, scams and fraud, burglaries, flooding or power cuts; everything
+  else is dropped (see LOCAL STORIES ONLY). Category notice, a
   short headline and a one-sentence summary in our own words. Never official.
 - ARCH Messenger (PDF): extract special services and events at Harvington, Rous Lench,
   Church Lench and Abbots Morton churches (harvest, remembrance, carols, fundraisers). Skip
