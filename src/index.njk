@@ -1,8 +1,32 @@
 ---
 layout: base.njk
 title: Home
-description: News, events and information for the Lenches villages in Worcestershire, and the weekly Thursday newsletter.
+description: Events, notices, roadworks and information for the Lenches villages in Worcestershire, and the weekly Thursday newsletter.
+cards:
+  - { title: "Events", url: "/events/", icon: calendar, text: "What's on across the villages, week by week." }
+  - { title: "Notices", url: "/notices/", icon: notice, text: "Parish council notices and news from around the villages." }
+  - { title: "Roads", url: "/living-here/roads/", icon: road, text: "Road closures and roadworks in and around the Lenches." }
+  - { title: "Bins", url: "/bins/", icon: bins, text: "Collection days and what goes in which bin." }
+  - { title: "Community", url: "/community/", icon: users, text: "Groups and clubs, village halls and churches." }
+  - { title: "Living here", url: "/living-here/", icon: home, text: "Health, transport, council, schools and walks." }
 ---
+{#- Six cards (hub-cards.njk). Live lines are worked out at build time (every commit, and
+    the pipeline commits several times a day): next event, notices added in the last 7 days
+    (hidden if none), roads on now / coming up, next bin collection for the first bins.json area. -#}
+{%- set nextEvent = (whatson.events | merge(pipeline.events) | upcoming) | first -%}
+{%- set allN = pipeline | allNotices(whatson) -%}
+{%- set newCount = allN | notRoadItems | newThisWeek -%}
+{%- set roads = allN | roadItems | roadSplit -%}
+{%- set roadParts = [] -%}
+{%- if roads.now | length %}{% set roadParts = (roadParts.push((roads.now | length) + " on now"), roadParts) %}{% endif -%}
+{%- if roads.soon | length %}{% set roadParts = (roadParts.push((roads.soon | length) + " coming up"), roadParts) %}{% endif -%}
+{%- set bin = bins | nextBin -%}
+{%- set live = {
+  "/events/": ("Next: " + nextEvent.title + " · " + (nextEvent.date | shortDate)) if nextEvent else "",
+  "/notices/": (newCount + " new this week") if newCount else "",
+  "/living-here/roads/": roadParts | join(" · ") if roadParts | length else "No works listed",
+  "/bins/": (bin.area + ": " + (bin.date | shortDate) + ", " + (bin.bins | andList)) if bin else ""
+} -%}
 <main class="container">
 
   <section class="intro">
@@ -12,39 +36,9 @@ description: News, events and information for the Lenches villages in Worcesters
 
   {% include "signup.njk" %}
 
-  <div class="home-cols">
-    <section>
-      <div class="section-head"><h2>Coming up</h2><a href="{{ '/events/' | url }}">All events &rarr;</a></div>
-      {% for e in whatson.events | merge(pipeline.events) | upcoming %}{% if loop.index <= 4 %}
-      {% set d = e.date | dateParts %}
-      {#- Anchor must match the id built in events.njk -#}
-      {% set anchor = ("ev-" + e.date + "-" + e.title) | slugify %}
-      <div class="event">
-        <div class="date"><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>
-        <div>
-          <h3 class="mt0">{{ e.title | escape }}</h3>
-          <p class="event-sub">{{ e.body | truncate(100) | escape }}{% if e.body | length > 100 %} <a class="more" href="{{ '/events/' | url }}#{{ anchor }}">more</a>{% endif %}</p>
-        </div>
-      </div>
-      {% endif %}{% else %}
-      <p class="muted">Nothing listed at the moment. Check back after Thursday's newsletter.</p>
-      {% endfor %}
-    </section>
-
-    <section>
-      <div class="section-head"><h2>Latest news</h2><a href="{{ '/news/' | url }}">All news &rarr;</a></div>
-      {% for n in pipeline.news | current | merge(whatson.news) %}{% if loop.index <= 3 %}
-      {#- Anchor must match the id built in news.njk -#}
-      {% set anchor = ("news-" + n.title) | slugify %}
-      <div class="card card-compact">
-        <h3 class="mt0">{{ n.title | escape }}</h3>
-        <p>{{ n.body | truncate(110) | escape }}{% if n.body | length > 110 %} <a class="more" href="{{ '/news/' | url }}#{{ anchor }}">more</a>{% endif %}</p>
-      </div>
-      {% endif %}{% else %}
-      <p class="muted">No news at the moment.</p>
-      {% endfor %}
-    </section>
-  </div>
+  <section class="home-cards">
+    {% include "hub-cards.njk" %}
+  </section>
 
   <img class="banner-img" src="{{ '/images/lenches-aerial.jpg' | url }}" alt="The Lenches, Worcestershire, seen from the air" loading="lazy">
 
