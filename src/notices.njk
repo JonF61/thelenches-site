@@ -3,7 +3,7 @@ layout: base.njk
 title: Notices
 description: Notices and news from across the Lenches villages, from parish councils, local groups and the Evesham Journal.
 ---
-{#- Items come from whatson.json (hand-edited) and pipeline.json (written by scripts/publish);
+{#- Items come from src/items/ (hand-edited, via lib/whatson.js) and pipeline.json (written by scripts/publish);
     the allNotices filter merges them, reads any old "news" lists as notices and drops expired ones.
     Road closures and roadworks (roadItems) are on /living-here/roads/ instead.
     Ids are ('notice-' + title) | slugify: the newsletter (lib/anchors.js) and /news/ redirects

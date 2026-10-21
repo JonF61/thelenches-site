@@ -21,6 +21,7 @@ const path = require('path');
 const zlib = require('zlib');
 const g = require('../ingest/google');
 const { select, deadlineFor } = require('./select');
+const { loadWhatson } = require('../../lib/whatson');
 const { render, wrapPreview } = require('./render');
 const { personalise, forPreview } = require('./unsub');
 const { buttons } = require('./actions');
@@ -106,7 +107,7 @@ async function main() {
 
   const model = select({
     issueDate, pending, issues, settings, sources, jpegFor, cutoff,
-    whatson: readJson('src/_data/whatson.json'),
+    whatson: loadWhatson(),
     bins: readJson('src/_data/bins.json'),
     siteupdates: readJson('src/_data/siteupdates.json'),
   });

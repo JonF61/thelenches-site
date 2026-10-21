@@ -3,7 +3,7 @@ layout: base.njk
 title: Events
 description: What's on across the Lenches villages — upcoming events from the newsletter and local groups.
 ---
-{#- Items come from whatson.json (hand-edited) and pipeline.json (written by scripts/publish). -#}
+{#- Items come from src/items/ (hand-edited, via lib/whatson.js) and pipeline.json (written by scripts/publish). -#}
 {#- Thumbnail/tile floats right inside .item-body so the text wraps under it on phones (no blank space) -#}
 {#- "Lenches" badge marks items in the five Lenches (inLenches filter, lib/lenches.js); order stays by date -#}
 {#- Image: the item's own, else a standing photo (Photos tab target event:<key>, eventImage filter), else a tile -#}

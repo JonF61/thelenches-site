@@ -1,6 +1,6 @@
 // scripts/eventimages/index.js
 // Event images from the web (agreed 4 Oct). Run by .github/workflows/eventimages.yml.
-// For upcoming events (whatson.json + pipeline.json, next 28 days) with a web link but no
+// For upcoming events (src/items/ + pipeline.json, next 28 days) with a web link but no
 // image and no matching photos.json target, find the organiser's share image on the
 // linked page (find.js), check it with Sonnet (check.js) and add a row to the
 // "Image fetch" tab. Apps Script (image-fetch.gs) saves it to Drive; the Photos job
@@ -17,6 +17,7 @@ const g = require('../ingest/google');
 const { sheetHeaders } = require('../photos/drive');
 const { findImage } = require('./find');
 const { checkImage } = require('./check');
+const { loadWhatson } = require('../../lib/whatson');
 
 const TAB = 'Image fetch';
 const REQUIRED = ['url', 'village', 'subject', 'filename', 'credit', 'source_page', 'status', 'notes',
@@ -114,7 +115,7 @@ async function main() {
     if (u) imageUses.set(u, (imageUses.get(u) || 0) + 1);
   }
 
-  const whatson = readJson('whatson.json') || {};
+  const whatson = loadWhatson();
   const pipeline = readJson('pipeline.json') || {};
   const photos = readJson('photos.json') || [];
   const from = ukToday();

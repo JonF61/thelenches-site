@@ -255,7 +255,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, issues, settin
     if (isNew) notices.push({ ...base, image: imageFor(row, key) });
   }
 
-  // ---- whatson.json (hand-edited).
+  // ---- Hand-written items (src/items/, assembled by lib/whatson.js; expired ones already left out).
   const w = whatson || {};
   for (const ev of w.events || []) {
     const date = ymd(ev.date);

@@ -5,7 +5,7 @@ Read this first in every session. The full Project Plan is a Claude Doc you can'
 ## The project
 - thelenches.org.uk: community website + weekly newsletter for the Lenches villages (Worcestershire). Eleventy v3 + Nunjucks, GitHub Pages, commits to main rebuild automatically. `pathPrefix` must stay "/".
 - Pipeline: GitHub Actions + a Google Sheet ("Lenches Pipeline") as data hub + a Cloudflare Worker (`worker/`, deployed by deploy-worker.yml on push) for signed approval/send links and crons. Claude API for extraction. Newsletter sends via Gmail API from website@.
-- Key code: `scripts/ingest` (Gmail + RSS ingestion, extract.js, replies.js = "Holly" submitter replies, rules.md), `scripts/newsletter` (select, render, index, send), `scripts/digest`, `scripts/approve`, `scripts/publish`, `lib/` (lenches.js, anchors.js), `src/_data/` (whatson.json, siteupdates.json, services.json, bins.json, site.json), `.eleventy.js`, `src/_includes/base.njk`.
+- Key code: `scripts/ingest` (Gmail + RSS ingestion, extract.js, replies.js = "Holly" submitter replies, rules.md), `scripts/newsletter` (select, render, index, send), `scripts/digest`, `scripts/approve`, `scripts/publish`, `lib/` (lenches.js, anchors.js, whatson.js), `src/items/` (hand-written events and notices, one file each; assembled by `lib/whatson.js` into `src/_data/whatson.js`), `src/_data/` (siteupdates.json, services.json, bins.json, site.json), `.eleventy.js`, `src/_includes/base.njk`.
 
 ## Working with Jon
 - Names (after Red Dwarf): you, Claude Code, are **Kryten**; the claude.ai Project chat is **Holly** (replies.js is also nicknamed Holly; its emails sign as "Lenches website assistant"). "Report back to Holly" means the PR description.
@@ -13,6 +13,34 @@ Read this first in every session. The full Project Plan is a Claude Doc you can'
 - One step at a time: when you need him to do or check something, ask only that, then wait.
 - If this session is on Jon's PC without Git/Node, move to a cloud session straight away rather than asking to install anything.
 - Ask before finalising anything that is a judgement call about content or wording; show public-facing wording for approval before committing it.
+
+## Hand-written items (`src/items/`)
+One small JSON file per item, so adding or removing one never resends a big file. `lib/whatson.js` assembles them at build (site, newsletter, publish, eventimages) and leaves out expired items; the nightly rebuild keeps this current.
+- **Event**: `src/items/events/YYYY-MM-DD-slug.json` (the event's start date, then a short slug of the title). Fields: `date`, `title`, `body`, optional `endDate` (YYYY-MM-DD, multi-day events), `link` {text, url}, `image` {url, alt}, `saveTheDate`, `lenches`, `tile`. Shown until `endDate`, or else `date`, has passed (UK time). Events sort by date, then title.
+- **Notice**: `src/items/notices/slug.json`. Fields: `title`, `body`, optional `expires` (YYYY-MM-DD: hidden from that date on; none = shown until the file is deleted), `order` (lower first; none = after numbered ones, by file name), `link`, `image`, `official`, `roads`.
+- **Bin line and Events footnote**: `src/items/bin-and-footnote.json` ({bin, eventsFootnote}).
+- **Edit**: change the one file. Editing an item's `title` or `date` makes it a new item (new page anchor; the newsletter may show it again).
+- **Remove**: delete the file. Expired files stay harmlessly in place and are never auto-deleted; tidy them up now and then.
+- Note: pipeline notices' `expires` (pipeline.json) is the last day shown; hand-written `expires` is the first day hidden.
+
+Minimal event (`src/items/events/2026-11-14-craft-fair-church-lench.json`):
+```json
+{
+  "date": "2026-11-14",
+  "endDate": "2026-11-15",
+  "title": "Craft fair — Church Lench Village Hall",
+  "body": "Local makers' stalls, 10am to 4pm both days."
+}
+```
+Minimal notice (`src/items/notices/hall-car-park-resurfacing.json`):
+```json
+{
+  "title": "Hall car park resurfacing",
+  "body": "The car park is closed for resurfacing until the end of November.",
+  "expires": "2026-12-01",
+  "order": 15
+}
+```
 
 ## Hard rules
 - Never edit `.github/workflows/` (Jon pastes workflow files himself) or `package.json` (the lockfile must be regenerated on a runner; `npm ci` everywhere).

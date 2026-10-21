@@ -5,7 +5,7 @@
 // images.toRaster() turns it into a picture first (PDF = page 1).
 // Each WebP also gets a JPEG copy (same name, .jpg) for the email newsletter:
 // classic Outlook can't show WebP. Missing JPEGs are made from the WebP, so
-// existing items are backfilled on the next run, including images used in whatson.json.
+// existing items are backfilled on the next run, including images used in src/items/ (hand-written).
 // Each item carries "village" from the Pending village column, so the site's
 // inLenches filter (lib/lenches.js) doesn't have to guess from the text.
 // Idempotent: safe to run as often as you like; the workflow commits only if files changed.
@@ -25,11 +25,11 @@ const g = require('../ingest/google');
 const { toRaster } = require('../ingest/images');
 const { bodyOf, isOfficial } = require('../../lib/wording');
 const { localSource } = require('../../lib/sources');
+const { loadWhatson } = require('../../lib/whatson');
 
 const TZ = 'Europe/London';
 const ROOT = path.join(__dirname, '..', '..');
 const DATA_FILE = path.join(ROOT, 'src', '_data', 'pipeline.json');
-const WHATSON_FILE = path.join(ROOT, 'src', '_data', 'whatson.json');
 const IMAGE_DIR = path.join(ROOT, 'src', 'images', 'items');
 const IMAGE_URL = '/images/items';
 const IMAGE_EDGE = 1200;  // longest side, px
@@ -175,8 +175,8 @@ async function main() {
     notices: out.notices.map((x) => x.item),
   };
 
-  // JPEG copies for hand-added whatson.json images too (the newsletter uses them).
-  const whatson = fs.existsSync(WHATSON_FILE) ? JSON.parse(fs.readFileSync(WHATSON_FILE, 'utf8')) : {};
+  // JPEG copies for hand-added src/items/ images too (the newsletter uses them).
+  const whatson = loadWhatson({ all: true });
   for (const list of ['events', 'news', 'notices']) {
     for (const it of whatson[list] || []) {
       if (it && it.image && it.image.url) await ensureJpeg(it.image.url, `whatson: ${str(it.title)}`, failures);
