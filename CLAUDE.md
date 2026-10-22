@@ -53,6 +53,7 @@ Minimal notice (`src/items/notices/hall-car-park-resurfacing.json`):
 - Sheet: code reads columns by header name. Never rename or move headers or tabs; add new columns at the END only. The grid ends at the last column and tidyTabs hides technical columns, so tell Jon to unhide and insert columns before typing headers, with exact cells and header text.
 - Cloudflare cron day-of-week is 1=Sunday..7=Saturday: always write day names (WED,THU).
 - Commits made with GITHUB_TOKEN don't trigger other workflows.
+- GitHub Actions concurrency groups keep only one waiting run: a newer queued run cancels the waiting one, even with `cancel-in-progress: false`. Where every dispatch must run (e.g. approval.yml), key the group per item (`approval-${{ github.event.client_payload.id }}`); when proposing workflow text for Jon to paste, never use a shared group for such workflows (22 Oct: rapid Approve/Reject taps were silently dropped).
 - When you make a significant visible site change, propose an entry for `src/_data/siteupdates.json` (Jon decides; never reuse a key).
 
 ## Finishing a job: the PR description
