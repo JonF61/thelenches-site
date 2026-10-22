@@ -1,74 +1,18 @@
 ---
-layout: base.njk
-title: Moving to the Lenches
-description: A welcome for newcomers to Church, Rous, Ab, Atch and Sheriffs Lench in Worcestershire — the villages, and what to sort out in your first few weeks.
+permalink: /living-here/moving/
+eleventyExcludeFromCollections: true
 ---
-{%- set m = moving -%}
-<style>
-.mv-banner{display:block;width:100%;aspect-ratio:3/1;object-fit:cover;border-radius:10px;margin:.75rem 0 0}
-.mv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.75rem}
-.mv-grid .card{margin:0;scroll-margin-top:1rem}
-.mv-grid .card:target{outline:3px solid #e8892b;outline-offset:2px}
-.mv-grid h3{margin:0 0 .25rem}
-.mv-img,.mv-tile{display:block;width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:8px;margin-bottom:.5rem}
-.mv-tile{background:#fdf0dc;color:#7a4a06;display:flex;align-items:center;justify-content:center;font-family:'Source Serif 4',serif;font-weight:700}
-.mv-muted{color:#666;font-size:.92rem}
-.mv-check{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.4rem 1rem}
-.mv-check li{padding-left:1.6rem;position:relative;line-height:1.5}
-.mv-check li::before{content:"";position:absolute;left:0;top:.3em;width:.9rem;height:.9rem;border:2px solid #b5471b;border-radius:3px}
-.mv-sponsor img{max-height:56px;max-width:180px;margin-bottom:.4rem}
-</style>
-<main class="container">
-
-  <section>
-    <h1>Moving to the Lenches</h1>
-    <p class="mt0">{{ m.intro }}</p>
-    {%- if m.banner and m.banner.src %}<img class="mv-banner" src="{{ m.banner.src | url }}" alt="{{ m.banner.alt }}" loading="lazy">{% endif %}
-  </section>
-
-  <section id="villages">
-    <h2>The villages</h2>
-    <div class="mv-grid">
-      {%- for v in m.villages %}
-      <div class="card" id="{{ v.name | slugify }}">
-        {%- if v.image %}<img class="mv-img" src="{{ v.image | url }}" alt="{{ v.imageAlt or v.name }}" loading="lazy">{% else %}<div class="mv-tile" aria-hidden="true">{{ v.name }}</div>{% endif %}
-        <h3>{{ v.name }}</h3>
-        <p class="mv-muted mt0">{{ v.text }}</p>
-      </div>
-      {%- endfor %}
-    </div>
-  </section>
-
-  <section id="first-weeks">
-    <h2>Your first few weeks</h2>
-    <div class="card">
-      <ul class="mv-check">
-        {%- for c in m.checklist %}
-        <li><a href="{% if c.url.startsWith('/') %}{{ c.url | url }}{% else %}{{ c.url }}{% endif %}"{% if c.url.startsWith('http') %} target="_blank" rel="noopener"{% endif %}>{{ c.label }}</a></li>
-        {%- endfor %}
-      </ul>
-    </div>
-  </section>
-
-  {#- Sponsor slots (property partner, conveyancing partner) render only once moving.json lists a sponsor. -#}
-  {%- if m.sponsors and m.sponsors.length %}
-  <section id="partners">
-    <h2>Help with your move</h2>
-    <div class="mv-grid">
-      {%- for s in m.sponsors %}
-      <div class="card mv-sponsor">
-        {%- if s.logo %}<img src="{{ s.logo | url }}" alt="{{ s.name }}" loading="lazy">{% endif %}
-        <h3>{{ s.name }}</h3>
-        <p class="mv-muted mt0">{{ s.role }}</p>
-        <p>{{ s.text }}</p>
-        <p><a href="{{ s.url }}" target="_blank" rel="noopener sponsored">Visit {{ s.name }}</a></p>
-      </div>
-      {%- endfor %}
-    </div>
-    <p class="mv-muted">Our partners help fund this website. A listing isn't an endorsement.</p>
-  </section>
-  {%- endif %}
-
-  <p class="mv-muted">New to the villages and something's missing from this page? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
-
-</main>
+{#- Moving to the Lenches retired for now (22 Oct 2026). The full template is in commit f1cfeb4; content is still in src/_data/moving.json. -#}
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex">
+  <meta http-equiv="refresh" content="0; url={{ '/living-here/' | url }}">
+  <link rel="canonical" href="{{ site.url }}/living-here/">
+  <title>Moved — The Lenches</title>
+</head>
+<body>
+  <p>This page has moved to <a href="{{ '/living-here/' | url }}">Living here</a>.</p>
+</body>
+</html>

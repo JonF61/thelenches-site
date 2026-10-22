@@ -1,8 +1,8 @@
 {#- Illustrated antique-style map for Home (replaced the aerial banner, 21 Oct 2026).
     Village positions are to scale from VILLAGES in lib/roads.js (x = 20 + (lon + 2.06) * 3556,
     y = 15 + (52.196 - lat) * 5792); the lanes and the Avon are hand-sketched, not surveyed.
-    The five Lenches link to their cards on Moving to the Lenches (ids from slugified names). -#}
-{%- set mv = '/living-here/moving/' | url -%}
+    The five Lenches used to link to their cards on Moving to the Lenches; unlinked 22 Oct while that page is retired.
+    To restore: wrap each name in <a href="{{ '/living-here/moving/' | url }}#<slug>">…</a> (slugified names). -#}
 <style>
 .lmap{display:block;width:100%;max-width:760px;height:auto;margin:1.5rem auto 0}
 .lmap text{font-family:Georgia,'Times New Roman',serif;font-style:italic;fill:#4a2f1a}
@@ -19,11 +19,11 @@
 <g fill="#5f7a3e" opacity=".75"><circle cx="150" cy="200" r="5"/><circle cx="158" cy="206" r="4"/><circle cx="144" cy="208" r="4"/><circle cx="230" cy="300" r="5"/><circle cx="238" cy="306" r="4"/><circle cx="440" cy="150" r="5"/><circle cx="448" cy="156" r="4"/><circle cx="432" cy="157" r="4"/><circle cx="520" cy="205" r="5"/><circle cx="528" cy="211" r="4"/><circle cx="260" cy="410" r="5"/><circle cx="268" cy="404" r="4"/><circle cx="385" cy="395" r="5"/><circle cx="393" cy="401" r="4"/><circle cx="110" cy="330" r="5"/><circle cx="118" cy="336" r="4"/><circle cx="560" cy="160" r="5"/><circle cx="470" cy="105" r="4"/><circle cx="478" cy="111" r="5"/><circle cx="175" cy="160" r="4"/><circle cx="600" cy="230" r="5"/><circle cx="608" cy="236" r="4"/></g>
 <defs><path id="lmap-h" d="M-9 4v-6l4-4 4 4v6zM1 4v-5l4-4 4 4v5z"/></defs>
 <g fill="#8a5a3b"><use href="#lmap-h" x="367" y="226"/><use href="#lmap-h" x="301" y="120"/><use href="#lmap-h" x="294" y="197"/><use href="#lmap-h" x="396" y="246"/><use href="#lmap-h" x="332" y="337"/><use href="#lmap-h" x="498" y="323"/><circle cx="395" cy="60" r="3.5"/><circle cx="476" cy="437" r="3.5"/><circle cx="199" cy="104" r="3.5"/></g>
-<a href="{{ mv }}#church-lench"><text class="v" x="379" y="224">Church Lench</text></a>
-<a href="{{ mv }}#rous-lench"><text class="v" x="313" y="117">Rous Lench</text></a>
-<a href="{{ mv }}#ab-lench"><text class="v" x="282" y="201" text-anchor="end">Ab Lench</text></a>
-<a href="{{ mv }}#atch-lench"><text class="v" x="388" y="266">Atch Lench</text></a>
-<a href="{{ mv }}#sheriffs-lench"><text class="v" x="344" y="342">Sheriffs Lench</text></a>
+<text class="v" x="379" y="224">Church Lench</text>
+<text class="v" x="313" y="117">Rous Lench</text>
+<text class="v" x="282" y="201" text-anchor="end">Ab Lench</text>
+<text class="v" x="388" y="266">Atch Lench</text>
+<text class="v" x="344" y="342">Sheriffs Lench</text>
 <text class="v" x="510" y="320" style="font-size:14px">Harvington</text>
 <text class="o" x="405" y="58">Abbots Morton</text>
 <text class="o" x="466" y="441" text-anchor="end">Lenchwick</text>
