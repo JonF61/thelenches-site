@@ -9,8 +9,10 @@ on:
 permissions:
   contents: read
 
+# One queue per item: GitHub keeps only one waiting run per group, so a shared
+# group silently cancelled taps made in quick succession (22 Oct).
 concurrency:
-  group: approval
+  group: approval-${{ github.event.client_payload.id }}
   cancel-in-progress: false
 
 jobs:
