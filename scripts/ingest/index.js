@@ -16,6 +16,7 @@ const { extract, stats: claudeStats } = require('./extract');
 const { prepareAttachments, hashDistance } = require('./images');
 const { sendUrgentAlerts } = require('./urgent');
 const replies = require('./replies');
+const edits = require('./edits');
 const rss = require('./rss');
 const trust = require('./trusted');
 const { offersChoice } = require('../../lib/wording');
@@ -147,7 +148,7 @@ async function processMessage(id, ctx) {
     // (a retry would re-apply the answer); the run fails instead so GitHub emails Jon.
     let follow;
     try {
-      const f = await replies.planFollowup({ msg, reply: answered, ctx, added });
+      const f = await replies.planFollowup({ msg, reply: answered, ctx, added, result });
       follow = f.flagged ? `follow-up flagged (${f.reason})` : `no follow-up needed (${f.reason})`;
     } catch (err) {
       ctx.replyErrors += 1;
@@ -370,6 +371,14 @@ async function main() {
   } catch (err) {
     console.error(`Urgent alert failed (will retry next run): ${(err && err.message) || err}`);
     process.exitCode = 1; // GitHub emails the failure
+  }
+
+  // Jon's Edit emails (corrected reply text he sent himself): sent in place of the draft.
+  try {
+    await edits.applyEdits(settings);
+  } catch (err) {
+    console.error(`Edits: ${(err && err.message) || err}`);
+    process.exitCode = 1;
   }
 
   // Sends queued replies and 24h-expired approvals (live mode only).

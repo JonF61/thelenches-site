@@ -7,8 +7,12 @@
 //   trust             "Trust this source" (daily approvals email): adds the item's sender
 //                     address or feed URL to the Trusted tab (once), then approves that
 //                     item as "approve" does. Never touches the source's other items.
-//   send / skip       Submitter replies (Replies tab). Only rows still "awaiting" change;
-//                     Send uses the body cell as it is now (see scripts/ingest/replies.js).
+//   send / skip       Replies (Replies tab): the Approve and Reject buttons. Only rows still
+//                     "awaiting" change; Approve sends the body cell as it is now (see
+//                     scripts/ingest/replies.js). REASON (optional, typed on the Reject
+//                     page) goes to the Reply feedback tab.
+// Rejecting an item whose acknowledgement said it was on its way drafts a "sorry, we
+// couldn't use it after all" reply for Jon's Approve/Edit/Reject (replies.planSorry).
 // Replayed or duplicate clicks therefore do nothing.
 'use strict';
 
@@ -54,6 +58,15 @@ async function decideItem(id, action) {
   }
   await g.updateRow('Pending', row._row, fields);
   console.log(`Item ${id} ("${row.title}") marked ${status}${fields.wording ? ` (${fields.wording} wording)` : ''}.`);
+  if (status === 'rejected') {
+    // The rejection is recorded either way; a failed draft only fails the run (GitHub emails Jon).
+    try {
+      await replies.planSorry(row);
+    } catch (err) {
+      console.error(`Sorry note not drafted: ${(err && err.message) || err}`);
+      process.exitCode = 1;
+    }
+  }
 }
 
 async function trustSource(id) {
@@ -74,7 +87,10 @@ async function main() {
 
   if (ITEM_ACTIONS.includes(action)) return decideItem(id, action);
   if (action === 'trust') return trustSource(id);
-  if (['send', 'skip'].includes(action)) return replies.decideReply(id, action);
+  if (['send', 'skip'].includes(action)) {
+    const reason = String(process.env.REASON || '').replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 300);
+    return replies.decideReply(id, action, reason);
+  }
   throw new Error(`Bad action "${action}"`);
 }
 

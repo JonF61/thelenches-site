@@ -113,6 +113,12 @@ async function listMessageIds(labelName, afterEpochSeconds) {
   return ids;
 }
 
+// Message IDs matching a Gmail search (e.g. edits.js: 'in:sent subject:"[Edit reply"').
+async function searchMessageIds(q, max = 50) {
+  const res = await gmail().users.messages.list({ userId: 'me', q, maxResults: max });
+  return (res.data.messages || []).map((m) => m.id);
+}
+
 // "Send mail as" addresses GMAIL_USER may use (lower case): the primary address plus
 // aliases that are verified or need no verification (same-domain aliases).
 async function sendAsAddresses() {
@@ -213,6 +219,7 @@ async function getMessage(id) {
   return {
     id: msg.id,
     threadId: msg.threadId,
+    labelIds: msg.labelIds || [],
     internalDate: Number(msg.internalDate),
     from: header(headers, 'From'),
     fromAddress: addressOf(header(headers, 'From')),
@@ -447,6 +454,7 @@ async function updateRow(tab, rowNumber, fields) {
 
 module.exports = {
   listMessageIds,
+  searchMessageIds,
   sendAsAddresses,
   getMessage,
   getAttachmentData,

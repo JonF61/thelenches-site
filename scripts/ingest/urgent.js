@@ -5,9 +5,12 @@
 //   - official notices awaiting a decision: their wording and our rewrite, with "Approve
 //     with their wording" / "Approve with rewrite" buttons (wordingview.js). Urgent items
 //     that offer the choice (official or "use my wording") show it too.
-//   - follow-ups needing a human (a question or new issue on a thread we've replied to),
-//     submitter replies awaiting a decision (Send/Skip), shadow-mode drafts, and replies
-//     stuck at "sending" (never resent automatically)
+//   - replies held for Jon (complaints, data/GDPR, legal or press, children or
+//     safeguarding, money, who runs the site: a holding reply has gone), follow-ups
+//     needing a human (a question or new issue on a thread we've replied to), other
+//     drafts awaiting a decision (Approve / Edit / Reject; Edit opens an email to Jon
+//     himself, edits.js), shadow-mode drafts, and replies stuck at "sending" (never
+//     resent automatically). Each shows the email's class and confidence.
 //
 // Retry-safe: Pending and Replies "alerted_at" are stamped only after the email is sent,
 // so a failed send is retried on the next run. Pending rows that don't qualify are
@@ -19,6 +22,7 @@ const { signedLink, linksEnabled, LINK_DAYS } = require('./links');
 const replies = require('./replies');
 const { offersChoice, isOfficial } = require('../../lib/wording');
 const wv = require('./wordingview');
+const { editLink } = require('./edits');
 
 const TZ = 'Europe/London';
 const DEFAULT_WINDOW_DAYS = 7; // override with Settings key urgent_window_days
@@ -33,6 +37,10 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
 ));
 const truthy = (v) => String(v).trim().toUpperCase() === 'TRUE';
 const isFollowup = (r) => r.type === 'followup';
+const isHeld = (r) => r.type === 'held';
+const alertTo = () => process.env.ALERT_TO || process.env.GMAIL_USER;
+const classLine = (r) => [r.class && `Class: ${r.class}${r.class_confidence !== '' && r.class_confidence !== undefined ? ` (${r.class_confidence})` : ''}`,
+  r.policy_codes].filter(Boolean).join(' · ');
 
 function londonDate(ms) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(ms); // YYYY-MM-DD
@@ -89,15 +97,21 @@ function replyLine(r, liveButtons) {
       + 'It will never be resent automatically; set the status by hand once checked.';
   }
   const noButtons = liveButtons ? '' : ' Buttons unavailable; edit the status in the Sheet.';
+  const how = 'Approve sends it (as the Sheet body cell stands); Edit opens an email to yourself: change '
+    + 'the text and send it, and the next run sends yours; Reject sends nothing.';
   if (isFollowup(r)) {
     return 'They wrote again on a thread we already answered (see the note). This draft is never sent '
-      + 'unless you press Send, including in holiday mode. Edit the body cell first if needed, or Skip '
-      + `and reply by hand.${noButtons}`;
+      + `unless you approve or edit it, including in holiday mode. ${how}${noButtons}`;
   }
-  const when = r.status === 'awaiting'
+  if (isHeld(r)) {
+    return 'They have had a holding reply. This draft never goes unless you approve or edit it, even in '
+      + `holiday mode; Reject if you'd rather reply yourself (from website@). ${how}${noButtons}`;
+  }
+  const when = r.status === 'awaiting' && replies.FALLBACK_TYPES.includes(r.type || 'ack')
+    && !String(r.policy_codes || '').includes('sender_limit')
     ? ` If you do nothing, it goes without the question ${replies.AWAIT_HOURS}h after ${r.created_at}.`
-    : '';
-  return `Awaiting your decision: Send uses the body cell as it is when you confirm.${when}${noButtons}`;
+    : ' Never sent unless you approve or edit it.';
+  return `Awaiting your decision. ${how}${when}${noButtons}`;
 }
 
 /* ----------------------------------------------------------------- HTML -- */
@@ -150,21 +164,23 @@ function replyHtml(r, ctx) {
   const showButtons = ctx.liveButtons && r.status === 'awaiting';
   const link = { id: r.reply_id, title: `Reply to ${r.to}` };
   let border = C.green;
-  if (r.status === 'sending') border = C.red;
+  if (r.status === 'sending' || isHeld(r)) border = C.red;
   else if (isFollowup(r)) border = C.orange;
-  // Follow-ups: their words matter more than our draft, so the note sits above the body.
+  // Follow-ups and enquiries: their words matter more than our draft, so the note sits
+  // above the body.
+  const noteFirst = !replies.FALLBACK_TYPES.includes(r.type || 'ack');
   const noteHtml = r.notes
-    ? `<div style="color:${isFollowup(r) ? '#2b2b2b' : C.grey};font-size:${isFollowup(r) ? 14 : 12}px;margin-bottom:8px;">${esc(r.notes)}</div>`
+    ? `<div style="color:${noteFirst ? '#2b2b2b' : C.grey};font-size:${noteFirst ? 14 : 12}px;margin-bottom:8px;">${esc(r.notes)}</div>`
     : '';
   return card(`
       <div style="font-size:16px;font-weight:bold;color:${C.green};margin-bottom:4px;">To ${esc(r.to)}</div>
-      <div style="color:${C.grey};font-size:14px;margin-bottom:8px;">${esc(r.subject)}${r.policy_codes ? ` · ${esc(r.policy_codes)}` : ''}</div>
-      ${isFollowup(r) ? noteHtml : ''}
+      <div style="color:${C.grey};font-size:14px;margin-bottom:8px;">${esc(r.subject)}${classLine(r) ? ` · ${esc(classLine(r))}` : ''}</div>
+      ${noteFirst ? noteHtml : ''}
       <div style="white-space:pre-wrap;background:${C.cream};border-radius:6px;padding:10px 12px;font-size:14px;margin-bottom:8px;">${esc(r.body)}</div>
-      ${isFollowup(r) ? '' : noteHtml}
+      ${noteFirst ? '' : noteHtml}
       <div style="font-weight:bold;font-size:14px;margin-bottom:6px;">${esc(replyLine(r, ctx.liveButtons))}</div>
-      ${showButtons ? `<div>${button(signedLink(link, 'send'), 'Send', C.green)}${button(signedLink(link, 'skip'), 'Skip', C.red)}</div>` : ''}
-      <div style="margin-top:6px;">${textLink(ctx.replyUrl(r), 'Edit in Sheet')}${ctx.gmailFor(r) ? textLink(ctx.gmailFor(r), isFollowup(r) ? 'Their email' : 'Original email') : ''}</div>`,
+      ${showButtons ? `<div>${button(signedLink(link, 'send'), 'Approve', C.green)}${button(editLink(r, alertTo()), 'Edit', C.orange)}${button(signedLink(link, 'skip'), 'Reject', C.red)}</div>` : ''}
+      <div style="margin-top:6px;">${textLink(ctx.replyUrl(r), 'Open in Sheet')}${ctx.gmailFor(r) ? textLink(ctx.gmailFor(r), !replies.FALLBACK_TYPES.includes(r.type || 'ack') ? 'Their email' : 'Original email') : ''}</div>`,
   border);
 }
 
@@ -173,8 +189,9 @@ const SUGGESTION = 'Suggested: a one-off extra send to subscribers. There is no 
 
 function buildHtml(ctx) {
   const { items, choices, drafts, stuck, holiday, rowUrl, buttons } = ctx;
+  const held = drafts.filter((r) => r.status === 'awaiting' && isHeld(r));
   const followups = drafts.filter((r) => r.status === 'awaiting' && isFollowup(r));
-  const awaiting = drafts.filter((r) => r.status === 'awaiting' && !isFollowup(r));
+  const awaiting = drafts.filter((r) => r.status === 'awaiting' && !isFollowup(r) && !isHeld(r));
   const shadow = drafts.filter((r) => r.status === 'shadow');
   return `<!doctype html>
 <html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>
@@ -193,6 +210,7 @@ function buildHtml(ctx) {
       ${items.map((r) => itemHtml(r, rowUrl, buttons)).join('')}` : ''}
       ${choices.length ? `${heading('Choose the wording', C.green)}${choices.map((r) => itemHtml(r, rowUrl, buttons, C.green)).join('')}` : ''}
       ${stuck.length ? `${heading('Replies stuck at "sending"', C.red)}${stuck.map((r) => replyHtml(r, ctx)).join('')}` : ''}
+      ${held.length ? `${heading('Held for you', C.red)}${held.map((r) => replyHtml(r, ctx)).join('')}` : ''}
       ${followups.length ? `${heading('Follow-ups needing a human', C.orange)}${followups.map((r) => replyHtml(r, ctx)).join('')}` : ''}
       ${awaiting.length ? `${heading('Replies needing your decision', C.green)}${awaiting.map((r) => replyHtml(r, ctx)).join('')}` : ''}
       ${shadow.length ? `${heading('Reply drafts (shadow mode, not sent)', C.green)}${shadow.map((r) => replyHtml(r, ctx)).join('')}` : ''}
@@ -243,24 +261,27 @@ function buildText(ctx) {
     if (!list.length) return;
     out.push(label, '');
     for (const r of list) {
-      out.push(`To ${r.to}: ${r.subject}${r.policy_codes ? ` [${r.policy_codes}]` : ''}`);
-      if (isFollowup(r) && r.notes) out.push(r.notes);
+      const noteFirst = !replies.FALLBACK_TYPES.includes(r.type || 'ack');
+      out.push(`To ${r.to}: ${r.subject}${classLine(r) ? ` [${classLine(r)}]` : ''}`);
+      if (noteFirst && r.notes) out.push(r.notes);
       out.push('---', r.body, '---');
-      if (!isFollowup(r) && r.notes) out.push(r.notes);
+      if (!noteFirst && r.notes) out.push(r.notes);
       out.push(replyLine(r, ctx.liveButtons));
       if (ctx.liveButtons && r.status === 'awaiting') {
         const link = { id: r.reply_id, title: `Reply to ${r.to}` };
-        out.push(`Send: ${signedLink(link, 'send')}`);
-        out.push(`Skip: ${signedLink(link, 'skip')}`);
+        out.push(`Approve: ${signedLink(link, 'send')}`);
+        out.push(`Edit: ${editLink(r, alertTo())}`);
+        out.push(`Reject: ${signedLink(link, 'skip')}`);
       }
-      out.push(`Edit: ${ctx.replyUrl(r)}`);
+      out.push(`Sheet: ${ctx.replyUrl(r)}`);
       if (ctx.gmailFor(r)) out.push(`Original: ${ctx.gmailFor(r)}`);
       out.push('');
     }
   };
   section('REPLIES STUCK AT "SENDING"', stuck);
+  section('HELD FOR YOU', drafts.filter((r) => r.status === 'awaiting' && isHeld(r)));
   section('FOLLOW-UPS NEEDING A HUMAN', drafts.filter((r) => r.status === 'awaiting' && isFollowup(r)));
-  section('REPLIES NEEDING YOUR DECISION', drafts.filter((r) => r.status === 'awaiting' && !isFollowup(r)));
+  section('REPLIES NEEDING YOUR DECISION', drafts.filter((r) => r.status === 'awaiting' && !isFollowup(r) && !isHeld(r)));
   section('REPLY DRAFTS (SHADOW MODE, NOT SENT)', drafts.filter((r) => r.status === 'shadow'));
   return out.join('\n');
 }
@@ -277,6 +298,8 @@ function subjectFor(items, choices, drafts, stuck) {
       : `Choose the wording: ${choices.length} items (Lenches)`;
   }
   if (stuck.length) return `Action needed: ${stuck.length} reply(ies) stuck (Lenches)`;
+  const held = drafts.filter((r) => r.status === 'awaiting' && isHeld(r)).length;
+  if (held) return `Action needed: ${held} email(s) held for you (Lenches)`;
   const follow = drafts.filter((r) => r.status === 'awaiting' && isFollowup(r)).length;
   if (follow) return `Action needed: ${follow} follow-up(s) need a reply (Lenches)`;
   const awaiting = drafts.filter((r) => r.status === 'awaiting').length;

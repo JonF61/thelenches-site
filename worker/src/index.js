@@ -20,7 +20,8 @@
 //                       5-cron-per-account free limit.
 // Actions: approve/reject (Pending items), approve_own/approve_rewrite (approve with the
 // submitter's own wording or our rewrite), trust (add the item's sender or feed to the
-// Trusted tab and approve that item), send/skip (submitter replies), nlsend/nlbuild
+// Trusted tab and approve that item), send/skip (the Approve and Reject buttons for replies;
+// Reject's page takes an optional reason), nlsend/nlbuild
 // (newsletter Send and Rebuild buttons). Single use and every send safeguard are enforced
 // downstream: the Worker only passes signed requests on to GitHub.
 // The Rebuild button's build carries rebuild: true, which lifts the Wednesday 18:00
@@ -61,8 +62,8 @@ const ACTIONS = {
   approve_own: ['Approve with their wording', 'Approved with their wording', 'approve'],
   approve_rewrite: ['Approve with rewrite', 'Approved with our rewrite', 'approve'],
   trust: ['Trust this source', 'Source trusted', 'approve'],
-  send: ['Send reply', 'Reply queued to send', 'approve'],
-  skip: ['Skip reply', 'Reply skipped', 'reject'],
+  send: ['Approve and send reply', 'Reply approved', 'approve'],
+  skip: ['Reject reply', 'Reply rejected', 'reject'],
   nlsend: ['Send newsletter', 'Send started', 'approve'],
   nlbuild: ['Rebuild newsletter', 'Rebuild started', 'approve'],
   unsub: ['Unsubscribe', 'Unsubscribed', 'reject'],
@@ -191,13 +192,17 @@ async function dispatch(env, eventType, clientPayload, tries = 1) {
   return false;
 }
 
-function dispatchFor(p) {
+// Optional reason typed on the Reject reply page (Reply feedback tab): one line, short.
+const cleanReason = (v) => String(v || '').replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 300);
+
+function dispatchFor(p, reason = '') {
   if (p.a === 'nlsend') {
     return ['newsletter', {
       action: 'send', issue_date: p.i, confirm_count: String(p.n), expect_hash: p.h, expect_mode: p.m,
     }];
   }
   if (p.a === 'nlbuild') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true }];
+  if (p.a === 'skip' && reason) return ['approval', { id: p.i, action: p.a, reason }];
   return ['approval', { id: p.i, action: p.a }];
 }
 
@@ -239,6 +244,7 @@ async function handleApproval(request, env) {
 ${confirmExtra(p)}
 <form method="post" action="/a">
   <input type="hidden" name="t" value="${esc(token)}">
+  ${p.a === 'skip' ? '<p><label for="reason">Why? (optional, kept in the Reply feedback tab, never sent)</label><br><input id="reason" name="reason" type="text" maxlength="300" style="width:100%;max-width:420px;padding:8px;font-size:16px;"></p>' : ''}
   <button class="${cls}" type="submit">${esc(p.a === 'nlsend' ? (p.t || verb) : verb)}</button>
 </form>
 <p class="muted">${esc(p.i)}</p>`);
@@ -246,8 +252,11 @@ ${confirmExtra(p)}
 
   if (request.method === 'POST') {
     let token = '';
+    let reason = '';
     try {
-      token = (await request.formData()).get('t');
+      const form = await request.formData();
+      token = form.get('t');
+      reason = cleanReason(form.get('reason'));
     } catch {
       return invalidPage();
     }
@@ -255,7 +264,7 @@ ${confirmExtra(p)}
     if (!p || p.a === 'unsub') return invalidPage();
     if (p.expired) return expiredPage();
 
-    const [eventType, payload] = dispatchFor(p);
+    const [eventType, payload] = dispatchFor(p, reason);
     if (!(await dispatch(env, eventType, payload, 2))) return failedPage();
     const [, done] = ACTIONS[p.a];
     return page(done, `
