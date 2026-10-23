@@ -29,10 +29,14 @@ description: Pre-school, first, middle and high schools for the Lenches villages
     <h2>In the village</h2>
     <div class="sc-grid">
       {%- for p in s.local %}
-      <div class="card">
+      <div class="card" id="{{ p.name | slugify }}">
+        {%- if p.image %}
+        {#- First School photo is Jon's IMG_1685 (13 Oct); a newer one is on the Todoist list -#}
+        <img class="thumb" src="{{ p.image | url }}" alt="{{ p.alt }}" loading="lazy">
+        {%- endif %}
         <h3>{{ p.name }}</h3>
         <p class="sc-muted mt0">{{ p.where }}</p>
-        <p>{{ p.text }}</p>
+        <p>{{ p.text }}{% if p.forestSchool %} Forest School at the <a href="{{ '/groups/#orchard' | url }}">community orchard</a>.{% endif %}</p>
         <p><a href="tel:{{ p.phone | replace(' ', '') }}">{{ p.phone }}</a>{% if p.email %} &middot; <a href="mailto:{{ p.email }}">Email</a>{% endif %} &middot; <a href="https://www.google.com/maps/search/?api=1&query={{ p.map | urlencode }}" target="_blank" rel="noopener">Map</a></p>
         <p class="sc-muted">{% for l in p.links %}<a href="{{ l.url }}" target="_blank" rel="noopener">{{ l.text }}</a>{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
       </div>
