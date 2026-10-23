@@ -158,6 +158,48 @@ function longDate(ymd) {
   }).format(new Date(`${ymd}T12:00:00Z`));
 }
 
+// Dates in drafts and Jon's edits put in voice.md's style, "Saturday 12 October": no comma,
+// no "th", no "of", full names. "Monday, 9 November 2026", "Mon 9th Nov" and "November 9,
+// 2026" all become "Monday 9 November". The year stays (as "9 November 2027") only for a
+// date more than 300 days ahead or 60 days back, where leaving it out would mislead.
+// Wording and weekdays are never changed otherwise.
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+  'September', 'October', 'November', 'December'];
+const WD_RE = '(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tues?|Wed|Thu(?:rs?)?|Fri|Sat|Sun)\\.?';
+const MON_RE = '(January|February|March|April|May|June|July|August|September|October|November|December'
+  + '|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept?|Oct|Nov|Dec)\\.?';
+// [weekday[,] [the]] 9[th] [of] November[,] [2026]
+const DAY_FIRST = new RegExp(`(?<![\\w£$.:/])(?:${WD_RE},?\\s+(?:the\\s+)?)?(\\d{1,2})(?:st|nd|rd|th)?(?:\\s+of)?\\s+${MON_RE}(?:,?\\s+(\\d{4}))?(?![\\w/])`, 'g');
+// [weekday[,]] November 9[th][,] [2026] (full month names; "May" only with a weekday or year)
+const MONTH_FIRST = new RegExp(`(?<![\\w£$.:/])(?:${WD_RE},?\\s+)?(${MONTHS.join('|')})\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+(\\d{4}))?(?![\\w/:.]\\d)(?![\\w/])`, 'g');
+
+// "on the 3rd of March" -> "on 3rd of March" (then "on 3 March" below); "Friday the
+// 13th" is left to DAY_FIRST.
+const THE_ORDINAL = new RegExp(`(?<!(?:day|Mon|Tues?|Wed|Thu(?:rs?)?|Fri|Sat|Sun)\\.?,?\\s+)\\bthe\\s+(\\d{1,2}(?:st|nd|rd|th)(?:\\s+of)?\\s+${MON_RE})`, 'g');
+
+const fullName = (abbr, names) => names.find((n) => n.toLowerCase().startsWith(abbr.slice(0, 3).toLowerCase()));
+
+function styleDate(wd, day, month, year, today) {
+  const m = MONTHS.indexOf(fullName(month, MONTHS));
+  const d = Number(day);
+  if (m < 0 || d < 1 || d > 31) return null;
+  let keepYear = false;
+  if (year) {
+    const ms = Date.UTC(Number(year), m, d) - Date.parse(`${today}T00:00:00Z`);
+    keepYear = ms > 300 * 864e5 || ms < -60 * 864e5;
+  }
+  return [wd ? fullName(wd, WEEKDAYS) : '', `${d} ${MONTHS[m]}`, keepYear ? year : ''].filter(Boolean).join(' ');
+}
+
+function normaliseDates(text, today = londonDate(Date.now())) {
+  return String(text || '')
+    .replace(THE_ORDINAL, '$1')
+    .replace(DAY_FIRST, (all, wd, day, month, year) => styleDate(wd, day, month, year, today) ?? all)
+    .replace(MONTH_FIRST, (all, wd, month, day, year) => (month === 'May' && !wd && !year
+      ? all : styleDate(wd, day, month, year, today) ?? all));
+}
+
 // After the Wednesday 6pm deadline and before Thursday's newsletter has gone (noon).
 function isLate(ms) {
   const parts = new Intl.DateTimeFormat('en-GB', {
@@ -327,7 +369,7 @@ function voiceGuide() {
 function withVoice(system) {
   const voice = voiceGuide();
   return voice
-    ? `${system}\n\nWrite in the voice described in this guide. The rules above take precedence: the sign-off is added separately, so do not sign off or mention Holly or any name.\n\n<voice_guide>\n${voice}\n</voice_guide>`
+    ? `${system}\n\nWrite in the voice described in this guide. The rules above take precedence: the sign-off is added separately, so do not sign off or mention Holly or any name. Write every date exactly in the guide's style, weekday then day then month, with no comma, no \"th\" and no year (\"Monday 9 November\", never \"Monday, 9 November 2026\"), even where site_facts or their message write it differently.\n\n<voice_guide>\n${voice}\n</voice_guide>`
     : system;
 }
 
@@ -375,7 +417,7 @@ function sanitiseDraft(text) {
   const t = String(text || '').replace(/\s+/g, ' ').trim();
   if (t.length < 20 || t.length > MAX_CLARIFY_CHARS) return '';
   if (/https?:|www\.|@/i.test(t)) return '';
-  return t;
+  return normaliseDates(t);
 }
 
 // Returns { text, drafted } — drafted false means the fixed fallback wording was used.
@@ -758,7 +800,7 @@ function sanitiseAnswer(text, urls, { emails = [], max = MAX_ANSWER_CHARS } = {}
   if (/@|www\./i.test(rest)) return '';
   const links = t.match(/https?:\/\/[^\s<>"]+/g) || [];
   if (links.some((u) => !urls.has(u))) return '';
-  return t;
+  return normaliseDates(t);
 }
 
 // Returns { text, drafted, warnings }. drafted false: holding wording (Claude unavailable or
@@ -939,21 +981,99 @@ const FOLLOWUP_FALLBACK = 'Thank you for getting back to us. The team will look 
 // Signatures (23 Oct: "They wrote" quotes carried phone numbers and social links).
 const SIG_DELIM = /^(--|__+)\s*$/;
 const DEVICE_LINE = /^(sent from my\b|sent from (outlook|mail|yahoo|gmail)|get outlook for\b|download outlook\b)/i;
-const SIGN_OFF = /^(kind(est)? regards|warm(est)? regards|best regards|many regards|regards|with (best |kind )?(regards|wishes|thanks)|many thanks|thanks( again| so much| very much| a lot)?|thank you( so much| very much)?|best wishes|all the best|warm wishes|best|cheers|yours( sincerely| faithfully| truly)?|sincerely|love|bw|kr)[\s,.!]*$/i;
+const SIGN_OFF_WORDS = '(?:kind(?:est)? regards|warm(?:est)? regards|best regards|many regards|regards'
+  + '|with (?:best |kind )?(?:regards|wishes|thanks)|many thanks|thanks(?: again| so much| very much| a lot)?'
+  + '|thank you(?: so much| very much)?|best wishes|all the best|warm wishes|best|cheers'
+  + '|yours(?: sincerely| faithfully| truly)?|sincerely|love|bw|kr)';
+const SIGN_OFF_AT = new RegExp(`^${SIGN_OFF_WORDS}(?=$|[\\s,.!;:])`, 'i');
 const CONTACT_LINE = /(\+?\d[\d ()-]{7,}\d)|https?:\/\/|www\.|\S@\S|\b(tel|telephone|mob|mobile|phone|fax|facebook|instagram|twitter|linkedin|tiktok|youtube)\b|\b[a-z0-9-]+\.(co\.uk|com|org|org\.uk|net|uk)\b/i;
+// A word of a name or job title ("Jo", "Smith-Jones", "J.", "Managing", "of", "&").
+const NAME_WORD = /^(?:[A-Z][A-Za-z'’.-]*|&|of|and|the|to|for|at|de|van|von|le|la|du|da)$/;
+const CONNECTOR = /^(?:&|of|and|the|to|for|at|de|van|von|le|la|du|da)$/;
+
+// Reads s as sign-offs, names and job titles only, e.g. "Kind regards, Jo Smith All the
+// best, Jo. Jo Smith, Managing Director". Returns { signOffs, words, first } or null if
+// anything else is in it (a question, a lower-case word, "to"/"for" straight after a
+// sign-off, as in "Best wishes to everyone"). strict: a one-word sign-off must be
+// followed by punctuation or the end ("Love, Jo", not "Love Lench Fest").
+function readSignOff(s, { strict = false } = {}) {
+  if (/[?]/.test(s)) return null;
+  let rest = String(s).trim();
+  let signOffs = 0;
+  let words = 0;
+  let first = '';
+  let afterSignOff = false;
+  while (rest) {
+    const m = rest.match(SIGN_OFF_AT);
+    if (m) {
+      const after = rest.slice(m[0].length);
+      if (!first && strict && !/\s/.test(m[0]) && !/^\s*([,.!]|$)/.test(after)) return null;
+      first = first || 'signoff';
+      signOffs += 1;
+      afterSignOff = true;
+      rest = after;
+    } else {
+      const w = rest.match(/^\S+/)[0];
+      const bare = w.replace(/^[("'‘“]+|[)"'’”,.;:!]+$/g, '');
+      if (bare) {
+        if (!NAME_WORD.test(bare) || (afterSignOff && CONNECTOR.test(bare))) return null;
+        first = first || 'name';
+        words += 1;
+        afterSignOff = false;
+      }
+      rest = rest.slice(w.length);
+    }
+    rest = rest.replace(/^[\s,.;:!|/–—-]+/, '');
+  }
+  return words <= 15 ? { signOffs, words, first } : null;
+}
+
+// Where a sign-off starts in a line (to the end of it), or -1: at the start (only if
+// atStart) or after a sentence ("Is the quiz on? Kind regards, Jo Smith").
+function signOffStart(line, atStart) {
+  const starts = atStart ? [0] : [];
+  for (const m of line.matchAll(/[.!?]["')’”]*\s+/g)) starts.push(m.index + m[0].length);
+  return starts.find((i) => {
+    const r = readSignOff(line.slice(i), { strict: i > 0 });
+    return r && r.first === 'signoff';
+  }) ?? -1;
+}
 
 // Drops a signature: everything from a "-- " line or a "Sent from my iPhone" line, then
-// from a sign-off line ("Kind regards,") near the end, then trailing lines of contact
-// details (phone, links, social media). Their first line is never dropped.
+// from a sign-off ("Kind regards,") near the end, on its own line or after their last
+// sentence, then any sign-offs stacked above it ("Kind regards, Jo / All the best, Jo /
+// Jo Smith, Chair"), then trailing lines of contact details (phone, links, social media).
+// Their first line is never dropped, and a sign-off that is the whole message is kept.
 function trimSignature(lines) {
   let out = lines;
   const cut = out.findIndex((l, i) => i > 0 && (SIG_DELIM.test(l) || DEVICE_LINE.test(l.trim())));
   if (cut > 0) out = out.slice(0, cut);
-  for (let i = out.length - 1; i > 0 && out.length - i <= 12; i -= 1) {
-    if (SIGN_OFF.test(out[i].trim()) && out.slice(0, i).some((l) => l.trim())) {
-      out = out.slice(0, i);
+  const before = (i) => out.slice(0, i).some((l) => l.trim());
+  const cutAt = (i, at) => {
+    out = at > 0 ? [...out.slice(0, i), out[i].slice(0, at).trimEnd()] : out.slice(0, i);
+  };
+  let found = false;
+  for (let i = out.length - 1; i >= 0 && out.length - i <= 12; i -= 1) {
+    const at = signOffStart(out[i].trim(), i > 0 && before(i));
+    if (at >= 0) {
+      cutAt(i, out[i].length - out[i].trimStart().length + at);
+      found = true;
       break;
     }
+  }
+  // Stacked sign-offs: names and job titles left at the end, with a sign-off above them.
+  while (found) {
+    let k = out.length - 1;
+    while (k > 0) {
+      const t = out[k].trim();
+      const r = t && readSignOff(t);
+      if (t && !(r && r.first === 'name' && r.words <= 8)) break;
+      k -= 1;
+    }
+    const line = out[k].trim();
+    const at = line ? signOffStart(line, k > 0 && before(k)) : -1;
+    found = at >= 0;
+    if (found) cutAt(k, out[k].length - out[k].trimStart().length + at);
   }
   const contact = (l) => !l.trim() || (CONTACT_LINE.test(l) && l.trim().length <= 80 && !/\?\s*$/.test(l)
     && l.trim().split(/\s+/).length <= 8);
@@ -982,7 +1102,7 @@ function sanitiseFollowup(text) {
     .map((p) => p.replace(/\s+/g, ' ').trim()).filter(Boolean).join('\n\n');
   if (t.length < 20 || t.length > MAX_FOLLOWUP_CHARS) return '';
   if (/https?:|www\.|@/i.test(t)) return '';
-  return t;
+  return normaliseDates(t);
 }
 
 // What the team holds now for each item on the thread (after applyAnswer), so the draft
@@ -1141,10 +1261,13 @@ function exposesTeam(text) {
 // retried; a From rewrite (would expose jon@) throws so the whole run stops.
 async function deliver(row, settings, { body: given, note: givenNote = '', decidedAt = '' } = {}) {
   const raw = String(given !== undefined ? given : row.body || '').trim();
-  // Links on their own line, nothing touching them (fixLinks); the Sheet keeps what went.
-  const text = fixLinks(raw);
+  // Links on their own line, nothing touching them (fixLinks), and dates in the house
+  // style (normaliseDates, also for Jon's edits); the Sheet keeps what went.
+  const linked = fixLinks(raw);
+  const text = normaliseDates(linked);
   const body = given !== undefined || text !== raw ? text : undefined;
-  const note = [givenNote, text !== raw ? 'Links moved onto their own line' : ''].filter(Boolean).join('; ');
+  const note = [givenNote, linked !== raw ? 'Links moved onto their own line' : '',
+    text !== linked ? 'Dates put in house style' : ''].filter(Boolean).join('; ');
   const fail = async (why) => {
     await g.updateRow('Replies', row._row, { status: 'failed', notes: [row.notes, why].filter(Boolean).join(' | ') });
     console.error(`Reply ${row.reply_id} failed: ${why}`);
@@ -1536,6 +1659,7 @@ module.exports = {
   applyEdit,
   planSorry,
   stripQuoted,
+  normaliseDates,
   fixLinks,
   firstName,
   redraftReply,

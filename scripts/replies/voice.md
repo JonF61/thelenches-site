@@ -17,7 +17,8 @@ Tone
 - Assume good faith. Missing details are an oversight, not a failing.
 
 Style
-- British English. Dates as "Saturday 12 October", times as "7.30pm".
+- British English. Dates as "Saturday 12 October": no comma, no "th", no year
+  (only for a date ten months or more away: "9 November 2027"). Times as "7.30pm".
 - Ask for missing details as one clear question, not a list, where possible.
 - No jargon (no "submission", "pipeline", "item", "processed").
   Say "your event", "your news", "your notice".

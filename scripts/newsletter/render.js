@@ -311,6 +311,8 @@ function actionsBlock(info) {
 
 // Preview copy for Jon: a banner with the buttons above the issue. Never part of the hash.
 // info: { testTo, status, ...actions.buttons() }
+// info.warning (optional): a line for the preview only, e.g. waitruns.js's note that
+// approval or publish runs were still going; never in the subscriber copy or the hash.
 function wrapPreview(rendered, info) {
   const block = actionsBlock(info);
   const banner = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="padding:16px 8px 0;">`
@@ -318,10 +320,12 @@ function wrapPreview(rendered, info) {
     + `<tr><td style="padding:14px 18px;font-family:${SANS};font-size:13px;line-height:1.5;color:${C.ink};">`
     + `<div style="font-size:15px;font-weight:bold;color:${C.accentText};">PREVIEW: not sent to subscribers</div>`
     + `<div>Test copy sent to ${esc(info.testTo)}. Status: ${esc(info.status)}. Hash ${esc(rendered.hash.slice(0, 12))}.</div>`
+    + (info.warning ? `<div style="margin-top:8px;padding:8px 10px;background:${C.cream};border-left:4px solid ${C.red};color:${C.red};font-weight:bold;">${esc(info.warning)}</div>` : '')
     + block.html
     + `</td></tr></table></td></tr></table>`;
   const textBanner = ['PREVIEW: not sent to subscribers',
     `Test copy sent to ${info.testTo}. Status: ${info.status}. Hash ${rendered.hash.slice(0, 12)}.`,
+    ...(info.warning ? ['', `WARNING: ${info.warning}`] : []),
     block.text, '', '========', ''].join('\n');
   return {
     subject: `[Preview] ${rendered.subject}`,
