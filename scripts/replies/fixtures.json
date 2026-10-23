@@ -622,6 +622,72 @@
           ]
         ]
       }
+    },
+    {
+      "name": "question with a signature and quoted history",
+      "msg": {
+        "from": "Ruth Green <ruth@example.com>",
+        "subject": "Council meeting",
+        "text": "When's the next South Lenches PC meeting?\n\nKind regards,\nRuth Green\nTel: 01386 000111\nwww.ruthgreenpottery.co.uk\nFollow me on Instagram\n\nOn Mon, 19 Oct 2026 at 09:00, The Lenches <website@thelenches.org.uk> wrote:\n> Thanks for getting in touch."
+      },
+      "result": {
+        "emailClass": "question",
+        "classConfidence": 0.93,
+        "holdReason": "none",
+        "needsReply": true,
+        "request": "next parish council meeting"
+      },
+      "claude": {
+        "draft": "The next South Lenches Parish Council meeting is on Monday 9 November at Church Lench Village Hall. The Council page has the details:\nhttps://thelenches.org.uk/living-here/council/",
+        "answered_from_site": true
+      },
+      "expect": {
+        "normal": [
+          [
+            "answer",
+            "awaiting"
+          ]
+        ],
+        "holiday": [
+          [
+            "answer",
+            "queued"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "draft with a bracketed link",
+      "msg": {
+        "from": "Max <max@example.com>",
+        "subject": "Green bin",
+        "text": "Which week is the green bin?"
+      },
+      "result": {
+        "emailClass": "question",
+        "classConfidence": 0.9,
+        "holdReason": "none",
+        "needsReply": true,
+        "request": "green bin week"
+      },
+      "claude": {
+        "draft": "The next collection dates are on our Bins page (https://thelenches.org.uk/bins/).",
+        "answered_from_site": true
+      },
+      "expect": {
+        "normal": [
+          [
+            "answer",
+            "awaiting"
+          ]
+        ],
+        "holiday": [
+          [
+            "answer",
+            "queued"
+          ]
+        ]
+      }
     }
   ]
 }

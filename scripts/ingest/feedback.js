@@ -10,6 +10,9 @@
 //   rejected     Jon pressed Reject (reason from the confirm page, if given)
 //   auto_sent    sent by Holly in holiday mode
 //   timed_out    no decision in 24h: the acknowledgement went without the question
+//   redrafted    Jon pressed Redraft: reason is what he asked to change (the new draft
+//                has its own row)
+//   closed       Jon pressed "Close, no reply needed" on an email still owed a reply
 //   shadow       shadow mode: never sent
 // Jon can type a reason in the tab by hand at any time.
 // The tab is created (at the end, after every other tab) the first time it is needed.
@@ -30,8 +33,9 @@ const excerpt = (s) => (flat(s).length > EXCERPT ? `${flat(s).slice(0, EXCERPT)}
 const warn = (what, err) => console.warn(`Reply feedback: ${what} failed: ${(err && err.message) || err}`);
 
 // row: the Replies row just written. theyWrote: the sender's text (quoted text removed).
+// A redraft is logged whatever its type.
 async function record(row, { theyWrote = '', mode = '' } = {}) {
-  if (!TYPES.includes(row.type)) return;
+  if (!TYPES.includes(row.type) && !/(^|,)redraft(,|$)/.test(String(row.policy_codes || ''))) return;
   try {
     await g.ensureTab(TAB, HEADERS);
     await g.appendRows(TAB, [{
@@ -70,4 +74,21 @@ async function resolve(replyId, { outcome, finalText = '', reason = '', decidedA
   }
 }
 
-module.exports = { record, resolve, TAB, HEADERS, TYPES };
+// Redraft: outcome "redrafted", reason = Jon's instruction. Unlike resolve, this also
+// overwrites an earlier "rejected" (a redraft of an email still owed a reply), keeping
+// that reason in front.
+async function markRedrafted(replyId, instruction, decidedAt) {
+  try {
+    const rows = await g.readTable(TAB).catch(() => []);
+    const row = rows.find((r) => r.reply_id === replyId);
+    if (!row) return;
+    const before = String(row.outcome || '').trim();
+    if (before && before !== 'rejected') return;
+    const earlier = before === 'rejected' ? `Rejected${row.reason ? ` (${row.reason})` : ''}, then redraft: ` : '';
+    await g.updateRow(TAB, row._row, { outcome: 'redrafted', reason: `${earlier}${instruction}`, decided_at: decidedAt });
+  } catch (err) {
+    warn(`updating ${replyId}`, err);
+  }
+}
+
+module.exports = { record, resolve, markRedrafted, TAB, HEADERS, TYPES };

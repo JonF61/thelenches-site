@@ -13,6 +13,12 @@
 //                     page) goes to the Reply feedback tab.
 //   edit              The Worker's edit form (part 2): sends BODY, Jon's edited text, in place
 //                     of the draft, if the reply is still awaiting (replies.applyEdit).
+//   redraft           Redraft (23 Oct): REASON is what Jon wants changed (required). Holly
+//                     writes a new draft (replies.redraftReply), closes the old one, and a
+//                     fresh card is emailed to Jon (urgent.sendReplyCard). Needs
+//                     ANTHROPIC_API_KEY, WORKER_URL and APPROVAL_SIGNING_KEY in approval.yml.
+//   close             "Close, no reply needed" on an email still owed a reply
+//                     (replies.closeOwed). Nothing is sent.
 // Rejecting an item whose acknowledgement said it was on its way drafts a "sorry, we
 // couldn't use it after all" reply for Jon's Approve/Edit/Reject (replies.planSorry).
 // Replayed or duplicate clicks therefore do nothing.
@@ -21,6 +27,7 @@
 const g = require('../ingest/google');
 const replies = require('../ingest/replies');
 const trust = require('../ingest/trusted');
+const { sendReplyCard } = require('../ingest/urgent');
 
 const TZ = 'Europe/London';
 const WORDING = { approve_own: 'own', approve_rewrite: 'rewrite' };
@@ -89,8 +96,24 @@ async function main() {
 
   if (ITEM_ACTIONS.includes(action)) return decideItem(id, action);
   if (action === 'trust') return trustSource(id);
-  const reason = String(process.env.REASON || '').replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 300);
+  const reason = String(process.env.REASON || '').replace(/[\u0000-\u001f]+/g, ' ').trim()
+    .slice(0, action === 'redraft' ? 500 : 300);
   if (['send', 'skip'].includes(action)) return replies.decideReply(id, action, reason);
+  if (action === 'redraft') {
+    const fresh = await replies.redraftReply(id, reason);
+    if (!fresh) return undefined;
+    const { settings } = await g.readSettings();
+    // The redraft is saved either way; a failed card only fails the run (GitHub emails
+    // Jon) and the next ingestion run's action email shows the draft.
+    try {
+      await sendReplyCard(fresh.reply_id, settings);
+    } catch (err) {
+      console.error(`Redraft card not sent: ${(err && err.message) || err}`);
+      process.exitCode = 1;
+    }
+    return undefined;
+  }
+  if (action === 'close') return replies.closeOwed(id);
   if (action === 'edit') {
     const body = String(process.env.BODY || '').replace(/\r\n?/g, '\n').trim();
     if (body.length < 10) throw new Error('Edit has no text (is BODY passed in approval.yml?)');

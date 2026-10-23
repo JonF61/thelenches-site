@@ -10,7 +10,13 @@
 //     needing a human (a question or new issue on a thread we've replied to), other
 //     drafts awaiting a decision (Approve / Edit / Reject; Edit opens the Worker's edit
 //     form, or for a draft too long for a link an email to Jon himself, edits.js), shadow-mode drafts, and replies stuck at "sending" (never
-//     resent automatically). Each shows the email's class and confidence.
+//     resent automatically). Each shows the email's class and confidence. Every card
+//     also has Redraft (23 Oct): Jon says what to change, Holly writes a new draft and
+//     a fresh card comes by itself (sendReplyCard, from scripts/approve).
+//   - at the top, "Still owed a reply" (23 Oct): emails whose holding reply went 2 days
+//     ago with no real reply since (replies.owedReplies), with Redraft, a "reply myself"
+//     note and "Close, no reply needed". Shown in every action email until answered or
+//     closed; on their own they trigger one at most once a day.
 //
 // Retry-safe: Pending and Replies "alerted_at" are stamped only after the email is sent,
 // so a failed send is retried on the next run. Pending rows that don't qualify are
@@ -28,7 +34,7 @@ const TZ = 'Europe/London';
 const DEFAULT_WINDOW_DAYS = 7; // override with Settings key urgent_window_days
 const RECENT_DAYS = 3;         // only items received this recently are considered
 
-const C = { green: '#3F5233', cream: '#F6F1E4', orange: '#C0703A', red: '#A33B2B', grey: '#666666' };
+const C = { green: '#3F5233', cream: '#F6F1E4', orange: '#C0703A', red: '#A33B2B', grey: '#666666', slate: '#4A5D73' };
 
 /* -------------------------------------------------------------- helpers -- */
 
@@ -98,7 +104,8 @@ function replyLine(r, liveButtons) {
   }
   const noButtons = liveButtons ? '' : ' Buttons unavailable; edit the status in the Sheet.';
   const how = 'Approve sends it (as the Sheet body cell stands); Edit opens it in a form to change and '
-    + 'send (a long draft opens an email to yourself instead); Reject sends nothing.';
+    + 'send (a long draft opens an email to yourself instead); Redraft asks Holly for a new version '
+    + 'with your instructions (a fresh card follows); Reject sends nothing.';
   if (isFollowup(r)) {
     return 'They wrote again on a thread we already answered (see the note). This draft is never sent '
       + `unless you approve or edit it, including in holiday mode. ${how}${noButtons}`;
@@ -179,16 +186,74 @@ function replyHtml(r, ctx) {
       <div style="white-space:pre-wrap;background:${C.cream};border-radius:6px;padding:10px 12px;font-size:14px;margin-bottom:8px;">${esc(r.body)}</div>
       ${noteFirst ? '' : noteHtml}
       <div style="font-weight:bold;font-size:14px;margin-bottom:6px;">${esc(replyLine(r, ctx.liveButtons))}</div>
-      ${showButtons ? `<div>${button(signedLink(link, 'send'), 'Approve', C.green)}${button(editFormLink(r) || editLink(r, alertTo()), 'Edit', C.orange)}${button(signedLink(link, 'skip'), 'Reject', C.red)}</div>` : ''}
+      ${showButtons ? `<div>${button(signedLink(link, 'send'), 'Approve', C.green)}${button(editFormLink(r) || editLink(r, alertTo()), 'Edit', C.orange)}${button(signedLink(link, 'redraft'), 'Redraft', C.slate)}${button(signedLink(link, 'skip'), 'Reject', C.red)}</div>` : ''}
       <div style="margin-top:6px;">${showButtons && editFormLink(r) ? textLink(editLink(r, alertTo()), 'Edit by email') : ''}${textLink(ctx.replyUrl(r), 'Open in Sheet')}${ctx.gmailFor(r) ? textLink(ctx.gmailFor(r), !replies.FALLBACK_TYPES.includes(r.type || 'ack') ? 'Their email' : 'Original email') : ''}</div>`,
   border);
+}
+
+const REPLY_MYSELF = 'Reply myself: answer them from website@ in Gmail (Their email, below), then tap '
+  + '"Close, no reply needed" so this stops.';
+
+// Still owed a reply: the holding reply went, the real one hasn't.
+function owedLine(o) {
+  const d = o.draft;
+  const state = !d ? 'No draft.'
+    : d.status === 'awaiting' ? 'The draft below is still waiting for you.'
+      : d.status === 'skipped' ? `You rejected the draft below${d.decided_at ? ` (${d.decided_at})` : ''}.`
+        : `The draft below is "${d.status}".`;
+  return `Holding reply sent ${o.holding.sent_at}; no real reply yet. ${state}`;
+}
+
+function owedHtml(o, ctx) {
+  const d = o.draft || o.holding;
+  const live = ctx.liveButtons;
+  const link = (r) => ({ id: r.reply_id, title: `Reply to ${r.to}` });
+  const waiting = o.draft && o.draft.status === 'awaiting';
+  const buttons = live ? [
+    waiting ? button(signedLink(link(o.draft), 'send'), 'Approve', C.green) : '',
+    waiting ? button(editFormLink(o.draft) || editLink(o.draft, alertTo()), 'Edit', C.orange) : '',
+    o.draft ? button(signedLink(link(o.draft), 'redraft'), 'Redraft', C.slate) : '',
+    button(signedLink(link(o.holding), 'close'), 'Close, no reply needed', C.grey),
+  ].join('') : '';
+  return card(`
+      <div style="font-size:16px;font-weight:bold;color:${C.green};margin-bottom:4px;">To ${esc(d.to)}</div>
+      <div style="color:${C.grey};font-size:14px;margin-bottom:8px;">${esc(d.subject)}${classLine(d) ? ` · ${esc(classLine(d))}` : ''}</div>
+      <div style="font-weight:bold;font-size:14px;margin-bottom:6px;">${esc(owedLine(o))}</div>
+      ${o.draft && o.draft.notes ? `<div style="font-size:14px;margin-bottom:8px;">${esc(o.draft.notes)}</div>` : ''}
+      ${o.draft ? `<div style="white-space:pre-wrap;background:${C.cream};border-radius:6px;padding:10px 12px;font-size:14px;margin-bottom:8px;">${esc(o.draft.body)}</div>` : ''}
+      <div style="font-size:14px;margin-bottom:6px;">${esc(REPLY_MYSELF)}${live ? '' : ' Buttons unavailable; set the status in the Sheet.'}</div>
+      ${buttons ? `<div>${buttons}</div>` : ''}
+      <div style="margin-top:6px;">${textLink(ctx.replyUrl(d), 'Open in Sheet')}${ctx.gmailFor(d) ? textLink(ctx.gmailFor(d), 'Their email') : ''}</div>`,
+  C.red);
+}
+
+function owedText(o, ctx, out) {
+  const d = o.draft || o.holding;
+  out.push(`To ${d.to}: ${d.subject}${classLine(d) ? ` [${classLine(d)}]` : ''}`, owedLine(o));
+  if (o.draft) {
+    if (o.draft.notes) out.push(o.draft.notes);
+    out.push('---', o.draft.body, '---');
+  }
+  out.push(REPLY_MYSELF);
+  if (ctx.liveButtons) {
+    const link = (r) => ({ id: r.reply_id, title: `Reply to ${r.to}` });
+    if (o.draft && o.draft.status === 'awaiting') {
+      out.push(`Approve: ${signedLink(link(o.draft), 'send')}`);
+      out.push(`Edit: ${editFormLink(o.draft) || editLink(o.draft, alertTo())}`);
+    }
+    if (o.draft) out.push(`Redraft: ${signedLink(link(o.draft), 'redraft')}`);
+    out.push(`Close, no reply needed: ${signedLink(link(o.holding), 'close')}`);
+  }
+  out.push(`Sheet: ${ctx.replyUrl(d)}`);
+  if (ctx.gmailFor(d)) out.push(`Their email: ${ctx.gmailFor(d)}`);
+  out.push('');
 }
 
 const SUGGESTION = 'Suggested: a one-off extra send to subscribers. There is no Send button yet (step 5b), '
   + 'so send it yourself if it is worth it. Extra sends are never automatic, including in holiday mode.';
 
 function buildHtml(ctx) {
-  const { items, choices, drafts, stuck, holiday, rowUrl, buttons } = ctx;
+  const { items, choices, drafts, stuck, owed, holiday, rowUrl, buttons } = ctx;
   const held = drafts.filter((r) => r.status === 'awaiting' && isHeld(r));
   const followups = drafts.filter((r) => r.status === 'awaiting' && isFollowup(r));
   const awaiting = drafts.filter((r) => r.status === 'awaiting' && !isFollowup(r) && !isHeld(r));
@@ -203,6 +268,7 @@ function buildHtml(ctx) {
         <div style="font-size:22px;font-weight:bold;color:${items.length ? C.red : C.green};">${esc(ctx.title)}</div>
         ${holiday ? `<div style="margin-top:6px;font-size:14px;color:${C.orange};font-weight:bold;">Holiday mode is ON.</div>` : ''}
       </td></tr>
+      ${owed.length ? `${heading('Still owed a reply', C.red)}${owed.map((o) => owedHtml(o, ctx)).join('')}` : ''}
       ${items.length ? `${heading(`Urgent item${items.length === 1 ? '' : 's'}`, C.red)}
       <tr><td style="padding:0 0 12px 0;font-family:Arial,Helvetica,sans-serif;">
         <div style="font-size:15px;color:#2b2b2b;background:#ffffff;border-left:4px solid ${C.orange};padding:10px 12px;">${esc(SUGGESTION)}</div>
@@ -246,9 +312,13 @@ function itemText(r, out, rowUrl, buttons) {
 }
 
 function buildText(ctx) {
-  const { items, choices, drafts, stuck, holiday, rowUrl, buttons } = ctx;
+  const { items, choices, drafts, stuck, owed, holiday, rowUrl, buttons } = ctx;
   const out = [ctx.title, ''];
   if (holiday) out.push('Holiday mode is ON.', '');
+  if (owed.length) {
+    out.push('STILL OWED A REPLY', '');
+    for (const o of owed) owedText(o, ctx, out);
+  }
   if (items.length) {
     out.push('URGENT ITEMS', SUGGESTION, '');
     for (const r of items) itemText(r, out, rowUrl, buttons);
@@ -272,6 +342,7 @@ function buildText(ctx) {
         out.push(`Approve: ${signedLink(link, 'send')}`);
         if (editFormLink(r)) out.push(`Edit: ${editFormLink(r)}`);
         out.push(`Edit by email: ${editLink(r, alertTo())}`);
+        out.push(`Redraft: ${signedLink(link, 'redraft')}`);
         out.push(`Reject: ${signedLink(link, 'skip')}`);
       }
       out.push(`Sheet: ${ctx.replyUrl(r)}`);
@@ -287,7 +358,7 @@ function buildText(ctx) {
   return out.join('\n');
 }
 
-function subjectFor(items, choices, drafts, stuck) {
+function subjectFor(items, choices, drafts, stuck, owed = []) {
   if (items.length) {
     return items.length === 1
       ? `URGENT: ${items[0].title || 'new item'} (Lenches)`
@@ -299,6 +370,7 @@ function subjectFor(items, choices, drafts, stuck) {
       : `Choose the wording: ${choices.length} items (Lenches)`;
   }
   if (stuck.length) return `Action needed: ${stuck.length} reply(ies) stuck (Lenches)`;
+  if (owed.length) return `Action needed: ${owed.length} email(s) still owed a reply (Lenches)`;
   const held = drafts.filter((r) => r.status === 'awaiting' && isHeld(r)).length;
   if (held) return `Action needed: ${held} email(s) held for you (Lenches)`;
   const follow = drafts.filter((r) => r.status === 'awaiting' && isFollowup(r)).length;
@@ -347,14 +419,21 @@ async function sendUrgentAlerts(settings, holiday) {
   const mode = replies.repliesMode(settings);
   let drafts = [];
   let stuck = [];
+  let owed = [];
   if (mode !== 'off') {
     const replyRows = await g.readTable('Replies');
     if (replyRows.length && !('alerted_at' in replyRows[0])) {
       throw new Error('Replies tab has no "alerted_at" header (O1); add it so drafts are not repeated');
     }
     ({ drafts, stuck } = replies.rowsForAlert(replyRows));
+    owed = replies.owedReplies(replyRows);
+    // A draft shown under "Still owed a reply" isn't shown again below.
+    const inOwed = new Set(owed.map((o) => o.draft && o.draft.reply_id).filter(Boolean));
+    drafts = drafts.filter((r) => !inOwed.has(r.reply_id));
   }
-  if (!items.length && !choices.length && !drafts.length && !stuck.length) return 0;
+  // Owed emails go in every action email, but trigger one on their own only once a day.
+  const owedNow = replies.owedDue(owed).length;
+  if (!items.length && !choices.length && !drafts.length && !stuck.length && !owedNow) return 0;
 
   const buttons = linksEnabled();
   if (!buttons) console.warn('WORKER_URL or APPROVAL_SIGNING_KEY not set: email sent without buttons.');
@@ -364,11 +443,12 @@ async function sendUrgentAlerts(settings, holiday) {
     choices,
     drafts,
     stuck,
+    owed,
     holiday,
     buttons,
     liveButtons: buttons && mode === 'live',
     rowUrl: items.length || choices.length ? await sheetUrl('Pending') : null,
-    replyUrl: drafts.length || stuck.length ? await sheetUrl('Replies') : null,
+    replyUrl: drafts.length || stuck.length || owed.length ? await sheetUrl('Replies') : null,
     // Follow-ups have no Pending row, so fall back to a link built from the message id.
     gmailFor: (r) => gmailByMessage.get(r.message_id)
       || (r.message_id ? `https://mail.google.com/mail/u/0/#all/${r.message_id}` : ''),
@@ -377,7 +457,7 @@ async function sendUrgentAlerts(settings, holiday) {
 
   const id = await g.sendMail({
     to: process.env.ALERT_TO || process.env.GMAIL_USER,
-    subject: subjectFor(items, choices, drafts, stuck),
+    subject: subjectFor(items, choices, drafts, stuck, owed),
     text: buildText(ctx),
     html: buildHtml(ctx),
     fromName: g.fromNameFor(settings),
@@ -387,8 +467,43 @@ async function sendUrgentAlerts(settings, holiday) {
   for (const r of [...items, ...choices]) await g.updateRow('Pending', r._row, { alerted_at: stamp });
   for (const r of drafts) await g.updateRow('Replies', r._row, { alerted_at: stamp });
   for (const r of stuck) await g.updateRow('Replies', r._row, { alerted_at: `stuck-flagged ${stamp}` });
-  console.log(`Action email sent: ${items.length} urgent, ${choices.length} wording choice(s), ${drafts.length} draft(s), ${stuck.length} stuck. Gmail id ${id}.`);
-  return items.length + choices.length + drafts.length + stuck.length;
+  for (const o of owed) {
+    await g.updateRow('Replies', o.holding._row, { alerted_at: `owed ${stamp}` });
+    if (o.draft && !String(o.draft.alerted_at || '').trim()) await g.updateRow('Replies', o.draft._row, { alerted_at: stamp });
+  }
+  console.log(`Action email sent: ${owed.length} owed, ${items.length} urgent, ${choices.length} wording choice(s), ${drafts.length} draft(s), ${stuck.length} stuck. Gmail id ${id}.`);
+  return items.length + choices.length + drafts.length + stuck.length + owed.length;
 }
 
-module.exports = { sendUrgentAlerts };
+// One fresh card for one reply (the redraft Jon asked for), sent from scripts/approve.
+// Stamps alerted_at once sent; if this fails the next ingestion run's action email shows it.
+async function sendReplyCard(replyId, settings) {
+  const rows = await g.readTable('Replies');
+  const r = rows.find((x) => x.reply_id === replyId);
+  if (!r) throw new Error(`Reply ${replyId} not found in Replies`);
+  const mode = replies.repliesMode(settings);
+  const buttons = linksEnabled();
+  if (!buttons) console.warn('WORKER_URL or APPROVAL_SIGNING_KEY not set: card sent without buttons.');
+  const ctx = {
+    items: [], choices: [], drafts: [r], stuck: [], owed: [],
+    holiday: String(settings.holiday_mode || '').toUpperCase() === 'TRUE',
+    buttons,
+    liveButtons: buttons && mode === 'live',
+    rowUrl: null,
+    replyUrl: await sheetUrl('Replies'),
+    gmailFor: (x) => (x.message_id ? `https://mail.google.com/mail/u/0/#all/${x.message_id}` : ''),
+    title: 'Redrafted reply',
+  };
+  const id = await g.sendMail({
+    to: alertTo(),
+    subject: `Redraft ready: reply to ${r.to} (Lenches)`,
+    text: buildText(ctx),
+    html: buildHtml(ctx),
+    fromName: g.fromNameFor(settings),
+  });
+  await g.updateRow('Replies', r._row, { alerted_at: londonDateTime(Date.now()) });
+  console.log(`Redraft card for ${replyId} sent. Gmail id ${id}.`);
+  return id;
+}
+
+module.exports = { sendUrgentAlerts, sendReplyCard };
