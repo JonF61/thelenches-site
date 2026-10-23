@@ -166,7 +166,9 @@ async function main() {
 
     const status = shadow ? 'shadow' : 'tested';
     const actions = buttons({ issueDate, hash: issue.hash, settings, subscribers, dns, pending });
-    const preview = wrapPreview(forPreview(issue), { testTo, status, ...actions });
+    // Approval or publish runs still going after waitruns.js gave up: preview banner only.
+    const warning = str(process.env.BUILD_WAIT_NOTE);
+    const preview = wrapPreview(forPreview(issue), { testTo, status, warning, ...actions });
     await sendChecked({
       to: previewTo, subject: preview.subject, html: preview.html, text: preview.text, fromName,
       headers: { 'Auto-Submitted': 'auto-generated' },

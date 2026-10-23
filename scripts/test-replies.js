@@ -331,6 +331,26 @@ async function testSignaturesAndLinks() {
     'contact lines and "Sent from my iPhone" trimmed');
   ok(replies.stripQuoted('Thanks') === 'Thanks' && replies.stripQuoted('Hi,\nThanks, is the quiz on?\nSam') === 'Hi,\nThanks, is the quiz on?\nSam',
     'a "thanks" that is the message itself is kept');
+  // Stacked sign-offs (23 Oct: an email ended "Kind regards, Jon Fletcher All the best,
+  // Jon. Jon Fletcher, Managing Director"), with or without line breaks.
+  const stacked = 'Kind regards, Jon Fletcher All the best, Jon. Jon Fletcher, Managing Director';
+  const q = 'Could you add our quiz night on Friday 6 November?';
+  ok(replies.stripQuoted(`${q}\n\n${stacked}`) === q, 'stacked sign-offs on one line trimmed');
+  ok(replies.stripQuoted(`${q} ${stacked}`) === q, 'stacked sign-offs on the message line trimmed');
+  ok(replies.stripQuoted(`${q}\n\nKind regards,\nJon Fletcher\n\nAll the best,\nJon.\nJon Fletcher, Managing Director\nTel: 01386 000111`) === q,
+    'stacked sign-offs on separate lines trimmed');
+  ok(replies.stripQuoted('Thanks for the write-up.\nThanks, Sam\nBest wishes\nSam Jones (Chair)') === 'Thanks for the write-up.',
+    'sign-off with a name, then another with a job title, trimmed');
+  ok(replies.stripQuoted('Is the quiz on? Cheers, Sam') === 'Is the quiz on?', 'one-line email: sign-off after the question trimmed');
+  const keep = [
+    'We send our best regards to everyone who helped at the fete.\nBest wishes to the Committee and all at the Hall for the season ahead.',
+    'The quiz was the best. Thanks to Sam and the Committee for organising it.',
+    'Please add this.\nAll the best players will be there.',
+    'Can you add our fete?\nMany thanks for your help last year, it went really well.',
+    'We had a great time. Love Lench Fest is back next year with more stalls.',
+  ];
+  keep.forEach((t, i) => ok(replies.stripQuoted(t) === t, `real content with "best"/"regards"/"thanks" kept (${i + 1})`));
+
   reset();
   settings = LIVE;
   requests = [];
@@ -365,6 +385,42 @@ async function testSignaturesAndLinks() {
   const out = sent[sent.length - 1];
   ok(out.text.includes('page\nhttps://thelenches.org.uk/bins/\n') && !out.text.includes('/bins/)') && !out.html.includes('/bins/)"'), 'sent text has the link on its own line');
   ok(/Links moved onto their own line/.test(find(b.reply_id).notes), 'link fix noted in the Replies row');
+}
+
+async function testDates() {
+  // Dates in drafts and edits in voice.md's style ("Saturday 12 October").
+  const n = (t) => replies.normaliseDates(t, '2026-10-23');
+  const cases = [
+    ['The meeting is on Monday, 9 November 2026 at 7.30pm.', 'The meeting is on Monday 9 November at 7.30pm.'],
+    ['Mon 9th Nov', 'Monday 9 November'],
+    ['on November 9, 2026, at the hall', 'on 9 November, at the hall'],
+    ['Friday the 13th of November', 'Friday 13 November'],
+    ['on the 3rd of December', 'on 3 December'],
+    ['Thursday, May 7 2027', 'Thursday 7 May'],
+    ['Tues 1 Dec, 2026', 'Tuesday 1 December'],
+    ['the fete on Saturday 11 September 2027', 'the fete on Saturday 11 September 2027'], // > 300 days ahead: year kept
+    ['back on 1 March 2026', 'back on 1 March 2026'], // in the past: year kept
+    ['Saturday 12 October', 'Saturday 12 October'],
+    ['May 5 people come?', 'May 5 people come?'],
+    ['from 9 to 11 November', 'from 9 to 11 November'],
+    ['£5 November raffle', '£5 November raffle'],
+    ['https://thelenches.org.uk/2026/11/9 November', 'https://thelenches.org.uk/2026/11/9 November'],
+  ];
+  cases.forEach(([from, to]) => ok(n(from) === to, `date style: "${from}" -> "${n(from)}"`));
+
+  reset();
+  settings = LIVE;
+  requests = [];
+  const ctx = { settings, holiday: false, replies: [], existing: [] };
+  const c = { ...caseNamed('question with a signature and quoted history'),
+    claude: { draft: 'The next meeting is on Monday, 9 November 2026 at 7.30pm.', answered_from_site: false } };
+  const [row] = await plan(c, 'd1', false, ctx);
+  ok(row.body.includes('Monday 9 November at 7.30pm') && !row.body.includes('2026'), 'draft date put in house style');
+  ok(requests.some((r) => /no comma, no "th" and no year/.test(r.system)), 'Claude is told the date style');
+  // Jon's edit: dates fixed as it goes, and noted.
+  await replies.applyEdit(row.reply_id, 'Hi Ruth,\n\nIt is on Mon, 9th November 2026.\n\nBest wishes,\nHolly');
+  ok(sent[sent.length - 1].text.includes('It is on Monday 9 November.'), 'edited text sent with the date in house style');
+  ok(/Dates put in house style/.test(find(row.reply_id).notes), 'date fix noted in the Replies row');
 }
 
 async function testFollowupLists() {
@@ -490,6 +546,7 @@ async function testOwed() {
 (async () => {
   await testClassify();
   await testSignaturesAndLinks();
+  await testDates();
   await testFollowupLists();
   await testRedraft();
   await testOwed();
