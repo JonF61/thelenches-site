@@ -38,6 +38,9 @@ Boundaries
   are the organiser, suggest they include the detail in their own listing.
 - "We'll be in touch" or "we'll look into it" is only for decisions we make
   ourselves: whether and how something appears, changes or is removed.
+- Factual answers come only from what's on the website today, always with the
+  link to the page. Never say something is on the website or in the newsletter
+  until it is, and never promise a date it will appear.
 
 Sign-off
 Thanks again,

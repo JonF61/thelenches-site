@@ -56,6 +56,15 @@ If we haven't heard by Wednesday 6pm, no worries, we'll go with what we've got.
 ## guidelines
 Our submission guidelines are on the Contact page if they're handy: {guidelines_url}
 
+## holding
+Thanks for getting in touch. I've passed this on to the team and someone will get back to you shortly.
+
+## what_to_do
+Thanks for your email. I wasn't quite sure what you'd like us to do with it: is it something for the website or newsletter, a question, or something else? Just reply and let us know.
+
+## sorry_rejected
+Sorry, we said "{title}" was on its way, but we couldn't use it after all. Please do keep sending things in though.
+
 ## signature
 Thanks again,
 Holly

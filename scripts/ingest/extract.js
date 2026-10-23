@@ -15,12 +15,16 @@
 // keepLocalStory filters first), written as a headline plus one line in our own words.
 // Road items (closures and roadworks) also give road, end_date and road_coords for the
 // Roads page map; their event_date is the works' start date (rules.md, Dates).
+// Every email is also classified (email_class, class_confidence, hold_reason, needs_reply,
+// request; see classify.js) in the same call, so replies.js knows what kind of reply,
+// if any, it needs. Feed items are always "submission".
 'use strict';
 
 const fs = require('fs');
 const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk');
 const { tidyText } = require('../../lib/wording');
+const { CLASSES, HOLD_REASONS, normaliseClass } = require('./classify');
 
 // Model name overridable via env, so a model change needs no code edit.
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5';
@@ -51,6 +55,23 @@ date, time, cost (or say it is free) and a contact. List any that are genuinely 
 from the email, its images and PDFs in "missing". Do not list details that can be
 reasonably inferred (e.g. a named village hall gives "where"). Notices without an
 attendable event need only "where" and "contact" where relevant.
+
+CLASSIFY THE EMAIL as a whole (email_class), even if you record no items:
+- submission: sends something for the website or newsletter (event, notice, news, photo).
+- question: asks us something (what's on, bin days, how to join or advertise, etc.).
+- correction: says something we published or hold is wrong, or asks for a change or removal.
+- subscribe / unsubscribe: asks to join or leave the newsletter mailing list.
+- complaint: unhappy with us, the site, the newsletter or something we published.
+- spam: unsolicited marketing, scams, phishing, SEO or link offers, mass mailings.
+- other: anything else, including thanks or chat with nothing to answer.
+class_confidence is 0 to 1. hold_reason is "none" unless the email is or involves:
+complaint; data_request (personal data, GDPR, deleting someone's details); legal_press
+(legal threats or enquiries, journalists, press); safeguarding (concerns about children's
+or anyone's safety, or a question involving children beyond an ordinary event listing);
+money (offers of money, payment, sponsorship or paid advertising); who_runs (asks who runs,
+owns or writes the site or newsletter). needs_reply is false only for thanks, simple
+confirmations, out-of-office or automated mail, and spam. request says in under 20 words
+what the sender wants.
 
 ${RULES}`;
 
@@ -131,8 +152,13 @@ const TOOL = {
         description: 'True if the submission was not recorded (or only partly) because it is outside the area covered by the rules',
       },
       skip_reason: { type: 'string', description: 'If no items, why (not relevant, out of area, etc.)' },
+      email_class: { type: 'string', enum: CLASSES, description: 'What kind of email this is (see CLASSIFY THE EMAIL)' },
+      class_confidence: { type: 'number', description: '0 to 1: how sure email_class is right' },
+      hold_reason: { type: 'string', enum: HOLD_REASONS, description: 'Topic that must be held for the team (see CLASSIFY THE EMAIL), or none' },
+      needs_reply: { type: 'boolean', description: 'False only for thanks, confirmations, automated mail and spam' },
+      request: { type: 'string', description: 'What the sender wants, under 20 words' },
     },
-    required: ['items', 'anonymous', 'out_of_scope'],
+    required: ['items', 'anonymous', 'out_of_scope', 'email_class', 'class_confidence', 'hold_reason', 'needs_reply'],
   },
 };
 
@@ -304,6 +330,9 @@ async function extract(input) {
     anonymous: signpost ? false : block.input.anonymous === true,
     outOfScope: block.input.out_of_scope === true,
     skipReason: str(block.input.skip_reason),
+    ...(signpost
+      ? { emailClass: 'submission', classConfidence: 1, holdReason: 'none', needsReply: false, request: '' }
+      : normaliseClass(block.input)),
     usage: res.usage, // input_tokens excludes cached tokens; see stats
   };
 }
