@@ -37,3 +37,4 @@ jobs:
           GMAIL_USER: jon@thelenches.org.uk
           ITEM_ID: ${{ github.event.client_payload.id }}
           ACTION: ${{ github.event.client_payload.action }}
+          REASON: ${{ github.event.client_payload.reason }}
