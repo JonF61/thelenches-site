@@ -17,6 +17,7 @@ const { prepareAttachments, hashDistance } = require('./images');
 const { sendUrgentAlerts } = require('./urgent');
 const replies = require('./replies');
 const edits = require('./edits');
+const welcome = require('./welcome');
 const rss = require('./rss');
 const trust = require('./trusted');
 const { offersChoice } = require('../../lib/wording');
@@ -387,6 +388,15 @@ async function main() {
   } catch (err) {
     console.error(`Replies: ${(err && err.message) || err}`);
     process.exitCode = 1;
+  }
+  // First run after holiday mode goes off: one email listing what Holly sent meanwhile.
+  if (!holiday) {
+    try {
+      await welcome.sendWelcomeBack(settings);
+    } catch (err) {
+      console.error(`Welcome-back digest failed (will retry next run): ${(err && err.message) || err}`);
+      process.exitCode = 1;
+    }
   }
   if (ctx.replyErrors) {
     console.error(`${ctx.replyErrors} reply plan(s) or follow-up check(s) failed; see the log above.`);

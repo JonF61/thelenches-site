@@ -43,4 +43,19 @@ function trustLink(item, sourceKey) {
   });
 }
 
-module.exports = { signedLink, trustLink, signToken, linksEnabled, workerUrl, LINK_DAYS };
+// Edit form for a reply draft (Worker /a, action "edit", part 2). The draft travels in the
+// signed token so the form can show it; '' if the link would be too long for some mail
+// apps (the action email then offers Edit by email only).
+const MAX_EDIT_URL = 2000;
+function editFormLink(row) {
+  const url = signToken({
+    i: row.reply_id,
+    a: 'edit',
+    t: `Reply to ${row.to}`.slice(0, 80),
+    b: String(row.body || ''),
+    e: Math.floor(Date.now() / 1000) + LINK_DAYS * 86400,
+  });
+  return url.length <= MAX_EDIT_URL ? url : '';
+}
+
+module.exports = { signedLink, trustLink, editFormLink, signToken, linksEnabled, workerUrl, LINK_DAYS };

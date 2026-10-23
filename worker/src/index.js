@@ -21,7 +21,8 @@
 // Actions: approve/reject (Pending items), approve_own/approve_rewrite (approve with the
 // submitter's own wording or our rewrite), trust (add the item's sender or feed to the
 // Trusted tab and approve that item), send/skip (the Approve and Reject buttons for replies;
-// Reject's page takes an optional reason), nlsend/nlbuild
+// Reject's page takes an optional reason), edit (a form showing the reply draft carried in
+// the signed link; the edited text is sent on to GitHub as client_payload.body), nlsend/nlbuild
 // (newsletter Send and Rebuild buttons). Single use and every send safeguard are enforced
 // downstream: the Worker only passes signed requests on to GitHub.
 // The Rebuild button's build carries rebuild: true, which lifts the Wednesday 18:00
@@ -64,6 +65,7 @@ const ACTIONS = {
   trust: ['Trust this source', 'Source trusted', 'approve'],
   send: ['Approve and send reply', 'Reply approved', 'approve'],
   skip: ['Reject reply', 'Reply rejected', 'reject'],
+  edit: ['Send edited reply', 'Edited reply queued to send', 'approve'],
   nlsend: ['Send newsletter', 'Send started', 'approve'],
   nlbuild: ['Rebuild newsletter', 'Rebuild started', 'approve'],
   unsub: ['Unsubscribe', 'Unsubscribed', 'reject'],
@@ -88,6 +90,7 @@ function validPayload(p) {
   if (p.a === 'nlsend' || p.a === 'nlbuild') {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(p.i)) return false;
   }
+  if (p.a === 'edit' && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
   if (p.a === 'trust') {
     const k = String(p.k || '');
     if (k.length > 300 || !(/^[^\s@<>]+@[^\s@<>]+$/.test(k) || /^https?:\/\/\S+$/i.test(k))) return false;
@@ -194,8 +197,10 @@ async function dispatch(env, eventType, clientPayload, tries = 1) {
 
 // Optional reason typed on the Reject reply page (Reply feedback tab): one line, short.
 const cleanReason = (v) => String(v || '').replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 300);
+// Edited reply text: keeps line breaks, drops other control characters.
+const cleanBody = (v) => String(v || '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f\u007f]+/g, ' ').trim().slice(0, 3000);
 
-function dispatchFor(p, reason = '') {
+function dispatchFor(p, reason = '', body = '') {
   if (p.a === 'nlsend') {
     return ['newsletter', {
       action: 'send', issue_date: p.i, confirm_count: String(p.n), expect_hash: p.h, expect_mode: p.m,
@@ -203,6 +208,7 @@ function dispatchFor(p, reason = '') {
   }
   if (p.a === 'nlbuild') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true }];
   if (p.a === 'skip' && reason) return ['approval', { id: p.i, action: p.a, reason }];
+  if (p.a === 'edit') return ['approval', { id: p.i, action: p.a, body, reason }];
   return ['approval', { id: p.i, action: p.a }];
 }
 
@@ -225,6 +231,7 @@ function confirmExtra(p) {
 function doneText(p) {
   if (p.a === 'nlsend') return 'Started. GitHub emails you if any safety check refuses it; the Issues and Sends tabs show progress.';
   if (p.a === 'nlbuild') return 'Started. A new test copy and preview should arrive in a few minutes.';
+  if (p.a === 'edit') return 'Recorded. Your text goes out within a few minutes, unless the reply had already been sent or rejected.';
   if (p.a === 'trust') return `Recorded. ${p.k} is added to the Trusted tab (once) and this item is approved if it was still waiting.`;
   return 'Recorded. If this had already been decided, nothing changes.';
 }
@@ -244,6 +251,8 @@ async function handleApproval(request, env) {
 ${confirmExtra(p)}
 <form method="post" action="/a">
   <input type="hidden" name="t" value="${esc(token)}">
+  ${p.a === 'edit' ? `<p><label for="body">Change the reply below, then press the button. It is sent exactly as it stands.</label><br><textarea id="body" name="body" rows="16" maxlength="3000" style="width:100%;max-width:560px;padding:8px;font-size:16px;font-family:Arial,Helvetica,sans-serif;line-height:1.4;">${esc(p.b)}</textarea></p>
+  <p><label for="reason">Why did you change it? (optional, kept in the Reply feedback tab, never sent)</label><br><input id="reason" name="reason" type="text" maxlength="300" style="width:100%;max-width:560px;padding:8px;font-size:16px;"></p>` : ''}
   ${p.a === 'skip' ? '<p><label for="reason">Why? (optional, kept in the Reply feedback tab, never sent)</label><br><input id="reason" name="reason" type="text" maxlength="300" style="width:100%;max-width:420px;padding:8px;font-size:16px;"></p>' : ''}
   <button class="${cls}" type="submit">${esc(p.a === 'nlsend' ? (p.t || verb) : verb)}</button>
 </form>
@@ -253,10 +262,12 @@ ${confirmExtra(p)}
   if (request.method === 'POST') {
     let token = '';
     let reason = '';
+    let body = '';
     try {
       const form = await request.formData();
       token = form.get('t');
       reason = cleanReason(form.get('reason'));
+      body = cleanBody(form.get('body'));
     } catch {
       return invalidPage();
     }
@@ -264,7 +275,8 @@ ${confirmExtra(p)}
     if (!p || p.a === 'unsub') return invalidPage();
     if (p.expired) return expiredPage();
 
-    const [eventType, payload] = dispatchFor(p, reason);
+    if (p.a === 'edit' && body.length < 10) return page('Nothing to send', '<h1>Nothing to send</h1><p>The reply text was empty. Go back and try again.</p>', 400);
+    const [eventType, payload] = dispatchFor(p, reason, body);
     if (!(await dispatch(env, eventType, payload, 2))) return failedPage();
     const [, done] = ACTIONS[p.a];
     return page(done, `

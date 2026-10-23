@@ -22,6 +22,11 @@
 // Rejecting an item that was acknowledged as on its way drafts a "sorry, we couldn't use it
 // after all" note (type "sorry", planSorry), which waits for Jon.
 // Every drafted reply is also logged in the Reply feedback tab (feedback.js).
+// Part 2 (23 Oct): replies open "Hi <first name>," when the sender's display name gives
+// one (firstName), else "Hi there,". Confident subscribe/unsubscribe emails are done
+// automatically (subscriptions.js) and confirmed with a templated reply (type "list").
+// Replies Holly sends in holiday mode go in the Holiday log tab for the welcome-back
+// digest (welcome.js).
 //
 // Lifecycle of a Replies row (status):
 //   shadow    replies_mode=shadow: drafted and logged, shown to Jon, never sent
@@ -55,6 +60,8 @@ const g = require('./google');
 const cls = require('./classify');
 const feedback = require('./feedback');
 const { siteFacts } = require('./sitefacts');
+const { applyListRequest } = require('./subscriptions');
+const welcome = require('./welcome');
 
 const TZ = 'Europe/London';
 const REPLY_FROM = 'website@thelenches.org.uk'; // never jon@: replies must not expose it
@@ -192,10 +199,34 @@ function fill(key, vars = {}) {
   return t.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined ? String(vars[k]) : m));
 }
 
+// "Hi <first name>," from a From header's display name, or '' when it doesn't clearly give
+// one (organisations, titles, role addresses, the bare address).
+const NOT_A_NAME = new Set(['info', 'admin', 'office', 'hello', 'contact', 'enquiries', 'enquiry', 'team', 'the',
+  'secretary', 'clerk', 'chair', 'chairman', 'treasurer', 'bookings', 'booking', 'events', 'news', 'mr', 'mrs', 'ms',
+  'miss', 'dr', 'rev', 'revd', 'sir', 'lady', 'lord', 'no', 'noreply', 'website', 'mail', 'support', 'sales']);
+const ORG_WORDS = /\b(council|club|society|association|church|school|hall|group|team|village|parish|office|ltd|limited|plc|trust|committee|newsletter|news|services?|ministry|benefice|surgery|practice|wi|pta|friends of|network|uk|co)\b/i;
+
+function firstName(fromHeader) {
+  const raw = String(fromHeader || '');
+  const lt = raw.indexOf('<');
+  if (lt <= 0) return '';
+  const display = raw.slice(0, lt).replace(/["']/g, '').replace(/\s+/g, ' ').trim();
+  if (!display || display.includes('@') || ORG_WORDS.test(display)) return '';
+  const parts = display.includes(',') ? display.split(',').map((x) => x.trim()).reverse().join(' ').split(' ') : display.split(' ');
+  const word = parts[0];
+  if (!/^[A-Za-z][A-Za-z'’-]{1,19}$/.test(word) || NOT_A_NAME.has(word.toLowerCase())) return '';
+  if (parts.length === 1 && word === word.toLowerCase()) return ''; // e.g. "jo" taken from the address
+  return word.charAt(0).toUpperCase() + (word === word.toUpperCase() || word === word.toLowerCase() ? word.slice(1).toLowerCase() : word.slice(1));
+}
+
+function greeting(name) {
+  return name && templates().greeting_name !== undefined ? fill('greeting_name', { name }) : fill('greeting');
+}
+
 // items: [{ title, event_date, policy: [codes] }]
 // unusable: attachment names we couldn't use ('' entries = name unknown, e.g. the 24h rebuild)
-function buildBody({ items, outOfScope, clarification, unusable = [] }) {
-  const parts = [fill('greeting')];
+function buildBody({ items, outOfScope, clarification, unusable = [], name = '' }) {
+  const parts = [greeting(name)];
   if (items.length === 1) parts.push(fill('ack_one', { title: items[0].title }));
   else if (items.length > 1) parts.push(fill('ack_many', { titles: items.map((i) => `- ${i.title}`).join('\n') }));
   else parts.push(fill('ack_none'));
@@ -455,13 +486,13 @@ async function planReply({ msg, sourceName, result, rows, ctx, unusable = [] }) 
     note: `${SENDER_LIMIT_NOTE} (${recent} replies to this sender in ${SENDER_GAP_HOURS}h, max ${maxSender})`,
   };
 
-  const job = { msg, result, rows, ctx, unusable, mode, base, said, limit };
+  const job = { msg, result, rows, ctx, unusable, mode, base, said, limit, name: firstName(msg.from) };
   if (hold) return planHeld(job, { hold });
   if (isSubmission) return planSubmission(job, skip);
   return planEnquiry(job);
 }
 
-async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, limit }, skip) {
+async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, limit, name }, skip) {
   const anonymous = result.anonymous === true;
   const needs = rows
     .map((r) => ({ title: r.title, missing: splitCodes(r.missing).filter((c) => FIELD_FOR[c]) }))
@@ -492,7 +523,7 @@ async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, li
     type,
     policy_codes: codes.join(','),
     subject: replySubject(msg.subject),
-    body: buildBody({ items, outOfScope: result.outOfScope, clarification, unusable }),
+    body: buildBody({ items, outOfScope: result.outOfScope, clarification, unusable, name }),
     status,
     notes: [
       limit.over ? `${limit.note}: clarification held for your Approve/Reject, never sent automatically` : '',
@@ -505,7 +536,7 @@ async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, li
 }
 
 const modeLabel = (mode, holiday) => (mode === 'shadow' ? 'shadow' : (holiday ? 'holiday' : 'normal'));
-const wrap = (text) => [fill('greeting'), text, fill('signature')].join('\n\n');
+const wrap = (text, name = '') => [greeting(name), text, fill('signature')].join('\n\n');
 const theyWroteNote = (said) => {
   const flat = said.replace(/\s+/g, ' ');
   return flat ? `They wrote: "${flat.length > FOLLOWUP_EXCERPT ? `${flat.slice(0, FOLLOWUP_EXCERPT)}…` : flat}"` : '';
@@ -514,7 +545,7 @@ const theyWroteNote = (said) => {
 // Held for Jon: the holding reply goes automatically (dropped over the sender limit), and
 // Holly's draft of the real reply waits for Jon in every mode. why: extra note for Jon
 // (e.g. a holiday-mode answer that failed the checks).
-async function planHeld({ msg, result, ctx, mode, base, said, limit }, { hold, why = '', draft = null }) {
+async function planHeld({ msg, result, ctx, mode, base, said, limit, name }, { hold, why = '', draft = null }) {
   const label = modeLabel(mode, ctx.holiday);
   const d = draft || await draftAnswer({ emailClass: base.class, result, msg, said, hold });
   let holding = null;
@@ -525,7 +556,7 @@ async function planHeld({ msg, result, ctx, mode, base, said, limit }, { hold, w
       type: 'holding',
       policy_codes: 'holding',
       subject: replySubject(msg.subject),
-      body: wrap(fill('holding')),
+      body: wrap(fill('holding'), name),
       status: mode === 'shadow' ? 'shadow' : 'queued',
       notes: hold ? `Holding reply: held for you (${cls.HOLD_WORDS[hold] || hold})` : 'Holding reply',
     });
@@ -536,7 +567,7 @@ async function planHeld({ msg, result, ctx, mode, base, said, limit }, { hold, w
     type: hold ? 'held' : 'answer',
     policy_codes: [hold ? `held:${hold}` : 'answer', limit.over && SENDER_LIMIT_CODE].filter(Boolean).join(','),
     subject: replySubject(msg.subject),
-    body: wrap(d.text),
+    body: wrap(d.text, name),
     status: mode === 'shadow' ? 'shadow' : 'awaiting',
     notes: [
       hold ? `Held for you: ${cls.HOLD_WORDS[hold] || hold}` : '',
@@ -554,7 +585,7 @@ async function planHeld({ msg, result, ctx, mode, base, said, limit }, { hold, w
 
 // Questions, corrections, subscribe/unsubscribe and anything else that needs a reply.
 async function planEnquiry(job) {
-  const { msg, result, ctx, mode, base, said, limit } = job;
+  const { msg, result, ctx, mode, base, said, limit, name } = job;
   const label = modeLabel(mode, ctx.holiday);
   const uncertain = cls.isUncertain(base.class, base.class_confidence);
   const about = `${base.class} (${base.class_confidence})${result.request ? `: ${result.request}` : ''}`;
@@ -574,11 +605,31 @@ async function planEnquiry(job) {
   else if (ctx.holiday && !limit.over) status = 'queued';
   const codes = (c) => [c, limit.over && SENDER_LIMIT_CODE].filter(Boolean).join(',');
 
+  // Subscribe / unsubscribe, confidently classed: done automatically for the sender's own
+  // address, then confirmed (agreed 23 Oct). Shadow mode only drafts the confirmation.
+  // Refused (e.g. on Do Not Send) or unsure: falls through to a draft for Jon.
+  let listNote = '';
+  if (['subscribe', 'unsubscribe'].includes(base.class) && !uncertain && !limit.over && sameAddress(msg.fromAddress, base.to)) {
+    let r = { done: base.class === 'subscribe' ? 'subscribed' : 'unsubscribed' };
+    if (mode !== 'shadow') r = await applyListRequest(base.class, msg.fromAddress, londonDateTime(Date.now()));
+    if (r.done) {
+      const key = { subscribed: 'list_subscribed', already: 'list_already', unsubscribed: 'list_unsubscribed', already_off: 'list_unsubscribed' }[r.done];
+      return write({
+        reply_id: `${msg.id}-list`, type: 'list', policy_codes: `list:${r.done}`,
+        body: wrap(fill(key), name), status: mode === 'shadow' ? 'shadow' : 'queued',
+        extra: [mode === 'shadow' ? `Shadow mode: would have been ${r.done}` : `Done automatically: ${r.done}`],
+      });
+    }
+    listNote = `Not done automatically: ${r.refused}`;
+    // Holiday mode: a refused request needs Jon, so holding reply + draft for him.
+    if (ctx.holiday && mode !== 'shadow') return planHeld(job, { hold: '', why: listNote });
+  }
+
   // Holiday mode, unsure what they want: ask rather than guess.
   if (ctx.holiday && uncertain) {
     return write({
       reply_id: `${msg.id}-whattodo`, type: 'whattodo', policy_codes: codes('whattodo'),
-      body: wrap(fill('what_to_do')), status, extra: ['Holiday mode: class uncertain, asked what they would like'],
+      body: wrap(fill('what_to_do'), name), status, extra: ['Holiday mode: class uncertain, asked what they would like'],
     });
   }
 
@@ -589,8 +640,8 @@ async function planEnquiry(job) {
   }
   return write({
     reply_id: `${msg.id}-answer`, type: 'answer', policy_codes: codes(`answer:${base.class}`),
-    body: wrap(d.text), status,
-    extra: [d.drafted ? '' : 'Draft is holding wording: edit before approving', ...d.warnings],
+    body: wrap(d.text, name), status,
+    extra: [listNote, d.drafted ? '' : 'Draft is holding wording: edit before approving', ...d.warnings],
   });
 }
 
@@ -717,7 +768,7 @@ async function planSorry(item) {
     created_at: londonDateTime(Date.now()),
     policy_codes: 'sorry',
     subject: told.subject,
-    body: wrap(fill('sorry_rejected', { title: item.title })),
+    body: wrap(fill('sorry_rejected', { title: item.title }), firstName(item.from)),
     status: mode === 'shadow' ? 'shadow' : 'awaiting',
     notes: `You rejected "${item.title}" after we told them it was on its way`,
   };
@@ -927,7 +978,7 @@ async function planFollowup({ msg, reply, ctx, added = [], result = {} }) {
     type: 'followup',
     policy_codes: 'followup',
     subject: replySubject(msg.subject),
-    body: [fill('greeting'), t.draft || FOLLOWUP_FALLBACK, fill('signature')].join('\n\n'),
+    body: wrap(t.draft || FOLLOWUP_FALLBACK, firstName(msg.from)),
     status: mode === 'shadow' ? 'shadow' : 'awaiting',
     created_at: londonDateTime(Date.now()),
     notes: [
@@ -953,8 +1004,8 @@ async function assertSendAs() {
 // Body without the clarification, rebuilt from the Pending rows (24h fallback). The
 // attachment names aren't stored, so the unusable note says "one of your attachments".
 function bodyWithoutQuestion(reply, pending) {
-  const items = pending
-    .filter((r) => r.message_id === reply.message_id)
+  const mine = pending.filter((r) => r.message_id === reply.message_id);
+  const items = mine
     .map((r) => ({ title: r.title, event_date: r.event_date, policy: splitCodes(r.policy_flags) }));
   const codes = splitCodes(reply.policy_codes);
   return buildBody({
@@ -962,15 +1013,17 @@ function bodyWithoutQuestion(reply, pending) {
     outOfScope: codes.includes('out_of_scope'),
     clarification: '',
     unusable: codes.includes(UNUSABLE_CODE) ? [''] : [],
+    name: mine.length ? firstName(mine[0].from) : '',
   });
 }
 
 // Anonymity (CLAUDE.md): a reply must never contain the team's own address or its name
 // part (e.g. from an edited draft or a mail signature). Returns what matched, or ''.
+// The opening "Hi <name>," line is the sender's own name, so it isn't checked.
 function exposesTeam(text) {
   const user = String(process.env.GMAIL_USER || '').trim().toLowerCase();
   if (!user) return '';
-  const t = String(text || '').toLowerCase();
+  const t = String(text || '').replace(/^\s*Hi [A-Za-z'’-]{1,20},[ \t]*\n/, '').toLowerCase();
   if (t.includes(user)) return user;
   const local = user.split('@')[0];
   return local.length >= 3 && new RegExp(`\\b${local.replace(/[^a-z0-9]/g, '.')}\\b`).test(t) ? local : '';
@@ -1078,6 +1131,7 @@ async function sendDueReplies(settings, holiday) {
     if (await deliver(r, settings, opts)) {
       sent += 1;
       sentToday += 1;
+      if (holiday) await welcome.logHolidaySend({ ...r, body: opts.body || r.body }, londonDateTime(Date.now()));
       await feedback.resolve(r.reply_id, {
         outcome, finalText: opts.body || r.body, decidedAt: londonDateTime(Date.now()),
         reason: outcome === 'timed_out' ? opts.note : '',
@@ -1170,6 +1224,7 @@ module.exports = {
   applyEdit,
   planSorry,
   stripQuoted,
+  firstName,
   rowsForAlert,
   FALLBACK_TYPES,
   REPLY_FROM,

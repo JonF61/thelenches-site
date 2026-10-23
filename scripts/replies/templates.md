@@ -10,6 +10,9 @@ or remove a key: the code needs every one of them.
 ## greeting
 Hi there,
 
+## greeting_name
+Hi {name},
+
 ## ack_one
 Thanks for sending "{title}", it's on its way to the website and Thursday's newsletter.
 
@@ -64,6 +67,15 @@ Thanks for your email. I wasn't quite sure what you'd like us to do with it: is 
 
 ## sorry_rejected
 Sorry, we said "{title}" was on its way, but we couldn't use it after all. Please do keep sending things in though.
+
+## list_subscribed
+Thanks, you're now on the list for the newsletter. It comes out every Thursday morning, and there's an unsubscribe link at the bottom of each one if you ever change your mind.
+
+## list_already
+Thanks, you're already on the list for the newsletter, so it should be with you every Thursday morning. If it isn't turning up, it's worth a quick look in your spam folder.
+
+## list_unsubscribed
+No problem, we've taken you off the newsletter list, so you won't get any more. If you change your mind, just let us know.
 
 ## signature
 Thanks again,
