@@ -78,6 +78,6 @@ Thanks, you're already on the list for the newsletter, so it should be with you 
 No problem, we've taken you off the newsletter list, so you won't get any more. If you change your mind, just let us know.
 
 ## signature
-Thanks again,
+Best wishes,
 Holly
 Lenches website assistant
