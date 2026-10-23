@@ -22,7 +22,9 @@
 // submitter's own wording or our rewrite), trust (add the item's sender or feed to the
 // Trusted tab and approve that item), send/skip (the Approve and Reject buttons for replies;
 // Reject's page takes an optional reason), edit (a form showing the reply draft carried in
-// the signed link; the edited text is sent on to GitHub as client_payload.body), nlsend/nlbuild
+// the signed link; the edited text is sent on to GitHub as client_payload.body), redraft (a
+// page asking what to change, required, sent on as client_payload.reason), close ("Close,
+// no reply needed" for an email still owed a reply), nlsend/nlbuild
 // (newsletter Send and Rebuild buttons). Single use and every send safeguard are enforced
 // downstream: the Worker only passes signed requests on to GitHub.
 // The Rebuild button's build carries rebuild: true, which lifts the Wednesday 18:00
@@ -66,6 +68,8 @@ const ACTIONS = {
   send: ['Approve and send reply', 'Reply approved', 'approve'],
   skip: ['Reject reply', 'Reply rejected', 'reject'],
   edit: ['Send edited reply', 'Edited reply queued to send', 'approve'],
+  redraft: ['Redraft reply', 'Redraft requested', 'approve'],
+  close: ['Close, no reply needed', 'Closed', 'reject'],
   nlsend: ['Send newsletter', 'Send started', 'approve'],
   nlbuild: ['Rebuild newsletter', 'Rebuild started', 'approve'],
   unsub: ['Unsubscribe', 'Unsubscribed', 'reject'],
@@ -196,7 +200,8 @@ async function dispatch(env, eventType, clientPayload, tries = 1) {
 }
 
 // Optional reason typed on the Reject reply page (Reply feedback tab): one line, short.
-const cleanReason = (v) => String(v || '').replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 300);
+// Also the Redraft page's instruction (required, up to 500 characters).
+const cleanReason = (v, max = 300) => String(v || '').replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, max);
 // Edited reply text: keeps line breaks, drops other control characters.
 const cleanBody = (v) => String(v || '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f\u007f]+/g, ' ').trim().slice(0, 3000);
 
@@ -207,7 +212,7 @@ function dispatchFor(p, reason = '', body = '') {
     }];
   }
   if (p.a === 'nlbuild') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true }];
-  if (p.a === 'skip' && reason) return ['approval', { id: p.i, action: p.a, reason }];
+  if ((p.a === 'skip' || p.a === 'redraft') && reason) return ['approval', { id: p.i, action: p.a, reason }];
   if (p.a === 'edit') return ['approval', { id: p.i, action: p.a, body, reason }];
   return ['approval', { id: p.i, action: p.a }];
 }
@@ -232,6 +237,8 @@ function doneText(p) {
   if (p.a === 'nlsend') return 'Started. GitHub emails you if any safety check refuses it; the Issues and Sends tabs show progress.';
   if (p.a === 'nlbuild') return 'Started. A new test copy and preview should arrive in a few minutes.';
   if (p.a === 'edit') return 'Recorded. Your text goes out within a few minutes, unless the reply had already been sent or rejected.';
+  if (p.a === 'redraft') return 'Recorded. Holly writes a new draft and emails you a fresh card within a few minutes; the old draft is closed. If the reply had already been sent or closed, nothing changes.';
+  if (p.a === 'close') return 'Recorded. This email no longer appears under "Still owed a reply", and any draft still waiting is closed. Nothing is sent.';
   if (p.a === 'trust') return `Recorded. ${p.k} is added to the Trusted tab (once) and this item is approved if it was still waiting.`;
   return 'Recorded. If this had already been decided, nothing changes.';
 }
@@ -253,6 +260,8 @@ ${confirmExtra(p)}
   <input type="hidden" name="t" value="${esc(token)}">
   ${p.a === 'edit' ? `<p><label for="body">Change the reply below, then press the button. It is sent exactly as it stands.</label><br><textarea id="body" name="body" rows="16" maxlength="3000" style="width:100%;max-width:560px;padding:8px;font-size:16px;font-family:Arial,Helvetica,sans-serif;line-height:1.4;">${esc(p.b)}</textarea></p>
   <p><label for="reason">Why did you change it? (optional, kept in the Reply feedback tab, never sent)</label><br><input id="reason" name="reason" type="text" maxlength="300" style="width:100%;max-width:560px;padding:8px;font-size:16px;"></p>` : ''}
+  ${p.a === 'redraft' ? '<p><label for="reason">What should Holly change? (required; kept in the Reply feedback tab, never sent)</label><br><textarea id="reason" name="reason" rows="5" maxlength="500" required style="width:100%;max-width:560px;padding:8px;font-size:16px;font-family:Arial,Helvetica,sans-serif;line-height:1.4;"></textarea></p><p class="muted">Holly writes a new draft from their email, the old draft and this, and emails you a fresh card to approve.</p>' : ''}
+  ${p.a === 'close' ? '<p>This stops the reminder for this email. Nothing is sent to them; any draft still waiting is closed.</p>' : ''}
   ${p.a === 'skip' ? '<p><label for="reason">Why? (optional, kept in the Reply feedback tab, never sent)</label><br><input id="reason" name="reason" type="text" maxlength="300" style="width:100%;max-width:420px;padding:8px;font-size:16px;"></p>' : ''}
   <button class="${cls}" type="submit">${esc(p.a === 'nlsend' ? (p.t || verb) : verb)}</button>
 </form>
@@ -266,7 +275,7 @@ ${confirmExtra(p)}
     try {
       const form = await request.formData();
       token = form.get('t');
-      reason = cleanReason(form.get('reason'));
+      reason = form.get('reason');
       body = cleanBody(form.get('body'));
     } catch {
       return invalidPage();
@@ -274,6 +283,8 @@ ${confirmExtra(p)}
     const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
     if (!p || p.a === 'unsub') return invalidPage();
     if (p.expired) return expiredPage();
+    reason = cleanReason(reason, p.a === 'redraft' ? 500 : 300);
+    if (p.a === 'redraft' && reason.length < 3) return page('Nothing to change', '<h1>Say what to change</h1><p>The box was empty. Go back and type what Holly should change.</p>', 400);
 
     if (p.a === 'edit' && body.length < 10) return page('Nothing to send', '<h1>Nothing to send</h1><p>The reply text was empty. Go back and try again.</p>', 400);
     const [eventType, payload] = dispatchFor(p, reason, body);

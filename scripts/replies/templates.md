@@ -57,7 +57,8 @@ We'll be in touch shortly about "{title}".
 If we haven't heard by Wednesday 6pm, no worries, we'll go with what we've got.
 
 ## guidelines
-Our submission guidelines are on the Contact page if they're handy: {guidelines_url}
+Our submission guidelines are on the Contact page if they're handy:
+{guidelines_url}
 
 ## holding
 Thanks for getting in touch. I've passed this on to the team and someone will get back to you shortly.

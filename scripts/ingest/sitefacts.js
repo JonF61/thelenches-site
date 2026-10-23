@@ -4,12 +4,18 @@
 // checkout (src/_data, src/items via lib/whatson.js, pipeline.json), so it is what is live
 // now; Pending items are never included, so a reply can't say something is live before
 // it is. urls is every link a draft may contain.
+// 23 Oct: also the "Living here" data, including what the build computes (next parish
+// council meetings from meetings.js, school holidays from termdates.js), so a question
+// like "when's the next South Lenches PC meeting?" is answered from the Council page.
+// Outside links (NHS, bus and council sites) are left out: a reply links to our page.
 'use strict';
 
 const fs = require('fs');
 const path = require('path');
 const { loadWhatson, ukToday } = require('../../lib/whatson');
 const { anchorUrl } = require('../../lib/anchors');
+const meetings = require('../../src/_data/meetings');
+const termdates = require('../../src/_data/termdates');
 
 const SITE = 'https://thelenches.org.uk';
 const DATA = path.join(__dirname, '..', '..', 'src', '_data');
@@ -96,6 +102,8 @@ function siteFacts(opts = {}) {
     url: `${SITE}/churches/`,
   };
 
+  const living = livingHere(opts);
+
   return {
     facts: {
       today,
@@ -104,9 +112,76 @@ function siteFacts(opts = {}) {
       notices,
       bins,
       church_services: services,
+      ...living,
     },
     urls,
   };
+}
+
+// Computed data files are functions; a failure leaves that part out rather than the lot.
+function computed(fn, dflt) {
+  try {
+    return fn();
+  } catch (err) {
+    console.warn(`Site facts: computed data unavailable: ${(err && err.message) || err}`);
+    return dflt;
+  }
+}
+
+const NOT_WORKED_OUT = 'not worked out on the site: point them to the Council page, which links to the council\'s own meetings page';
+
+// Council, schools, health, transport and walks pages. opts.council etc.: for tests.
+function livingHere(opts) {
+  const c = opts.council || readJson('council.json', {});
+  const next = opts.meetings || computed(meetings, {});
+  const council = {
+    parishes: (c.parishes || []).map((p) => ({
+      name: str(p.name), covers: str(p.covers), meets: str(p.meets),
+      next_meeting: next[p.key] || NOT_WORKED_OUT,
+      ...(p.clerk ? { clerk: str(p.clerk) } : {}), ...(p.phone ? { phone: str(p.phone) } : {}),
+    })),
+    councillors: (c.councillors || []).map((a) => `${a.area}: ${(a.people || []).map((x) => x.name).join(', ')}`),
+    url: `${SITE}/living-here/council/`,
+  };
+
+  const s = opts.schools || readJson('schools.json', {});
+  const schools = {
+    local: (s.local || []).map((x) => ({ name: str(x.name), where: str(x.where), details: clip(x.text), ...(x.phone ? { phone: str(x.phone) } : {}) })),
+    holidays: (opts.termdates || computed(termdates, [])).map((b) => ({
+      name: b.name, closes: b.closes, ...(b.reopens ? { reopens: b.reopens } : {}), ...(b.on ? { on_now: true } : {}),
+    })),
+    holidays_note: str(s.terms && s.terms.note),
+    url: `${SITE}/living-here/schools/`,
+  };
+
+  const h = opts.health || readJson('health.json', {});
+  const places = (list) => (list || []).map((x) => [x.name, x.address, x.phone, x.hours].filter(Boolean).map(str).join(', '));
+  const health = {
+    numbers: (h.numbers || []).map((n) => `${n.label}: ${n.number}`),
+    minor_injuries_and_ae: places(h.injuries),
+    gps: places(h.gps && h.gps.items),
+    pharmacies: places(h.pharmacies && h.pharmacies.items),
+    defibrillators: ((h.defibs && h.defibs.villages) || []).map((v) => `${v.name}: ${(v.sites || []).map((x) => `${x.name} (${x.address})`).join('; ') || str(v.note) || 'none listed'}`),
+    url: `${SITE}/living-here/health/`,
+  };
+
+  const t = opts.transport || readJson('transport.json', {});
+  const transport = {
+    buses: ((t.buses && t.buses.items) || []).map((b) => [b.name, b.route, b.days, b.stops && `Stops: ${b.stops}`].filter(Boolean).map(str).join(' ')),
+    buses_note: clip(t.buses && t.buses.note),
+    on_demand: t.ondemand ? `${str(t.ondemand.name)}: ${str(t.ondemand.text)}${t.ondemand.phone ? ` Phone ${t.ondemand.phone}.` : ''}` : '',
+    community_transport: places(t.community && t.community.items),
+    stations: places(t.trains && t.trains.items),
+    url: `${SITE}/living-here/getting-around/`,
+  };
+
+  const w = opts.walks || readJson('walks.json', {});
+  const walks = {
+    walks: (w.walks || []).map((x) => [x.name, x.start && `from ${x.start}`, ...(x.tags || [])].filter(Boolean).map(str).join(', ')),
+    url: `${SITE}/living-here/walks/`,
+  };
+
+  return { council, schools, health, transport, walks };
 }
 
 module.exports = { siteFacts, SITE };
