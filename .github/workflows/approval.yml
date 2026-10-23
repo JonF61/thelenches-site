@@ -38,3 +38,4 @@ jobs:
           ITEM_ID: ${{ github.event.client_payload.id }}
           ACTION: ${{ github.event.client_payload.action }}
           REASON: ${{ github.event.client_payload.reason }}
+          BODY: ${{ github.event.client_payload.body }}
