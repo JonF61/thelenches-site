@@ -236,6 +236,10 @@ async function getMessage(id) {
       listId: header(headers, 'List-Id'),
       listUnsubscribe: header(headers, 'List-Unsubscribe'),
       returnPath,
+      // Present at all (any value) marks an auto-reply.
+      xAutoreply: headerValues(headers, 'X-Autoreply').length > 0,
+      xAutorespond: headerValues(headers, 'X-Autorespond').length > 0,
+      xAutoResponseSuppress: headerValues(headers, 'X-Auto-Response-Suppress').length > 0,
     },
     text,
     attachments: out.attachments,

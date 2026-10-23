@@ -2,7 +2,11 @@
 // Replies to people who email website@ (step 6; enquiries added 23 Oct). Every inbound
 // email from a reply source is classified first (classify.js, in the extraction call) and
 // gets one Replies row logging its class, confidence and any hold reason:
-//   spam / automated   never replied to (row "skipped")
+//   spam / automated   never replied to (row "skipped"; a definite auto-responder, by its
+//                      headers, has hold_reason "auto-responder")
+//   possible auto-     no-reply style sender or "Out of office" style subject, no telling
+//   responder          header: nothing sent, not even a holding reply; the draft waits for
+//                      Jon (type "held", hold_reason "possible auto-responder")
 //   held               complaints, data/GDPR, legal or press, children or safeguarding,
 //                      money or sponsorship offers, who runs the site: a templated holding
 //                      reply goes automatically (type "holding"), and Holly's draft of the
@@ -464,19 +468,37 @@ function itemPolicy(row, receivedMs) {
 /* ------------------------------------------------------------ safeguards -- */
 
 const AUTO_LOCAL = /^(no[-_.]?reply|do[-_.]?not[-_.]?reply|mailer[-_.]?daemon|postmaster|bounces?)([+._-]|$)/i;
+const AUTO_SUBJECT = /^\s*\[?\s*(automatic reply|auto[-\s]?reply|autoreply|out of (the )?office|undeliverable|delivery status notification)\b/i;
+const AUTO_HOLD = 'auto-responder';            // hold_reason on a definite one (row "skipped")
+const PROBABLE_HOLD = 'possible auto-responder'; // hold_reason on a probable one (held for Jon)
 
-// Reason not to reply to this message at all, or ''.
-function automatedReason(msg, to) {
+// Auto-responder check (agreed 23 Oct). Definite (a telling header): never replied to.
+// Probable (sender or subject only): held for Jon's Send, never dropped on a heuristic.
+// Returns { definite: reason } or { probable: reason } or null.
+function autoResponder(msg, to) {
   const a = msg.auto || {};
   const as = String(a.autoSubmitted || '').trim().toLowerCase();
-  if (as && as !== 'no') return `Automated mail (Auto-Submitted: ${as})`;
-  if (/^(bulk|list|junk)$/i.test(String(a.precedence || '').trim())) return `Automated mail (Precedence: ${a.precedence})`;
+  if (as && as !== 'no') return { definite: `Auto-responder (Auto-Submitted: ${as})` };
+  if (a.xAutoreply) return { definite: 'Auto-responder (X-Autoreply)' };
+  if (a.xAutorespond) return { definite: 'Auto-responder (X-Autorespond)' };
+  const prec = String(a.precedence || '').trim();
+  if (/^(bulk|list|junk|auto_reply)$/i.test(prec)) return { definite: `Auto-responder (Precedence: ${prec})` };
+  if (a.xAutoResponseSuppress) return { definite: 'Auto-responder (X-Auto-Response-Suppress)' };
+  if (a.returnPath === '') return { definite: 'Auto-responder (empty Return-Path: bounce)' };
+  for (const addr of [msg.fromAddress, to]) {
+    if (addr && AUTO_LOCAL.test(addr.split('@')[0])) return { probable: `Possible auto-responder (sender ${addr})` };
+  }
+  if (AUTO_SUBJECT.test(String(msg.subject || ''))) return { probable: `Possible auto-responder (subject "${String(msg.subject).trim().slice(0, 80)}")` };
+  return null;
+}
+
+// Reason not to reply to this message at all (other than an auto-responder), or ''.
+function automatedReason(msg, to) {
+  const a = msg.auto || {};
   if (a.listId) return 'Mailing list (List-Id)';
   if (a.listUnsubscribe) return 'Mailing list (List-Unsubscribe)';
-  if (a.returnPath === '') return 'Empty Return-Path (bounce)';
   for (const addr of [msg.fromAddress, to]) {
     if (!addr) return 'No reply address';
-    if (AUTO_LOCAL.test(addr.split('@')[0])) return `Automated sender (${addr})`;
     if (addr.endsWith(`@${OWN_DOMAIN}`)) return `Own domain (${addr})`;
   }
   return '';
@@ -529,6 +551,12 @@ async function planReply({ msg, sourceName, result, rows, ctx, unusable = [] }) 
     ...base, reply_id: `${msg.id}-none`, type: 'none', status: 'skipped', notes: reason,
   });
 
+  const responder = autoResponder(msg, to);
+  if (responder && responder.definite) {
+    return appendReply(ctx, {
+      ...base, hold_reason: AUTO_HOLD, reply_id: `${msg.id}-none`, type: 'none', status: 'skipped', notes: responder.definite,
+    });
+  }
   const auto = automatedReason(msg, to);
   if (auto) return skip(auto);
   if (emailClass === 'spam') return skip('Spam: never replied to');
@@ -545,6 +573,7 @@ async function planReply({ msg, sourceName, result, rows, ctx, unusable = [] }) 
   const limit = senderLimit(ctx, to);
 
   const job = { msg, result, rows, ctx, unusable, mode, base, said, limit, name: firstName(msg.from) };
+  if (responder) return planProbable(job, responder.probable, isSubmission);
   if (hold) return planHeld(job, { hold });
   if (isSubmission) return planSubmission(job, skip);
   return planEnquiry(job);
@@ -650,6 +679,38 @@ async function planHeld({ msg, result, ctx, mode, base, said, limit, name }, { h
   });
   await feedback.record(held, { theyWrote: said, mode: label });
   return holding || held;
+}
+
+// Possible auto-responder (sender or subject only): nothing goes automatically, not even a
+// holding reply. Holly's draft of the reply it would otherwise get waits for Jon's Send
+// (type "held", never sent without him, in every mode), so a real villager isn't lost.
+async function planProbable({ msg, result, rows, ctx, unusable, mode, base, said, limit, name }, why, isSubmission) {
+  // A submission (e.g. a booking site's no-reply notice) gets its plain acknowledgement.
+  const d = isSubmission
+    ? { text: '', drafted: true, warnings: [] }
+    : await draftAnswer({ emailClass: base.class, result, msg, said, hold: base.hold_reason });
+  const items = rows.map((r) => ({ title: r.title, event_date: r.event_date, policy: splitCodes(r.policy_flags) }));
+  const row = await appendReply(ctx, {
+    ...base,
+    hold_reason: PROBABLE_HOLD,
+    reply_id: `${msg.id}-held`,
+    type: 'held',
+    policy_codes: ['held:auto-responder', limit.over && SENDER_LIMIT_CODE].filter(Boolean).join(','),
+    subject: replySubject(msg.subject),
+    body: isSubmission ? buildBody({ items, outOfScope: result.outOfScope, unusable, name }) : wrap(d.text, name),
+    status: mode === 'shadow' ? 'shadow' : 'awaiting',
+    notes: [
+      `${why}: held for you, nothing sent. Send only if a real person wrote it`,
+      base.hold_reason ? `Also held for: ${cls.HOLD_WORDS[base.hold_reason] || base.hold_reason}` : '',
+      `${base.class} (${base.class_confidence})${result.request ? `: ${result.request}` : ''}`,
+      limit.over ? limit.note : '',
+      theyWroteNote(said),
+      d.drafted ? '' : 'Draft is holding wording: edit before approving',
+      ...d.warnings,
+    ].filter(Boolean).join(' | '),
+  });
+  await feedback.record(row, { theyWrote: said, mode: modeLabel(mode, ctx.holiday) });
+  return row;
 }
 
 // Questions, corrections, subscribe/unsubscribe and anything else that needs a reply.
@@ -1157,7 +1218,17 @@ async function planFollowup({ msg, reply, ctx, added = [], result = {} }) {
   if (ctx.replies.some((r) => r.reply_id === replyId)) return { flagged: false, reason: 'already flagged' };
 
   const to = g.addressOf(msg.replyTo) || msg.fromAddress;
-  const auto = automatedReason(msg, to); // out-of-office, bounces, lists
+  const responder = autoResponder(msg, to);
+  if (responder && responder.definite) {
+    await appendReply(ctx, {
+      message_id: msg.id, thread_id: msg.threadId, to, class: result.emailClass || '',
+      class_confidence: result.classConfidence === undefined ? '' : result.classConfidence,
+      hold_reason: AUTO_HOLD, created_at: londonDateTime(Date.now()),
+      reply_id: replyId, type: 'followup', status: 'skipped', notes: `Follow-up: ${responder.definite}`,
+    });
+    return { flagged: false, reason: responder.definite };
+  }
+  const auto = automatedReason(msg, to); // lists, own domain
   if (auto) return { flagged: false, reason: auto };
   if (result.emailClass === 'spam') return { flagged: false, reason: 'spam' };
 
@@ -1196,12 +1267,14 @@ async function planFollowup({ msg, reply, ctx, added = [], result = {} }) {
     details_added: added,
     items: itemState(reply, ctx),
   });
-  if (!t.needsHuman && !hold && !listNote) return { flagged: false, reason: t.reason };
+  // A possible auto-responder always goes to Jon (never dropped on a heuristic).
+  if (!t.needsHuman && !hold && !listNote && !responder) return { flagged: false, reason: t.reason };
 
   const flat = said.replace(/\s+/g, ' ');
   const excerpt = flat.length > FOLLOWUP_EXCERPT ? `${flat.slice(0, FOLLOWUP_EXCERPT)}…` : flat;
   const row = await appendReply(ctx, {
     ...base,
+    ...(responder ? { hold_reason: PROBABLE_HOLD } : {}),
     reply_id: replyId,
     type: 'followup',
     policy_codes: 'followup',
@@ -1210,6 +1283,7 @@ async function planFollowup({ msg, reply, ctx, added = [], result = {} }) {
     status: mode === 'shadow' ? 'shadow' : 'awaiting',
     notes: [
       `Follow-up: ${t.reason}`,
+      responder ? `${responder.probable}: send only if a real person wrote it` : '',
       listNote,
       hold ? `Held for you: ${cls.HOLD_WORDS[hold] || hold}` : '',
       excerpt ? `They wrote: "${excerpt}"` : 'No text (attachment only?)',
@@ -1654,6 +1728,7 @@ module.exports = {
   answerContext,
   applyAnswer,
   planFollowup,
+  autoResponder,
   sendDueReplies,
   decideReply,
   applyEdit,
