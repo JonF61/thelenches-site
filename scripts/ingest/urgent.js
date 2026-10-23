@@ -8,8 +8,8 @@
 //   - replies held for Jon (complaints, data/GDPR, legal or press, children or
 //     safeguarding, money, who runs the site: a holding reply has gone), follow-ups
 //     needing a human (a question or new issue on a thread we've replied to), other
-//     drafts awaiting a decision (Approve / Edit / Reject; Edit opens an email to Jon
-//     himself, edits.js), shadow-mode drafts, and replies stuck at "sending" (never
+//     drafts awaiting a decision (Approve / Edit / Reject; Edit opens the Worker's edit
+//     form, or for a draft too long for a link an email to Jon himself, edits.js), shadow-mode drafts, and replies stuck at "sending" (never
 //     resent automatically). Each shows the email's class and confidence.
 //
 // Retry-safe: Pending and Replies "alerted_at" are stamped only after the email is sent,
@@ -18,7 +18,7 @@
 'use strict';
 
 const g = require('./google');
-const { signedLink, linksEnabled, LINK_DAYS } = require('./links');
+const { signedLink, editFormLink, linksEnabled, LINK_DAYS } = require('./links');
 const replies = require('./replies');
 const { offersChoice, isOfficial } = require('../../lib/wording');
 const wv = require('./wordingview');
@@ -97,8 +97,8 @@ function replyLine(r, liveButtons) {
       + 'It will never be resent automatically; set the status by hand once checked.';
   }
   const noButtons = liveButtons ? '' : ' Buttons unavailable; edit the status in the Sheet.';
-  const how = 'Approve sends it (as the Sheet body cell stands); Edit opens an email to yourself: change '
-    + 'the text and send it, and the next run sends yours; Reject sends nothing.';
+  const how = 'Approve sends it (as the Sheet body cell stands); Edit opens it in a form to change and '
+    + 'send (a long draft opens an email to yourself instead); Reject sends nothing.';
   if (isFollowup(r)) {
     return 'They wrote again on a thread we already answered (see the note). This draft is never sent '
       + `unless you approve or edit it, including in holiday mode. ${how}${noButtons}`;
@@ -179,8 +179,8 @@ function replyHtml(r, ctx) {
       <div style="white-space:pre-wrap;background:${C.cream};border-radius:6px;padding:10px 12px;font-size:14px;margin-bottom:8px;">${esc(r.body)}</div>
       ${noteFirst ? '' : noteHtml}
       <div style="font-weight:bold;font-size:14px;margin-bottom:6px;">${esc(replyLine(r, ctx.liveButtons))}</div>
-      ${showButtons ? `<div>${button(signedLink(link, 'send'), 'Approve', C.green)}${button(editLink(r, alertTo()), 'Edit', C.orange)}${button(signedLink(link, 'skip'), 'Reject', C.red)}</div>` : ''}
-      <div style="margin-top:6px;">${textLink(ctx.replyUrl(r), 'Open in Sheet')}${ctx.gmailFor(r) ? textLink(ctx.gmailFor(r), !replies.FALLBACK_TYPES.includes(r.type || 'ack') ? 'Their email' : 'Original email') : ''}</div>`,
+      ${showButtons ? `<div>${button(signedLink(link, 'send'), 'Approve', C.green)}${button(editFormLink(r) || editLink(r, alertTo()), 'Edit', C.orange)}${button(signedLink(link, 'skip'), 'Reject', C.red)}</div>` : ''}
+      <div style="margin-top:6px;">${showButtons && editFormLink(r) ? textLink(editLink(r, alertTo()), 'Edit by email') : ''}${textLink(ctx.replyUrl(r), 'Open in Sheet')}${ctx.gmailFor(r) ? textLink(ctx.gmailFor(r), !replies.FALLBACK_TYPES.includes(r.type || 'ack') ? 'Their email' : 'Original email') : ''}</div>`,
   border);
 }
 
@@ -270,7 +270,8 @@ function buildText(ctx) {
       if (ctx.liveButtons && r.status === 'awaiting') {
         const link = { id: r.reply_id, title: `Reply to ${r.to}` };
         out.push(`Approve: ${signedLink(link, 'send')}`);
-        out.push(`Edit: ${editLink(r, alertTo())}`);
+        if (editFormLink(r)) out.push(`Edit: ${editFormLink(r)}`);
+        out.push(`Edit by email: ${editLink(r, alertTo())}`);
         out.push(`Reject: ${signedLink(link, 'skip')}`);
       }
       out.push(`Sheet: ${ctx.replyUrl(r)}`);

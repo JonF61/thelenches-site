@@ -1,9 +1,11 @@
 // scripts/ingest/edits.js
-// "Edit" for reply drafts (part 1, agreed 23 Oct; part 2 adds a Worker form). The action
-// email's Edit link opens a new email to Jon himself, subject "[Edit reply <reply_id>] ...",
-// with Holly's draft as the body. Jon corrects the text and sends it; the next ingestion
-// run finds it in Sent mail and sends the corrected text to the submitter in place of the
-// draft (replies.applyEdit), if that reply is still awaiting a decision.
+// "Edit by email" for reply drafts (part 1, agreed 23 Oct). Part 2 added the Worker's edit
+// form, which the action email's Edit button opens; this stays as the fallback (a draft too
+// long for a link, or the "Edit by email" link). It opens a new email to Jon himself,
+// subject "[Edit reply <reply_id>] ...", with Holly's draft as the body. Jon corrects the
+// text and sends it; the next ingestion run finds it in Sent mail and sends the corrected
+// text to the submitter in place of the draft (replies.applyEdit), if that reply is still
+// awaiting a decision.
 //   - Only Jon's own sent mail counts (Gmail "in:sent", SENT label, From GMAIL_USER), so
 //     nobody else can trigger a send.
 //   - Everything from the "### Edit above this line" marker down, quoted text and a mail

@@ -11,6 +11,8 @@
 //                     "awaiting" change; Approve sends the body cell as it is now (see
 //                     scripts/ingest/replies.js). REASON (optional, typed on the Reject
 //                     page) goes to the Reply feedback tab.
+//   edit              The Worker's edit form (part 2): sends BODY, Jon's edited text, in place
+//                     of the draft, if the reply is still awaiting (replies.applyEdit).
 // Rejecting an item whose acknowledgement said it was on its way drafts a "sorry, we
 // couldn't use it after all" reply for Jon's Approve/Edit/Reject (replies.planSorry).
 // Replayed or duplicate clicks therefore do nothing.
@@ -87,9 +89,12 @@ async function main() {
 
   if (ITEM_ACTIONS.includes(action)) return decideItem(id, action);
   if (action === 'trust') return trustSource(id);
-  if (['send', 'skip'].includes(action)) {
-    const reason = String(process.env.REASON || '').replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 300);
-    return replies.decideReply(id, action, reason);
+  const reason = String(process.env.REASON || '').replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 300);
+  if (['send', 'skip'].includes(action)) return replies.decideReply(id, action, reason);
+  if (action === 'edit') {
+    const body = String(process.env.BODY || '').replace(/\r\n?/g, '\n').trim();
+    if (body.length < 10) throw new Error('Edit has no text (is BODY passed in approval.yml?)');
+    return replies.applyEdit(id, body, reason);
   }
   throw new Error(`Bad action "${action}"`);
 }

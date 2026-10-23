@@ -3,119 +3,625 @@
   "cases": [
     {
       "name": "clean submission",
-      "msg": { "from": "Sam <sam@example.com>", "subject": "Quiz night", "text": "Quiz night at Church Lench Village Hall, Friday 13 November 7.30pm, £5, call 01386 000000." },
-      "result": { "emailClass": "submission", "classConfidence": 0.95, "holdReason": "none", "needsReply": true, "request": "list a quiz night" },
-      "rows": [{ "title": "Quiz night — Church Lench Village Hall", "event_date": "2026-11-13", "missing": "", "policy_flags": "" }],
-      "expect": { "normal": [["ack", "queued"]], "holiday": [["ack", "queued"]] }
+      "msg": {
+        "from": "Sam <sam@example.com>",
+        "subject": "Quiz night",
+        "text": "Quiz night at Church Lench Village Hall, Friday 13 November 7.30pm, £5, call 01386 000000."
+      },
+      "result": {
+        "emailClass": "submission",
+        "classConfidence": 0.95,
+        "holdReason": "none",
+        "needsReply": true,
+        "request": "list a quiz night"
+      },
+      "rows": [
+        {
+          "title": "Quiz night — Church Lench Village Hall",
+          "event_date": "2026-11-13",
+          "missing": "",
+          "policy_flags": ""
+        }
+      ],
+      "expect": {
+        "normal": [
+          [
+            "ack",
+            "queued"
+          ]
+        ],
+        "holiday": [
+          [
+            "ack",
+            "queued"
+          ]
+        ]
+      }
     },
     {
       "name": "submission missing details",
-      "msg": { "from": "Pat <pat@example.com>", "subject": "Coffee morning", "text": "Coffee morning at the hall soon." },
-      "result": { "emailClass": "submission", "classConfidence": 0.9, "holdReason": "none", "needsReply": true },
-      "rows": [{ "title": "Coffee morning", "event_date": "", "missing": "date,time", "policy_flags": "" }],
-      "expect": { "normal": [["clarify", "awaiting"]], "holiday": [["clarify", "queued"]] }
+      "msg": {
+        "from": "Pat <pat@example.com>",
+        "subject": "Coffee morning",
+        "text": "Coffee morning at the hall soon."
+      },
+      "result": {
+        "emailClass": "submission",
+        "classConfidence": 0.9,
+        "holdReason": "none",
+        "needsReply": true
+      },
+      "rows": [
+        {
+          "title": "Coffee morning",
+          "event_date": "",
+          "missing": "date,time",
+          "policy_flags": ""
+        }
+      ],
+      "expect": {
+        "normal": [
+          [
+            "clarify",
+            "awaiting"
+          ]
+        ],
+        "holiday": [
+          [
+            "clarify",
+            "queued"
+          ]
+        ]
+      }
     },
     {
       "name": "question answered from the site",
-      "msg": { "from": "Lee <lee@example.com>", "subject": "Bins", "text": "When are the bins collected in Rous Lench?" },
-      "result": { "emailClass": "question", "classConfidence": 0.92, "holdReason": "none", "needsReply": true, "request": "bin day in Rous Lench" },
-      "claude": { "draft": "Bins in Rous Lench go out on Fridays, by 7am. The next dates are on our Bins page: https://thelenches.org.uk/bins/", "answered_from_site": true },
-      "expect": { "normal": [["answer", "awaiting"]], "holiday": [["answer", "queued"]] }
+      "msg": {
+        "from": "Lee <lee@example.com>",
+        "subject": "Bins",
+        "text": "When are the bins collected in Rous Lench?"
+      },
+      "result": {
+        "emailClass": "question",
+        "classConfidence": 0.92,
+        "holdReason": "none",
+        "needsReply": true,
+        "request": "bin day in Rous Lench"
+      },
+      "claude": {
+        "draft": "Bins in Rous Lench go out on Fridays, by 7am. The next dates are on our Bins page: https://thelenches.org.uk/bins/",
+        "answered_from_site": true
+      },
+      "expect": {
+        "normal": [
+          [
+            "answer",
+            "awaiting"
+          ]
+        ],
+        "holiday": [
+          [
+            "answer",
+            "queued"
+          ]
+        ]
+      }
     },
     {
       "name": "correction",
-      "msg": { "from": "Jo <jo@example.com>", "subject": "Wrong time", "text": "The quiz listing says 7pm but it's 7.30pm." },
-      "result": { "emailClass": "correction", "classConfidence": 0.88, "holdReason": "none", "needsReply": true, "request": "fix quiz time" },
-      "claude": { "draft": "Thanks for letting us know about the time. We'll look into it.", "answered_from_site": false },
-      "expect": { "normal": [["answer", "awaiting"]], "holiday": [["answer", "queued"]] }
+      "msg": {
+        "from": "Jo <jo@example.com>",
+        "subject": "Wrong time",
+        "text": "The quiz listing says 7pm but it's 7.30pm."
+      },
+      "result": {
+        "emailClass": "correction",
+        "classConfidence": 0.88,
+        "holdReason": "none",
+        "needsReply": true,
+        "request": "fix quiz time"
+      },
+      "claude": {
+        "draft": "Thanks for letting us know about the time. We'll look into it.",
+        "answered_from_site": false
+      },
+      "expect": {
+        "normal": [
+          [
+            "answer",
+            "awaiting"
+          ]
+        ],
+        "holiday": [
+          [
+            "answer",
+            "queued"
+          ]
+        ]
+      }
     },
     {
       "name": "subscribe",
-      "msg": { "from": "Ali <ali@example.com>", "subject": "Add me to the mailing list", "text": "Please add me." },
-      "result": { "emailClass": "subscribe", "classConfidence": 0.97, "holdReason": "none", "needsReply": true },
-      "claude": { "draft": "Thanks, we'll add you to the Thursday newsletter list.", "answered_from_site": false },
-      "expect": { "normal": [["answer", "awaiting"]], "holiday": [["answer", "queued"]] }
+      "msg": {
+        "from": "Ali <ali@example.com>",
+        "subject": "Add me to the mailing list",
+        "text": "Please add me."
+      },
+      "result": {
+        "emailClass": "subscribe",
+        "classConfidence": 0.97,
+        "holdReason": "none",
+        "needsReply": true
+      },
+      "claude": {
+        "draft": "Thanks, we'll add you to the Thursday newsletter list.",
+        "answered_from_site": false
+      },
+      "expect": {
+        "normal": [
+          [
+            "list",
+            "queued"
+          ]
+        ],
+        "holiday": [
+          [
+            "list",
+            "queued"
+          ]
+        ]
+      }
     },
     {
       "name": "unsubscribe",
-      "msg": { "from": "Kim <kim@example.com>", "subject": "Unsubscribe", "text": "Please take me off." },
-      "result": { "emailClass": "unsubscribe", "classConfidence": 0.97, "holdReason": "none", "needsReply": true },
-      "claude": { "draft": "No problem, we'll take you off the list. There's also an unsubscribe link at the bottom of every newsletter.", "answered_from_site": false },
-      "expect": { "normal": [["answer", "awaiting"]], "holiday": [["answer", "queued"]] }
+      "msg": {
+        "from": "Kim <kim@example.com>",
+        "subject": "Unsubscribe",
+        "text": "Please take me off."
+      },
+      "result": {
+        "emailClass": "unsubscribe",
+        "classConfidence": 0.97,
+        "holdReason": "none",
+        "needsReply": true
+      },
+      "claude": {
+        "draft": "No problem, we'll take you off the list. There's also an unsubscribe link at the bottom of every newsletter.",
+        "answered_from_site": false
+      },
+      "expect": {
+        "normal": [
+          [
+            "list",
+            "queued"
+          ]
+        ],
+        "holiday": [
+          [
+            "list",
+            "queued"
+          ]
+        ]
+      }
     },
     {
       "name": "complaint",
-      "msg": { "from": "Max <max@example.com>", "subject": "Unhappy", "text": "I'm unhappy with what you published about the parish meeting." },
-      "result": { "emailClass": "complaint", "classConfidence": 0.9, "holdReason": "complaint", "needsReply": true },
-      "claude": { "draft": "Thanks for telling us how you feel about this. The team will reply to you personally.", "answered_from_site": false },
-      "expect": { "normal": [["holding", "queued"], ["held", "awaiting"]], "holiday": [["holding", "queued"], ["held", "awaiting"]] }
+      "msg": {
+        "from": "Max <max@example.com>",
+        "subject": "Unhappy",
+        "text": "I'm unhappy with what you published about the parish meeting."
+      },
+      "result": {
+        "emailClass": "complaint",
+        "classConfidence": 0.9,
+        "holdReason": "complaint",
+        "needsReply": true
+      },
+      "claude": {
+        "draft": "Thanks for telling us how you feel about this. The team will reply to you personally.",
+        "answered_from_site": false
+      },
+      "expect": {
+        "normal": [
+          [
+            "holding",
+            "queued"
+          ],
+          [
+            "held",
+            "awaiting"
+          ]
+        ],
+        "holiday": [
+          [
+            "holding",
+            "queued"
+          ],
+          [
+            "held",
+            "awaiting"
+          ]
+        ]
+      }
     },
     {
       "name": "GDPR request classed as a question (keyword net)",
-      "msg": { "from": "Ash <ash@example.com>", "subject": "My details", "text": "Under GDPR please delete my details." },
-      "result": { "emailClass": "question", "classConfidence": 0.8, "holdReason": "none", "needsReply": true },
-      "claude": { "draft": "Thanks for your message about your details. The team will reply to you personally.", "answered_from_site": false },
-      "expect": { "normal": [["holding", "queued"], ["held", "awaiting"]], "holiday": [["holding", "queued"], ["held", "awaiting"]] }
+      "msg": {
+        "from": "Ash <ash@example.com>",
+        "subject": "My details",
+        "text": "Under GDPR please delete my details."
+      },
+      "result": {
+        "emailClass": "question",
+        "classConfidence": 0.8,
+        "holdReason": "none",
+        "needsReply": true
+      },
+      "claude": {
+        "draft": "Thanks for your message about your details. The team will reply to you personally.",
+        "answered_from_site": false
+      },
+      "expect": {
+        "normal": [
+          [
+            "holding",
+            "queued"
+          ],
+          [
+            "held",
+            "awaiting"
+          ]
+        ],
+        "holiday": [
+          [
+            "holding",
+            "queued"
+          ],
+          [
+            "held",
+            "awaiting"
+          ]
+        ]
+      }
     },
     {
       "name": "who runs the site",
-      "msg": { "from": "Robin <robin@example.com>", "subject": "Hello", "text": "Who runs this website?" },
-      "result": { "emailClass": "question", "classConfidence": 0.9, "holdReason": "who_runs", "needsReply": true },
-      "claude": { "draft": "It's run by a small team of volunteers, with an automated assistant that helps with replies.", "answered_from_site": false },
-      "expect": { "normal": [["holding", "queued"], ["held", "awaiting"]], "holiday": [["holding", "queued"], ["held", "awaiting"]] }
+      "msg": {
+        "from": "Robin <robin@example.com>",
+        "subject": "Hello",
+        "text": "Who runs this website?"
+      },
+      "result": {
+        "emailClass": "question",
+        "classConfidence": 0.9,
+        "holdReason": "who_runs",
+        "needsReply": true
+      },
+      "claude": {
+        "draft": "It's run by a small team of volunteers, with an automated assistant that helps with replies.",
+        "answered_from_site": false
+      },
+      "expect": {
+        "normal": [
+          [
+            "holding",
+            "queued"
+          ],
+          [
+            "held",
+            "awaiting"
+          ]
+        ],
+        "holiday": [
+          [
+            "holding",
+            "queued"
+          ],
+          [
+            "held",
+            "awaiting"
+          ]
+        ]
+      }
     },
     {
       "name": "sponsorship offer",
-      "msg": { "from": "Biz <sales@example.com>", "subject": "Partnership", "text": "We'd like to sponsor your newsletter for £200 a month." },
-      "result": { "emailClass": "other", "classConfidence": 0.8, "holdReason": "money", "needsReply": true },
-      "claude": { "draft": "Thanks for your offer. The team will reply to you personally.", "answered_from_site": false },
-      "expect": { "normal": [["holding", "queued"], ["held", "awaiting"]], "holiday": [["holding", "queued"], ["held", "awaiting"]] }
+      "msg": {
+        "from": "Biz <sales@example.com>",
+        "subject": "Partnership",
+        "text": "We'd like to sponsor your newsletter for £200 a month."
+      },
+      "result": {
+        "emailClass": "other",
+        "classConfidence": 0.8,
+        "holdReason": "money",
+        "needsReply": true
+      },
+      "claude": {
+        "draft": "Thanks for your offer. The team will reply to you personally.",
+        "answered_from_site": false
+      },
+      "expect": {
+        "normal": [
+          [
+            "holding",
+            "queued"
+          ],
+          [
+            "held",
+            "awaiting"
+          ]
+        ],
+        "holiday": [
+          [
+            "holding",
+            "queued"
+          ],
+          [
+            "held",
+            "awaiting"
+          ]
+        ]
+      }
     },
     {
       "name": "spam",
-      "msg": { "from": "SEO <seo@example.net>", "subject": "Boost your rankings", "text": "Get to page one of Google today!" },
-      "result": { "emailClass": "spam", "classConfidence": 0.99, "holdReason": "none", "needsReply": false },
-      "expect": { "normal": [["none", "skipped"]], "holiday": [["none", "skipped"]] }
+      "msg": {
+        "from": "SEO <seo@example.net>",
+        "subject": "Boost your rankings",
+        "text": "Get to page one of Google today!"
+      },
+      "result": {
+        "emailClass": "spam",
+        "classConfidence": 0.99,
+        "holdReason": "none",
+        "needsReply": false
+      },
+      "expect": {
+        "normal": [
+          [
+            "none",
+            "skipped"
+          ]
+        ],
+        "holiday": [
+          [
+            "none",
+            "skipped"
+          ]
+        ]
+      }
     },
     {
       "name": "automated mail",
-      "msg": { "from": "Robot <noreply@example.org>", "subject": "Out of office", "text": "I'm away.", "auto": { "autoSubmitted": "auto-replied" } },
-      "result": { "emailClass": "other", "classConfidence": 0.9, "holdReason": "none", "needsReply": false },
-      "expect": { "normal": [["none", "skipped"]], "holiday": [["none", "skipped"]] }
+      "msg": {
+        "from": "Robot <noreply@example.org>",
+        "subject": "Out of office",
+        "text": "I'm away.",
+        "auto": {
+          "autoSubmitted": "auto-replied"
+        }
+      },
+      "result": {
+        "emailClass": "other",
+        "classConfidence": 0.9,
+        "holdReason": "none",
+        "needsReply": false
+      },
+      "expect": {
+        "normal": [
+          [
+            "none",
+            "skipped"
+          ]
+        ],
+        "holiday": [
+          [
+            "none",
+            "skipped"
+          ]
+        ]
+      }
     },
     {
       "name": "thanks only",
-      "msg": { "from": "Viv <viv@example.com>", "subject": "Thanks", "text": "Thanks so much for including our fete!" },
-      "result": { "emailClass": "other", "classConfidence": 0.9, "holdReason": "none", "needsReply": false },
-      "expect": { "normal": [["none", "skipped"]], "holiday": [["none", "skipped"]] }
+      "msg": {
+        "from": "Viv <viv@example.com>",
+        "subject": "Thanks",
+        "text": "Thanks so much for including our fete!"
+      },
+      "result": {
+        "emailClass": "other",
+        "classConfidence": 0.9,
+        "holdReason": "none",
+        "needsReply": false
+      },
+      "expect": {
+        "normal": [
+          [
+            "none",
+            "skipped"
+          ]
+        ],
+        "holiday": [
+          [
+            "none",
+            "skipped"
+          ]
+        ]
+      }
     },
     {
       "name": "ambiguous email",
-      "msg": { "from": "Chris <chris@example.com>", "subject": "Fwd: stuff", "text": "See below." },
-      "result": { "emailClass": "other", "classConfidence": 0.4, "holdReason": "none", "needsReply": true },
-      "claude": { "draft": "Thanks for forwarding this. Could you tell us a bit more about what it's for?", "answered_from_site": false },
-      "expect": { "normal": [["answer", "awaiting"]], "holiday": [["whattodo", "queued"]] }
+      "msg": {
+        "from": "Chris <chris@example.com>",
+        "subject": "Fwd: stuff",
+        "text": "See below."
+      },
+      "result": {
+        "emailClass": "other",
+        "classConfidence": 0.4,
+        "holdReason": "none",
+        "needsReply": true
+      },
+      "claude": {
+        "draft": "Thanks for forwarding this. Could you tell us a bit more about what it's for?",
+        "answered_from_site": false
+      },
+      "expect": {
+        "normal": [
+          [
+            "answer",
+            "awaiting"
+          ]
+        ],
+        "holiday": [
+          [
+            "whattodo",
+            "queued"
+          ]
+        ]
+      }
     },
     {
       "name": "low-confidence question",
-      "msg": { "from": "Dee <dee@example.com>", "subject": "Hall", "text": "Hall?" },
-      "result": { "emailClass": "question", "classConfidence": 0.5, "holdReason": "none", "needsReply": true },
-      "claude": { "draft": "Details of both village halls, including bookings, are on our Village Halls page: https://thelenches.org.uk/halls/", "answered_from_site": true },
-      "expect": { "normal": [["answer", "awaiting"]], "holiday": [["whattodo", "queued"]] }
+      "msg": {
+        "from": "Dee <dee@example.com>",
+        "subject": "Hall",
+        "text": "Hall?"
+      },
+      "result": {
+        "emailClass": "question",
+        "classConfidence": 0.5,
+        "holdReason": "none",
+        "needsReply": true
+      },
+      "claude": {
+        "draft": "Details of both village halls, including bookings, are on our Village Halls page: https://thelenches.org.uk/halls/",
+        "answered_from_site": true
+      },
+      "expect": {
+        "normal": [
+          [
+            "answer",
+            "awaiting"
+          ]
+        ],
+        "holiday": [
+          [
+            "whattodo",
+            "queued"
+          ]
+        ]
+      }
     },
     {
       "name": "draft claims something is done",
-      "msg": { "from": "Fran <fran@example.com>", "subject": "Typo", "text": "There's a typo in the fete notice." },
-      "result": { "emailClass": "correction", "classConfidence": 0.9, "holdReason": "none", "needsReply": true },
-      "claude": { "draft": "Thanks for spotting that, we've corrected the notice.", "answered_from_site": false },
-      "expect": { "normal": [["answer", "awaiting"]], "holiday": [["holding", "queued"], ["answer", "awaiting"]] }
+      "msg": {
+        "from": "Fran <fran@example.com>",
+        "subject": "Typo",
+        "text": "There's a typo in the fete notice."
+      },
+      "result": {
+        "emailClass": "correction",
+        "classConfidence": 0.9,
+        "holdReason": "none",
+        "needsReply": true
+      },
+      "claude": {
+        "draft": "Thanks for spotting that, we've corrected the notice.",
+        "answered_from_site": false
+      },
+      "expect": {
+        "normal": [
+          [
+            "answer",
+            "awaiting"
+          ]
+        ],
+        "holiday": [
+          [
+            "holding",
+            "queued"
+          ],
+          [
+            "answer",
+            "awaiting"
+          ]
+        ]
+      }
     },
     {
       "name": "draft with an outside link",
-      "msg": { "from": "Gil <gil@example.com>", "subject": "Buses", "text": "Is there a bus to Evesham?" },
-      "result": { "emailClass": "question", "classConfidence": 0.9, "holdReason": "none", "needsReply": true },
-      "claude": { "draft": "Try the timetable at https://example-buses.com/evesham for times.", "answered_from_site": true },
-      "expect": { "normal": [["answer", "awaiting"]], "holiday": [["holding", "queued"], ["answer", "awaiting"]] }
+      "msg": {
+        "from": "Gil <gil@example.com>",
+        "subject": "Buses",
+        "text": "Is there a bus to Evesham?"
+      },
+      "result": {
+        "emailClass": "question",
+        "classConfidence": 0.9,
+        "holdReason": "none",
+        "needsReply": true
+      },
+      "claude": {
+        "draft": "Try the timetable at https://example-buses.com/evesham for times.",
+        "answered_from_site": true
+      },
+      "expect": {
+        "normal": [
+          [
+            "answer",
+            "awaiting"
+          ]
+        ],
+        "holiday": [
+          [
+            "holding",
+            "queued"
+          ],
+          [
+            "answer",
+            "awaiting"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "subscribe from someone on Do Not Send",
+      "msg": {
+        "from": "Bo Blocked <blocked@example.com>",
+        "subject": "Rejoin",
+        "text": "Please add me back to the newsletter."
+      },
+      "result": {
+        "emailClass": "subscribe",
+        "classConfidence": 0.95,
+        "holdReason": "none",
+        "needsReply": true
+      },
+      "claude": {
+        "draft": "Thanks, we'll sort out adding you back to the Thursday newsletter list.",
+        "answered_from_site": false
+      },
+      "expect": {
+        "normal": [
+          [
+            "answer",
+            "awaiting"
+          ]
+        ],
+        "holiday": [
+          [
+            "holding",
+            "queued"
+          ],
+          [
+            "answer",
+            "awaiting"
+          ]
+        ]
+      }
     }
   ]
 }
