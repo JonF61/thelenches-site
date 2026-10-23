@@ -455,6 +455,75 @@ async function testFollowupLists() {
   ok(list.status === 'sent' && find('f2-followup').status === 'awaiting', 'confirmation sent; follow-up drafts wait');
 }
 
+// Auto-responders (23 Oct): definite headers never replied to; probable sender or subject
+// held for Jon's Send; a normal villager still answered; every reply sent carries
+// Auto-Submitted: auto-replied.
+async function testAutoResponders() {
+  const villager = { from: 'Pat Hill <pat@example.com>', fromAddress: 'pat@example.com', subject: 'Bin day?', auto: {} };
+  const check = (over, want, what) => {
+    const got = replies.autoResponder({ ...villager, ...over, auto: { ...over.auto } }, over.fromAddress || villager.fromAddress);
+    ok(want ? got && got[want] : got === null, `${what}: ${got ? JSON.stringify(got) : 'none'}`);
+  };
+  check({}, null, 'normal villager');
+  check({ auto: { autoSubmitted: 'no' } }, null, 'Auto-Submitted: no');
+  check({ auto: { autoSubmitted: 'auto-replied' } }, 'definite', 'Auto-Submitted: auto-replied');
+  check({ auto: { autoSubmitted: 'auto-generated' } }, 'definite', 'Auto-Submitted: auto-generated');
+  check({ auto: { xAutoreply: true } }, 'definite', 'X-Autoreply');
+  check({ auto: { xAutorespond: true } }, 'definite', 'X-Autorespond');
+  for (const p of ['bulk', 'junk', 'list', 'auto_reply', 'Bulk']) check({ auto: { precedence: p } }, 'definite', `Precedence: ${p}`);
+  check({ auto: { precedence: 'first-class' } }, null, 'Precedence: first-class');
+  check({ auto: { xAutoResponseSuppress: true } }, 'definite', 'X-Auto-Response-Suppress');
+  check({ auto: { returnPath: '' } }, 'definite', 'empty Return-Path');
+  check({ auto: { returnPath: 'pat@example.com' } }, null, 'normal Return-Path');
+  for (const a of ['noreply@x.org', 'no-reply@x.org', 'no_reply@x.org', 'donotreply@x.org', 'do-not-reply@x.org',
+    'MAILER-DAEMON@x.org', 'postmaster@x.org', 'bounces+123@x.org']) check({ fromAddress: a }, 'probable', `sender ${a}`);
+  for (const a of ['noreen@x.org', 'postman@x.org']) check({ fromAddress: a }, null, `sender ${a}`);
+  for (const sub of ['Automatic reply: Bin day?', 'Auto-reply: hello', 'Auto reply', 'Autoreply: away', 'Out of office',
+    'Out of the Office until Monday', '[Auto-Reply] away', 'Undeliverable: Your message', 'Delivery Status Notification (Failure)'])
+    check({ subject: sub }, 'probable', `subject "${sub}"`);
+  for (const sub of ['Re: Out of office cover for the hall', 'Office party at the hall', 'Automatic gates on Ab Lench Road'])
+    check({ subject: sub }, null, `subject "${sub}"`);
+
+  reset();
+  settings = LIVE;
+  const ctx = { settings, holiday: true, replies: [], existing: [] };
+  const q = fixtures.find((c) => c.name === 'question answered from the site');
+  const run = (n, msg, c = q) => plan({ ...c, msg: { ...c.msg, ...msg } }, n, true, ctx);
+  requests = [];
+  const [def] = await run('ar1', { from: 'Pat <pat@example.com>', auto: { xAutoreply: true } });
+  ok(def.type === 'none' && def.status === 'skipped' && def.hold_reason === 'auto-responder' && /X-Autoreply/.test(def.notes),
+    'definite: row skipped, hold_reason auto-responder');
+  ok(ctx.replies.filter((r) => r.message_id === 'mar1').length === 1 && !requests.length, 'definite: nothing drafted');
+  const [prob, ...more] = await run('ar2', { from: 'Village Hall <noreply@hall.example>', subject: 'Re: Bins' });
+  ok(!more.length && prob.type === 'held' && prob.status === 'awaiting' && prob.hold_reason === 'possible auto-responder',
+    'probable sender: held for Jon (holiday mode too), no holding reply');
+  const [prob2] = await run('ar3', { from: 'Sam <sam@example.com>', subject: 'Automatic reply: Bins' });
+  ok(prob2.status === 'awaiting' && prob2.hold_reason === 'possible auto-responder' && /subject/.test(prob2.notes), 'probable subject: held');
+  const ack = fixtures.find((c) => c.name === 'clean submission');
+  const [probAck] = await run('ar4', { from: 'Bookings <no-reply@tickets.example>' }, ack);
+  ok(probAck.status === 'awaiting' && probAck.body.includes(ack.rows[0].title), 'probable submission: acknowledgement held');
+  const [normal] = await run('ar5', { from: 'Lee Green <lee2@example.com>' });
+  ok(normal.type === 'answer' && normal.status === 'queued' && !normal.hold_reason, 'normal villager still answered');
+
+  await replies.sendDueReplies(settings, true);
+  ok(sent.length === 1 && sent[0].to === 'lee2@example.com', 'only the villager sent automatically');
+  await replies.decideReply(prob.reply_id, 'send');
+  ok(find(prob.reply_id).status === 'sent' && sent[1].to === 'noreply@hall.example', 'Send releases a probable one');
+  ok(sent.length === 2 && sent.every((m) => m.headers['Auto-Submitted'] === 'auto-replied'), 'every reply sent has Auto-Submitted: auto-replied');
+
+  // Follow-ups: definite logged as skipped; probable always goes to Jon.
+  const answered = { reply_id: 'fa0-answer', message_id: 'fa0', thread_id: 'tfa', to: 'pat@example.com', type: 'answer', status: 'sent', body: 'Hi Pat' };
+  ctx.replies.push(answered);
+  const follow = (id, extra) => replies.planFollowup({
+    msg: { id, threadId: 'tfa', subject: 'Re: Bins', text: 'I am away until Monday.', from: 'Pat <pat@example.com>', fromAddress: 'pat@example.com', replyTo: '', attachments: [], auto: {}, ...extra },
+    reply: answered, ctx, added: [], result: { emailClass: 'other', classConfidence: 0.9, holdReason: 'none' },
+  });
+  const fd = await follow('fa1', { auto: { autoSubmitted: 'auto-replied' } });
+  ok(!fd.flagged && find('fa1-followup').status === 'skipped' && find('fa1-followup').hold_reason === 'auto-responder', 'definite follow-up: logged skipped');
+  const fp = await follow('fa2', { subject: 'Out of office: Re: Bins' });
+  ok(fp.flagged && find('fa2-followup').status === 'awaiting' && find('fa2-followup').hold_reason === 'possible auto-responder', 'probable follow-up: goes to Jon');
+}
+
 async function testRedraft() {
   reset();
   settings = LIVE;
@@ -548,6 +617,7 @@ async function testOwed() {
   await testSignaturesAndLinks();
   await testDates();
   await testFollowupLists();
+  await testAutoResponders();
   await testRedraft();
   await testOwed();
   await testRouting();

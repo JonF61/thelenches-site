@@ -110,6 +110,10 @@ function replyLine(r, liveButtons) {
     return 'They wrote again on a thread we already answered (see the note). This draft is never sent '
       + `unless you approve or edit it, including in holiday mode. ${how}${noButtons}`;
   }
+  if (isHeld(r) && r.hold_reason === 'possible auto-responder') {
+    return 'This may be an automatic reply (see the note), so nothing has been sent, not even a holding reply. '
+      + `Approve only if a real person wrote it; otherwise Reject. ${how}${noButtons}`;
+  }
   if (isHeld(r)) {
     return 'They have had a holding reply. This draft never goes unless you approve or edit it, even in '
       + `holiday mode; Reject if you'd rather reply yourself (from website@). ${how}${noButtons}`;
