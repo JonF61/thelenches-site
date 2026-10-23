@@ -8,55 +8,55 @@ Keep in step with src/_includes/guidelines.md and scripts/replies/voice.md. Don'
 or remove a key: the code needs every one of them.
 
 ## greeting
-Hello,
+Hi there,
 
 ## ack_one
-Thank you for sending us "{title}". We've received it and will consider it for the website and Thursday's newsletter.
+Thanks for sending "{title}", it's on its way to the website and Thursday's newsletter.
 
 ## ack_many
-Thank you for sending us the following. We've received them and will consider them for the website and Thursday's newsletter:
+Thanks for these, they're on their way to the website and Thursday's newsletter:
 {titles}
 
 ## ack_none
-Thank you for your email.
+Thanks for getting in touch.
 
 ## own_wording
-You asked us to use your own wording for "{title}", so we'll publish it as you wrote it, correcting only obvious typos and broken links.
+No problem, we'll use your wording for "{title}" exactly as written, just fixing any obvious typos or broken links.
 
 ## attachment_unusable
-We couldn't open {files}. We can use photos (JPEG, PNG or straight from an iPhone) and PDF flyers, so if it contains anything we need, please send it again in one of those formats or paste the details into an email.
+Sorry, we couldn't open {files}. Photos (JPEG, PNG or straight off an iPhone) and PDF flyers work best, or just paste the details into an email.
 
 ## too_early
-"{title}" is more than two weeks away. We list events no earlier than two weeks before they take place, so we'll hold it and include it from {show_from}.
+"{title}" is a little way off yet, so we'll hang on to it and start showing it from {show_from} (we list events up to two weeks ahead).
 
 ## after_deadline
-Your email arrived after our Wednesday 6pm deadline, so we'll consider it for the following week's newsletter.
+This arrived just after our Wednesday 6pm cut-off, so it'll go in the following week's newsletter.
 
 ## flyer_limit
-The flyer for "{title}" has already been shown twice, which is our limit for any one image, so we'll include the details as text only.
+We've shown the flyer for "{title}" twice now, which is as often as we show any one image, so this time it'll go in as text.
 
 ## newsletter_limit
-"{title}" has already appeared in the newsletter three times, which is our limit, but it will stay listed on the website until the event.
+"{title}" has had its three newsletter outings now, but it'll stay on the website right up to the day.
 
 ## people_in_image
-The image for "{title}" shows people. Please make sure everyone pictured is happy for it to be published, and that a parent or guardian has agreed for any children. If that isn't the case, let us know and we'll leave the image out.
+Quick one about the photo for "{title}": could you check everyone in it is happy for it to go online, and that parents are OK with it for any children? If not, just say and we'll leave it out.
 
 ## out_of_scope
-We cover the Lenches and nearby villages, plus events of clear interest in Evesham, Pershore and Inkberrow. Some or all of what you sent appears to be outside that area, so it may not be included.
+We mainly cover the Lenches and the villages around them, plus bigger events in Evesham, Pershore and Inkberrow, so this one might be a bit outside our patch.
 
 ## classified
-We don't include classified adverts (items for sale or wanted, lettings, jobs or personal services), so "{title}" is unlikely to be included.
+Sorry, we don't run classified adverts (things for sale or wanted, lettings, jobs or services), so we can't include "{title}".
 
 ## political_commercial
-The team will review "{title}" before deciding whether it can be included.
+We'll be in touch shortly about "{title}".
 
 ## clarify_deadline
-If we don't hear back by Wednesday 6pm, we'll go ahead with the details we have.
+If we haven't heard by Wednesday 6pm, no worries, we'll go with what we've got.
 
 ## guidelines
-You can find our submission guidelines on the Contact page: {guidelines_url}
+Our submission guidelines are on the Contact page if they're handy: {guidelines_url}
 
 ## signature
-Best wishes,
+Thanks again,
 Holly
 Lenches website assistant
