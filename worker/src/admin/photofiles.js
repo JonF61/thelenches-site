@@ -67,11 +67,12 @@ export function newFileName(current, typed) {
   return { name };
 }
 
-// A name's parts for clash checks: core (no extension, no trailing -N), N (null if
+// A name's parts for clash checks: core (no extension, no trailing -N of 1 to 3 digits,
+// so camera names like IMG-3113 keep their number), N (null if
 // none) and extension, core and extension in lower case for comparing.
 export function nameParts(name) {
   const { stem, ext } = splitExt(name);
-  const m = stem.match(/^(.+)-(\d+)$/);
+  const m = stem.match(/^(.+)-(\d{1,3})$/);
   const core = m ? m[1] : stem;
   return { core, num: m ? Number(m[2]) : null, ext, key: `${low(core)}\u0000${low(ext)}` };
 }
