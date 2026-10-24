@@ -33,6 +33,8 @@
   <meta name="twitter:image:alt" content="{{ pageImageAlt }}">{% endif %}
 
   <link rel="stylesheet" href="{{ '/style.css' | url }}">
+  {#- Set before first paint so the phone menu starts closed without a jump; without JavaScript the menu is always shown. -#}
+  <script>document.documentElement.classList.add('js')</script>
 </head>
 <body>
   <a class="skip-link" href="#main">Skip to content</a>
@@ -44,7 +46,8 @@
         {% if page.url == "/" %}<h1 class="brand-h1">{% endif %}<a class="brand" href="{{ '/' | url }}">The Lenches <span>Website</span></a>{% if page.url == "/" %}</h1>{% endif %}
         <p class="brand-villages">Church &middot; Rous &middot; Ab &middot; Atch &middot; Sheriffs</p>
       </div>
-      <nav class="nav" aria-label="Main">
+      <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="site-nav">Menu</button>
+      <nav class="nav" id="site-nav" aria-label="Main">
         {#- A nav item is active on its own URL, or on any page whose first path segment is in its match list (site.json). -#}
         {% set navSeg = (page.url or '').split('/')[1] %}
         {% for item in site.nav %}
@@ -99,6 +102,15 @@
   html.iv-open{overflow:hidden}
   </style>
   <script>
+  (function () {
+    var b = document.querySelector('.nav-toggle'), n = document.getElementById('site-nav');
+    if (!b || !n) return;
+    function set(open) { b.setAttribute('aria-expanded', open ? 'true' : 'false'); n.classList.toggle('open', open); }
+    b.addEventListener('click', function () { set(b.getAttribute('aria-expanded') !== 'true'); });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && n.classList.contains('open')) { set(false); b.focus(); }
+    });
+  })();
   (function () {
     var d = document.getElementById('img-viewer');
     if (!d || typeof d.showModal !== 'function') return;
