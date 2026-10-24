@@ -155,6 +155,13 @@ export async function writeCells(env, data) {
   });
 }
 
+// New rows at the end of a tab (RAW, inserted, so nothing below is overwritten).
+export async function appendValues(env, tab, rows) {
+  const range = encodeURIComponent(`'${String(tab).replace(/'/g, "''")}'!A1`);
+  const url = `${SHEETS}/${sheetId(env)}/values/${range}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
+  await google(env, SCOPES.sheets, url, { method: 'POST', body: JSON.stringify({ values: rows }) });
+}
+
 // { tabTitle: gid } for links straight to a row.
 export async function sheetGids(env) {
   const url = `${SHEETS}/${sheetId(env)}?fields=${encodeURIComponent('sheets.properties(sheetId,title)')}`;

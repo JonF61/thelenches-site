@@ -214,4 +214,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { villageFor };
+module.exports = { villageFor, creditFor, filenameFor, keyOf, targetOf };

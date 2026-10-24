@@ -72,7 +72,7 @@ description: Notices and news from across the Lenches villages, from parish coun
         <summary>Read the full statement</summary>
         {% for p in ps %}{% if loop.index > lead %}<p>{{ p | escape }}</p>{% endif %}{% endfor %}
       </details>{% endif %}
-      {% if n.link or n.image %}<p class="np-link">{% if n.link %}<a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ (n.image.alt or n.title) | escape }}">(image)</a>{% endif %}</p>{% endif %}
+      {% if n.link or n.image %}<p class="np-link">{% if n.link %}<a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ ((n.image.alt or n.title) + (' — ' + n.image.credit if n.image.credit else '')) | escape }}">(image)</a>{% endif %}</p>{% endif %}
     </article>
     {% endfor %}
   </section>
@@ -84,7 +84,7 @@ description: Notices and news from across the Lenches villages, from parish coun
     {% for n in around %}{% set ps = n.body | paras %}{% set isNew = ([n] | newThisWeek) > 0 %}
     <div class="np-notice np-row" id="{{ ('notice-' + n.title) | slugify }}">
       {% if n.village or isNew %}<p class="np-meta">{% if n.village %}<span class="np-label">{{ n.village | escape }}</span>{% endif %}{% if isNew %}<span class="np-new">New</span>{% endif %}</p>{% endif %}
-      <p><strong>{{ n.title | escape }}:</strong> {{ ps[0] | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ (n.image.alt or n.title) | escape }}">(image)</a>{% endif %}</p>
+      <p><strong>{{ n.title | escape }}:</strong> {{ ps[0] | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ ((n.image.alt or n.title) + (' — ' + n.image.credit if n.image.credit else '')) | escape }}">(image)</a>{% endif %}</p>
       {% if ps.length > 1 %}<details>
         <summary>More</summary>
         {% for p in ps %}{% if not loop.first %}<p>{{ p | escape }}</p>{% endif %}{% endfor %}

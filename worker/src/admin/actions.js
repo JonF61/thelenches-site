@@ -92,3 +92,62 @@ export function planPhoto({ action, expected }, row) {
   }
   return { field: 'status', value, expected: String(expected ?? '') };
 }
+
+// Suggested images (scripts/suggest, "Image suggestions" tab): Choose / "None of these" on a
+// Queue card. The choice is a stale-checked write of Pending image_choice; approval is the
+// usual decide() path, and publish uses the chosen image. Only for a pending item that has
+// no image of its own. An image flagged for people needs people_ok "yes" first; one showing
+// children never gets here (the run drops them). Choosing an organiser's or Pexels image also
+// queues it for Lenches Photos (an "Image fetch" row, saved to Drive by image-fetch.gs, as
+// organisers' images are now), once per suggestion.
+export const SUGGEST_TAB = 'Image suggestions';
+export const SUGGEST_SOURCES = { own: 'Own photo', organiser: "Organiser's site", library: 'Library' };
+const SUGGEST_ID = /^[A-Za-z0-9_-]{1,100}#[1-9]$/;
+const PEOPLE_FLAG = new Set(['identifiable', 'unknown']);
+const one = (v, max) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
+
+export const hasOwnImage = (row) => Boolean(String(row.image_part_id || '').trim() || String(row.image_url || '').trim());
+
+function hostOf(href) {
+  try { return new URL(href).hostname; } catch { return ''; }
+}
+
+// The Image fetch row for a chosen external image (columns by header; extra keys ignored).
+export function imageFetchRow(row, s) {
+  const via = s.source === 'library' ? 'suggestion (Pexels)' : `suggestion (organiser's site, ${hostOf(s.page)})`;
+  return {
+    url: one(s.url, 1000),
+    village: one(s.village, 60) || 'General',
+    subject: one(s.subject, 60) || 'Events',
+    filename: one(s.filename, 120),
+    credit: one(s.credit, 120),
+    source_page: one(s.page, 1000),
+    status: '',
+    notes: one(`Chosen in the admin panel for Pending ${row.id}${s.licence ? `; licence ${s.licence}` : ''}`, 300),
+    event: one(s.event, 250),
+    suggested_target: one(s.target, 250),
+    found_via: via,
+    check: one(s.check, 300),
+  };
+}
+
+// Returns { value, save } (save: the Image fetch row to add, or null), or { error, status }.
+export function planSuggest({ id, sid }, row, suggestion, { hasChoice = false, hasPeopleOk = false } = {}) {
+  if (!row) return refuse(404, `No Pending item ${id}`);
+  if (row.status !== 'pending') return refuse(409, `This item is already "${row.status}"`);
+  if (!hasChoice) return refuse(409, 'Add an image_choice column at the end of Pending first');
+  if (hasOwnImage(row)) return refuse(409, 'This item already has an image');
+  if (sid === 'none') return { value: 'none', save: null };
+  if (!SUGGEST_ID.test(String(sid || ''))) return refuse(400, 'Invalid suggestion');
+  if (!suggestion || String(suggestion.item) !== String(row.id)) return refuse(404, 'That suggestion has gone: reload the page');
+  const source = String(suggestion.source || '');
+  if (!SUGGEST_SOURCES[source]) return refuse(409, 'That suggestion has no image');
+  const people = norm(suggestion.people);
+  if (people === 'children') return refuse(409, 'This image shows children and cannot be used');
+  if (PEOPLE_FLAG.has(people)) {
+    if (!hasPeopleOk) return refuse(409, 'This image may show people: add a people_ok column at the end of Pending first');
+    if (!truthy(row.people_ok)) return refuse(409, 'This image may show people: tick "People OK" first');
+  }
+  const save = source !== 'own' && norm(suggestion.status) !== 'saved' ? imageFetchRow(row, suggestion) : null;
+  return { value: String(sid), save };
+}

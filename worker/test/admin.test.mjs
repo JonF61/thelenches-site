@@ -11,7 +11,7 @@ import { verifyAccess, resetCertCache } from '../src/admin/access.js';
 import { makeCsrf, checkCsrf, sameOrigin, CSRF_TTL_MS } from '../src/admin/csrf.js';
 import { editCell, colLetter, isTypoFix, wordsChanged } from '../src/admin/sheet.js';
 import { owedReplies } from '../src/admin/owed.js';
-import { planPending, planReply, planPhoto, trustKeyFor } from '../src/admin/actions.js';
+import { planPending, planReply, planPhoto, trustKeyFor, planSuggest } from '../src/admin/actions.js';
 import { resetTokenCache, accessToken, serviceAccountJwt, SCOPES } from '../src/admin/google.js';
 import { bytesToB64url, jsonToB64url } from '../src/admin/b64.js';
 import { dispatchFor } from '../src/core.js';
@@ -66,7 +66,7 @@ const ALLOWED = {
 
 // A small fake Google Sheet + GitHub + Access certs behind global fetch.
 function fakeWorld(tables) {
-  const calls = { writes: [], dispatches: [], certFetches: 0, tokenSubs: [] };
+  const calls = { writes: [], dispatches: [], certFetches: 0, tokenSubs: [], appends: [] };
   const colIndex = (letters) => [...letters].reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0) - 1;
   globalThis.fetch = async (input, init = {}) => {
     const url = new URL(String(input));
@@ -93,6 +93,15 @@ function fakeWorld(tables) {
         if (tab === 'Settings' && range === 'E1:F100') return Response.json({ values: tables.SettingsKV });
         if (tab === 'Settings') return Response.json({ values: tables.SettingsSources || [['source', 'match', 'mode']] });
         return Response.json({ values: tables[tab] });
+      }
+      const ap = decodeURIComponent(url.pathname).match(/\/values\/'(.+)'!A1:append$/);
+      if (ap && method === 'POST') {
+        assert.equal(url.searchParams.get('valueInputOption'), 'RAW');
+        assert.equal(url.searchParams.get('insertDataOption'), 'INSERT_ROWS');
+        const rows = JSON.parse(init.body).values;
+        calls.appends.push({ tab: ap[1], rows });
+        tables[ap[1]].push(...rows);
+        return Response.json({});
       }
       if (url.pathname.endsWith('/values:batchUpdate')) {
         const body = JSON.parse(init.body);
@@ -610,4 +619,118 @@ test('Scopes: every token request in this run was on the allow-list, in its own 
     assert.ok(scope in ALLOWED, `scope ${scope}`);
     assert.equal(sub ? 'impersonation' : 'own', ALLOWED[scope], `${scope} with sub "${sub}"`);
   }
+});
+
+/* ---------------------------------------------------- suggested images -- */
+
+const THUMB = 'data:image/jpeg;base64,/9j/AAAA';
+const SUGG_HEADERS = ['id', 'item', 'event', 'rank', 'source', 'url', 'page', 'credit', 'caption', 'credit_url', 'licence',
+  'people', 'check', 'thumb', 'village', 'subject', 'filename', 'target', 'alt', 'status', 'created'];
+const FETCH_HEADERS = ['url', 'village', 'subject', 'filename', 'credit', 'source_page', 'status', 'saved_at', 'drive_file_id',
+  'notes', 'event', 'suggested_target', 'found_via', 'check'];
+function suggestTables() {
+  const t = tablesFor();
+  t.Pending[0].push('image_part_id', 'image_url', 'image_choice');
+  t.Pending.slice(1).forEach((r) => r.push('', '', ''));
+  t['Image suggestions'] = [
+    SUGG_HEADERS.slice(),
+    ['m1-1#1', 'm1-1', '2026-11-14|Quiz night', '1', 'own', '/images/photos/rous-hall.webp', '', '', '', '', '', 'none', 'score=6', THUMB, 'Rous Lench', 'Events', '', '', 'Hall', '', '2026-10-24'],
+    ['m1-1#2', 'm1-1', '2026-11-14|Quiz night', '2', 'organiser', 'https://hall.example.org/q.jpg', 'https://hall.example.org/quiz', 'Rous Lench Village Hall', 'Image: Rous Lench Village Hall', 'https://hall.example.org/quiz', '', 'none', 'kind=photo', THUMB, 'Rous Lench', 'Events', '2026-11-14 Quiz night.jpg', 'event:quiz night', '', '', '2026-10-24'],
+    ['m1-1#3', 'm1-1', '2026-11-14|Quiz night', '3', 'library', 'https://images.pexels.com/1.jpeg', 'https://www.pexels.com/photo/1/', 'Ann Lee / Pexels', 'Photo by Ann Lee on Pexels', 'https://www.pexels.com/photo/1/', 'https://www.pexels.com/license/', 'identifiable', 'kind=photo', THUMB, 'Rous Lench', 'Events', '2026-11-14 Quiz night.jpg', 'event:quiz night', 'Quiz', '', '2026-10-24'],
+    ['m2-1#0', 'm2-1', '2026-12-01|Fete', '0', 'none', '', '', '', '', '', '', '', 'nothing found', '', 'Atch Lench', 'Events', '', '', '', '', '2026-10-24'],
+  ];
+  t['Image fetch'] = [FETCH_HEADERS.slice()];
+  return t;
+}
+const choiceOf = (t, id) => t.Pending[t.Pending.findIndex((r) => r[0] === id)][t.Pending[0].indexOf('image_choice')];
+const suggStatus = (t, sid) => t['Image suggestions'].find((r) => r[0] === sid)[SUGG_HEADERS.indexOf('status')];
+
+test('Suggest mapping: only pending items with no image; people need people_ok; children never', () => {
+  const row = { id: 'm1-1', status: 'pending', image_part_id: '', image_url: '', people_ok: '' };
+  const s = (over) => ({ id: 'm1-1#2', item: 'm1-1', source: 'organiser', people: 'none', status: '', url: 'https://x.org/a.jpg', page: 'https://x.org/p', ...over });
+  const opts = { hasChoice: true, hasPeopleOk: true };
+  assert.equal(planSuggest({ id: 'm1-1', sid: 'none' }, row, null, opts).value, 'none');
+  assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, row, s(), opts).save.url, 'https://x.org/a.jpg');
+  assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#1' }, row, s({ source: 'own' }), opts).save, null, 'own photos are already in Lenches Photos');
+  assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, row, s({ status: 'saved' }), opts).save, null, 'saved once only');
+  assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, row, s({ people: 'identifiable' }), opts).status, 409);
+  assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, { ...row, people_ok: 'yes' }, s({ people: 'identifiable' }), opts).value, 'm1-1#2');
+  assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, { ...row, people_ok: 'yes' }, s({ people: 'children' }), opts).status, 409);
+  assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, { ...row, image_part_id: '2' }, s(), opts).status, 409);
+  assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, { ...row, status: 'approved' }, s(), opts).status, 409);
+  assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, row, s({ item: 'm9-9' }), opts).status, 404);
+  assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#0' }, row, s({ source: 'none' }), opts).status, 400);
+  assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, row, s(), { hasChoice: false }).status, 409);
+  assert.equal(planSuggest({ id: 'm1-1', sid: '../x' }, row, s(), opts).status, 400);
+});
+
+test('E2E suggest: state lists suggestions only for events with no image, with safe thumbnails', async () => {
+  const tables = suggestTables();
+  tables['Image suggestions'][2][SUGG_HEADERS.indexOf('thumb')] = 'javascript:alert(1)';
+  fakeWorld(tables);
+  const r = await worker.fetch(await reqWith('/admin/api/state'), env());
+  const d = await r.json();
+  const m1 = d.pending.rows.find((x) => x.id === 'm1-1');
+  const m2 = d.pending.rows.find((x) => x.id === 'm2-1');
+  assert.deepEqual(m1._suggest.map((x) => [x.id, x.source]), [['m1-1#1', 'own'], ['m1-1#2', 'organiser'], ['m1-1#3', 'library']]);
+  assert.equal(m1._suggest[1].thumb, '', 'only data: JPEG thumbnails reach the browser');
+  assert.ok(!('url' in m1._suggest[0]) && !('check' in m1._suggest[0]), 'working columns stay in the Sheet');
+  assert.deepEqual(m2._suggest, [], '"none" row: an empty strip');
+});
+
+test('E2E suggest: Choose writes image_choice (stale-checked); saving to Lenches Photos only on Choose of an external image, once', async () => {
+  const tables = suggestTables();
+  const calls = fakeWorld(tables);
+  await worker.fetch(await reqWith('/admin/api/state'), env());
+  assert.equal(calls.appends.length, 0, 'loading the panel saves nothing');
+
+  let r = await post('/admin/api/suggest', { id: 'm1-1', sid: 'm1-1#1', expected: '' });
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  assert.equal(choiceOf(tables, 'm1-1'), 'm1-1#1');
+  assert.equal(calls.appends.length, 0, 'an own photo is already in Lenches Photos');
+
+  r = await post('/admin/api/suggest', { id: 'm1-1', sid: 'm1-1#2', expected: '' });
+  assert.equal(r.status, 409, 'stale: the page loaded an empty choice');
+  assert.equal(r.json.current, 'm1-1#1');
+  assert.equal(calls.appends.length, 0);
+
+  r = await post('/admin/api/suggest', { id: 'm1-1', sid: 'm1-1#2', expected: 'm1-1#1' });
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  assert.equal(choiceOf(tables, 'm1-1'), 'm1-1#2');
+  assert.equal(calls.appends.length, 1);
+  const added = Object.fromEntries(FETCH_HEADERS.map((h, i) => [h, calls.appends[0].rows[0][i]]));
+  assert.equal(calls.appends[0].tab, 'Image fetch');
+  assert.equal(added.url, 'https://hall.example.org/q.jpg');
+  assert.equal(added.credit, 'Rous Lench Village Hall');
+  assert.equal(added.village, 'Rous Lench');
+  assert.equal(added.status, '', 'image-fetch.gs picks it up');
+  assert.equal(added.source_page, 'https://hall.example.org/quiz');
+  assert.equal(suggStatus(tables, 'm1-1#2'), 'saved');
+
+  // Choosing it again (after another choice) doesn't save a second copy.
+  await post('/admin/api/suggest', { id: 'm1-1', sid: 'none', expected: 'm1-1#2' });
+  assert.equal(choiceOf(tables, 'm1-1'), 'none');
+  await post('/admin/api/suggest', { id: 'm1-1', sid: 'm1-1#2', expected: 'none' });
+  assert.equal(calls.appends.length, 1);
+  assert.equal(calls.dispatches.length, 0, 'Choose never approves: approval is the usual decide() path');
+});
+
+test('E2E suggest: a people-flagged image needs People OK; a decided item or one with an image is refused', async () => {
+  const tables = suggestTables();
+  const calls = fakeWorld(tables);
+  let r = await post('/admin/api/suggest', { id: 'm1-1', sid: 'm1-1#3', expected: '' });
+  assert.equal(r.status, 409);
+  assert.match(r.json.error, /People OK/);
+  r = await post('/admin/api/edit', { tab: 'Pending', key: 'm1-1', field: 'people_ok', expected: '', value: 'yes' });
+  assert.equal(r.status, 200);
+  r = await post('/admin/api/suggest', { id: 'm1-1', sid: 'm1-1#3', expected: '' });
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  assert.match(calls.appends[0].rows[0][FETCH_HEADERS.indexOf('notes')], /licence https:\/\/www\.pexels\.com\/license\//);
+  r = await post('/admin/api/suggest', { id: 'm3-1', sid: 'none', expected: '' });
+  assert.equal(r.status, 409, 'decided item');
+  tables.Pending[2][tables.Pending[0].indexOf('image_part_id')] = '1';
+  r = await post('/admin/api/suggest', { id: 'm2-1', sid: 'none', expected: '' });
+  assert.equal(r.status, 409, 'has its own image');
+  r = await post('/admin/api/suggest', { id: 'm1-1', sid: 'm2-1#0', expected: 'm1-1#3' });
+  assert.equal(r.status, 400);
 });

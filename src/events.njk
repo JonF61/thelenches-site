@@ -14,6 +14,7 @@ description: What's on across the Lenches villages — upcoming events from the 
   .lenches-badge{display:inline-block;vertical-align:middle;margin-left:.35rem;padding:0 .45rem;border-radius:4px;background:#fbe6d6;color:#8a3e0c;font-size:.7rem;font-weight:600;line-height:1.6;white-space:nowrap}
   .flyer-link{display:block;max-width:420px;margin:.6rem 0 0}
   .item-flyer{display:block;width:100%;height:auto;border:1px solid #e6e1d6;border-radius:4px}
+  .img-credit{margin:.3rem 0 0}
 </style>
 <main class="container">
   <div class="page-head">
@@ -36,7 +37,7 @@ description: What's on across the Lenches villages — upcoming events from the 
         {% if not own %}{% if img %}<a class="thumb-link" href="{{ img.url | url }}" data-viewer aria-label="View full image"><img class="item-thumb" src="{{ img.url | url }}" alt="{{ img.alt | escape }}" loading="lazy"></a>{% else %}{{ e | tileSvg | safe }}{% endif %}{% endif %}
         <h3>{{ e.title | escape }}{% if e | inLenches %} <span class="lenches-badge">Lenches</span>{% endif %}</h3>
         {% for p in e.body | paras %}<p>{{ p | escape }}{% if loop.last and e.link %} <a href="{{ e.link.url | escape }}" target="_blank" rel="noopener">{{ e.link.text | escape }} &rarr;</a>{% endif %}</p>{% endfor %}
-        {% if own %}<a class="flyer-link" href="{{ e.image.url | url }}" data-viewer aria-label="View full image"><img class="item-flyer" src="{{ e.image.url | url }}" alt="{{ e.image.alt | escape }}" loading="lazy"></a>{% endif %}
+        {% if own %}<a class="flyer-link" href="{{ e.image.url | url }}" data-viewer aria-label="View full image"><img class="item-flyer" src="{{ e.image.url | url }}" alt="{{ e.image.alt | escape }}" loading="lazy"></a>{% if e.image.credit %}<p class="img-credit small mut">{% if e.image.creditUrl %}<a href="{{ e.image.creditUrl | escape }}" target="_blank" rel="noopener">{{ e.image.credit | escape }}</a>{% else %}{{ e.image.credit | escape }}{% endif %}</p>{% endif %}{% endif %}
       </div>
     </div>
     {% endfor %}
