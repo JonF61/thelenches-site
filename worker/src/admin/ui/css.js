@@ -68,6 +68,7 @@ nav.side button[aria-current="page"] .n{background:rgba(255,255,255,.25);color:i
 .filebox{margin-top:14px;border-top:1px solid var(--line);padding-top:8px;font-size:.88rem}
 .filebox summary{cursor:pointer;font-weight:600;padding:4px 0}
 .filebox form{margin:4px 0 8px}
+.filebox select.f+.toolbar{margin-top:6px}
 .filebox label.f,.small label.f{font-size:.82rem;margin:8px 0 3px}
 .small textarea.f{min-height:64px}
 .copies{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
@@ -111,6 +112,8 @@ table.h td,table.h th{text-align:left;padding:6px 4px;border-bottom:1px solid va
   nav.side{overflow:auto}
   nav.side .folders{display:flex;flex-direction:column;gap:1px;margin:2px 0 8px}
   nav.side .folders button{padding:4px 8px;font-size:.82rem;border-radius:6px}
+  nav.side .folders button.top{font-weight:700;margin-top:4px}
+  nav.side .folders button.top:not([aria-current]){color:var(--ink)}
   nav.side .folders button span:first-child{overflow:hidden;text-overflow:ellipsis}
   .detail .photo img{max-height:280px}
   .filebox input.f,.filebox select.f,.small input.f,.small textarea.f{font-size:.88rem;padding:6px 8px}

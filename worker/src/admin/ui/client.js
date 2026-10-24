@@ -5,7 +5,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '3';
+export const UI_VERSION = '4';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -629,6 +629,7 @@ export const CLIENT_JS = String.raw`
     var waiting = t.error ? '' : t.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length;
     var item = function (path, label, depth, n) {
       return h('button', { 'aria-current': S.pf === path ? 'page' : null, style: 'padding-left:' + (10 + depth * 12) + 'px',
+        class: path && depth === 0 ? 'top' : null,
         title: path || 'Waiting for a decision', onclick: function () { pickFolder(path); } },
       h('span', null, label), n === '' ? null : h('span', { class: 'n' }, String(n)));
     };
@@ -711,7 +712,10 @@ export const CLIENT_JS = String.raw`
         decide('approve', 'approved', 'Approved');
       } }, 'Approve'),
       h('button', { class: 'btn danger', onclick: function () {
-        if (window.confirm('Reject ' + str(r.filename) + '? It will not be published.')) decide('reject', 'rejected', 'Rejected');
+        var msg = str(r.published_at)
+          ? str(r.filename) + ' is ON THE WEBSITE.\n\nRejecting it takes it off the site on the next daily photos run, and pages using it lose the picture. To undo, click Approve: before that run nothing changes; after it, the next run puts it back at the same web address.\n\nReject it?'
+          : 'Reject ' + str(r.filename) + '? It will not be published.';
+        if (window.confirm(msg)) decide('reject', 'rejected', 'Rejected');
       } }, 'Reject'),
       str(r.duplicate_of) ? h('button', { class: 'btn', onclick: function () { overlay('Possible duplicates', copiesView(r)); } }, 'Compare copies') : null,
       str(r.drive_link) ? h('a', { class: 'btn link', href: str(r.drive_link), target: '_blank', rel: 'noopener' }, 'Open in Drive') : null,
