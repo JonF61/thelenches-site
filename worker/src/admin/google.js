@@ -1,7 +1,10 @@
 // worker/src/admin/google.js
-// Google APIs for the admin panel with the pipeline's service account (Worker secret
-// GOOGLE_SA_KEY, the same JSON key as the GitHub secret). Access tokens come from a JWT
-// signed with WebCrypto and are cached until shortly before they expire.
+// Google APIs for the admin panel with its own service account (Worker secret
+// GOOGLE_SA_KEY: lenches-admin-panel, not the pipeline's key, whose delegation includes
+// gmail.send). Access tokens come from a JWT signed with WebCrypto and are cached until
+// shortly before they expire. Only the scopes in ALLOWED_SCOPES can ever be requested,
+// each only in its one mode (impersonating or as the account itself); anything else,
+// gmail.send and gmail.modify included, is refused before anything is signed.
 //   Sheets   read and write the Lenches Pipeline Sheet (SHEET_ID in wrangler.toml)
 //   Drive    read-only, for Photos-tab images (the folder is already shared with the account);
 //            full drive scope only for the panel's rename / move (photofiles.js),
@@ -21,6 +24,13 @@ export const SCOPES = {
   driveWrite: 'https://www.googleapis.com/auth/drive',
   gmail: 'https://www.googleapis.com/auth/gmail.readonly',
 };
+// scope -> true: impersonation only (a sub is required); false: own identity only (no sub).
+const ALLOWED_SCOPES = new Map([
+  [SCOPES.gmail, true],
+  [SCOPES.sheets, false],
+  [SCOPES.drive, false],
+  [SCOPES.driveWrite, false],
+]);
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const SHEETS = 'https://sheets.googleapis.com/v4/spreadsheets';
 export const DRIVE_FILES = 'https://www.googleapis.com/drive/v3/files';
@@ -57,8 +67,25 @@ async function signingKey(pem) {
   return key;
 }
 
+// Throws unless the scope is on the allow-list and asked for in its own mode.
+export function checkScope(scope, sub = '') {
+  if (!ALLOWED_SCOPES.has(scope)) throw new Error(`Google scope not allowed: ${scope}`);
+  if (ALLOWED_SCOPES.get(scope) && !sub) throw new Error(`Google scope ${scope} is for impersonation only`);
+  if (!ALLOWED_SCOPES.get(scope) && sub) throw new Error(`Google scope ${scope} is for the account's own identity only`);
+}
+
+// The key's client_email, for the panel's Health screen ('' if the key is unreadable).
+export function serviceAccountEmail(env) {
+  try {
+    return serviceAccount(env).client_email;
+  } catch {
+    return '';
+  }
+}
+
 // The signed assertion exchanged for an access token (exported for tests).
 export async function serviceAccountJwt(sa, scope, sub = '', nowS = Math.floor(Date.now() / 1000)) {
+  checkScope(scope, sub);
   const claims = { iss: sa.client_email, scope, aud: TOKEN_URL, iat: nowS, exp: nowS + 3600 };
   if (sub) claims.sub = sub;
   const body = `${jsonToB64url({ alg: 'RS256', typ: 'JWT' })}.${jsonToB64url(claims)}`;
@@ -67,6 +94,7 @@ export async function serviceAccountJwt(sa, scope, sub = '', nowS = Math.floor(D
 }
 
 export async function accessToken(env, scope, sub = '') {
+  checkScope(scope, sub);
   const id = `${scope}|${sub}`;
   const hit = tokens.get(id);
   if (hit && hit.exp > Date.now() + 60000) return hit.token;

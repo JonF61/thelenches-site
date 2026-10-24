@@ -12,7 +12,7 @@ import { makeCsrf, checkCsrf, sameOrigin, CSRF_TTL_MS } from '../src/admin/csrf.
 import { editCell, colLetter, isTypoFix, wordsChanged } from '../src/admin/sheet.js';
 import { owedReplies } from '../src/admin/owed.js';
 import { planPending, planReply, planPhoto, trustKeyFor } from '../src/admin/actions.js';
-import { resetTokenCache } from '../src/admin/google.js';
+import { resetTokenCache, accessToken, serviceAccountJwt, SCOPES } from '../src/admin/google.js';
 import { bytesToB64url, jsonToB64url } from '../src/admin/b64.js';
 import { dispatchFor } from '../src/core.js';
 import worker from '../src/index.js';
@@ -55,6 +55,15 @@ const env = () => ({
   GOOGLE_SA_KEY: JSON.stringify({ client_email: 'sa@example.iam.gserviceaccount.com', private_key: saPem }),
 });
 
+// Every token request any test makes, checked against the allow-list at the end.
+const tokenRequests = [];
+const ALLOWED = {
+  'https://www.googleapis.com/auth/gmail.readonly': 'impersonation',
+  'https://www.googleapis.com/auth/spreadsheets': 'own',
+  'https://www.googleapis.com/auth/drive': 'own',
+  'https://www.googleapis.com/auth/drive.readonly': 'own',
+};
+
 // A small fake Google Sheet + GitHub + Access certs behind global fetch.
 function fakeWorld(tables) {
   const calls = { writes: [], dispatches: [], certFetches: 0, tokenSubs: [] };
@@ -73,6 +82,7 @@ function fakeWorld(tables) {
         Buffer.from(assertion.split('.')[2], 'base64url'), enc.encode(assertion.split('.').slice(0, 2).join('.')));
       if (!ok) return new Response('bad sig', { status: 400 });
       calls.tokenSubs.push(claims.sub || '');
+      tokenRequests.push({ scope: claims.scope, sub: claims.sub || '' });
       return Response.json({ access_token: 'goog', expires_in: 3600 });
     }
     if (url.hostname === 'sheets.googleapis.com') {
@@ -477,6 +487,7 @@ test('E2E: state, session and the panel files', async () => {
   assert.equal(s.health[0].status, 'OK');
   assert.deepEqual(s.watchdog, { open: true, since: '2026-10-24T09:00:00Z', problems: ['Website returned HTTP 500'] });
   assert.equal(s.gids.Pending, 7);
+  assert.equal(s.googleAccount, 'sa@example.iam.gserviceaccount.com');
   assert.equal(s.sheetId, 'sheet123');
   assert.equal(calls.dispatches.length, 0);
 
@@ -546,4 +557,57 @@ test('Owed: same rule as scripts/ingest/replies.js owedReplies', async () => {
   ];
   const ids = (list) => list.map((o) => [o.holding.reply_id, o.draft && o.draft.reply_id]);
   assert.deepEqual(ids(owedReplies(rows)), ids(script.owedReplies(rows)));
+});
+
+/* -------------------------------------------------------- Google scopes -- */
+
+test('Scopes: only the allow-list, each in its own mode; gmail.send and gmail.modify refused', async () => {
+  const calls = fakeWorld(tablesFor());
+  const sa = JSON.parse(env().GOOGLE_SA_KEY);
+  for (const scope of [
+    'https://www.googleapis.com/auth/gmail.send',
+    'https://www.googleapis.com/auth/gmail.modify',
+    'https://www.googleapis.com/auth/gmail.compose',
+    'https://mail.google.com/',
+    'https://www.googleapis.com/auth/admin.directory.user',
+    `${SCOPES.gmail} https://www.googleapis.com/auth/gmail.send`,
+    '',
+  ]) {
+    await assert.rejects(accessToken(env(), scope, 'inbox@example.org'), /not allowed/, scope);
+    await assert.rejects(accessToken(env(), scope), /not allowed/, scope);
+    await assert.rejects(serviceAccountJwt(sa, scope, 'inbox@example.org'), /not allowed/, scope);
+  }
+  await assert.rejects(accessToken(env(), SCOPES.gmail), /impersonation only/);
+  for (const scope of [SCOPES.sheets, SCOPES.drive, SCOPES.driveWrite]) {
+    await assert.rejects(accessToken(env(), scope, 'inbox@example.org'), /own identity only/);
+  }
+  assert.equal(calls.tokenSubs.length, 0, 'nothing refused ever reached Google');
+});
+
+test('Scopes: no Worker source names a Google scope outside the allow-list', async () => {
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const root = new URL('../src/', import.meta.url).pathname;
+  const files = [];
+  const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).forEach((e) => {
+    const f = path.join(d, e.name);
+    if (e.isDirectory()) walk(f); else if (f.endsWith('.js')) files.push(f);
+  });
+  walk(root);
+  const found = new Set();
+  for (const f of files) {
+    const src = fs.readFileSync(f, 'utf8').replace(/^\s*\/\/.*$/gm, ''); // code only, not comments
+    for (const m of src.matchAll(/https:\/\/(?:www\.googleapis\.com\/auth\/[\w.]+|mail\.google\.com\/)/g)) found.add(m[0]);
+    assert.doesNotMatch(src, /gmail\.(send|modify|compose|insert)/, f);
+  }
+  assert.deepEqual([...found].filter((s) => !(s in ALLOWED)), []);
+});
+
+// Last, so it sees every token request the tests above made.
+test('Scopes: every token request in this run was on the allow-list, in its own mode', () => {
+  assert.ok(tokenRequests.length > 0);
+  for (const { scope, sub } of tokenRequests) {
+    assert.ok(scope in ALLOWED, `scope ${scope}`);
+    assert.equal(sub ? 'impersonation' : 'own', ALLOWED[scope], `${scope} with sub "${sub}"`);
+  }
 });

@@ -5,7 +5,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '6';
+export const UI_VERSION = '7';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -935,6 +935,9 @@ export const CLIENT_JS = String.raw`
       dog.error ? h('div', { class: 'note bad' }, 'Could not check: ' + dog.error)
         : dog.open ? [h('div', { class: 'note bad' }, 'Alert open since ' + when(dog.since)), h('ul', null, (dog.problems || []).map(function (p) { return h('li', null, p); }))]
           : h('p', null, 'No open alert' + (dog.cleared ? '; last one cleared ' + when(dog.cleared) : '') + '. It checks every 3 hours.')));
+    els.push(h('div', { class: 'card' }, h('h2', null, 'Google account'),
+      d.googleAccount ? h('p', null, 'The panel uses ', h('b', null, str(d.googleAccount)))
+        : h('div', { class: 'note bad' }, 'GOOGLE_SA_KEY is missing or unreadable')));
     if (!Array.isArray(d.health)) { els.push(errorNote(d.health, 'Health')); return els; }
     var t = h('table', { class: 'h' }, h('thead', null, h('tr', null, h('th', null, 'Run'), h('th', null, 'Status'), h('th', null, 'Summary and problems'))),
       h('tbody', null, d.health.map(function (r) {
