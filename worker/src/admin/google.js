@@ -168,6 +168,26 @@ export async function gmailImage(env, messageId, partId) {
   return { type, bytes: b64urlBytes(data) };
 }
 
+// Every image in one message (attachments and inline), so the panel can show them all
+// next to the item: [{ partId, filename, type, size }].
+export async function gmailImageParts(env, messageId) {
+  const sub = String(env.GMAIL_USER || '').trim();
+  if (!sub) throw new Error('GMAIL_USER is not set');
+  const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(messageId)}?format=full`;
+  const msg = await (await google(env, SCOPES.gmail, url, {}, sub)).json();
+  const out = [];
+  const walk = (part) => {
+    if (!part) return;
+    const type = String(part.mimeType || '').toLowerCase();
+    if (IMAGE_TYPES.includes(type) && part.partId) {
+      out.push({ partId: String(part.partId), filename: part.filename || '', type, size: (part.body && part.body.size) || 0 });
+    }
+    (part.parts || []).forEach(walk);
+  };
+  walk(msg.payload);
+  return out;
+}
+
 // A Drive image: Drive's own thumbnail (about `size` px on the long side) when it has
 // one, else the file itself. { type, bytes }.
 export async function driveImage(env, fileId, size = 0) {

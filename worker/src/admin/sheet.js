@@ -48,6 +48,7 @@ export const EDITS = {
       category: oneOf('event', 'notice'),
       people_ok: oneOf('yes', ''),
     },
+    guard: (...a) => officialGuard(...a),
   },
   Photos: {
     key: 'drive_id',
@@ -125,12 +126,47 @@ export async function editCell(env, { tab, key, field, expected, value }) {
   const v = clean(value);
   if (v === null) return fail(400, `Not a valid value for ${field}`);
 
-  return checkedWrite(env, { tab, keyCol: spec.key, key, field, expected, value: v, onlyStatus: spec.onlyStatus });
+  return checkedWrite(env, {
+    tab, keyCol: spec.key, key, field, expected, value: v, onlyStatus: spec.onlyStatus, guard: spec.guard,
+  });
+}
+
+// Official statements are published in their own words: on an official Pending row the
+// text fields take typo fixes only (a few words changed), checked here as well as in the page.
+export const TYPO_FIELDS = new Set(['title', 'summary', 'own_text']);
+const words = (s) => String(s || '').split(/\s+/).filter(Boolean);
+
+// Words changed between a and b (deleted plus inserted), by longest common subsequence.
+export function wordsChanged(a, b) {
+  const x = words(a);
+  const y = words(b);
+  if (x.length * y.length > 400000) return Math.max(x.length, y.length);
+  let prev = new Array(y.length + 1).fill(0);
+  for (let i = 1; i <= x.length; i += 1) {
+    const cur = new Array(y.length + 1).fill(0);
+    for (let j = 1; j <= y.length; j += 1) {
+      cur[j] = x[i - 1] === y[j - 1] ? prev[j - 1] + 1 : Math.max(prev[j], cur[j - 1]);
+    }
+    prev = cur;
+  }
+  const common = prev[y.length];
+  return (x.length - common) + (y.length - common);
+}
+
+// A typo fix: at most 3 words, or 5% of the words, swapped (each swap counts twice).
+export const isTypoFix = (a, b) => wordsChanged(a, b) <= 2 * Math.max(3, Math.ceil(words(a).length * 0.05));
+
+function officialGuard(row, field, current, value) {
+  if (!TYPO_FIELDS.has(field) || !/^(true|yes|y|1)$/i.test(String(row.official ?? '').trim())) return '';
+  return isTypoFix(current, value) ? '' : 'Official statement: only typo fixes are allowed, published in their own words';
 }
 
 // Writes one cell of the row whose keyCol cell is key, only if it still holds expected
 // (and, with onlyStatus, only while the row's status is that). Value already cleaned.
-export async function checkedWrite(env, { tab, keyCol, key, field, expected, value, onlyStatus = '' }) {
+// guard(row, field, current, value): returns a reason to refuse, or ''.
+export async function checkedWrite(env, {
+  tab, keyCol, key, field, expected, value, onlyStatus = '', guard = null,
+}) {
   const { headers, rows } = await readTable(env, tab);
   const col = headers.indexOf(field);
   if (col < 0) return fail(400, `${tab} has no "${field}" column`);
@@ -144,6 +180,8 @@ export async function checkedWrite(env, { tab, keyCol, key, field, expected, val
   if (current !== String(expected ?? '')) {
     return fail(409, 'Changed in the Sheet since you loaded the page', { current });
   }
+  const refused = guard ? guard(row, field, current, value) : '';
+  if (refused) return fail(400, refused);
   await writeCells(env, [{ range: `${quoteTab(tab)}!${colLetter(col)}${row._row}`, values: [[value]] }]);
   return { ok: true, value };
 }
