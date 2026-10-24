@@ -487,11 +487,13 @@ test('Edit: Photos description and alt text are editable, stale-checked and leng
 
 /* ----------------------------------------------------- rename numbering -- */
 
-test('Numbering: core name is the name without extension or trailing -N', () => {
+test('Numbering: core name is the name without extension or trailing -N (1 to 3 digits)', () => {
   assert.deepEqual(nameParts('Bonfire-12.JPG'), { core: 'Bonfire', num: 12, ext: '.JPG', key: 'bonfire\u0000.jpg' });
   assert.deepEqual(nameParts('bonfire.jpg').num, null);
   assert.equal(nameParts('a-2-3.jpg').core, 'a-2', 'only the last -N');
   assert.equal(nameParts('-5.jpg').core, '-5', 'a bare number is a core');
+  assert.deepEqual([nameParts('bonfire-999.jpg').core, nameParts('bonfire-999.jpg').num], ['bonfire', 999], 'up to 3 digits is a number');
+  assert.deepEqual([nameParts('IMG-3113.jpg').core, nameParts('IMG-3113.jpg').num], ['IMG-3113', null], '4+ digits are part of the core');
 });
 
 test('Numbering: no clash, plain clash, existing -2/-5, case, other extensions, no gap filling', () => {
@@ -504,6 +506,8 @@ test('Numbering: no clash, plain clash, existing -2/-5, case, other extensions, 
   assert.equal(numberedName('bonfire.jpg', ['bonfire.png', 'bonfire.jpeg', 'bonfire']), 'bonfire.jpg', 'other extensions do not clash');
   assert.equal(numberedName('bonfire-2.jpg', ['bonfire.jpg', 'bonfire-2.jpg']), 'bonfire-3.jpg', 'a typed number follows the same rule');
   assert.equal(numberedName('bonfire-2.jpg', ['hall.jpg']), 'bonfire-2.jpg', 'a typed number with no clash is kept');
+  assert.equal(numberedName('IMG-5000.jpg', ['IMG-3113.jpg']), 'IMG-5000.jpg', 'camera numbers never clash with each other');
+  assert.equal(numberedName('IMG-3113.jpg', ['img-3113.JPG']), 'IMG-3113-2.jpg', 'the same camera name does clash');
 });
 
 const bonfireFiles = (extra) => {
