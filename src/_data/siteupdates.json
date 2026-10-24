@@ -18,6 +18,12 @@
       "from": "2026-10-29",
       "link": "https://thelenches.org.uk/",
       "text": "New on the website: a new home page with an illustrated map of the villages, a Notices page for notices and news from around the villages, and a Roads page with a map of closures and roadworks and a slider to see what's on any day in the next 8 weeks."
+    },
+    {
+      "key": "menu-pills-2026-11",
+      "from": "2026-11-05",
+      "link": "https://thelenches.org.uk/",
+      "text": "The menu at the top of every page is now a row of buttons, and on phones a Menu button opens it."
     }
   ]
 }

@@ -19,15 +19,18 @@ img{max-width:100%;height:auto;display:block}
 /* Header / nav */
 .site-header{background:var(--paper);border-bottom:1px solid var(--line)}
 .site-header .container{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.25rem 1rem;padding-top:.6rem;padding-bottom:.6rem}
-.brand-wrap{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.9rem}
+.brand-wrap{display:flex;flex-direction:column;align-items:flex-start}
 .brand-h1{margin:0;font-size:inherit;line-height:inherit;font-weight:inherit}
 .brand{display:inline-flex;align-items:center;min-height:44px;font-size:1.75rem;font-weight:600;color:var(--green-dark);text-decoration:none}
 .brand span{color:var(--muted);font-weight:400;margin-left:.4rem}
 .brand-villages{margin:0;font-size:.85rem;color:var(--muted);letter-spacing:.04em}
-.nav{display:flex;flex-wrap:wrap;gap:0 .15rem}
-.nav a{display:flex;align-items:center;min-height:44px;padding:0 .55rem;color:var(--green-dark);text-decoration:none;font-size:.93rem;border-bottom:2px solid transparent}
-.nav a:hover{color:var(--accent-text)}
-.nav a.active{border-bottom-color:var(--accent)}
+/* Menu as pills: outlined in the accent, current page filled. --accent-text is used, as white on --accent is below 4.5:1. */
+.nav{display:flex;flex-wrap:wrap;gap:.4rem}
+.nav a{display:inline-flex;align-items:center;justify-content:center;padding:6px 14px;border:1px solid var(--accent-text);border-radius:999px;color:var(--green-dark);background:transparent;text-decoration:none;font-size:1.02rem;line-height:1.4;white-space:nowrap}
+.nav a:hover{background:#F4E6D6;color:var(--green-dark)}
+.nav a.active{background:var(--accent-text);color:#fff}
+.nav a.active:hover{background:#82450F;color:#fff}
+.nav-toggle{display:none}
 
 /* Blocks */
 /* Space above page titles, same on every page. main.container needed: .container's padding otherwise overrides it */
@@ -170,6 +173,14 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 @media (max-width:560px){
   .container{padding:0 1rem}
   .brand{font-size:1.5rem}
+  /* Phone menu: a filled "Menu" pill opens the same items as full-width pills (always shown without JavaScript). */
+  html.js .brand-wrap{flex:1 1 0;min-width:0}
+  html.js .nav-toggle{display:inline-flex;align-items:center;gap:.45rem;padding:6px 16px;border:1px solid var(--accent-text);border-radius:999px;background:var(--accent-text);color:#fff;font:inherit;font-size:1.02rem;font-weight:500;line-height:1.4;cursor:pointer}
+  html.js .nav-toggle::after{content:"";width:.45em;height:.45em;border:solid currentColor;border-width:0 2px 2px 0;transform:translateY(-.15em) rotate(45deg)}
+  html.js .nav-toggle[aria-expanded="true"]::after{transform:translateY(.1em) rotate(-135deg)}
+  html.js .nav-toggle:hover{background:#82450F}
+  html.js .nav{display:none;width:100%;flex-direction:column;padding:.35rem 0 .2rem}
+  html.js .nav.open{display:flex}
   h1{font-size:1.3rem}
   h2{font-size:1.1rem}
   .banner-img{aspect-ratio:2/1}
