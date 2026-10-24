@@ -26,13 +26,24 @@ function drive() {
   return driveClient;
 }
 
+// Copies discarded in the admin panel wait here (directly under the root) until Jon
+// empties it; the job never adds, describes or publishes anything in it.
+const TO_DELETE = 'to delete';
+
+// For tests: a stand-in for the googleapis Drive client.
+function setClient(client) {
+  driveClient = client;
+}
+
 // Every file under rootId, each with segs = folder names from the root down.
 // Folders whose name starts with "_" (drafts) are skipped with everything in them.
+// Files in "To delete" are listed only by ID (toDelete), so their rows aren't marked missing.
 async function walk(rootId) {
   const files = [];
-  const queue = [{ id: rootId, segs: [] }];
+  const toDelete = new Set();
+  const queue = [{ id: rootId, segs: [], bin: false }];
   while (queue.length) {
-    const { id, segs } = queue.shift();
+    const { id, segs, bin } = queue.shift();
     let pageToken;
     do {
       const res = await drive().files.list({
@@ -45,7 +56,10 @@ async function walk(rootId) {
       });
       for (const f of res.data.files || []) {
         if (f.mimeType === FOLDER) {
-          if (!String(f.name).startsWith('_')) queue.push({ id: f.id, segs: [...segs, f.name.trim()] });
+          const toBin = bin || (!segs.length && String(f.name).trim().toLowerCase() === TO_DELETE);
+          if (toBin || !String(f.name).startsWith('_')) queue.push({ id: f.id, segs: [...segs, f.name.trim()], bin: toBin });
+        } else if (bin) {
+          toDelete.add(f.id);
         } else {
           files.push({ ...f, segs });
         }
@@ -53,6 +67,7 @@ async function walk(rootId) {
       pageToken = res.data.nextPageToken;
     } while (pageToken);
   }
+  files.toDelete = toDelete;
   return files;
 }
 
@@ -78,4 +93,4 @@ async function sheetHeaders(tab) {
   return ((res.data.values || [])[0] || []).map((h) => String(h).trim());
 }
 
-module.exports = { walk, download, sheetHeaders };
+module.exports = { walk, download, sheetHeaders, setClient };

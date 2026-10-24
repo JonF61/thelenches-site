@@ -12,6 +12,12 @@
 //   POST /admin/api/action          { kind: pending|reply|photo, id, action, reason?, body?,
 //                                   expected? }: decisions go through core.js decide(),
 //                                   the same path as the signed email links
+//   GET  /admin/api/photo-file?id=  a Photos file's live Drive name and folder, and the
+//                                   Lenches Photos folders it can move to
+//   GET  /admin/api/photo-group?id= every copy in a possible-duplicate group
+//   POST /admin/api/photo-file      { op: rename|move|folder|discard, ... }: Drive file
+//                                   management, stale-checked, inside Lenches Photos only
+//                                   (photofiles.js); nothing is ever binned or deleted
 //   GET  /admin/img/mail/MSG/PART   a Pending image (email attachment)
 //   GET  /admin/img/drive/ID[?size=N]  a Photos image (Drive thumbnail, else the file)
 // Nothing here can send the newsletter or change repository code: the only GitHub call
@@ -24,6 +30,7 @@ import { getValues, sheetGids, gmailImage, gmailImageParts, driveImage } from '.
 import { readTable, readSettingsPairs, editCell, checkedWrite } from './sheet.js';
 import { planPending, planReply, planPhoto, trustKeyFor, truthy } from './actions.js';
 import { owedReplies } from './owed.js';
+import { fileInfo, dupMembers, renameFile, moveFile, newFolder, discardFile } from './photofiles.js';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 
@@ -219,6 +226,24 @@ async function doAction(env, body) {
   return json({ ok: true, message: `${ACTIONS[plan.p.a][1]}. It takes a minute or two to show in the Sheet.` });
 }
 
+const fromResult = (r) => (r.ok ? json(r) : json(r, r.status));
+
+// Photos file management: one operation per request.
+const FILE_OPS = {
+  rename: (env, b) => renameFile(env, { id: String(b.id || ''), expected: b.expected, name: b.name }),
+  move: (env, b) => moveFile(env, { id: String(b.id || ''), expectedParent: b.expectedParent, to: b.to }),
+  folder: (env, b) => newFolder(env, { parent: b.parent, name: b.name }),
+  discard: (env, b) => discardFile(env, {
+    id: String(b.id || ''), expected: b.expected, expectedParent: b.expectedParent, confirmPublished: b.confirmPublished === true,
+  }),
+};
+
+async function doFileOp(env, body) {
+  const op = FILE_OPS[String(body.op || '')];
+  if (!op) return json({ ok: false, error: `Unknown operation "${body.op}"` }, 400);
+  return fromResult(await op(env, body));
+}
+
 /* --------------------------------------------------------------- images -- */
 
 async function mailImages(env, url) {
@@ -273,6 +298,8 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/mail-images') return await mailImages(env, url);
       if (path === '/admin/api/session') return json({ email: auth.email, csrf: await makeCsrf(env, auth.email) });
       if (path === '/admin/api/state') return json(await state(env, auth.email));
+      if (path === '/admin/api/photo-file') return fromResult(await fileInfo(env, String(url.searchParams.get('id') || '')));
+      if (path === '/admin/api/photo-group') return fromResult(await dupMembers(env, String(url.searchParams.get('id') || '')));
       if (path.startsWith('/admin/img/')) return await image(env, path, url);
       return json({ error: 'Not found' }, 404);
     }
@@ -285,6 +312,7 @@ export async function handleAdmin(request, env) {
       if (!body) return json({ ok: false, error: 'Bad request' }, 400);
       if (path === '/admin/api/edit') return await doEdit(env, body);
       if (path === '/admin/api/action') return await doAction(env, body);
+      if (path === '/admin/api/photo-file') return await doFileOp(env, body);
       return json({ ok: false, error: 'Not found' }, 404);
     }
     return new Response('Method not allowed', { status: 405, headers: SECURITY_HEADERS });

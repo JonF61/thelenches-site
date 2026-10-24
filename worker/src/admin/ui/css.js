@@ -65,6 +65,8 @@ nav.side button[aria-current="page"] .n{background:rgba(255,255,255,.25);color:i
 .imgs a.main-img{border-color:var(--accent)}
 .imgs img{display:block;height:140px;max-width:100%;object-fit:contain}
 .photo img{display:block;width:100%;max-height:360px;object-fit:contain;background:var(--panel2);border-radius:8px}
+.copies{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+.copies img{display:block;width:100%;height:200px;object-fit:contain;background:var(--panel2);border-radius:8px}
 .tick{display:flex;align-items:center;gap:8px;margin:8px 0;padding:8px 10px;border-radius:8px;background:var(--warn-bg);color:var(--warn)}
 .tick input{width:22px;height:22px;accent-color:var(--accent)}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
