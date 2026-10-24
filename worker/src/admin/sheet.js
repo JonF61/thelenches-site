@@ -55,6 +55,10 @@ export const EDITS = {
     fields: {
       target: oneLine(200),
       people_ok: oneOf('yes', ''),
+      // Drafted by the photos run; alt text is kept once filled, the description is
+      // redrafted only if the file is edited in Drive. Same limits as the run.
+      alt_text: oneLine(125),
+      description: oneLine(300),
     },
   },
 };

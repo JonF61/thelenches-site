@@ -5,13 +5,13 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '2';
+export const UI_VERSION = '3';
 
 export const CLIENT_JS = String.raw`
 (function () {
   'use strict';
 
-  var S = { data: null, csrf: '', view: 'queue', filter: 'all', sel: {}, done: {}, imgs: {} };
+  var S = { data: null, csrf: '', view: 'queue', filter: 'all', sel: {}, done: {}, imgs: {}, pf: '', files: {}, open: {} };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
   var VIEWS = [['queue', 'Queue'], ['replies', 'Replies'], ['owed', 'Owed'], ['photos', 'Photos'], ['health', 'Health']];
@@ -125,6 +125,7 @@ export const CLIENT_JS = String.raw`
       if (!r.ok) throw new Error(r.json.error || 'Could not load');
       S.data = r.json;
       S.done = {};
+      S.files = {};
       render();
       if (!quiet) toast('Up to date');
     } catch (e) {
@@ -213,17 +214,20 @@ export const CLIENT_JS = String.raw`
     return {
       queue: n(d.pending, 'pending', 'id'), replies: n(d.replies, 'reply', 'reply_id'),
       owed: Array.isArray(d.owed) ? d.owed.filter(function (o) { return !S.done['reply:' + o.holding.reply_id]; }).length : '!',
-      photos: n(d.photos, 'photo', 'drive_id'), health: null
+      photos: d.photos && !d.photos.error ? d.photos.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length : '!',
+      health: null
     };
   }
 
   function nav(d) {
     var c = counts(d);
     return h('nav', { class: 'side', 'aria-label': 'Sections' }, VIEWS.map(function (v) {
-      return h('button', {
+      var b = h('button', {
         'aria-current': S.view === v[0] ? 'page' : null,
         onclick: function () { S.view = v[0]; closeOverlay(); render(); window.scrollTo(0, 0); }
       }, v[1], c[v[0]] === null ? null : h('span', { class: 'n' }, String(c[v[0]])));
+      // Photos: its Drive folders listed below it on desktop (a dropdown on phones).
+      return v[0] === 'photos' && S.view === 'photos' && wide() ? [b, folderMenu(d)] : b;
     }));
   }
 
@@ -605,21 +609,67 @@ export const CLIENT_JS = String.raw`
 
   function consent(r) { return PHOTO_CONSENT.indexOf(lower(r.people)) >= 0; }
 
+  // The Photos menu: S.pf '' = waiting for a decision; else a folder path under Lenches
+  // Photos ("Rous Lench / Churches"), matched against the Photos tab's path, subfolders included.
+  function inFolder(r, path) { var p = str(r.path); return p === path || p.indexOf(path + ' / ') === 0; }
+  function photoFolders(d) { return Array.isArray(d.photoFolders) ? d.photoFolders : []; }
+  function photoRows(d) {
+    var rows = d.photos.rows;
+    if (!S.pf) return rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; });
+    return rows.filter(function (r) { return inFolder(r, S.pf); }).slice().sort(function (a, b) {
+      return str(a.path).localeCompare(str(b.path)) || str(a.filename).localeCompare(str(b.filename));
+    });
+  }
+  function pickFolder(path) { S.pf = path; S.sel.photo = null; render(); window.scrollTo(0, 0); }
+
+  // Desktop: under Photos in the side menu.
+  function folderMenu(d) {
+    var t = d.photos;
+    var count = function (path) { return t.error ? '' : t.rows.filter(function (r) { return inFolder(r, path); }).length; };
+    var waiting = t.error ? '' : t.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length;
+    var item = function (path, label, depth, n) {
+      return h('button', { 'aria-current': S.pf === path ? 'page' : null, style: 'padding-left:' + (10 + depth * 12) + 'px',
+        title: path || 'Waiting for a decision', onclick: function () { pickFolder(path); } },
+      h('span', null, label), n === '' ? null : h('span', { class: 'n' }, String(n)));
+    };
+    return h('div', { class: 'folders', role: 'group', 'aria-label': 'Photo folders' },
+      item('', 'Waiting', 0, waiting),
+      photoFolders(d).map(function (f) { var p = f.names.join(' / '); return item(p, f.names[f.names.length - 1], f.names.length - 1, count(p)); }));
+  }
+
+  // Phone: a dropdown above the list.
+  function folderPicker(d) {
+    return h('select', { class: 'f', 'aria-label': 'Photo folder', onchange: function (e) { pickFolder(e.target.value); } },
+      h('option', { value: '', selected: S.pf === '' ? true : null }, 'Waiting for a decision'),
+      photoFolders(d).map(function (f) {
+        var p = f.names.join(' / ');
+        return h('option', { value: p, selected: S.pf === p ? true : null }, p);
+      }));
+  }
+
   function photosList(d) {
     var t = d.photos;
     if (t.error) return { els: [errorNote(t, 'Photos')] };
-    var rows = t.rows.filter(function (r) { return !S.done['photo:' + r.drive_id]; });
-    var els = [h('p', { class: 'meta' }, 'Approved photos are published by the daily photos run (early morning).')];
-    if (!rows.length) els.push(h('p', { class: 'empty' }, 'No photos waiting.'));
+    var rows = photoRows(d);
+    var els = [];
+    if (!wide()) els.push(folderPicker(d));
+    if (d.photoFolders && d.photoFolders.error) els.push(errorNote(d.photoFolders, 'Drive folders'));
+    els.push(h('p', { class: 'meta' }, S.pf
+      ? 'Every photo in ' + S.pf + ', whatever its status. A move shows here at once, or after the next photos run if made in Drive.'
+      : 'Approved photos are published by the daily photos run (early morning).'));
+    if (!rows.length) els.push(h('p', { class: 'empty' }, S.pf ? 'No photos in this folder.' : 'No photos waiting.'));
     rows.forEach(function (r) {
-      els.push(entry('photo', r.drive_id, function () { return photoSummary(r); }, function () { return photoCard(r); }));
+      els.push(entry('photo', r.drive_id, function () { return photoSummary(r); }, function () { return photoCard(r, false); }));
     });
     var sel = wide() ? pickSelected('photo', rows, 'drive_id') : null;
-    return { els: els, selected: sel ? function () { return photoCard(sel); } : null };
+    return { els: els, selected: sel ? function () { return photoCard(sel, true); } : null };
   }
 
   function photoBadges(r) {
     var b = [];
+    var st = lower(r.status);
+    if (!r._waiting) b.push(h('span', { class: st === 'approved' ? 'badge info' : 'badge' }, st ? st.charAt(0).toUpperCase() + st.slice(1) : 'New'));
+    if (str(r.published_at)) b.push(h('span', { class: 'badge info' }, 'On the website'));
     if (r._organiser) b.push(h('span', { class: 'badge info' }, "Organiser's image"));
     if (consent(r)) b.push(h('span', { class: 'badge bad' }, (lower(r.people) === 'children' ? 'Children' : lower(r.people) === 'unknown' ? 'People: not checked' : 'Identifiable people') + (truthy(r.people_ok) ? ' · OK given' : '')));
     if (str(r.duplicate_of)) b.push(h('span', { class: 'badge warn' }, 'Possible duplicate'));
@@ -630,39 +680,74 @@ export const CLIENT_JS = String.raw`
     return [h('h2', null, str(r.filename)), h('div', { class: 'meta' }, [str(r.village), str(r.subject)].filter(Boolean).join(' · ')), photoBadges(r)];
   }
 
-  function photoCard(r) {
+  function photoCard(r, inDetail) {
     var src = '/admin/img/drive/' + encodeURIComponent(r.drive_id);
     var c = h('div', { class: 'card photo' },
       h('a', { href: src + '?size=1600', target: '_blank', rel: 'noopener' }, h('img', { src: src + '?size=600', alt: str(r.alt_text) || str(r.filename), loading: 'lazy' })),
       photoSummary(r));
+    if (str(r.path)) add(c, h('div', { class: 'meta' }, 'In Lenches Photos / ' + str(r.path)));
     if (r._organiser) add(c, h('div', { class: 'meta' }, 'For: ' + str(r._organiser.event) + (str(r._organiser.source_page) ? ' · from ' + str(r._organiser.source_page) : '')));
-    if (str(r.description)) add(c, h('div', { class: 'text' }, str(r.description)));
-    if (str(r.alt_text)) add(c, h('div', { class: 'meta' }, 'Alt text: ' + str(r.alt_text)));
     if (str(r.credit)) add(c, h('div', { class: 'meta' }, 'Credit: ' + str(r.credit)));
+    add(c, photoText(r));
     if (consent(r)) add(c, peopleTick('Photos', r.drive_id, r, 'Tick only if everyone shown is happy to appear (for children, their parents).'));
     var tid = 'tg-' + r.drive_id;
     var target = h('input', { class: 'f', id: tid, value: str(r.target), placeholder: 'e.g. home, church-lench' });
-    add(c, h('label', { class: 'f', for: tid }, 'Target (where it is used)'));
-    add(c, h('form', { class: 'toolbar', onsubmit: async function (e) {
+    add(c, h('form', { class: 'small', onsubmit: async function (e) {
       e.preventDefault();
       var res = await edit('Photos', r.drive_id, 'target', r.target, target.value);
       if (res.ok) { r.target = res.value; toast('Target saved'); }
       else { toast(res.status === 409 ? 'Changed in the Sheet (now "' + res.current + '"). Not saved.' : res.error, true); if (res.current !== undefined) r.target = res.current; }
       render();
-    } }, h('div', { class: 'spacer' }, target), h('button', { class: 'btn', type: 'submit' }, 'Save')));
+    } }, h('label', { class: 'f', for: tid }, 'Target (where it is used)'),
+    h('div', { class: 'toolbar' }, h('div', { class: 'spacer' }, target), h('button', { class: 'btn', type: 'submit' }, 'Save'))));
     var blocked = consent(r) && !truthy(r.people_ok);
+    var decide = function (action, value, text) {
+      act('photo', r.drive_id, action, { expected: r.status }, text).then(function (ok) {
+        if (ok) { r.status = value; r._waiting = false; render(); }
+      });
+    };
     add(c, h('div', { class: 'actions' },
       h('button', { class: 'btn primary', disabled: blocked, title: blocked ? 'Tick "People OK" first' : null, onclick: function () {
-        act('photo', r.drive_id, 'approve', { expected: r.status }, 'Approved');
+        decide('approve', 'approved', 'Approved');
       } }, 'Approve'),
       h('button', { class: 'btn danger', onclick: function () {
-        if (window.confirm('Reject ' + str(r.filename) + '? It will not be published.')) act('photo', r.drive_id, 'reject', { expected: r.status }, 'Rejected');
+        if (window.confirm('Reject ' + str(r.filename) + '? It will not be published.')) decide('reject', 'rejected', 'Rejected');
       } }, 'Reject'),
-      h('button', { class: 'btn', onclick: function () { overlay('Rename or move', fileForm(r)); } }, 'Rename or move'),
       str(r.duplicate_of) ? h('button', { class: 'btn', onclick: function () { overlay('Possible duplicates', copiesView(r)); } }, 'Compare copies') : null,
       str(r.drive_link) ? h('a', { class: 'btn link', href: str(r.drive_link), target: '_blank', rel: 'noopener' }, 'Open in Drive') : null,
       sheetLink('Photos', r._row)));
+    add(c, fileBox(r, inDetail));
     return c;
+  }
+
+  // The run's drafts, editable: the description (a note for the editor) and the alt text
+  // (read out on the website). Each field is stale-checked on its own.
+  function photoText(r) {
+    var did = 'de-' + r.drive_id;
+    var aid = 'al-' + r.drive_id;
+    var desc = h('textarea', { class: 'f', id: did, rows: 3, maxlength: 300 }, str(r.description));
+    var alt = h('input', { class: 'f', id: aid, maxlength: 125, value: str(r.alt_text) });
+    return h('form', { class: 'small', onsubmit: async function (e) {
+      e.preventDefault();
+      var changed = [['description', desc], ['alt_text', alt]].filter(function (x) { return x[1].value.trim() !== str(r[x[0]]); });
+      if (!changed.length) { toast('No changes to save'); return; }
+      for (var i = 0; i < changed.length; i += 1) {
+        var name = changed[i][0];
+        var res = await edit('Photos', r.drive_id, name, r[name] === undefined ? '' : r[name], changed[i][1].value);
+        if (!res.ok) {
+          toast(res.status === 409 && res.current !== undefined ? name + ' was changed in the Sheet (now "' + res.current + '"). Not saved.' : name + ': ' + res.error, true);
+          if (res.current !== undefined) r[name] = res.current;
+          render();
+          return;
+        }
+        r[name] = res.value;
+      }
+      toast('Saved');
+      render();
+    } },
+    h('label', { class: 'f', for: did }, 'Description (a note for you, not shown on the site)'), desc,
+    h('label', { class: 'f', for: aid }, 'Alt text (read out on the website to people using screen readers; up to 125 characters)'), alt,
+    h('div', { class: 'actions' }, h('button', { class: 'btn', type: 'submit' }, 'Save text')));
   }
 
   /* ---------------------------------------------------------- photo files -- */
@@ -670,16 +755,29 @@ export const CLIENT_JS = String.raw`
   function fileOp(body) { return api('/admin/api/photo-file', body); }
   function bad(res) { return res.json.error || ('HTTP ' + res.status); }
 
-  // Rename, change of folder and new folder, from the file's live Drive state.
-  function fileForm(r) {
-    var box = h('div', null, h('p', { class: 'meta' }, 'Loading from Drive…'));
-    var show = async function () {
-      var res = await api('/admin/api/photo-file?id=' + encodeURIComponent(r.drive_id));
-      if (!res.ok) { box.replaceChildren(h('div', { class: 'note bad' }, 'Could not load: ' + bad(res))); return; }
-      box.replaceChildren.apply(box, fileParts(r, res.json.file, res.json.folders, show));
+  // Rename, move and new folder, in the card itself. The file's live Drive name and folder
+  // load when the section opens (open already in the desktop detail) and are kept in
+  // S.files until a change, so the stale checks use Drive's own values.
+  function fileBox(r, inDetail) {
+    var id = r.drive_id;
+    var inner = h('div', null);
+    var started = false;
+    var fill = async function () {
+      started = true;
+      if (!S.files[id]) {
+        inner.replaceChildren(h('p', { class: 'meta' }, 'Loading from Drive…'));
+        var res = await api('/admin/api/photo-file?id=' + encodeURIComponent(id));
+        if (!res.ok) { inner.replaceChildren(h('div', { class: 'note bad' }, 'Could not load: ' + bad(res))); return; }
+        S.files[id] = res.json;
+      }
+      inner.replaceChildren.apply(inner, fileParts(r, S.files[id].file, S.files[id].folders));
     };
-    show();
-    return box;
+    var det = h('details', { class: 'filebox', open: inDetail || S.open[id] ? true : null, ontoggle: function () {
+      if (!inDetail) S.open[id] = det.open;
+      if (det.open && !started) fill();
+    } }, h('summary', null, 'Rename or move'), inner);
+    if (det.open) fill();
+    return det;
   }
 
   function splitExt(name) {
@@ -693,12 +791,11 @@ export const CLIENT_JS = String.raw`
     }));
   }
 
-  function fileParts(r, file, folders, again) {
-    var out = [];
-    out.push(h('div', { class: 'card' },
-      h('h2', null, file.name),
-      h('div', { class: 'meta' }, 'In ' + file.folder),
-      file.published ? h('div', { class: 'badges' }, h('span', { class: 'badge info' }, 'On the website')) : null));
+  // After any change: drop the cached Drive state and redraw (the section reloads).
+  function changed(r) { delete S.files[r.drive_id]; render(); }
+
+  function fileParts(r, file, folders) {
+    var out = [h('p', { class: 'meta' }, file.name + ' · in ' + file.folder)];
     if (file.toDelete) {
       out.push(h('div', { class: 'note warn' }, 'This file is in To delete. Move it out in Drive to use it again.'));
       return out;
@@ -707,12 +804,11 @@ export const CLIENT_JS = String.raw`
     var parts = splitExt(file.name);
     var nid = 'fn-' + r.drive_id;
     var nameIn = h('input', { class: 'f', id: nid, value: parts.stem, maxlength: 120 });
-    out.push(h('h3', null, 'Rename'));
     out.push(h('form', { onsubmit: async function (e) {
       e.preventDefault();
       var res = await fileOp({ op: 'rename', id: r.drive_id, expected: file.name, name: nameIn.value });
-      if (res.ok) { r.filename = res.json.name; toast('Renamed to ' + res.json.name); again(); render(); }
-      else { toast(res.status === 409 && res.json.current ? 'Renamed in Drive since you loaded it (now "' + res.json.current + '"). Not changed.' : bad(res), true); if (res.status === 409) again(); }
+      if (res.ok) { r.filename = res.json.name; toast('Renamed to ' + res.json.name); changed(r); }
+      else { toast(res.status === 409 && res.json.current ? 'Renamed in Drive since you loaded it (now "' + res.json.current + '"). Not changed.' : bad(res), true); if (res.status === 409) changed(r); }
     } },
     h('label', { class: 'f', for: nid }, 'New name' + (parts.ext ? ' (' + parts.ext + ' is kept)' : '')),
     h('div', { class: 'toolbar' }, h('div', { class: 'spacer' }, nameIn), h('button', { class: 'btn', type: 'submit' }, 'Rename')),
@@ -722,33 +818,37 @@ export const CLIENT_JS = String.raw`
 
     var mid = 'fm-' + r.drive_id;
     var dest = folderSelect(mid, folders, file.folderId);
-    out.push(h('h3', null, 'Move to another folder'));
     out.push(h('form', { onsubmit: async function (e) {
       e.preventDefault();
       if (dest.value === file.folderId) { toast('It is already in that folder'); return; }
       var to = folders.find(function (f) { return f.id === dest.value; });
       if (file.published && !window.confirm('This photo is on the website. Its village and subject follow its folder; in a Rejected folder or a folder starting with _ it comes off the site on the next photos run.\n\nMove it to ' + to.path + '?')) return;
       var res = await fileOp({ op: 'move', id: r.drive_id, expectedParent: file.folderId, to: dest.value });
-      if (res.ok) { toast('Moved to ' + res.json.folder + '. The Photos tab follows on the next photos run.'); again(); }
-      else { toast(res.status === 409 && res.json.currentPath ? 'Moved in Drive since you loaded it (now in ' + res.json.currentPath + '). Not changed.' : bad(res), true); if (res.status === 409) again(); }
+      if (res.ok) {
+        r.path = res.json.folder.replace(/^Lenches Photos( \/ )?/, '');
+        toast('Moved to ' + res.json.folder + '. Village and subject in the Photos tab follow on the next photos run.');
+        changed(r);
+      } else { toast(res.status === 409 && res.json.currentPath ? 'Moved in Drive since you loaded it (now in ' + res.json.currentPath + '). Not changed.' : bad(res), true); if (res.status === 409) changed(r); }
     } },
-    h('label', { class: 'f', for: mid }, 'Folder'),
-    h('div', { class: 'toolbar' }, h('div', { class: 'spacer' }, dest), h('button', { class: 'btn', type: 'submit' }, 'Move')),
-    h('p', { class: 'meta' }, 'Village and subject come from the folder: Village (or General) / Subject.')));
+    h('label', { class: 'f', for: mid }, 'Move to folder (village or General, then subject)'),
+    h('div', { class: 'toolbar' }, h('div', { class: 'spacer' }, dest), h('button', { class: 'btn', type: 'submit' }, 'Move'))));
 
     var pid = 'fp-' + r.drive_id;
     var fid = 'fnew-' + r.drive_id;
     var parent = folderSelect(pid, folders, file.folderId);
-    var fname = h('input', { class: 'f', id: fid, maxlength: 60 });
-    out.push(h('h3', null, 'New folder'));
+    var fname = h('input', { class: 'f', id: fid, maxlength: 60, placeholder: 'Folder name' });
     out.push(h('form', { onsubmit: async function (e) {
       e.preventDefault();
       var res = await fileOp({ op: 'folder', parent: parent.value, name: fname.value });
-      if (res.ok) { toast('Folder made: ' + res.json.path); again(); }
-      else toast(bad(res), true);
+      if (!res.ok) { toast(bad(res), true); return; }
+      toast('Folder made: ' + res.json.path);
+      if (Array.isArray(S.data.photoFolders)) {
+        S.data.photoFolders.push({ id: res.json.id, names: res.json.path.split(' / ').slice(1) });
+        S.data.photoFolders.sort(function (a, b) { return a.names.join(' / ').localeCompare(b.names.join(' / ')); });
+      }
+      changed(r);
     } },
-    h('label', { class: 'f', for: pid }, 'Inside'), parent,
-    h('label', { class: 'f', for: fid }, 'Name'),
+    h('label', { class: 'f', for: pid }, 'New folder inside'), parent,
     h('div', { class: 'toolbar' }, h('div', { class: 'spacer' }, fname), h('button', { class: 'btn', type: 'submit' }, 'Make folder'))));
     return out;
   }

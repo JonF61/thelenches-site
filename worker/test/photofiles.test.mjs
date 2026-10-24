@@ -425,3 +425,51 @@ test('Router: photo-file endpoints need Access and CSRF, then work', async () =>
   assert.deepEqual(files.photoOther00004.parents, ['folderRousLench']);
   assertNeverBins(calls);
 });
+
+/* ------------------------------------------- folder views and text edits -- */
+
+test('State: every Photos row still in Drive (with _waiting) and the Lenches Photos folders', async () => {
+  const { photos } = fakeWorld();
+  photos.push(['photoGone000007', 'General', 'gone.jpg', 'missing', '', '', '', '']);
+  const r = await worker.fetch(new Request(`${ORIGIN}/admin/api/state`, { headers: { 'cf-access-jwt-assertion': await accessJwt() } }), env());
+  const s = await r.json();
+  assert.equal(r.status, 200);
+  assert.deepEqual(s.photos.rows.map((x) => [x.drive_id, x._waiting]), [
+    ['photoChurchA001', false], ['photoChurchB002', true], ['photoChurchC003', true], ['photoOther00004', true], ['photoOutside005', true],
+  ], 'missing rows left out; approved ones kept for the folder views');
+  assert.deepEqual(s.photoFolders.map((f) => f.names.join(' / ')), ['General', 'Rous Lench', 'Rous Lench / Churches']);
+});
+
+test('State: To delete is not offered as a folder view', async () => {
+  const { files } = fakeWorld();
+  files.binFolder0001 = folder('binFolder0001', 'To delete', ROOT);
+  files.binSub0000001 = folder('binSub0000001', 'Old', 'binFolder0001');
+  const r = await worker.fetch(new Request(`${ORIGIN}/admin/api/state`, { headers: { 'cf-access-jwt-assertion': await accessJwt() } }), env());
+  assert.ok(!(await r.json()).photoFolders.some((f) => f.names.includes('To delete')));
+});
+
+test('Edit: Photos description and alt text are editable, stale-checked and length-limited', async () => {
+  const { photos, calls } = fakeWorld();
+  photos[0].push('alt_text', 'description');
+  photos.slice(1).forEach((row) => row.push('Church tower', 'Taken in snow.'));
+  const csrf = await makeCsrf(env(), ADMIN);
+  const token = await accessJwt();
+  const edit = async (body) => worker.fetch(new Request(`${ORIGIN}/admin/api/edit`, {
+    method: 'POST', body: JSON.stringify({ tab: 'Photos', key: 'photoOther00004', ...body }),
+    headers: { 'cf-access-jwt-assertion': token, origin: ORIGIN, 'content-type': 'application/json', 'x-csrf-token': csrf },
+  }), env());
+  let r = await edit({ field: 'alt_text', expected: 'Church tower', value: 'Village hall from the green' });
+  assert.equal(r.status, 200);
+  assert.equal(photos[4][8], 'Village hall from the green');
+  r = await edit({ field: 'description', expected: 'Old text', value: 'New note' });
+  assert.equal(r.status, 409, 'stale');
+  assert.equal((await r.json()).current, 'Taken in snow.');
+  r = await edit({ field: 'description', expected: 'Taken in snow.', value: 'Slightly blurred.' });
+  assert.equal(r.status, 200);
+  assert.equal(photos[4][9], 'Slightly blurred.');
+  r = await edit({ field: 'alt_text', expected: 'Village hall from the green', value: 'x'.repeat(126) });
+  assert.equal(r.status, 400, 'alt text over 125 characters');
+  r = await edit({ field: 'slug', expected: '', value: 'new-slug' });
+  assert.equal(r.status, 400, 'other columns stay read-only');
+  assert.equal(calls.writes.length, 2);
+});

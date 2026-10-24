@@ -4,8 +4,9 @@
 // so the workers.dev URL can't skip it. The Sheet stays the source of truth.
 //   GET  /admin, /admin/app.js, /admin/app.css   the panel (ui/client.js, ui/css.js)
 //   GET  /admin/api/session         { email, csrf }
-//   GET  /admin/api/state           Pending, Replies (awaiting and still owed), Photos,
-//                                   holiday mode, latest newsletter, Health, watchdog
+//   GET  /admin/api/state           Pending, Replies (awaiting and still owed), Photos (all
+//                                   in Drive) and the Lenches Photos folders, holiday mode,
+//                                   latest newsletter, Health, watchdog
 //   GET  /admin/api/mail-images?m=  every image in one email (for a Pending item)
 //   POST /admin/api/edit            { tab, key, field, expected, value }: one plain field
 //                                   edit, refused (409, current value) if the cell changed
@@ -30,7 +31,7 @@ import { getValues, sheetGids, gmailImage, gmailImageParts, driveImage } from '.
 import { readTable, readSettingsPairs, editCell, checkedWrite } from './sheet.js';
 import { planPending, planReply, planPhoto, trustKeyFor, truthy } from './actions.js';
 import { owedReplies } from './owed.js';
-import { fileInfo, dupMembers, renameFile, moveFile, newFolder, discardFile } from './photofiles.js';
+import { fileInfo, folderList, dupMembers, renameFile, moveFile, newFolder, discardFile } from './photofiles.js';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 
@@ -101,10 +102,10 @@ function organiserImages(t) {
 const pick = (row, keys) => Object.fromEntries(keys.filter((k) => k in row).map((k) => [k, row[k]]));
 
 async function state(env, email) {
-  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog] = await settled([
+  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders] = await settled([
     readTable(env, 'Pending'), readTable(env, 'Replies'), readTable(env, 'Photos'),
     readSettingsPairs(env), readTable(env, 'Health'), readTable(env, 'Issues'), sheetGids(env),
-    readSources(env), readTable(env, 'Image fetch'), watchdog(env),
+    readSources(env), readTable(env, 'Image fetch'), watchdog(env), folderList(env),
   ]);
   const holiday = settings.error ? settings : (settings.find((p) => p.key === 'holiday_mode') || { value: '' });
   const filled = (t) => t.rows.filter((r) => Object.entries(r).some(([k, v]) => k !== '_row' && v !== ''));
@@ -141,12 +142,18 @@ async function state(env, email) {
     pending: pend,
     replies: replies.error ? replies : { headers: replies.headers, rows: replies.rows.filter((r) => r.status === 'awaiting') },
     owed,
+    // Every photo still in Drive (for the folder views); _waiting = needs a decision.
     photos: photos.error ? photos : {
       headers: photos.headers,
       rows: photos.rows
-        .filter((r) => r.drive_id && PHOTO_WAITING.has(String(r.status || '').trim().toLowerCase()))
-        .map((r) => ({ ...r, _organiser: fromWeb[r.drive_id] || null })),
+        .filter((r) => r.drive_id && String(r.status || '').trim().toLowerCase() !== 'missing')
+        .map((r) => ({
+          ...r,
+          _waiting: PHOTO_WAITING.has(String(r.status || '').trim().toLowerCase()),
+          _organiser: fromWeb[r.drive_id] || null,
+        })),
     },
+    photoFolders: folders,
   };
 }
 

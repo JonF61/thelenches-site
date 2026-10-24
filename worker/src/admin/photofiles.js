@@ -127,6 +127,14 @@ export function folderChoices(rootId, tree) {
       .sort((a, b) => a.path.localeCompare(b.path))];
 }
 
+// Folders under root for the panel's Photos menu (not To delete): [{ id, names }], by path.
+export async function folderList(env) {
+  const { tree } = await loadTree(env);
+  return [...tree.values()].filter((f) => !f.toDelete)
+    .map((f) => ({ id: f.id, names: f.names.map((n) => String(n).trim()) }))
+    .sort((a, b) => a.names.join(' / ').localeCompare(b.names.join(' / ')));
+}
+
 async function loadTree(env) {
   const root = rootOf(env);
   return { root, tree: folderTree(root, await listFolders(env)) };
