@@ -1,11 +1,18 @@
 ---
-layout: base.njk
-title: Community
-description: Groups and clubs, village halls and churches across the Lenches villages in Worcestershire.
-intro: Clubs, halls and churches across the Lenches.
-cards:
-  - { title: "Groups & Clubs", url: "/groups/", icon: users, text: "Clubs, societies and activities across the villages." }
-  - { title: "Village Halls", url: "/halls/", icon: hall, text: "Church Lench and Rous Lench halls, history and bookings." }
-  - { title: "Churches", url: "/churches/", icon: church, text: "Service times and readings across the ARCH Benefice." }
+permalink: /community/
+eleventyExcludeFromCollections: true
 ---
-{% include "hub.njk" %}
+{#- Community page folded into the home page (24 Oct 2026). Old links land on its home page section. -#}
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex">
+  <meta http-equiv="refresh" content="0; url={{ '/#community' | url }}">
+  <link rel="canonical" href="{{ site.url }}/">
+  <title>Moved — The Lenches</title>
+</head>
+<body>
+  <p>This page has moved to <a href="{{ '/#community' | url }}">Community on the home page</a>.</p>
+</body>
+</html>
