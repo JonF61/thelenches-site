@@ -5,7 +5,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '5';
+export const UI_VERSION = '6';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -795,6 +795,16 @@ export const CLIENT_JS = String.raw`
     }));
   }
 
+  // Folders are made in Google Drive itself, never by the panel, so they belong to Jon.
+  function photosLink(text) {
+    var id = str(S.data && S.data.photosRoot);
+    return id ? h('a', { href: 'https://drive.google.com/drive/folders/' + encodeURIComponent(id), target: '_blank', rel: 'noopener' }, text) : text;
+  }
+  function newFolderNote() {
+    return h('p', { class: 'meta' }, 'Need a new folder? Make it in Google Drive so it belongs to you: open ',
+      photosLink('Lenches Photos'), ', go into the village (or General) folder, click New, then New folder. Press Reload here and it appears in the list.');
+  }
+
   // After any change: drop the cached Drive state and redraw (the section reloads).
   function changed(r) { delete S.files[r.drive_id]; render(); }
 
@@ -837,23 +847,7 @@ export const CLIENT_JS = String.raw`
     h('label', { class: 'f', for: mid }, 'Move to folder (village or General, then subject)'),
     h('div', { class: 'toolbar' }, h('div', { class: 'spacer' }, dest), h('button', { class: 'btn', type: 'submit' }, 'Move'))));
 
-    var pid = 'fp-' + r.drive_id;
-    var fid = 'fnew-' + r.drive_id;
-    var parent = folderSelect(pid, folders, file.folderId);
-    var fname = h('input', { class: 'f', id: fid, maxlength: 60, placeholder: 'Folder name' });
-    out.push(h('form', { onsubmit: async function (e) {
-      e.preventDefault();
-      var res = await fileOp({ op: 'folder', parent: parent.value, name: fname.value });
-      if (!res.ok) { toast(bad(res), true); return; }
-      toast('Folder made: ' + res.json.path);
-      if (Array.isArray(S.data.photoFolders)) {
-        S.data.photoFolders.push({ id: res.json.id, names: res.json.path.split(' / ').slice(1) });
-        S.data.photoFolders.sort(function (a, b) { return a.names.join(' / ').localeCompare(b.names.join(' / ')); });
-      }
-      changed(r);
-    } },
-    h('label', { class: 'f', for: pid }, 'New folder inside'), parent,
-    h('div', { class: 'toolbar' }, h('div', { class: 'spacer' }, fname), h('button', { class: 'btn', type: 'submit' }, 'Make folder'))));
+    out.push(newFolderNote());
     return out;
   }
 
@@ -870,7 +864,8 @@ export const CLIENT_JS = String.raw`
       if (!res.ok) { box.replaceChildren(h('div', { class: 'note bad' }, 'Could not load: ' + bad(res))); return; }
       var list = res.json.members;
       var els = [h('p', { class: 'meta' }, list.length > 1
-        ? 'Copies that look the same (same picture, perhaps resized). "To delete" is a folder in Lenches Photos: nothing is binned, you empty it yourself in Drive.'
+        ? ['Copies that look the same (same picture, perhaps resized). "To delete" is a folder directly in ', photosLink('Lenches Photos'),
+          ': nothing is binned, you empty it yourself in Drive. If it is not there yet, make it in Drive first (New, then New folder, named To delete).']
         : 'No other copy found: the copy it was flagged against may have been removed or edited since.')];
       els.push(h('div', { class: 'copies' }, list.map(function (m) { return copyCard(m, list, show); })));
       box.replaceChildren.apply(box, els);

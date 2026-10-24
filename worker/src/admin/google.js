@@ -4,7 +4,7 @@
 // signed with WebCrypto and are cached until shortly before they expire.
 //   Sheets   read and write the Lenches Pipeline Sheet (SHEET_ID in wrangler.toml)
 //   Drive    read-only, for Photos-tab images (the folder is already shared with the account);
-//            full drive scope only for the panel's rename / move / new folder (photofiles.js),
+//            full drive scope only for the panel's rename / move (photofiles.js),
 //            as the account itself, never impersonating anyone: it reaches only what is
 //            shared with it (Lenches Photos, as Editor), and photofiles.js refuses anything
 //            outside that tree. drive.file would not do: it covers only files the app made.
@@ -218,10 +218,11 @@ export async function driveImage(env, fileId, size = 0) {
 /* ---------------------------------------------------------- Drive files -- */
 
 // Drive metadata reads and the panel's file changes, as the service account itself (no
-// sub). The only writes are PATCH (rename, change of folder) and POST (new folder):
-// DELETE, emptyTrash and "trashed" are refused here, so nothing can bin or delete a file.
+// sub). The only write is PATCH (rename, change of folder): POST (which would create files
+// or folders owned by the account), DELETE, emptyTrash and "trashed" are refused here, so
+// nothing can be created, binned or deleted.
 export async function driveJson(env, path, { method = 'GET', body } = {}) {
-  if (!['GET', 'PATCH', 'POST'].includes(method)) throw new Error(`Drive ${method} is not allowed`);
+  if (!['GET', 'PATCH'].includes(method)) throw new Error(`Drive ${method} is not allowed`);
   if (method !== 'GET' && (/trash/i.test(path) || (body && Object.keys(body).some((k) => /trash/i.test(k))))) {
     throw new Error('Drive: binning files is not allowed');
   }
