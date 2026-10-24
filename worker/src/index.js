@@ -5,6 +5,8 @@
 //   GET  /u?t=TOKEN  unsubscribe confirm page (people clicking the footer link)
 //   POST /u?t=TOKEN  one-click unsubscribe (RFC 8058: mail providers POST here) or the
 //                    confirm page's button; fires repository_dispatch "unsubscribe"
+//   /admin, /admin/*  admin panel (admin/index.js): Cloudflare Access only, decisions go
+//                    through the same decide() as POST /a (core.js)
 //   cron WATCHDOG_CRON  ingestion and daily diagnostic still running, site up, and on
 //                       Thursdays from 07:30 UK that the newsletter build has started;
 //                       alerts via GitHub
@@ -30,6 +32,11 @@
 // The Rebuild button's build carries rebuild: true, which lifts the Wednesday 18:00
 // deadline cutoff (the scheduled 06:30 build keeps it).
 
+import {
+  ACTIONS, validPayload, github, dispatch, decide, cleanReason, cleanBody,
+} from './core.js';
+import { handleAdmin } from './admin/index.js';
+
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
@@ -47,7 +54,6 @@ const HOURLY_CRON = '0,17 * * * *';
 const INGEST_MINUTE = '17';
 const DAILY_HM = '07:00';            // UK time, every day: daily approvals email
 const INGEST_HOURS = [6, 8, 10, 12, 14, 16, 18, 20, 22]; // UK hours, as ingest.yml's gate
-const NL_MODES = ['shadow', 'canary', 'live'];
 
 // UK times. payload(date) gets the UK date (YYYY-MM-DD) of the slot.
 const SLOTS = [
@@ -58,29 +64,11 @@ const SLOTS = [
   { dow: 'Thu', hm: '17:00', event: 'newsletter', payload: (d) => ({ action: 'remind', issue_date: d }) },
 ];
 
-// action -> [confirm verb, done word, button class]
-const ACTIONS = {
-  approve: ['Approve', 'Approved', 'approve'],
-  reject: ['Reject', 'Rejected', 'reject'],
-  approve_own: ['Approve with their wording', 'Approved with their wording', 'approve'],
-  approve_rewrite: ['Approve with rewrite', 'Approved with our rewrite', 'approve'],
-  trust: ['Trust this source', 'Source trusted', 'approve'],
-  send: ['Approve and send reply', 'Reply approved', 'approve'],
-  skip: ['Reject reply', 'Reply rejected', 'reject'],
-  edit: ['Send edited reply', 'Edited reply queued to send', 'approve'],
-  redraft: ['Redraft reply', 'Redraft requested', 'approve'],
-  close: ['Close, no reply needed', 'Closed', 'reject'],
-  nlsend: ['Send newsletter', 'Send started', 'approve'],
-  nlbuild: ['Rebuild newsletter', 'Rebuild started', 'approve'],
-  unsub: ['Unsubscribe', 'Unsubscribed', 'reject'],
-};
-
 /* -------------------------------------------------------------- helpers -- */
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
   { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
 ));
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function b64urlToBytes(s) {
   const b64 = s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4);
@@ -88,24 +76,6 @@ function b64urlToBytes(s) {
   return Uint8Array.from(bin, (c) => c.charCodeAt(0));
 }
 
-function validPayload(p) {
-  if (!p || !Object.prototype.hasOwnProperty.call(ACTIONS, p.a)) return false;
-  if (!/^[A-Za-z0-9_-]{1,100}$/.test(String(p.i || ''))) return false;
-  if (p.a === 'nlsend' || p.a === 'nlbuild') {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(p.i)) return false;
-  }
-  if (p.a === 'edit' && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
-  if (p.a === 'trust') {
-    const k = String(p.k || '');
-    if (k.length > 300 || !(/^[^\s@<>]+@[^\s@<>]+$/.test(k) || /^https?:\/\/\S+$/i.test(k))) return false;
-  }
-  if (p.a === 'nlsend') {
-    if (!/^[0-9a-f]{12,64}$/.test(String(p.h || ''))) return false;
-    if (!Number.isInteger(p.n) || p.n < 0 || p.n > 5000) return false;
-    if (!NL_MODES.includes(p.m)) return false;
-  }
-  return true;
-}
 
 // Returns the payload, { expired: true }, or null if the token is invalid.
 async function verifyToken(token, secret) {
@@ -167,55 +137,8 @@ const expiredPage = () => page('Link expired',
 const failedPage = () => page('Something went wrong',
   '<h1>Something went wrong</h1><p>GitHub did not accept the request. Please try again in a few minutes; nothing has changed.</p>', 502);
 
-function github(env, path, init = {}) {
-  return fetch(`https://api.github.com${path}`, {
-    ...init,
-    headers: {
-      authorization: `Bearer ${env.DISPATCH_TOKEN}`,
-      accept: 'application/vnd.github+json',
-      'x-github-api-version': '2022-11-28',
-      'user-agent': 'lenches-approvals-worker',
-      ...(init.body ? { 'content-type': 'application/json' } : {}),
-    },
-  });
-}
 
-// repository_dispatch with retries. Returns true on HTTP 204.
-async function dispatch(env, eventType, clientPayload, tries = 1) {
-  let last = '';
-  for (let n = 1; n <= tries; n += 1) {
-    try {
-      const r = await github(env, `/repos/${env.REPO}/dispatches`, {
-        method: 'POST', body: JSON.stringify({ event_type: eventType, client_payload: clientPayload }),
-      });
-      if (r.status === 204) return true;
-      last = `HTTP ${r.status} ${(await r.text()).slice(0, 200)}`;
-    } catch (e) {
-      last = e.message;
-    }
-    if (n < tries) await sleep(3000 * n);
-  }
-  console.error(`Dispatch "${eventType}" failed: ${last}`);
-  return false;
-}
 
-// Optional reason typed on the Reject reply page (Reply feedback tab): one line, short.
-// Also the Redraft page's instruction (required, up to 500 characters).
-const cleanReason = (v, max = 300) => String(v || '').replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, max);
-// Edited reply text: keeps line breaks, drops other control characters.
-const cleanBody = (v) => String(v || '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f\u007f]+/g, ' ').trim().slice(0, 3000);
-
-function dispatchFor(p, reason = '', body = '') {
-  if (p.a === 'nlsend') {
-    return ['newsletter', {
-      action: 'send', issue_date: p.i, confirm_count: String(p.n), expect_hash: p.h, expect_mode: p.m,
-    }];
-  }
-  if (p.a === 'nlbuild') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true }];
-  if ((p.a === 'skip' || p.a === 'redraft') && reason) return ['approval', { id: p.i, action: p.a, reason }];
-  if (p.a === 'edit') return ['approval', { id: p.i, action: p.a, body, reason }];
-  return ['approval', { id: p.i, action: p.a }];
-}
 
 /* ------------------------------------------------------------ approvals -- */
 
@@ -287,8 +210,7 @@ ${confirmExtra(p)}
     if (p.a === 'redraft' && reason.length < 3) return page('Nothing to change', '<h1>Say what to change</h1><p>The box was empty. Go back and type what Holly should change.</p>', 400);
 
     if (p.a === 'edit' && body.length < 10) return page('Nothing to send', '<h1>Nothing to send</h1><p>The reply text was empty. Go back and try again.</p>', 400);
-    const [eventType, payload] = dispatchFor(p, reason, body);
-    if (!(await dispatch(env, eventType, payload, 2))) return failedPage();
+    if (!(await decide(env, p, reason, body))) return failedPage();
     const [, done] = ACTIONS[p.a];
     return page(done, `
 <h1>${esc(done)}</h1>
@@ -566,6 +488,7 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === '/a') return handleApproval(request, env);
     if (url.pathname === '/u') return handleUnsubscribe(request, env);
+    if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) return handleAdmin(request, env);
     return new Response('Lenches approvals', { headers: { 'content-type': 'text/plain' } });
   },
 
