@@ -3,6 +3,8 @@
 //  1. Scan "Lenches Photos": new files become Photos rows. The folder path carries
 //     meaning: <Village or General>/<Subject>/file; any "Rejected" folder = never
 //     use; folders starting "_" are ignored. A file that disappears = missing.
+//     "To delete" (directly under the root, filled by the admin panel) is ignored:
+//     its files get no new rows, and a row whose file is there is rejected, not missing.
 //     Files saved by the Image fetch tab (event images from the web) get target,
 //     credit and, for performer promo shots, people_ok pre-filled from that row.
 //  2. Describe new rows: dHash (duplicates), Sonnet alt text, note, people and stock check.
@@ -164,6 +166,7 @@ async function main() {
 
   /* ------------------------------------------------------------- 1. Scan -- */
   const files = await drive.walk(root);
+  const binned = files.toDelete || new Set();
   const byId = new Map(files.map((f) => [f.id, f]));
   let rows = await g.readTable(TAB);
   const web = await webRows();
@@ -171,7 +174,7 @@ async function main() {
 
   // A failed or partial listing must never unpublish the library.
   const known = rows.filter((r) => r.drive_id && low(r.status) !== 'missing');
-  const seen = known.filter((r) => byId.has(r.drive_id)).length;
+  const seen = known.filter((r) => byId.has(r.drive_id) || binned.has(r.drive_id)).length;
   if (known.length >= 5 && seen < known.length / 2) {
     throw new Error(`Drive listing found only ${seen} of ${known.length} known photos: stopping so nothing is unpublished by mistake`);
   }
@@ -217,6 +220,10 @@ async function main() {
     if (!row.drive_id) continue;
     const f = byId.get(row.drive_id);
     const st = low(row.status);
+    if (!f && binned.has(row.drive_id)) {
+      if (st !== 'rejected') set(row, { status: 'rejected', notes: `${today()} in To delete` });
+      continue;
+    }
     if (!f) {
       if (st !== 'missing') set(row, { status: 'missing', notes: `${today()} not found in Drive (deleted, moved out, or in a _ folder)` });
       continue;

@@ -216,7 +216,10 @@ test('CSRF: token is tied to the email and expires', async () => {
   const t = await makeCsrf(e, ADMIN);
   assert.equal(await checkCsrf(e, ADMIN, t), true);
   assert.equal(await checkCsrf(e, 'second@example.org', t), false);
-  assert.equal(await checkCsrf(e, ADMIN, t.replace(/.$/, (c) => (c === 'A' ? 'B' : 'A'))), false);
+  // Tamper mid-signature: the last base64url character carries 2 ignored padding bits,
+  // so changing it alone ("A" to "B") can leave the signature bytes the same (1 run in 16).
+  const mid = t.length - 10;
+  assert.equal(await checkCsrf(e, ADMIN, t.slice(0, mid) + (t[mid] === 'A' ? 'B' : 'A') + t.slice(mid + 1)), false);
   assert.equal(await checkCsrf(e, ADMIN, await makeCsrf(e, ADMIN, Date.now() - CSRF_TTL_MS - 1000)), false);
   assert.equal(await checkCsrf(e, ADMIN, ''), false);
   assert.equal(await checkCsrf({ ...e, APPROVAL_SIGNING_KEY: 'other' }, ADMIN, t), false);

@@ -38,6 +38,9 @@ INGEST = "on"
 DAILY = "on"
 # Lenches Pipeline Sheet, read and written by the admin panel (same ID as the workflows).
 SHEET_ID = "1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI"
+# "Lenches Photos" in Drive (same ID as photos.yml): the panel renames and moves photos only
+# inside this folder, as the service account (shared on it as Editor).
+PHOTOS_FOLDER_ID = "0BwdIG5DOmCgkT2thdWs2LTdIbzQ"
 
 [observability]
 enabled = true

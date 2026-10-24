@@ -3,7 +3,11 @@
 // GOOGLE_SA_KEY, the same JSON key as the GitHub secret). Access tokens come from a JWT
 // signed with WebCrypto and are cached until shortly before they expire.
 //   Sheets   read and write the Lenches Pipeline Sheet (SHEET_ID in wrangler.toml)
-//   Drive    read-only, for Photos-tab images (the folder is already shared with the account)
+//   Drive    read-only, for Photos-tab images (the folder is already shared with the account);
+//            full drive scope only for the panel's rename / move / new folder (photofiles.js),
+//            as the account itself, never impersonating anyone: it reaches only what is
+//            shared with it (Lenches Photos, as Editor), and photofiles.js refuses anything
+//            outside that tree. drive.file would not do: it covers only files the app made.
 //   Gmail    read-only, impersonating GMAIL_USER (Worker secret) through the same
 //            domain-wide delegation the ingestion uses: Pending images are still
 //            email attachments until publish.
@@ -14,10 +18,12 @@ const enc = new TextEncoder();
 export const SCOPES = {
   sheets: 'https://www.googleapis.com/auth/spreadsheets',
   drive: 'https://www.googleapis.com/auth/drive.readonly',
+  driveWrite: 'https://www.googleapis.com/auth/drive',
   gmail: 'https://www.googleapis.com/auth/gmail.readonly',
 };
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const SHEETS = 'https://sheets.googleapis.com/v4/spreadsheets';
+export const DRIVE_FILES = 'https://www.googleapis.com/drive/v3/files';
 
 const tokens = new Map(); // `${scope}|${sub}` -> { token, exp }
 const keyCache = { pem: '', key: null };
@@ -207,4 +213,22 @@ export async function driveImage(env, fileId, size = 0) {
   if (!IMAGE_TYPES.includes(type)) throw Object.assign(new Error(`not a web image (${type})`), { status: 415 });
   const r = await google(env, SCOPES.drive, `${base}?alt=media&supportsAllDrives=true`);
   return { type, bytes: new Uint8Array(await r.arrayBuffer()) };
+}
+
+/* ---------------------------------------------------------- Drive files -- */
+
+// Drive metadata reads and the panel's file changes, as the service account itself (no
+// sub). The only writes are PATCH (rename, change of folder) and POST (new folder):
+// DELETE, emptyTrash and "trashed" are refused here, so nothing can bin or delete a file.
+export async function driveJson(env, path, { method = 'GET', body } = {}) {
+  if (!['GET', 'PATCH', 'POST'].includes(method)) throw new Error(`Drive ${method} is not allowed`);
+  if (method !== 'GET' && (/trash/i.test(path) || (body && Object.keys(body).some((k) => /trash/i.test(k))))) {
+    throw new Error('Drive: binning files is not allowed');
+  }
+  const scope = method === 'GET' ? SCOPES.drive : SCOPES.driveWrite;
+  const sep = path.includes('?') ? '&' : '?';
+  const r = await google(env, scope, `${DRIVE_FILES}${path}${sep}supportsAllDrives=true`, {
+    method, ...(body ? { body: JSON.stringify(body) } : {}),
+  });
+  return r.json();
 }

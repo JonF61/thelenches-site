@@ -5,7 +5,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '1';
+export const UI_VERSION = '2';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -658,9 +658,173 @@ export const CLIENT_JS = String.raw`
       h('button', { class: 'btn danger', onclick: function () {
         if (window.confirm('Reject ' + str(r.filename) + '? It will not be published.')) act('photo', r.drive_id, 'reject', { expected: r.status }, 'Rejected');
       } }, 'Reject'),
+      h('button', { class: 'btn', onclick: function () { overlay('Rename or move', fileForm(r)); } }, 'Rename or move'),
+      str(r.duplicate_of) ? h('button', { class: 'btn', onclick: function () { overlay('Possible duplicates', copiesView(r)); } }, 'Compare copies') : null,
       str(r.drive_link) ? h('a', { class: 'btn link', href: str(r.drive_link), target: '_blank', rel: 'noopener' }, 'Open in Drive') : null,
       sheetLink('Photos', r._row)));
     return c;
+  }
+
+  /* ---------------------------------------------------------- photo files -- */
+
+  function fileOp(body) { return api('/admin/api/photo-file', body); }
+  function bad(res) { return res.json.error || ('HTTP ' + res.status); }
+
+  // Rename, change of folder and new folder, from the file's live Drive state.
+  function fileForm(r) {
+    var box = h('div', null, h('p', { class: 'meta' }, 'Loading from Drive…'));
+    var show = async function () {
+      var res = await api('/admin/api/photo-file?id=' + encodeURIComponent(r.drive_id));
+      if (!res.ok) { box.replaceChildren(h('div', { class: 'note bad' }, 'Could not load: ' + bad(res))); return; }
+      box.replaceChildren.apply(box, fileParts(r, res.json.file, res.json.folders, show));
+    };
+    show();
+    return box;
+  }
+
+  function splitExt(name) {
+    var m = String(name).match(/^(.+?)(\.[A-Za-z0-9]{1,5})$/);
+    return m ? { stem: m[1], ext: m[2] } : { stem: String(name), ext: '' };
+  }
+
+  function folderSelect(id, folders, current) {
+    return h('select', { class: 'f', id: id }, folders.map(function (f) {
+      return h('option', { value: f.id, selected: f.id === current ? true : null }, f.path);
+    }));
+  }
+
+  function fileParts(r, file, folders, again) {
+    var out = [];
+    out.push(h('div', { class: 'card' },
+      h('h2', null, file.name),
+      h('div', { class: 'meta' }, 'In ' + file.folder),
+      file.published ? h('div', { class: 'badges' }, h('span', { class: 'badge info' }, 'On the website')) : null));
+    if (file.toDelete) {
+      out.push(h('div', { class: 'note warn' }, 'This file is in To delete. Move it out in Drive to use it again.'));
+      return out;
+    }
+
+    var parts = splitExt(file.name);
+    var nid = 'fn-' + r.drive_id;
+    var nameIn = h('input', { class: 'f', id: nid, value: parts.stem, maxlength: 120 });
+    out.push(h('h3', null, 'Rename'));
+    out.push(h('form', { onsubmit: async function (e) {
+      e.preventDefault();
+      var res = await fileOp({ op: 'rename', id: r.drive_id, expected: file.name, name: nameIn.value });
+      if (res.ok) { r.filename = res.json.name; toast('Renamed to ' + res.json.name); again(); render(); }
+      else { toast(res.status === 409 && res.json.current ? 'Renamed in Drive since you loaded it (now "' + res.json.current + '"). Not changed.' : bad(res), true); if (res.status === 409) again(); }
+    } },
+    h('label', { class: 'f', for: nid }, 'New name' + (parts.ext ? ' (' + parts.ext + ' is kept)' : '')),
+    h('div', { class: 'toolbar' }, h('div', { class: 'spacer' }, nameIn), h('button', { class: 'btn', type: 'submit' }, 'Rename')),
+    h('p', { class: 'meta' }, file.published
+      ? 'It stays at the same web address: the site keeps the name it was first published under.'
+      : 'Characters such as / \\ : * ? " < > | are dropped.')));
+
+    var mid = 'fm-' + r.drive_id;
+    var dest = folderSelect(mid, folders, file.folderId);
+    out.push(h('h3', null, 'Move to another folder'));
+    out.push(h('form', { onsubmit: async function (e) {
+      e.preventDefault();
+      if (dest.value === file.folderId) { toast('It is already in that folder'); return; }
+      var to = folders.find(function (f) { return f.id === dest.value; });
+      if (file.published && !window.confirm('This photo is on the website. Its village and subject follow its folder; in a Rejected folder or a folder starting with _ it comes off the site on the next photos run.\n\nMove it to ' + to.path + '?')) return;
+      var res = await fileOp({ op: 'move', id: r.drive_id, expectedParent: file.folderId, to: dest.value });
+      if (res.ok) { toast('Moved to ' + res.json.folder + '. The Photos tab follows on the next photos run.'); again(); }
+      else { toast(res.status === 409 && res.json.currentPath ? 'Moved in Drive since you loaded it (now in ' + res.json.currentPath + '). Not changed.' : bad(res), true); if (res.status === 409) again(); }
+    } },
+    h('label', { class: 'f', for: mid }, 'Folder'),
+    h('div', { class: 'toolbar' }, h('div', { class: 'spacer' }, dest), h('button', { class: 'btn', type: 'submit' }, 'Move')),
+    h('p', { class: 'meta' }, 'Village and subject come from the folder: Village (or General) / Subject.')));
+
+    var pid = 'fp-' + r.drive_id;
+    var fid = 'fnew-' + r.drive_id;
+    var parent = folderSelect(pid, folders, file.folderId);
+    var fname = h('input', { class: 'f', id: fid, maxlength: 60 });
+    out.push(h('h3', null, 'New folder'));
+    out.push(h('form', { onsubmit: async function (e) {
+      e.preventDefault();
+      var res = await fileOp({ op: 'folder', parent: parent.value, name: fname.value });
+      if (res.ok) { toast('Folder made: ' + res.json.path); again(); }
+      else toast(bad(res), true);
+    } },
+    h('label', { class: 'f', for: pid }, 'Inside'), parent,
+    h('label', { class: 'f', for: fid }, 'Name'),
+    h('div', { class: 'toolbar' }, h('div', { class: 'spacer' }, fname), h('button', { class: 'btn', type: 'submit' }, 'Make folder'))));
+    return out;
+  }
+
+  function bytes(n) {
+    if (!n) return '';
+    return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.round(n / 1024) + ' KB';
+  }
+
+  // Every copy in the group side by side, with Keep this one / Move to To delete.
+  function copiesView(r) {
+    var box = h('div', null, h('p', { class: 'meta' }, 'Loading copies…'));
+    var show = async function () {
+      var res = await api('/admin/api/photo-group?id=' + encodeURIComponent(r.drive_id));
+      if (!res.ok) { box.replaceChildren(h('div', { class: 'note bad' }, 'Could not load: ' + bad(res))); return; }
+      var list = res.json.members;
+      var els = [h('p', { class: 'meta' }, list.length > 1
+        ? 'Copies that look the same (same picture, perhaps resized). "To delete" is a folder in Lenches Photos: nothing is binned, you empty it yourself in Drive.'
+        : 'No other copy found: the copy it was flagged against may have been removed or edited since.')];
+      els.push(h('div', { class: 'copies' }, list.map(function (m) { return copyCard(m, list, show); })));
+      box.replaceChildren.apply(box, els);
+    };
+    show();
+    return box;
+  }
+
+  function copyCard(m, list, again) {
+    var src = '/admin/img/drive/' + encodeURIComponent(m.drive_id);
+    var facts = [
+      m.missing ? (m.refused || 'Not found in Drive') : 'In ' + m.folder,
+      m.width && m.height ? m.width + ' × ' + m.height : '',
+      bytes(m.size),
+      m.created ? 'Added ' + when(m.created) : ''
+    ].filter(Boolean);
+    var live = !m.missing && !m.toDelete;
+    var c = h('div', { class: 'card' },
+      live ? h('a', { href: src + '?size=1600', target: '_blank', rel: 'noopener' }, h('img', { src: src + '?size=400', alt: m.name || m.filename, loading: 'lazy' })) : null,
+      h('h3', null, m.name || m.filename),
+      h('div', { class: 'meta' }, facts.join(' · ')),
+      h('div', { class: 'badges' },
+        h('span', { class: 'badge' }, 'Status: ' + (m.status || 'new')),
+        m.published ? h('span', { class: 'badge bad' }, 'On the website') : h('span', { class: 'badge' }, 'Not published'),
+        m.toDelete ? h('span', { class: 'badge warn' }, 'In To delete') : null));
+    if (live) {
+      add(c, h('div', { class: 'actions' },
+        h('button', { class: 'btn primary', onclick: function () { keepOne(m, list, again); } }, 'Keep this one'),
+        h('button', { class: 'btn danger', onclick: async function () {
+          if (!window.confirm('Move ' + (m.name || m.filename) + ' to To delete and mark it rejected?')) return;
+          if (await discard(m)) again();
+        } }, 'Move to To delete')));
+    }
+    return c;
+  }
+
+  // One copy to To delete. A copy on the website needs a second, explicit yes.
+  async function discard(m) {
+    var name = m.name || m.filename;
+    var body = { op: 'discard', id: m.drive_id, expected: m.status, expectedParent: m.folderId };
+    if (m.published) {
+      if (!window.confirm(name + ' is ON THE WEBSITE. Moving it takes it off the site on the next photos run, and any page that names it loses the picture.\n\nTake it down and move it to To delete?')) return false;
+      body.confirmPublished = true;
+    }
+    var res = await fileOp(body);
+    if (res.ok) { S.done['photo:' + m.drive_id] = 'Rejected'; toast(res.json.message); return true; }
+    toast(name + ': ' + bad(res), true);
+    return false;
+  }
+
+  async function keepOne(keep, list, again) {
+    var others = list.filter(function (m) { return m.drive_id !== keep.drive_id && !m.missing && !m.toDelete; });
+    if (!others.length) { toast('No other copies to move'); return; }
+    if (!window.confirm('Keep ' + (keep.name || keep.filename) + ' and move these to To delete (marked rejected)?\n\n' +
+      others.map(function (m) { return '• ' + (m.name || m.filename) + ' (' + m.folder + ')' + (m.published ? ' – ON THE WEBSITE' : ''); }).join('\n'))) return;
+    for (var i = 0; i < others.length; i += 1) await discard(others[i]);
+    again();
+    render();
   }
 
   /* --------------------------------------------------------------- health -- */
