@@ -2,16 +2,19 @@
 // Panel script, served as /admin/app.js. Plain browser JavaScript, no framework. All text
 // from the Sheet or email goes in as text nodes (never innerHTML), so nothing in an item
 // can inject markup. Every write sends the value the page loaded (stale-write check).
+// Photos: a collapsible folder tree built from the live Drive folders, tick boxes, drag and
+// drop onto folders (desktop), Move to… (phone), each move stale-checked, with Undo.
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '8';
+export const UI_VERSION = '9';
 
 export const CLIENT_JS = String.raw`
 (function () {
   'use strict';
 
-  var S = { data: null, csrf: '', view: 'queue', filter: 'all', sel: {}, done: {}, imgs: {}, pf: '', files: {}, open: {} };
+  var S = { data: null, csrf: '', view: 'queue', filter: 'all', sel: {}, done: {}, imgs: {}, pf: '', files: {}, open: {},
+    picked: {}, ff: '', openF: {}, drag: null, busy: false };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
   var VIEWS = [['queue', 'Queue'], ['replies', 'Replies'], ['owed', 'Owed'], ['photos', 'Photos'], ['health', 'Health']];
@@ -227,7 +230,7 @@ export const CLIENT_JS = String.raw`
         onclick: function () { S.view = v[0]; closeOverlay(); render(); window.scrollTo(0, 0); }
       }, v[1], c[v[0]] === null ? null : h('span', { class: 'n' }, String(c[v[0]])));
       // Photos: its Drive folders listed below it on desktop (a dropdown on phones).
-      return v[0] === 'photos' && S.view === 'photos' && wide() ? [b, folderMenu(d)] : b;
+      return v[0] === 'photos' && S.view === 'photos' && wide() ? [b, folderTree(d, {})] : b;
     }));
   }
 
@@ -254,7 +257,10 @@ export const CLIENT_JS = String.raw`
     return h('div', {
       class: 'card' + (selected ? ' sel' : ''), tabindex: '0', role: 'button', 'aria-pressed': selected ? 'true' : 'false',
       onclick: function () { S.sel[kind] = id; render(); },
-      onkeydown: function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); S.sel[kind] = id; render(); } }
+      onkeydown: function (e) {
+        if (e.target !== e.currentTarget) return; // a tick box inside the card handles its own keys
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); S.sel[kind] = id; render(); }
+      }
     }, compact());
   }
 
@@ -274,7 +280,7 @@ export const CLIENT_JS = String.raw`
       content);
     document.body.appendChild(o);
     document.body.style.overflow = 'hidden';
-    var first = o.querySelector('input,textarea,select');
+    var first = o.querySelector('input:not([data-nofocus]),textarea,select');
     if (first) first.focus();
   }
   function closeOverlay() {
@@ -623,15 +629,16 @@ export const CLIENT_JS = String.raw`
     return h('div', { class: 'onsite meta' }, 'On the website: ', links);
   }
 
-  // Yes or no in a box over the page (over an overlay too), with the photo's page links.
-  function ask(message, pages, yes) {
+  // Yes or no in a box over the page (over an overlay too), with the photo's page links
+  // (or, for several photos, list: nodes naming each with its links).
+  function ask(message, pages, yes, list) {
     return new Promise(function (resolve) {
       var box;
       var esc = function (e) { if (e.key === 'Escape') { e.stopPropagation(); done(false); } };
       var done = function (v) { box.remove(); document.removeEventListener('keydown', esc, true); resolve(v); };
       var no = h('button', { class: 'btn', onclick: function () { done(false); } }, 'Cancel');
       box = h('div', { class: 'ask', role: 'alertdialog', 'aria-modal': 'true' },
-        h('div', { class: 'box' }, h('p', { class: 'msg' }, message), onSite(pages),
+        h('div', { class: 'box' }, h('p', { class: 'msg' }, message), list || onSite(pages),
           h('div', { class: 'actions' }, h('button', { class: 'btn danger', onclick: function () { done(true); } }, yes), no)));
       document.addEventListener('keydown', esc, true);
       document.body.appendChild(box);
@@ -650,22 +657,390 @@ export const CLIENT_JS = String.raw`
       return str(a.path).localeCompare(str(b.path)) || str(a.filename).localeCompare(str(b.filename));
     });
   }
-  function pickFolder(path) { S.pf = path; S.sel.photo = null; render(); window.scrollTo(0, 0); }
+  function pickFolder(path, key) {
+    S.pf = path; S.sel.photo = null; S.picked = {};
+    render(); window.scrollTo(0, 0);
+    if (key) { var el = findKey(document.querySelector('nav .tree'), key); if (el) el.focus(); }
+  }
 
-  // Desktop: under Photos in the side menu.
-  function folderMenu(d) {
+  /* ------------------------------------------------------ photo folders -- */
+
+  // The Photos folder menu (desktop sidebar) and the Move to… list come only from the live
+  // Drive folders in the state (photoFolders), never from names in code, so a folder made
+  // in Drive appears after Reload. Which folders are open is kept in this browser; if that
+  // can't be read, all start collapsed.
+  var OPEN_KEY = 'lenches-admin-open-folders';
+  function loadOpen() {
+    try {
+      var v = JSON.parse(window.localStorage.getItem(OPEN_KEY) || '[]');
+      var o = {};
+      if (Array.isArray(v)) v.forEach(function (id) { if (typeof id === 'string') o[id] = true; });
+      return o;
+    } catch (e) { return {}; }
+  }
+  function saveOpen() {
+    try { window.localStorage.setItem(OPEN_KEY, JSON.stringify(Object.keys(S.openF))); } catch (e) { /* kept for this visit only */ }
+  }
+  S.openF = loadOpen();
+
+  // { root, list, byId, kids (parent id -> folders), byPath (path -> id; '' if two share it) }
+  function folderModel(d) {
+    var root = str(d.photosRoot);
+    var list = photoFolders(d).map(function (f) {
+      return { id: f.id, parent: f.parent, names: f.names, path: f.names.join(' / '), name: f.names[f.names.length - 1], level: f.names.length };
+    });
+    var byId = Object.create(null);
+    var byPath = Object.create(null);
+    var kids = Object.create(null);
+    list.forEach(function (f) { byId[f.id] = f; byPath[f.path] = f.path in byPath ? '' : f.id; });
+    list.forEach(function (f) {
+      if (!byId[f.parent]) f.parent = (f.level > 1 && byPath[f.names.slice(0, -1).join(' / ')]) || root;
+      (kids[f.parent] = kids[f.parent] || []).push(f);
+    });
+    return { root: root, list: list, byId: byId, byPath: byPath, kids: kids };
+  }
+  // The Drive folder a photo is in, from its Photos-tab path ('' = not known: reload).
+  function folderIdOf(m, r) { var p = str(r.path); return p ? (m.byPath[p] || '') : m.root; }
+  function findKey(tree, key) {
+    if (!tree) return null;
+    return Array.prototype.find.call(tree.querySelectorAll('[role="treeitem"]'), function (x) { return x.getAttribute('data-key') === key; }) || null;
+  }
+
+  var hoverTimer = null;
+  var hoverKey = '';
+  function clearHover() { clearTimeout(hoverTimer); hoverTimer = null; hoverKey = ''; }
+
+  // The folder tree. opts.move = the photos being moved (the Move to… list, any width,
+  // large buttons; picking a folder calls opts.onPick); none = the sidebar menu, where
+  // picking shows the folder and (desktop) every folder is a drop target.
+  // Keyboard: Up/Down, Home/End, Right opens (or goes to the first subfolder), Left
+  // closes (or goes to the parent), Enter or Space picks.
+  function folderTree(d, opts) {
+    var m = folderModel(d);
     var t = d.photos;
-    var count = function (path) { return t.error ? '' : t.rows.filter(function (r) { return inFolder(r, path); }).length; };
-    var waiting = t.error ? '' : t.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length;
-    var item = function (path, label, depth, n) {
-      return h('button', { 'aria-current': S.pf === path ? 'page' : null, style: 'padding-left:' + (10 + depth * 12) + 'px',
-        class: path && depth === 0 ? 'top' : null,
-        title: path || 'Waiting for a decision', onclick: function () { pickFolder(path); } },
-      h('span', null, label), n === '' ? null : h('span', { class: 'n' }, String(n)));
-    };
-    return h('div', { class: 'folders', role: 'group', 'aria-label': 'Photo folders' },
-      item('', 'Waiting', 0, waiting),
-      photoFolders(d).map(function (f) { var p = f.names.join(' / '); return item(p, f.names[f.names.length - 1], f.names.length - 1, count(p)); }));
+    var rows = t.error ? [] : t.rows;
+    var count = function (path) { return t.error ? '' : rows.filter(function (r) { return inFolder(r, path); }).length; };
+    var waiting = t.error ? '' : rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length;
+    var focusKey = '';
+    var tree = h('div', { class: 'tree', role: 'tree', 'aria-label': opts.move ? 'Folders to move to' : 'Photo folders', onkeydown: keys });
+    var filter = h('input', {
+      class: 'f ffilter', type: 'search', placeholder: 'Filter folders', 'aria-label': 'Filter folders', value: S.ff, 'data-nofocus': true,
+      oninput: function () { S.ff = filter.value; draw(); },
+      onkeydown: function (e) { if (e.key === 'ArrowDown') { e.preventDefault(); var x = tree.querySelector('[role="treeitem"]'); if (x) x.focus(); } }
+    });
+    var tools = h('div', { class: 'ftools' }, filter, h('div', { class: 'fbtns' },
+      h('button', { class: 'btn link', type: 'button', onclick: function () {
+        m.list.forEach(function (f) { if (m.kids[f.id]) S.openF[f.id] = true; });
+        saveOpen(); draw();
+      } }, 'Expand all'),
+      h('button', { class: 'btn link', type: 'button', onclick: function () { S.openF = {}; saveOpen(); draw(); } }, 'Collapse all')));
+
+    // Folders shown: all under open folders; with a filter, those whose path matches and
+    // the folders above them (opened).
+    function visible() {
+      var q = lower(S.ff);
+      var hit = Object.create(null);
+      if (q) {
+        m.list.forEach(function (f) {
+          if (lower(f.path).indexOf(q) < 0) return;
+          for (var x = f; x; x = m.byId[x.parent]) hit[x.id] = true;
+        });
+      }
+      var out = [];
+      var walk = function (parent) {
+        (m.kids[parent] || []).forEach(function (f) {
+          if (q && !hit[f.id]) return;
+          out.push(f);
+          if (q || S.openF[f.id]) walk(f.id);
+        });
+      };
+      walk(m.root);
+      return out;
+    }
+
+    // Already in this folder: every photo being moved (or dragged) is in it.
+    var allIn = function (list, f) { return list.every(function (r) { return str(r.path) === f.path; }); };
+
+    function item(key, f, label, n) {
+      var level = f ? f.level : 1;
+      var hasKids = Boolean(f && m.kids[f.id]);
+      var open = hasKids && Boolean(S.ff || S.openF[f.id]);
+      var here = Boolean(opts.move && f && allIn(opts.move, f));
+      var el = h('div', {
+        role: 'treeitem', 'data-key': key, 'aria-level': String(level), tabindex: '-1',
+        'aria-expanded': hasKids ? String(open) : null,
+        'aria-current': !opts.move && S.pf === (f ? f.path : '') ? 'page' : null,
+        'aria-disabled': here ? 'true' : null,
+        class: 'fi' + (f && level === 1 ? ' top' : ''),
+        title: f ? f.path : 'Waiting for a decision',
+        style: 'padding-left:' + (4 + (level - 1) * 14) + 'px',
+        onclick: function () { activate(key); }
+      },
+      h('span', { class: 'tw', 'aria-hidden': 'true', onclick: hasKids ? function (e) { e.stopPropagation(); toggle(key); } : null }, hasKids ? (open ? '▾' : '▸') : ''),
+      h('span', { class: 'nm' }, label),
+      here ? h('span', { class: 'here' }, 'already here') : null,
+      n === '' ? null : h('span', { class: 'n' }, String(n)));
+      if (f && !opts.move && wide()) dropTarget(el, f, key);
+      return el;
+    }
+
+    function draw() {
+      clearHover();
+      var els = opts.move ? [] : [item('waiting', null, 'Waiting', waiting)];
+      visible().forEach(function (f) { els.push(item(f.id, f, f.name, count(f.path))); });
+      if (!els.length) els.push(h('p', { class: 'meta' }, S.ff ? 'No folder matches.' : 'No folders.'));
+      tree.replaceChildren.apply(tree, els);
+      var cur = findKey(tree, focusKey) || tree.querySelector('[aria-current]') || tree.querySelector('[role="treeitem"]');
+      if (cur) cur.tabIndex = 0;
+    }
+
+    function toggle(key) {
+      if (S.openF[key]) delete S.openF[key]; else S.openF[key] = true;
+      saveOpen();
+      focusKey = key;
+      draw();
+      var el = findKey(tree, key);
+      if (el) el.focus();
+    }
+
+    function activate(key) {
+      if (key === 'waiting') { pickFolder('', key); return; }
+      var f = m.byId[key];
+      if (!f) return;
+      if (!opts.move) { pickFolder(f.path, key); return; }
+      if (allIn(opts.move, f)) { toast('Already in ' + f.path); return; }
+      opts.onPick(f);
+    }
+
+    function keys(e) {
+      var items = Array.prototype.slice.call(tree.querySelectorAll('[role="treeitem"]'));
+      var i = items.indexOf(document.activeElement);
+      if (i < 0) return;
+      var el = items[i];
+      var key = el.getAttribute('data-key');
+      var exp = el.getAttribute('aria-expanded');
+      var go = function (j) {
+        if (j < 0 || j >= items.length) return;
+        items.forEach(function (x) { x.tabIndex = -1; });
+        items[j].tabIndex = 0;
+        items[j].focus();
+        focusKey = items[j].getAttribute('data-key');
+      };
+      if (e.key === 'ArrowDown') go(i + 1);
+      else if (e.key === 'ArrowUp') go(i - 1);
+      else if (e.key === 'Home') go(0);
+      else if (e.key === 'End') go(items.length - 1);
+      else if (e.key === 'ArrowRight') {
+        if (exp === 'false') toggle(key);
+        else if (exp === 'true') go(i + 1);
+      } else if (e.key === 'ArrowLeft') {
+        if (exp === 'true' && !S.ff) toggle(key);
+        else {
+          var lv = Number(el.getAttribute('aria-level'));
+          for (var j = i - 1; j >= 0; j -= 1) if (Number(items[j].getAttribute('aria-level')) < lv) { go(j); break; }
+        }
+      } else if (e.key === 'Enter' || e.key === ' ') activate(key);
+      else return;
+      e.preventDefault();
+    }
+
+    // Desktop: drop photos on a folder. Not on the folder they are all already in (To
+    // delete is never listed; it keeps its own Compare copies flow). A closed folder
+    // opens after a second's hover, so its subfolders can be reached.
+    function dropTarget(el, f, key) {
+      var over = function (e) {
+        if (!S.drag) return;
+        if (m.kids[f.id] && !S.openF[f.id] && !S.ff && hoverKey !== key) {
+          clearHover();
+          hoverKey = key;
+          hoverTimer = setTimeout(function () { S.openF[f.id] = true; saveOpen(); draw(); }, 1000);
+        }
+        if (allIn(S.drag, f)) { el.classList.add('nodrop'); e.dataTransfer.dropEffect = 'none'; return; }
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        el.classList.add('drop');
+      };
+      el.addEventListener('dragenter', over);
+      el.addEventListener('dragover', over);
+      el.addEventListener('dragleave', function (e) {
+        // Moving onto the name or count inside it is not leaving it.
+        var b = el.getBoundingClientRect();
+        if (e.clientX > b.left && e.clientX < b.right && e.clientY > b.top && e.clientY < b.bottom) return;
+        el.classList.remove('drop', 'nodrop');
+        if (hoverKey === key) clearHover();
+      });
+      el.addEventListener('drop', function (e) {
+        e.preventDefault();
+        el.classList.remove('drop', 'nodrop');
+        clearHover();
+        var list = S.drag;
+        S.drag = null;
+        if (list && !allIn(list, f)) moveRows(list, f);
+      });
+    }
+
+    draw();
+    return h('div', { class: opts.move ? 'folders move-tree' : 'folders' }, tools, tree);
+  }
+
+  /* ------------------------------------------------- moving photos about -- */
+
+  function pickedRows() {
+    var t = S.data.photos;
+    return t.error ? [] : t.rows.filter(function (r) { return S.picked[r.drive_id]; });
+  }
+  function nPhotos(n) { return n === 1 ? '1 photo' : n + ' photos'; }
+  function relPath(folder) { return str(folder).replace(/^Lenches Photos( \/ )?/, ''); }
+  function moveError(res) {
+    return res.status === 409 && res.json.currentPath ? 'moved in Drive since you loaded the page (now in ' + res.json.currentPath + ')' : bad(res);
+  }
+
+  // Tick box on a photo in the list: picks it for a multi-photo drag or Move to….
+  function pickBox(r) {
+    return h('label', { class: 'pick', title: 'Select', onclick: function (e) { e.stopPropagation(); } },
+      h('input', { type: 'checkbox', checked: S.picked[r.drive_id], 'aria-label': 'Select ' + str(r.filename), onchange: function (e) {
+        if (e.target.checked) S.picked[r.drive_id] = true; else delete S.picked[r.drive_id];
+        fillPickBar(document.getElementById('pickbar'));
+      } }));
+  }
+
+  // The multi-select bar above the list (hidden while nothing is ticked).
+  function fillPickBar(bar) {
+    if (!bar) return;
+    var picked = pickedRows();
+    bar.hidden = !picked.length;
+    if (!picked.length) { bar.replaceChildren(); return; }
+    var view = S.viewRows || [];
+    bar.replaceChildren.apply(bar, [
+      h('b', null, picked.length + ' selected'),
+      wide() ? h('span', { class: 'meta' }, 'Drag one onto a folder to move them all') : null,
+      h('span', { class: 'spacer' }),
+      view.length > picked.length ? h('button', { class: 'btn link', onclick: function () {
+        view.forEach(function (r) { S.picked[r.drive_id] = true; }); render();
+      } }, 'Select all ' + view.length) : null,
+      h('button', { class: 'btn primary', onclick: function () { moveTo(pickedRows()); } }, 'Move to…'),
+      h('button', { class: 'btn', onclick: function () { S.picked = {}; render(); } }, 'Clear')].filter(Boolean));
+  }
+
+  // Desktop: a list entry can be dragged onto a folder; if it is ticked, every ticked photo goes.
+  function dragSource(el, r) {
+    el.draggable = true;
+    el.addEventListener('dragstart', function (e) {
+      var list = S.picked[r.drive_id] ? pickedRows() : [r];
+      S.drag = list;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', list.map(function (x) { return str(x.filename); }).join('\n'));
+      var ghost = h('div', { class: 'ghost' }, list.length === 1 ? str(r.filename) : nPhotos(list.length));
+      document.body.appendChild(ghost);
+      e.dataTransfer.setDragImage(ghost, 12, 12);
+      setTimeout(function () { ghost.remove(); }, 0);
+      el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', function () {
+      S.drag = null;
+      clearHover();
+      el.classList.remove('dragging');
+      document.querySelectorAll('.tree .drop, .tree .nodrop').forEach(function (x) { x.classList.remove('drop', 'nodrop'); });
+    });
+  }
+
+  // Phone (and the multi-select bar): the same folders as large buttons, full screen.
+  function moveTo(list) {
+    if (!list.length) return;
+    var names = list.map(function (r) { return str(r.filename); });
+    overlay('Move to…', h('div', null,
+      h('p', { class: 'meta' }, list.length === 1 ? 'Moving ' + names[0] + '. Pick a folder.'
+        : 'Moving ' + nPhotos(list.length) + ': ' + names.slice(0, 5).join(', ') + (names.length > 5 ? ' and ' + (names.length - 5) + ' more' : '') + '. Pick a folder.'),
+      folderTree(S.data, { move: list, onPick: function (f) { closeOverlay(); moveRows(list, f); } })));
+  }
+
+  // A published photo changes its village/subject on the site: confirm first, naming each
+  // one with its page links.
+  function confirmPublished(list, pub, dest) {
+    var off = dest.names.some(function (n) { return lower(n) === 'rejected' || str(n).charAt(0) === '_'; });
+    var one = list.length === 1;
+    var msg = (one ? str(pub[0].filename) + ' is ON THE WEBSITE.'
+      : pub.length + ' of these ' + list.length + ' photos ' + (pub.length === 1 ? 'is' : 'are') + ' ON THE WEBSITE.') +
+      '\n\nMoving to ' + dest.path + ': this changes ' + (pub.length === 1 ? 'its' : 'their') + ' village/subject on the website.' +
+      (off ? ' In a Rejected folder or a folder starting with _ ' + (pub.length === 1 ? 'it comes' : 'they come') + ' off the site on the next daily photos run, and pages using ' + (pub.length === 1 ? 'it lose the picture.' : 'them lose the pictures.') : '') +
+      '\n\nYou can Undo straight after.\n\n' + (one ? 'Move it?' : 'Move all ' + list.length + '?');
+    var names = pub.map(function (r) { return h('div', { class: 'pubrow' }, h('b', null, str(r.filename)), onSite(r._pages)); });
+    return ask(msg, null, 'Move', h('div', { class: 'publist' }, names));
+  }
+
+  // Move photos one by one with the stale-checked move (each carries the folder the page
+  // loaded). One failure doesn't stop the rest; failures are listed. Then Undo for 8 seconds.
+  async function moveRows(list, dest) {
+    if (S.busy) { toast('Wait for the last move to finish', true); return; }
+    var m = folderModel(S.data);
+    var todo = list.filter(function (r) { return str(r.path) !== dest.path; });
+    if (!todo.length) { toast('Already in ' + dest.path); return; }
+    var pub = todo.filter(function (r) { return str(r.published_at); });
+    if (pub.length && !(await confirmPublished(todo, pub, dest))) return;
+    S.busy = true;
+    var moved = [];
+    var failed = [];
+    try {
+      for (var i = 0; i < todo.length; i += 1) {
+        var r = todo[i];
+        if (todo.length > 1) toast('Moving ' + (i + 1) + ' of ' + todo.length + '…');
+        var from = folderIdOf(m, r);
+        if (!from) { failed.push({ r: r, error: 'its folder is not in the list (press Reload)' }); continue; }
+        var res = await fileOp({ op: 'move', id: r.drive_id, expectedParent: from, to: dest.id });
+        if (res.ok) {
+          moved.push({ r: r, from: from });
+          r.path = relPath(res.json.folder);
+          delete S.files[r.drive_id];
+          delete S.picked[r.drive_id];
+        } else failed.push({ r: r, error: moveError(res) });
+      }
+    } finally { S.busy = false; }
+    render();
+    var text = moved.length
+      ? 'Moved ' + (moved.length === 1 ? moved[0].r.filename : nPhotos(moved.length)) + ' to ' + dest.path + '. Village and subject follow on the next photos run.'
+      : 'Nothing moved.';
+    undoBox(text, failed, moved.length ? function () { undoMoves(moved, dest); } : null);
+  }
+
+  async function undoMoves(moved, dest) {
+    if (S.busy) { toast('Wait for the last move to finish', true); return; }
+    S.busy = true;
+    var back = 0;
+    var failed = [];
+    try {
+      for (var i = 0; i < moved.length; i += 1) {
+        var x = moved[i];
+        var res = await fileOp({ op: 'move', id: x.r.drive_id, expectedParent: dest.id, to: x.from });
+        if (res.ok) { x.r.path = relPath(res.json.folder); delete S.files[x.r.drive_id]; back += 1; }
+        else failed.push({ r: x.r, error: moveError(res) });
+      }
+    } finally { S.busy = false; }
+    render();
+    undoBox(back ? 'Moved ' + nPhotos(back) + ' back.' : 'Nothing moved back.', failed, null);
+  }
+
+  // The result of a move, bottom of the screen: Undo for 8 seconds. Failures stay listed
+  // until closed.
+  var undoTimer = null;
+  function undoBox(text, failed, onUndo) {
+    var old = document.querySelector('.undo');
+    if (old) old.remove();
+    var t = document.querySelector('.toast');
+    if (t) t.remove();
+    clearTimeout(undoTimer);
+    var box;
+    var close = function () { clearTimeout(undoTimer); box.remove(); };
+    var undo = onUndo ? h('button', { class: 'btn primary', onclick: function () { close(); onUndo(); } }, 'Undo') : null;
+    box = h('div', { class: 'undo' + (failed.length ? ' bad' : ''), role: 'status' },
+      h('div', { class: 'msg' }, text,
+        failed.length ? [h('div', null, 'Not moved (' + failed.length + '):'),
+          h('ul', null, failed.map(function (x) { return h('li', null, str(x.r.filename) + ': ' + x.error); }))] : null),
+      h('div', { class: 'actions' }, undo, h('button', { class: 'btn', onclick: close }, 'Close')));
+    document.body.appendChild(box);
+    undoTimer = setTimeout(function () {
+      if (!failed.length) box.remove();
+      else if (undo) undo.remove();
+    }, 8000);
   }
 
   // Phone: a dropdown above the list.
@@ -689,8 +1064,14 @@ export const CLIENT_JS = String.raw`
       ? 'Every photo in ' + S.pf + ', whatever its status. A move shows here at once, or after the next photos run if made in Drive.'
       : 'Approved photos are published by the daily photos run (early morning).'));
     if (!rows.length) els.push(h('p', { class: 'empty' }, S.pf ? 'No photos in this folder.' : 'No photos waiting.'));
+    S.viewRows = rows;
+    var bar = h('div', { class: 'pickbar', id: 'pickbar', role: 'region', 'aria-label': 'Selected photos' });
+    fillPickBar(bar);
+    els.push(bar);
     rows.forEach(function (r) {
-      els.push(entry('photo', r.drive_id, function () { return photoSummary(r); }, function () { return photoCard(r, false); }));
+      var el = entry('photo', r.drive_id, function () { return [pickBox(r), photoSummary(r)]; }, function () { return photoCard(r, false); });
+      if (wide()) dragSource(el, r);
+      els.push(el);
     });
     var sel = wide() ? pickSelected('photo', rows, 'drive_id') : null;
     return { els: els, selected: sel ? function () { return photoCard(sel, true); } : null };
@@ -714,7 +1095,7 @@ export const CLIENT_JS = String.raw`
 
   function photoCard(r, inDetail) {
     var src = '/admin/img/drive/' + encodeURIComponent(r.drive_id);
-    var c = h('div', { class: 'card photo' },
+    var c = h('div', { class: 'card photo' }, inDetail ? null : pickBox(r),
       h('a', { href: src + '?size=1600', target: '_blank', rel: 'noopener' }, h('img', { src: src + '?size=600', alt: str(r.alt_text) || str(r.filename), loading: 'lazy' })),
       photoSummary(r));
     if (str(r.path)) add(c, h('div', { class: 'meta' }, 'In Lenches Photos / ' + str(r.path)));
@@ -749,6 +1130,7 @@ export const CLIENT_JS = String.raw`
         if (yes) decide('reject', 'rejected', 'Rejected');
       } }, 'Reject'),
       str(r.duplicate_of) ? h('button', { class: 'btn', onclick: function () { overlay('Possible duplicates', copiesView(r)); } }, 'Compare copies') : null,
+      wide() ? null : h('button', { class: 'btn', onclick: function () { moveTo([r]); } }, 'Move to…'),
       str(r.drive_link) ? h('a', { class: 'btn link', href: str(r.drive_link), target: '_blank', rel: 'noopener' }, 'Open in Drive') : null,
       sheetLink('Photos', r._row)));
     add(c, fileBox(r, inDetail));

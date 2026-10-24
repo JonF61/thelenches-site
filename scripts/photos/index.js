@@ -1,7 +1,8 @@
 // scripts/photos/index.js
 // Drive photos (plan item 9). Run by .github/workflows/photos.yml.
 //  1. Scan "Lenches Photos": new files become Photos rows. The folder path carries
-//     meaning: <Village or General>/<Subject>/file; any "Rejected" folder = never
+//     meaning (meaning.js): <Village or General>/<Subject>/file, or any other top-level
+//     folder = its name is the subject; any "Rejected" folder = never
 //     use; folders starting "_" are ignored. A file that disappears = missing.
 //     "To delete" (directly under the root, filled by the admin panel) is ignored:
 //     its files get no new rows, and a row whose file is there is rejected, not missing.
@@ -21,6 +22,7 @@ const g = require('../ingest/google');
 const { dHash, hashDistance } = require('../ingest/images');
 const drive = require('./drive');
 const { describePhoto } = require('./describe');
+const { meaning } = require('./meaning');
 
 const TAB = 'Photos';
 const WEB_TAB = 'Image fetch';
@@ -50,14 +52,6 @@ const today = () => now().slice(0, 10);
 const low = (v) => String(v ?? '').trim().toLowerCase();
 const isTrue = (v) => ['true', 'yes', 'y'].includes(low(v));
 const validHash = (h) => /^[0-9a-f]{16}$/.test(String(h || ''));
-
-// Folder path -> meaning. "Rous Lench/Churches/x.jpg": village Rous Lench, subject Churches.
-function meaning(segs) {
-  const rejected = segs.some((s) => low(s) === 'rejected');
-  const parts = segs.filter((s) => low(s) !== 'rejected');
-  const village = parts[0] && low(parts[0]) !== 'general' ? parts[0] : '';
-  return { rejected, village, subject: parts[1] || '', path: segs.join(' / ') };
-}
 
 // Drive's EXIF time "2014:07:07 10:53:11" -> "2014-07-07 10:53".
 function exifTime(t) {

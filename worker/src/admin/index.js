@@ -9,6 +9,8 @@
 //                                   latest newsletter, Health, watchdog, Google account;
 //                                   each Photos row's _pages: the public pages it is on
 //                                   (photopages.js, from the site's photo-pages.json)
+//                                   photoFolders: [{ id, parent, names }] live from Drive,
+//                                   for the Photos menu and the drop/Move to… targets
 //   GET  /admin/api/mail-images?m=  every image in one email (for a Pending item)
 //   POST /admin/api/edit            { tab, key, field, expected, value }: one plain field
 //                                   edit, refused (409, current value) if the cell changed
