@@ -13,7 +13,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '11';
+export const UI_VERSION = '12';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -430,7 +430,11 @@ export const CLIENT_JS = String.raw`
     return [h('h2', null, str(r.title) || '(no title)'), itemMeta(r), itemBadges(r), h('div', { class: 'text' }, str(itemText(r)))];
   }
 
-  function needsTick(r) { return truthy(r.people_in_image) && !truthy(r.people_ok); }
+  // The item's own image shows people, or the suggested image chosen for it may.
+  function needsTick(r) {
+    var chosen = (r._suggest || []).filter(function (s) { return s.id === str(r.image_choice); })[0];
+    return (truthy(r.people_in_image) || Boolean(chosen && flaggedPeople(chosen))) && !truthy(r.people_ok);
+  }
 
   function itemCard(r, inDetail) {
     var c = h('div', { class: 'card' });

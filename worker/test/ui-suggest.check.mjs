@@ -136,6 +136,19 @@ async function check(viewport, tag) {
   await page.locator('section.suggest').first().locator('figure.sg').nth(2).getByRole('button', { name: 'Choose' }).click();
   await page.waitForFunction(() => document.querySelectorAll('section.suggest')[0].querySelectorAll('figure.sg')[2].classList.contains('chosen'));
   assert.deepEqual(posts.filter((p) => p.path === '/admin/api/suggest').at(-1), { path: '/admin/api/suggest', id: 'm1-1', sid: 'm1-1#3', expected: 'm1-1#2' });
+  // Unticking People OK with the flagged image chosen blocks Approve again.
+  await page.locator('section.suggest').first().getByRole('checkbox').uncheck();
+  await page.waitForFunction(() => {
+    const card = document.querySelectorAll('section.suggest')[0].closest('.card');
+    const b = [...card.querySelectorAll('button')].find((x) => x.textContent === 'Approve');
+    return b && b.disabled;
+  });
+  await page.locator('section.suggest').first().getByRole('checkbox').check();
+  await page.waitForFunction(() => {
+    const card = document.querySelectorAll('section.suggest')[0].closest('.card');
+    const b = [...card.querySelectorAll('button')].find((x) => x.textContent === 'Approve');
+    return b && !b.disabled;
+  });
 
   // None of these; then a stale refusal shows the Sheet's value.
   await page.locator('section.suggest').first().getByRole('button', { name: 'None of these' }).click();

@@ -49,14 +49,19 @@ export function trustKeyFor(row, sources) {
 const refuse = (status, error) => ({ error, status });
 
 // Pending decision. row: the Pending row (null if not found); hasPeopleOk: whether the
-// tab has a people_ok column. Returns { p } for decide(), or { error, status }.
-export function planPending({ action, id }, row, { hasPeopleOk = false, sources = [] } = {}) {
+// tab has a people_ok column; choicePeople: the people value of the suggested image chosen
+// for it (image_choice), if any. Returns { p } for decide(), or { error, status }.
+export function planPending({ action, id }, row, { hasPeopleOk = false, sources = [], choicePeople = '' } = {}) {
   if (!PENDING_ACTIONS.includes(action)) return refuse(400, `Unknown action "${action}"`);
   if (!row) return refuse(404, `No Pending item ${id}`);
   if (row.status !== 'pending') return refuse(409, `This item is already "${row.status}"`);
   if (APPROVING.has(action) && truthy(row.people_in_image)) {
     if (!hasPeopleOk) return refuse(409, 'The image shows people: add a people_ok column at the end of Pending first');
     if (!truthy(row.people_ok)) return refuse(409, 'The image shows people: tick "people OK" before approving');
+  }
+  // A chosen suggestion that may show people: People OK must still be ticked at approval.
+  if (APPROVING.has(action) && PEOPLE_FLAG.has(norm(choicePeople)) && !truthy(row.people_ok)) {
+    return refuse(409, 'The chosen image may show people: tick "People OK" before approving');
   }
   const p = { a: action, i: String(id) };
   if (action === 'trust') {
