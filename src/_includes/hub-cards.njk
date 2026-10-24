@@ -1,5 +1,7 @@
 {#- Grid of hub cards, shared by hub.njk and the home page. Needs cards (title, url, icon, text)
-    and, optionally, live: { url: "line" } for a computed line under a card's text (home page). -#}
+    and, optionally, live: { url: "line" } for a computed line under a card's text (home page),
+    and cardHeading ("h2" by default; "h3" for cards under a section heading). -#}
+{%- set hTag = cardHeading or "h2" -%}
 {%- set icons = {
   users: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.8.3 5 2.6 5 5.8"/>',
   hall: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-5h4v5"/>',
@@ -19,16 +21,16 @@
 <style>
 .hub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem;margin-top:1rem}
 .hub-card{display:block;margin:0;text-decoration:none;color:inherit}
-.hub-card h2{display:flex;align-items:center;gap:.5rem;margin:0 0 .25rem;font-size:1.08rem}
+.hub-card h2,.hub-card h3{display:flex;align-items:center;gap:.5rem;margin:0 0 .25rem;font-size:1.08rem}
 .hub-card svg{width:24px;height:24px;flex:none;color:#b5471b;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .hub-card p{margin:0;color:#666;font-size:.92rem}
 .hub-card .hub-live{margin:.45rem 0 0;color:#9A5312;font-weight:600;font-size:.88rem}
-.hub-card:hover h2,.hub-card:focus h2{text-decoration:underline}
+.hub-card:hover h2,.hub-card:focus h2,.hub-card:hover h3,.hub-card:focus h3{text-decoration:underline}
 </style>
 <div class="hub-grid">
   {%- for c in cards %}
   <a class="card hub-card" href="{{ c.url | url }}">
-    <h2><svg viewBox="0 0 24 24" aria-hidden="true">{{ icons[c.icon] | safe }}</svg>{{ c.title }}</h2>
+    <{{ hTag }}><svg viewBox="0 0 24 24" aria-hidden="true">{{ icons[c.icon] | safe }}</svg>{{ c.title }}</{{ hTag }}>
     <p>{{ c.text }}</p>
     {%- if live and live[c.url] %}
     <p class="hub-live">{{ live[c.url] }}</p>

@@ -17,7 +17,7 @@
     { "label": "Register to vote", "url": "https://www.gov.uk/register-to-vote" },
     { "label": "School places and term dates", "url": "/living-here/schools/" },
     { "label": "Buses and stations", "url": "/living-here/getting-around/" },
-    { "label": "Meet people: groups, halls and churches", "url": "/community/" }
+    { "label": "Meet people: groups, halls and churches", "url": "/#community" }
   ],
   "sponsors": []
 }

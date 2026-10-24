@@ -1,15 +1,18 @@
 ---
-layout: base.njk
-title: Living here
-description: Practical information for the Lenches villages — health and emergencies, transport, roadworks, council and planning, schools, walks and bins.
-intro: Practical information for everyone in the Lenches.
-cards:
-  - { title: "Health & emergencies", url: "/living-here/health/", icon: health, text: "GPs, pharmacies, hospitals and defibrillators." }
-  - { title: "Getting around", url: "/living-here/getting-around/", icon: bus, text: "Buses, on-demand and community transport, stations." }
-  - { title: "Roads", url: "/living-here/roads/", icon: road, text: "Road closures and roadworks, on now and coming up." }
-  - { title: "Council & planning", url: "/living-here/council/", icon: council, text: "Parish councils, councillors and planning searches." }
-  - { title: "Schools", url: "/living-here/schools/", icon: school, text: "Local schools, applying and term dates." }
-  - { title: "Walks & footpaths", url: "/living-here/walks/", icon: walk, text: "Circular walks, maps and the Countryside Code." }
-  - { title: "Bins", url: "/bins/", icon: bins, text: "Next collections and what goes where." }
+permalink: /living-here/
+eleventyExcludeFromCollections: true
 ---
-{% include "hub.njk" %}
+{#- Living here page folded into the home page (24 Oct 2026). Old links land on its home page section. -#}
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex">
+  <meta http-equiv="refresh" content="0; url={{ '/#living-here' | url }}">
+  <link rel="canonical" href="{{ site.url }}/">
+  <title>Moved — The Lenches</title>
+</head>
+<body>
+  <p>This page has moved to <a href="{{ '/#living-here' | url }}">Living here on the home page</a>.</p>
+</body>
+</html>
