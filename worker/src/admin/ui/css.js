@@ -2,6 +2,8 @@
 // Panel stylesheet, served as /admin/app.css. Light and dark follow the device setting.
 // Phone (under 900px): one column of stacked cards, Edit opens a full-screen form.
 // Desktop: sidebar, list in the middle, the selected item's detail on the right.
+// Photos: a collapsible folder tree (sidebar; full-screen Move to… list on phones),
+// tick boxes, a multi-select bar, drag and drop onto folders, and an Undo pop-up.
 
 export const CLIENT_CSS = String.raw`
 :root{
@@ -98,6 +100,46 @@ textarea.f{min-height:120px;resize:vertical;line-height:1.4}
 .onsite a{overflow-wrap:anywhere}
 .toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:20;box-shadow:0 2px 10px rgba(0,0,0,.25)}
 .toast.bad{background:var(--bad);color:#fff}
+.folders{display:flex;flex-direction:column;gap:2px;margin:2px 0 8px}
+.ftools{display:flex;flex-direction:column;gap:2px;margin:2px 0 4px}
+.ftools input.f{padding:5px 8px;font-size:.85rem}
+.fbtns{display:flex;gap:4px}
+.fbtns .btn.link{padding:2px 4px;min-height:0;font-size:.8rem}
+.tree{display:flex;flex-direction:column;gap:1px}
+.tree [role="treeitem"]{display:flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;cursor:pointer;font-size:.82rem;color:var(--muted);user-select:none}
+.tree [role="treeitem"]:hover{background:var(--panel2)}
+.tree [role="treeitem"].top{font-weight:700;color:var(--ink);margin-top:3px}
+.tree [role="treeitem"][aria-current="page"]{background:var(--accent);color:var(--accent-ink)}
+.tree [role="treeitem"][aria-disabled="true"]{opacity:.5;cursor:not-allowed}
+.tree .tw{flex:none;width:1.1em;text-align:center;font-size:.9em}
+.tree .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tree .here{font-size:.8em;font-weight:400}
+.tree .n{display:inline-block;min-width:1.4em;padding:0 6px;border-radius:10px;background:var(--panel2);color:var(--ink);font-size:.8rem;text-align:center;font-weight:400}
+.tree [aria-current="page"] .n{background:rgba(255,255,255,.25);color:inherit}
+.tree [role="treeitem"].drop{outline:2px dashed var(--accent);outline-offset:-2px;background:var(--ok-bg);color:var(--ink)}
+.tree [role="treeitem"].nodrop{opacity:.5}
+.move-tree .ftools input.f{font-size:16px;padding:10px}
+.move-tree .fbtns .btn.link{font-size:.95rem;padding:8px 6px}
+.move-tree .tree{gap:6px}
+.move-tree .tree [role="treeitem"]{min-height:52px;font-size:1rem;padding:8px 12px;border:1px solid var(--line);background:var(--panel);border-radius:8px;color:var(--ink)}
+.move-tree .tree .tw{width:1.8em;font-size:1.2em;padding:8px 0}
+.pick{float:right;display:flex;align-items:center;padding:4px;margin:-4px -4px 0 6px;cursor:pointer}
+.pick input{width:22px;height:22px;accent-color:var(--accent);cursor:pointer}
+.pickbar{position:sticky;top:0;z-index:3;display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;background:var(--info-bg);color:var(--info);box-shadow:0 2px 6px rgba(0,0,0,.12)}
+.pickbar[hidden]{display:none}
+.pickbar .btn{min-height:36px;padding:6px 12px}
+.card[draggable="true"]{cursor:grab}
+.card.dragging{opacity:.45}
+.ghost{position:fixed;top:-100px;left:0;padding:6px 10px;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-size:.9rem;font-weight:600}
+.publist{display:flex;flex-direction:column;gap:6px;margin:4px 0 8px}
+.pubrow{padding:6px 8px;border-radius:6px;background:var(--panel2)}
+.undo{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);width:min(560px,92vw);display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:10px;z-index:20;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.undo .msg{flex:1;min-width:200px}
+.undo ul{margin:4px 0 0;padding-left:20px}
+.undo .actions{margin:0}
+.undo .btn{min-height:36px;padding:6px 14px}
+.undo .btn.primary{background:var(--bg);color:var(--ink);border-color:var(--bg)}
+.undo.bad{border:3px solid var(--bad)}
 table.h{width:100%;border-collapse:collapse;font-size:.9rem}
 table.h td,table.h th{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:top}
 @media (min-width:900px){
@@ -114,11 +156,6 @@ table.h td,table.h th{text-align:left;padding:6px 4px;border-bottom:1px solid va
   .two{grid-template-columns:1fr 1fr}
   .list.wide{flex:1;max-width:none;border-right:0}
   nav.side{overflow:auto}
-  nav.side .folders{display:flex;flex-direction:column;gap:1px;margin:2px 0 8px}
-  nav.side .folders button{padding:4px 8px;font-size:.82rem;border-radius:6px}
-  nav.side .folders button.top{font-weight:700;margin-top:4px}
-  nav.side .folders button.top:not([aria-current]){color:var(--ink)}
-  nav.side .folders button span:first-child{overflow:hidden;text-overflow:ellipsis}
   .detail .photo img{max-height:280px}
   .filebox input.f,.filebox select.f,.small input.f,.small textarea.f{font-size:.88rem;padding:6px 8px}
   .filebox .btn,.small .btn{font-size:.85rem;padding:6px 10px;min-height:34px}

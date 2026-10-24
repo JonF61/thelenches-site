@@ -146,11 +146,13 @@ export function folderChoices(rootId, tree) {
       .sort((a, b) => a.path.localeCompare(b.path))];
 }
 
-// Folders under root for the panel's Photos menu (not To delete): [{ id, names }], by path.
+// Folders under root for the panel's Photos menu and drop targets (not To delete), live
+// from Drive so a folder Jon makes appears on Reload: [{ id, parent, names }], by path.
+// parent is the root's id for a top-level folder.
 export async function folderList(env) {
   const { tree } = await loadTree(env);
   return [...tree.values()].filter((f) => !f.toDelete)
-    .map((f) => ({ id: f.id, names: f.names.map((n) => String(n).trim()) }))
+    .map((f) => ({ id: f.id, parent: f.parent, names: f.names.map((n) => String(n).trim()) }))
     .sort((a, b) => a.names.join(' / ').localeCompare(b.names.join(' / ')));
 }
 

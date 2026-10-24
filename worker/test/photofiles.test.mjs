@@ -449,6 +449,67 @@ test('State: every Photos row still in Drive (with _waiting) and the Lenches Pho
     ['photoChurchA001', false], ['photoChurchB002', true], ['photoChurchC003', true], ['photoOther00004', true], ['photoOutside005', true],
   ], 'missing rows left out; approved ones kept for the folder views');
   assert.deepEqual(s.photoFolders.map((f) => f.names.join(' / ')), ['General', 'Rous Lench', 'Rous Lench / Churches']);
+  assert.deepEqual(s.photoFolders.map((f) => f.parent), [ROOT, ROOT, 'folderRousLench']);
+});
+
+// New top-level folders Jon makes in Drive: nothing in code names them.
+const withNewFolders = (files) => {
+  files.folderAmphi0001 = folder('folderAmphi0001', 'Amphitheatre', ROOT);
+  files.folderClub00001 = folder('folderClub00001', 'Lenches Club', ROOT);
+  files.folderClubQuiz1 = folder('folderClubQuiz1', 'Quiz nights', 'folderClub00001');
+  return files;
+};
+
+test('New folders: Amphitheatre and Lenches Club made in Drive appear in the state, with their parents', async () => {
+  const { files } = fakeWorld();
+  withNewFolders(files);
+  const r = await worker.fetch(new Request(`${ORIGIN}/admin/api/state`, { headers: { 'cf-access-jwt-assertion': await accessJwt() } }), env());
+  const s = await r.json();
+  assert.deepEqual(s.photoFolders.map((f) => [f.names.join(' / '), f.parent]), [
+    ['Amphitheatre', ROOT], ['General', ROOT], ['Lenches Club', ROOT], ['Lenches Club / Quiz nights', 'folderClub00001'],
+    ['Rous Lench', ROOT], ['Rous Lench / Churches', 'folderRousLench'],
+  ]);
+  assert.equal(s.photosRoot, ROOT);
+});
+
+test('New folders: drop into Amphitheatre, a batch where one is stale still moves the others, Undo moves back', async () => {
+  const { calls, files } = fakeWorld();
+  withNewFolders(files);
+  // The panel sends one stale-checked move per photo, in turn (as a multi-select drop does).
+  const batch = [
+    { id: 'photoChurchA001', expectedParent: 'folderChurches1' },
+    { id: 'photoOther00004', expectedParent: 'folderRousLench' }, // stale: it is in General
+    { id: 'photoChurchC003', expectedParent: 'folderGeneral01' },
+  ];
+  const out = [];
+  for (const b of batch) out.push(await moveFile(env(), { ...b, to: 'folderAmphi0001' }));
+  assert.deepEqual(out.map((r) => r.ok || r.status), [true, 409, true]);
+  assert.equal(out[0].folder, 'Lenches Photos / Amphitheatre');
+  assert.equal(out[1].currentPath, 'Lenches Photos / General');
+  assert.deepEqual(files.photoChurchA001.parents, ['folderAmphi0001']);
+  assert.deepEqual(files.photoOther00004.parents, ['folderGeneral01'], 'the stale one is left alone');
+  assert.deepEqual(files.photoChurchC003.parents, ['folderAmphi0001']);
+  // Undo: the same move back, stale-checked against the folder they were dropped in.
+  let r = await moveFile(env(), { id: 'photoChurchA001', expectedParent: 'folderAmphi0001', to: 'folderChurches1' });
+  assert.equal(r.ok, true);
+  files.photoChurchC003.parents = ['folderClubQuiz1']; // moved on in Drive meanwhile
+  r = await moveFile(env(), { id: 'photoChurchC003', expectedParent: 'folderAmphi0001', to: 'folderGeneral01' });
+  assert.equal(r.status, 409, 'Undo refuses a photo moved on since');
+  assert.equal(r.currentPath, 'Lenches Photos / Lenches Club / Quiz nights');
+  assert.deepEqual(files.photoChurchA001.parents, ['folderChurches1']);
+  // Into a subfolder of a new folder, and to the top level of Lenches Photos.
+  r = await moveFile(env(), { id: 'photoChurchC003', expectedParent: 'folderClubQuiz1', to: 'folderClub00001' });
+  assert.equal(r.folder, 'Lenches Photos / Lenches Club');
+  assertNeverBins(calls);
+  assert.ok(!calls.drive.some((c) => c.method === 'POST'), 'no folder ever created');
+});
+
+test('New folders: a move into To delete is refused (it keeps its own Compare copies flow)', async () => {
+  const { files } = fakeWorld();
+  files.binFolder0001 = folder('binFolder0001', 'To delete', ROOT);
+  const r = await moveFile(env(), { id: 'photoOther00004', expectedParent: 'folderGeneral01', to: 'binFolder0001' });
+  assert.equal(r.status, 400);
+  assert.deepEqual(files.photoOther00004.parents, ['folderGeneral01']);
 });
 
 test('State: To delete is not offered as a folder view', async () => {
