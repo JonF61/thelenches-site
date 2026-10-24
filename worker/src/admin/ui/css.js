@@ -118,6 +118,8 @@ textarea.f{min-height:120px;resize:vertical;line-height:1.4}
 .tree [aria-current="page"] .n{background:rgba(255,255,255,.25);color:inherit}
 .tree [role="treeitem"].drop{outline:2px dashed var(--accent);outline-offset:-2px;background:var(--ok-bg);color:var(--ink)}
 .tree [role="treeitem"].nodrop{opacity:.5}
+.tree [role="treeitem"].bin{color:var(--muted);font-style:italic;margin-top:6px;border-top:1px dashed var(--line)}
+.tree [role="treeitem"].bin.drop{opacity:1}
 .move-tree .ftools input.f{font-size:16px;padding:10px}
 .move-tree .fbtns .btn.link{font-size:.95rem;padding:8px 6px}
 .move-tree .tree{gap:6px}

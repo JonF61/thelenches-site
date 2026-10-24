@@ -27,9 +27,8 @@ const WINDOW_DAYS = Number(process.env.WINDOW_DAYS || 28);
 const MAX_EVENTS = Number(process.env.MAX_EVENTS || 15);
 const SAME_IMAGE_LIMIT = 3; // one image found for this many events = a site-wide default
 const DRY_RUN = /^(1|true|yes)$/i.test(String(process.env.DRY_RUN || ''));
-// Folder under Lenches Photos; anywhere else goes to General.
-const PLACES = ['Church Lench', 'Rous Lench', 'Ab Lench', 'Atch Lench', 'Sheriffs Lench', 'Harvington',
-  'Abbots Morton', 'Lenchwick', 'Radford', 'Evesham', 'Pershore', 'Inkberrow'];
+// Folder under Lenches Photos (lib/places.js, shared with the photos run); anywhere else goes to General.
+const { placeName, placesIn } = require('../../lib/places');
 
 const squash = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 const oneLine = (s, max) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
@@ -61,10 +60,7 @@ const targetOf = (e) => `event:${oneLine(e.title, 200).toLowerCase().replace(/[,
 function villageFor(e) {
   const title = String(e.title || '');
   const m = title.match(/\s[\u2014\u2013-]\s([^\u2014\u2013]+)$/);
-  const tail = m ? m[1].trim().toLowerCase() : '';
-  return PLACES.find((p) => p.toLowerCase() === tail)
-    || PLACES.find((p) => new RegExp(`\\b${p}\\b`, 'i').test(`${title} ${e.body || ''}`))
-    || 'General';
+  return (m && placeName(m[1])) || placesIn(`${title} ${e.body || ''}`)[0] || 'General';
 }
 
 function filenameFor(e, ext) {
@@ -211,7 +207,11 @@ async function main() {
   if (failures) process.exitCode = 1; // GitHub emails me
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
+
+module.exports = { villageFor };

@@ -10,7 +10,13 @@
 //   - stale checks: rename carries the Drive name the page loaded, a move the folder it
 //     loaded, a discard also the Photos status it loaded; any change since = 409, nothing written
 //   - "delete" is a move to "To delete" directly under the root; nothing is ever binned or
-//     deleted, Jon empties that folder himself. The photos run ignores it.
+//     deleted, Jon empties that folder himself. The photos run ignores it, and takes a
+//     published photo whose file is there off the site on its next run.
+//   - a move into To delete records where the file came from on the file itself (Drive
+//     properties lenchesFrom, lenchesFromPath, lenchesMovedAt, lenchesStatus), so Restore
+//     can put it back and set its Photos status back; files moved there by hand fall back
+//     to the Photos tab's path (the run leaves it as it was)
+//   - rejecting now always means To delete: a move into a "Rejected" folder is refused
 //   - the panel never creates folders (To delete included): anything the account made would
 //     belong to it, not to Jon, and would be at risk if the account were ever deleted.
 //     Jon makes folders in Drive; the panel picks them up on Reload.
@@ -31,7 +37,9 @@ export const TO_DELETE = 'To delete';
 export const DUP_DISTANCE = 6;      // as scripts/photos/index.js
 const MAX_STEM = 80;
 const MAX_GROUP = 12;
-const FILE_FIELDS = 'id,name,mimeType,parents,size,createdTime,trashed,imageMediaMetadata(width,height)';
+const FILE_FIELDS = 'id,name,mimeType,parents,size,createdTime,trashed,properties,imageMediaMetadata(width,height)';
+const REJECTED = 'rejected';
+const PROP_MAX = 100; // Drive allows 124 bytes for key and value together
 
 const low = (v) => String(v ?? '').trim().toLowerCase();
 const fail = (status, error, extra = {}) => ({ ok: false, status, error, ...extra });
@@ -138,6 +146,9 @@ export function folderTree(rootId, folders) {
 const inRoot = (rootId, tree, id) => id === rootId || tree.has(id);
 const pathOf = (rootId, tree, id) => (id === rootId ? 'Lenches Photos' : ['Lenches Photos', ...tree.get(id).names].join(' / '));
 const childrenOf = (tree, parent) => [...tree.values()].filter((f) => f.parent === parent);
+const relOf = (rootId, tree, id) => (id === rootId ? '' : tree.get(id).names.join(' / '));
+// A "Rejected" folder anywhere on the way (the photos run's old "never use").
+const inRejected = (rootId, tree, id) => id !== rootId && tree.has(id) && tree.get(id).names.some((n) => low(n) === REJECTED);
 
 // Folders a photo can be moved to (never To delete or anything in it), sorted by path.
 export function folderChoices(rootId, tree) {
@@ -298,6 +309,7 @@ export async function moveFile(env, { id, expectedParent, to }) {
   const dest = String(to || '');
   if (!inRoot(s.root, s.tree, dest)) return fail(403, 'That folder is not under Lenches Photos: refused');
   if (dest !== s.root && s.tree.get(dest).toDelete) return fail(400, `Use "Move to ${TO_DELETE}" for that`);
+  if (inRejected(s.root, s.tree, dest)) return fail(400, `Rejected photos go to ${TO_DELETE} now: use "Move to ${TO_DELETE}"`);
   if (dest === s.where.parent) return fail(400, 'It is already in that folder');
   await changeFolder(env, id, s.where.parent, dest);
   return { ok: true, folderId: dest, folder: pathOf(s.root, s.tree, dest) };
@@ -312,8 +324,21 @@ function toDeleteFolder(root, tree) {
   return { ok: true, id: found[0].id };
 }
 
-// Move one copy to To delete and mark its Photos row rejected (the run's value for
-// "never use"). expected = Photos status loaded, expectedParent = Drive folder loaded.
+// Into To delete, recording where from (and the Photos status before) on the file.
+async function moveToBin(env, id, from, binId, { fromPath, status }) {
+  const properties = {
+    lenchesFrom: from,
+    lenchesFromPath: String(fromPath || '').slice(0, PROP_MAX - 20),
+    lenchesMovedAt: new Date().toISOString().replace(/\.\d+Z$/, 'Z'),
+    lenchesStatus: String(status || '').trim().slice(0, 30) || 'new',
+  };
+  await driveJson(env, `/${encodeURIComponent(id)}?addParents=${encodeURIComponent(binId)}&removeParents=${encodeURIComponent(from)}&fields=id,parents`,
+    { method: 'PATCH', body: { properties } });
+}
+
+// Move one photo to To delete and mark its Photos row rejected (the run's value for
+// "never use"): the panel's Reject, Move to To delete, the duplicates view and the one-off
+// tidy of Rejected folders. expected = Photos status loaded, expectedParent = Drive folder loaded.
 export async function discardFile(env, { id, expected, expectedParent, confirmPublished }) {
   const s = await start(env, id);
   if (!s.ok) return s;
@@ -324,17 +349,140 @@ export async function discardFile(env, { id, expected, expectedParent, confirmPu
   if (published(s.row) && confirmPublished !== true) {
     return fail(409, 'This copy is on the website: confirm again to take it down and move it', { needsConfirm: true });
   }
+  const bin = toDeleteFolder(s.root, s.tree);
+  if (!bin.ok) return bin;
   if (!s.where.toDelete) {
     if (s.where.parent !== String(expectedParent ?? '')) {
       return fail(409, 'Moved in Drive since you loaded the page', { current: s.where.parent, currentPath: s.where.path });
     }
-    const bin = toDeleteFolder(s.root, s.tree);
-    if (!bin.ok) return bin;
-    await changeFolder(env, id, s.where.parent, bin.id);
+    await moveToBin(env, id, s.where.parent, bin.id, { fromPath: relOf(s.root, s.tree, s.where.parent), status });
   }
-  const w = await checkedWrite(env, { tab: 'Photos', keyCol: 'drive_id', key: id, field: 'status', expected: status, value: 'rejected' });
-  if (!w.ok) return { ...w, error: `Moved to ${TO_DELETE}, but the Photos status was not set: ${w.error}` };
-  return { ok: true, message: `Moved to ${TO_DELETE} and marked rejected.${published(s.row) ? ' The daily photos run takes it off the site.' : ''}` };
+  if (low(status) !== REJECTED) {
+    const w = await checkedWrite(env, { tab: 'Photos', keyCol: 'drive_id', key: id, field: 'status', expected: status, value: REJECTED });
+    if (!w.ok) return { ...w, error: `Moved to ${TO_DELETE}, but the Photos status was not set: ${w.error}` };
+  }
+  return {
+    ok: true,
+    folderId: s.where.toDelete ? s.where.parent : bin.id,
+    message: `Moved to ${TO_DELETE} and marked rejected.${published(s.row) ? ' The daily photos run takes it off the site.' : ''}`,
+  };
+}
+
+/* ---------------------------------------------------------------- To delete -- */
+
+// Where a file in To delete came from: the folder recorded at move time if it is still
+// under root (and not in To delete), else the folder at the Photos tab's path (one match
+// only). { id, path, source: 'recorded' | 'sheet' } or { error }.
+export function originOf(rootId, tree, file, row) {
+  const p = (file && file.properties) || {};
+  const rec = String(p.lenchesFrom || '');
+  if (rec && inRoot(rootId, tree, rec) && !(rec !== rootId && tree.get(rec).toDelete)) {
+    return { id: rec, path: relOf(rootId, tree, rec), source: 'recorded' };
+  }
+  const want = row ? String(row.path ?? '').trim() : null;
+  if (want === '') return { id: rootId, path: '', source: 'sheet' };
+  if (want) {
+    const hits = [...tree.values()].filter((f) => !f.toDelete && f.names.map((n) => String(n).trim()).join(' / ') === want);
+    if (hits.length === 1) return { id: hits[0].id, path: want, source: 'sheet' };
+    return { error: hits.length ? `More than one folder is called ${want}: move it back in Drive` : `Its old folder (${want}) is not in Lenches Photos any more: move it in Drive` };
+  }
+  return { error: rec ? 'Its old folder is not in Lenches Photos any more: move it in Drive' : 'Where it came from is not known: move it in Drive' };
+}
+
+// Every file in To delete (and folders inside it), with where it came from and when it
+// moved: [{ id, name, folderId, inside, from: { id, path, source } | { error }, movedAt,
+// movedBy: 'panel' | 'run' | '', prevStatus }]. rows: the Photos table (or a promise of it).
+export async function binList(env, photos) {
+  const { root, tree } = await loadTree(env);
+  const bins = [...tree.values()].filter((f) => f.toDelete);
+  let rows = [];
+  try { rows = (await photos).rows || []; } catch { /* listed without the Sheet's fallback */ }
+  const byId = new Map(rows.filter((r) => r.drive_id).map((r) => [r.drive_id, r]));
+  const out = [];
+  for (const b of bins) {
+    let page = '';
+    for (let n = 0; n < MAX_PAGES; n += 1) {
+      const q = encodeURIComponent(`'${b.id}' in parents and mimeType != '${FOLDER}' and trashed = false`);
+      const fields = encodeURIComponent('nextPageToken,files(id,name,parents,properties,createdTime)');
+      const j = await driveJson(env, `?q=${q}&fields=${fields}&pageSize=1000&includeItemsFromAllDrives=true${page ? `&pageToken=${encodeURIComponent(page)}` : ''}`);
+      for (const f of j.files || []) {
+        const row = byId.get(f.id) || null;
+        const p = f.properties || {};
+        const ran = row && String(row.notes || '').match(/^(\d{4}-\d{2}-\d{2}) in To delete/);
+        out.push({
+          id: f.id, name: f.name, folderId: b.id, inside: b.names.slice(1).join(' / '),
+          from: originOf(root, tree, f, row),
+          movedAt: String(p.lenchesMovedAt || '') || (ran ? ran[1] : ''),
+          movedBy: p.lenchesMovedAt ? 'panel' : ran ? 'run' : '',
+          prevStatus: String(p.lenchesStatus || ''),
+        });
+      }
+      page = j.nextPageToken || '';
+      if (!page) break;
+    }
+  }
+  return out.sort((a, b) => String(b.movedAt).localeCompare(String(a.movedAt)) || a.name.localeCompare(b.name));
+}
+
+// Back out of To delete to where it came from; the Photos status goes back to what it was
+// if the panel recorded it and the row is still rejected. expectedParent = the To delete
+// folder the page loaded.
+export async function restoreFile(env, { id, expectedParent }) {
+  const s = await start(env, id);
+  if (!s.ok) return s;
+  if (!s.where.toDelete) return fail(409, `It is not in ${TO_DELETE} any more (now in ${s.where.path})`, { current: s.where.parent, currentPath: s.where.path });
+  if (s.where.parent !== String(expectedParent ?? '')) {
+    return fail(409, 'Moved in Drive since you loaded the page', { current: s.where.parent, currentPath: s.where.path });
+  }
+  const to = originOf(s.root, s.tree, s.file, s.row);
+  if (to.error) return fail(409, to.error);
+  const clear = { lenchesFrom: null, lenchesFromPath: null, lenchesMovedAt: null, lenchesStatus: null };
+  await driveJson(env, `/${encodeURIComponent(id)}?addParents=${encodeURIComponent(to.id)}&removeParents=${encodeURIComponent(s.where.parent)}&fields=id,parents`,
+    { method: 'PATCH', body: { properties: clear } });
+  const prev = String((s.file.properties || {}).lenchesStatus || '');
+  const status = String(s.row.status ?? '');
+  let note = '';
+  if (low(status) === REJECTED && prev && low(prev) !== REJECTED) {
+    const w = await checkedWrite(env, { tab: 'Photos', keyCol: 'drive_id', key: id, field: 'status', expected: status, value: prev });
+    note = w.ok ? ` Photos status back to ${prev}.` : ` Its Photos status is still rejected (${w.error}).`;
+  } else if (low(status) === REJECTED) {
+    note = ' It is still marked rejected: Approve it to use it.';
+  }
+  const where = to.path || 'Lenches Photos';
+  return { ok: true, folderId: to.id, folder: pathOf(s.root, s.tree, to.id), status: note.includes('back to') ? prev : status, message: `Restored to ${where}.${note}` };
+}
+
+// The one-off tidy: every file still in a Rejected folder, or marked rejected in the
+// Photos tab but outside To delete. Nothing moves here; the panel shows the list, and on
+// Jon's yes moves each with discardFile. Safe to repeat: files already in To delete are
+// never listed. [{ id, name, folderId, path, reason, status, published, hasRow }]
+export async function tidyList(env) {
+  const [{ rows }, { root, tree }] = await Promise.all([readTable(env, 'Photos'), loadTree(env)]);
+  const byId = new Map(rows.filter((r) => r.drive_id).map((r) => [r.drive_id, r]));
+  const out = [];
+  let page = '';
+  for (let n = 0; n < MAX_PAGES; n += 1) {
+    const q = encodeURIComponent(`mimeType != '${FOLDER}' and trashed = false`);
+    const fields = encodeURIComponent('nextPageToken,files(id,name,parents)');
+    const j = await driveJson(env, `?q=${q}&fields=${fields}&pageSize=1000&includeItemsFromAllDrives=true${page ? `&pageToken=${encodeURIComponent(page)}` : ''}`);
+    for (const f of j.files || []) {
+      const parents = (f.parents || []).filter((p) => inRoot(root, tree, p));
+      if (parents.length !== 1) continue;
+      const [parent] = parents;
+      if (parent !== root && tree.get(parent).toDelete) continue;
+      const row = byId.get(f.id);
+      const folderRej = inRejected(root, tree, parent);
+      if (!folderRej && !(row && low(row.status) === REJECTED)) continue;
+      out.push({
+        id: f.id, name: f.name, folderId: parent, path: relOf(root, tree, parent),
+        reason: folderRej ? 'In a Rejected folder' : 'Marked rejected',
+        status: row ? String(row.status ?? '') : '', published: Boolean(row && published(row)), hasRow: Boolean(row),
+      });
+    }
+    page = j.nextPageToken || '';
+    if (!page) return { ok: true, files: out.sort((a, b) => a.path.localeCompare(b.path) || a.name.localeCompare(b.name)) };
+  }
+  throw new Error('Too many files in Drive to list: nothing listed');
 }
 
 /* ------------------------------------------------------------- duplicates -- */

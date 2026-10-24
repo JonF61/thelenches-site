@@ -9,7 +9,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { photoPages, scanPage } = require('../lib/photopages');
+const { photoPages, scanPage, eventEnds } = require('../lib/photopages');
 
 const REPO = path.resolve(__dirname, '..');
 const page = (body) => `<html><head><title>x</title></head><body><header><a id="top">Site</a></header><main class="container">${body}</main></body></html>`;
@@ -64,7 +64,7 @@ const published = JSON.parse(fs.readFileSync(path.join(REPO, 'src', '_data', 'ph
 const slugs = new Set(published.map((p) => p.slug));
 const htmlOf = (url) => fs.readFileSync(path.join(REPO, '_site', url.replace(/^\//, ''), 'index.html'), 'utf8');
 
-assert.deepStrictEqual(Object.keys(file).sort(), ['generated', 'pages']);
+assert.deepStrictEqual(Object.keys(file).sort(), ['eventEnds', 'generated', 'pages']);
 assert.match(file.generated, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
 assert.ok(Object.keys(file.pages).length > 0, 'the current site has photos on pages');
 const sheetOnly = ['drive_id', 'drive_link', 'filename', 'description', 'people', 'notes', 'dhash', 'path'];
@@ -89,5 +89,13 @@ assert.ok(!/drive\.google|docs\.google|googleapis|@/.test(text), 'no Google addr
 // The pages the current photos are on today.
 assert.deepStrictEqual(file.pages['rous-lench-img-3113'], [{ label: 'Village Halls: Rous Lench Village Hall', url: '/halls/#photo-rous-lench-img-3113' }]);
 assert.ok(Object.values(file.pages).flat().some((p) => p.label.startsWith('Churches: ')));
+
+// Multi-day events' last days, keyed as the Image fetch tab keys events (start|title).
+assert.deepStrictEqual(eventEnds([
+  { date: '2026-11-14', endDate: '2026-11-15', title: 'Craft  fair — Church Lench ' },
+  { date: '2026-11-20', title: 'One day' },
+  { date: '2026-11-21', endDate: '2026-11-21', title: 'Same day' },
+]), { '2026-11-14|Craft fair — Church Lench': '2026-11-15' });
+assert.ok(file.eventEnds && typeof file.eventEnds === 'object', 'build writes eventEnds');
 
 console.log(`photo-pages: all checks passed (${Object.keys(file.pages).length} photos on pages in this build).`);
