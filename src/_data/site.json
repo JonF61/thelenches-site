@@ -11,7 +11,8 @@
   "nav": [
     { "title": "Home", "url": "/" },
     { "title": "Events", "url": "/events/" },
-    { "title": "Community", "url": "/community/", "match": ["community", "groups", "halls", "churches", "notices"] },
+    { "title": "Notices", "url": "/notices/", "match": ["notices"] },
+    { "title": "Community", "url": "/community/", "match": ["community", "groups", "halls", "churches"] },
     { "title": "Living here", "url": "/living-here/", "match": ["living-here", "bins"] },
     { "title": "Contact", "url": "/contact/" }
   ]
