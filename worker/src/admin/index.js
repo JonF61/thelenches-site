@@ -2,10 +2,11 @@
 // Admin panel, served under /admin by the approvals Worker. Cloudflare Access sits in
 // front; every request here (pages, API, images) is checked again with verifyAccess,
 // so the workers.dev URL can't skip it. The Sheet stays the source of truth.
-//   GET  /admin                     the panel (this version: a connection check page)
+//   GET  /admin, /admin/app.js, /admin/app.css   the panel (ui/client.js, ui/css.js)
 //   GET  /admin/api/session         { email, csrf }
-//   GET  /admin/api/state           queue data: Pending, Replies, Photos, holiday mode,
-//                                   latest Health and Issues rows, tab gids
+//   GET  /admin/api/state           Pending, Replies (awaiting and still owed), Photos,
+//                                   holiday mode, latest newsletter, Health, watchdog
+//   GET  /admin/api/mail-images?m=  every image in one email (for a Pending item)
 //   POST /admin/api/edit            { tab, key, field, expected, value }: one plain field
 //                                   edit, refused (409, current value) if the cell changed
 //   POST /admin/api/action          { kind: pending|reply|photo, id, action, reason?, body?,
@@ -16,12 +17,15 @@
 // Nothing here can send the newsletter or change repository code: the only GitHub call
 // is decide(), for the item and reply actions listed in actions.js.
 
-import { ACTIONS, decide } from '../core.js';
+import { ACTIONS, decide, github } from '../core.js';
 import { verifyAccess } from './access.js';
 import { makeCsrf, checkCsrf, sameOrigin } from './csrf.js';
-import { getValues, sheetGids, gmailImage, driveImage } from './google.js';
+import { getValues, sheetGids, gmailImage, gmailImageParts, driveImage } from './google.js';
 import { readTable, readSettingsPairs, editCell, checkedWrite } from './sheet.js';
-import { planPending, planReply, planPhoto } from './actions.js';
+import { planPending, planReply, planPhoto, trustKeyFor, truthy } from './actions.js';
+import { owedReplies } from './owed.js';
+import { CLIENT_CSS } from './ui/css.js';
+import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 
 const MAX_BODY = 20000;
 const SECURITY_HEADERS = {
@@ -32,35 +36,15 @@ const SECURITY_HEADERS = {
   'x-frame-options': 'DENY',
   'content-security-policy': "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
 };
-// Issues cells too big or too technical for the panel.
-const ISSUE_SKIP = new Set(['snapshot', 'item_keys', 'image_keys', 'content_hash']);
+// Issues cells the status strip shows (never the snapshot or hashes).
+const NEWSLETTER_FIELDS = ['_row', 'issue_id', 'issue_date', 'status', 'subject', 'sent_at', 'recipients', 'notes'];
+const REPLY_FIELDS = ['_row', 'reply_id', 'message_id', 'to', 'type', 'status', 'subject', 'sent_at', 'created_at'];
+const WATCHDOG_TITLE = 'Watchdog alert';
 // Photos rows still waiting for a decision.
 const PHOTO_WAITING = new Set(['', 'new']);
 
-const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
-  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-));
-
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status, headers: { ...SECURITY_HEADERS, 'content-type': 'application/json; charset=utf-8' },
-});
-
-const html = (body, status = 200) => new Response(`<!doctype html>
-<html lang="en-GB"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex">
-<meta name="color-scheme" content="light dark">
-<title>Lenches admin</title>
-<style>
-:root{--bg:#F6F1E4;--card:#fff;--ink:#2b2b2b;--muted:#666;--accent:#3F5233;--bad:#A33B2B}
-@media (prefers-color-scheme: dark){:root{--bg:#161a14;--card:#22281f;--ink:#e8e6df;--muted:#a3a39a;--accent:#9cc28a;--bad:#e08a7c}}
-body{font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--ink);margin:0;padding:16px}
-main{max-width:640px;margin:24px auto;background:var(--card);border-radius:10px;padding:24px}
-h1{color:var(--accent);font-size:1.3rem;margin-top:0}
-.muted{color:var(--muted);font-size:.9rem}.bad{color:var(--bad)}
-li{margin:4px 0}
-</style></head><body><main>${body}</main></body></html>`, {
-  status, headers: { ...SECURITY_HEADERS, 'content-type': 'text/html; charset=utf-8' },
 });
 
 const forbidden = () => new Response('Forbidden', {
@@ -81,45 +65,100 @@ async function readSources(env) {
     .filter((s) => s.source && s.match);
 }
 
+// Watchdog: the Worker's own checks raise a GitHub issue titled "Watchdog alert" and
+// close it when the next check passes. { open, since, problems } or { open: false, cleared }.
+async function watchdog(env) {
+  const r = await github(env, `/repos/${env.REPO}/issues?state=all&per_page=30`);
+  if (!r.ok) throw new Error(`GitHub issues: HTTP ${r.status}`);
+  const alerts = ((await r.json()) || []).filter((i) => i.title === WATCHDOG_TITLE && !i.pull_request);
+  const open = alerts.find((i) => i.state === 'open');
+  if (open) {
+    const problems = String(open.body || '').split('\n').filter((l) => l.startsWith('- ')).map((l) => l.slice(2));
+    return { open: true, since: open.created_at, problems };
+  }
+  const last = alerts.find((i) => i.closed_at);
+  return { open: false, cleared: last ? last.closed_at : '' };
+}
+
+// Organisers' images: Image fetch rows saved to Drive, by Drive file id.
+function organiserImages(t) {
+  const out = {};
+  if (t.error) return out;
+  for (const r of t.rows) {
+    const id = String(r.drive_file_id || '').trim();
+    if (id) out[id] = { event: r.event || '', source_page: r.source_page || '', credit: r.credit || '' };
+  }
+  return out;
+}
+
+const pick = (row, keys) => Object.fromEntries(keys.filter((k) => k in row).map((k) => [k, row[k]]));
+
 async function state(env, email) {
-  const [pending, replies, photos, settings, health, issues, gids] = await settled([
+  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog] = await settled([
     readTable(env, 'Pending'), readTable(env, 'Replies'), readTable(env, 'Photos'),
     readSettingsPairs(env), readTable(env, 'Health'), readTable(env, 'Issues'), sheetGids(env),
+    readSources(env), readTable(env, 'Image fetch'), watchdog(env),
   ]);
-  const rowsOf = (t, keep) => (t.error ? t : { headers: t.headers, rows: t.rows.filter(keep) });
   const holiday = settings.error ? settings : (settings.find((p) => p.key === 'holiday_mode') || { value: '' });
-  const last = (t) => (t.error ? t : t.rows.filter((r) => Object.values(r).some((v) => v !== '' && typeof v === 'string')).pop() || null);
-  const issue = last(issues);
-  if (issue && !issue.error) for (const k of ISSUE_SKIP) delete issue[k];
+  const filled = (t) => t.rows.filter((r) => Object.entries(r).some(([k, v]) => k !== '_row' && v !== ''));
+
+  let newsletter = issues.error ? issues : (filled(issues).pop() || null);
+  if (newsletter && !newsletter.error) newsletter = pick(newsletter, NEWSLETTER_FIELDS);
+
+  let pend = pending;
+  if (!pending.error) {
+    const src = sources.error ? [] : sources;
+    pend = {
+      headers: pending.headers,
+      rows: pending.rows.filter((r) => r.status === 'pending').map((r) => ({
+        ...r,
+        _trust: trustKeyFor(r, src),
+        _official: truthy(r.official),
+        _offers: Boolean(String(r.own_text || '').trim()) && (truthy(r.official) || truthy(r.verbatim_requested)),
+      })),
+    };
+  }
+  const owed = replies.error ? replies : owedReplies(replies.rows).map(({ holding, draft }) => ({
+    holding: pick(holding, REPLY_FIELDS),
+    draft: draft ? pick(draft, REPLY_FIELDS) : null,
+  }));
+  const fromWeb = organiserImages(web);
   return {
     email,
-    pending: rowsOf(pending, (r) => r.status === 'pending'),
-    replies: rowsOf(replies, (r) => r.status === 'awaiting'),
-    photos: rowsOf(photos, (r) => r.drive_id && PHOTO_WAITING.has(String(r.status || '').trim().toLowerCase())),
+    sheetId: String(env.SHEET_ID || ''),
+    gids: gids.error ? {} : gids,
     holiday: holiday.error ? holiday : { value: holiday.value, on: String(holiday.value).trim().toUpperCase() === 'TRUE' },
-    health: last(health),
-    issue,
-    gids,
+    newsletter,
+    health: health.error ? health : filled(health).slice(-7).reverse(),
+    watchdog: dog,
+    pending: pend,
+    replies: replies.error ? replies : { headers: replies.headers, rows: replies.rows.filter((r) => r.status === 'awaiting') },
+    owed,
+    photos: photos.error ? photos : {
+      headers: photos.headers,
+      rows: photos.rows
+        .filter((r) => r.drive_id && PHOTO_WAITING.has(String(r.status || '').trim().toLowerCase()))
+        .map((r) => ({ ...r, _organiser: fromWeb[r.drive_id] || null })),
+    },
   };
 }
 
-async function homePage(env, email) {
-  const s = await state(env, email);
-  const count = (t) => (t.error ? `<span class="bad">not readable: ${esc(t.error)}</span>` : String(t.rows.length));
-  const missingPeopleOk = !s.pending.error && !s.pending.headers.includes('people_ok');
-  return html(`<h1>Lenches admin</h1>
-<p>Signed in as ${esc(email)}. The screens arrive in the next update; this page checks the connections.</p>
-<ul>
-<li>Pending items waiting: ${count(s.pending)}</li>
-<li>Replies awaiting you: ${count(s.replies)}</li>
-<li>Photos waiting: ${count(s.photos)}</li>
-<li>Holiday mode: ${s.holiday.error ? `<span class="bad">not readable: ${esc(s.holiday.error)}</span>` : (s.holiday.on ? 'ON' : 'off')}</li>
-<li>Latest health check: ${s.health && !s.health.error ? `${esc(s.health.date)} ${esc(s.health.status)}` : '<span class="bad">none found</span>'}</li>
-<li>Latest newsletter: ${s.issue && !s.issue.error ? `${esc(s.issue.issue_date || s.issue.issue_id)} ${esc(s.issue.status)}` : '<span class="bad">none found</span>'}</li>
-</ul>
-${missingPeopleOk ? '<p class="bad">Pending has no people_ok column yet: approving items whose image shows people is blocked until it is added.</p>' : ''}
-<p class="muted">Nothing on this page changes anything.</p>`);
-}
+// The panel: a static shell; everything else comes from the API.
+const shell = () => new Response(`<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light dark">
+<title>Lenches admin</title>
+<link rel="stylesheet" href="/admin/app.css?v=${UI_VERSION}">
+<script src="/admin/app.js?v=${UI_VERSION}" defer></script>
+</head><body><div id="app"><p class="loading">Loading…</p></div></body></html>`, {
+  headers: { ...SECURITY_HEADERS, 'content-type': 'text/html; charset=utf-8' },
+});
+
+const asset = (body, type) => new Response(body, {
+  headers: { ...SECURITY_HEADERS, 'content-type': `${type}; charset=utf-8`, 'cache-control': 'private, max-age=300' },
+});
 
 /* --------------------------------------------------------------- writes -- */
 
@@ -182,6 +221,12 @@ async function doAction(env, body) {
 
 /* --------------------------------------------------------------- images -- */
 
+async function mailImages(env, url) {
+  const m = String(url.searchParams.get('m') || '');
+  if (!/^[A-Za-z0-9]{6,40}$/.test(m)) return json({ error: 'Bad message id' }, 400);
+  return json({ images: await gmailImageParts(env, m) });
+}
+
 async function image(env, path, url) {
   let m = path.match(/^\/admin\/img\/mail\/([A-Za-z0-9]{6,40})\/([0-9.]{1,20})$/);
   let got;
@@ -222,7 +267,10 @@ export async function handleAdmin(request, env) {
 
   try {
     if (request.method === 'GET' || request.method === 'HEAD') {
-      if (path === '/admin') return await homePage(env, auth.email);
+      if (path === '/admin') return shell();
+      if (path === '/admin/app.js') return asset(CLIENT_JS, 'text/javascript');
+      if (path === '/admin/app.css') return asset(CLIENT_CSS, 'text/css');
+      if (path === '/admin/api/mail-images') return await mailImages(env, url);
       if (path === '/admin/api/session') return json({ email: auth.email, csrf: await makeCsrf(env, auth.email) });
       if (path === '/admin/api/state') return json(await state(env, auth.email));
       if (path.startsWith('/admin/img/')) return await image(env, path, url);

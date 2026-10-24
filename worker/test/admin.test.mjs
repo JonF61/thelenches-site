@@ -9,7 +9,8 @@ import assert from 'node:assert/strict';
 
 import { verifyAccess, resetCertCache } from '../src/admin/access.js';
 import { makeCsrf, checkCsrf, sameOrigin, CSRF_TTL_MS } from '../src/admin/csrf.js';
-import { editCell, colLetter } from '../src/admin/sheet.js';
+import { editCell, colLetter, isTypoFix, wordsChanged } from '../src/admin/sheet.js';
+import { owedReplies } from '../src/admin/owed.js';
 import { planPending, planReply, planPhoto, trustKeyFor } from '../src/admin/actions.js';
 import { resetTokenCache } from '../src/admin/google.js';
 import { bytesToB64url, jsonToB64url } from '../src/admin/b64.js';
@@ -97,6 +98,17 @@ function fakeWorld(tables) {
       }
       return Response.json({ sheets: [{ properties: { title: 'Pending', sheetId: 7 } }] });
     }
+    if (url.hostname === 'api.github.com' && url.pathname === '/repos/owner/repo/issues') {
+      return Response.json(tables.issues || []);
+    }
+    if (url.hostname === 'gmail.googleapis.com') {
+      assert.equal(calls.tokenSubs.at(-1), 'inbox@example.org');
+      return Response.json({ payload: { partId: '', mimeType: 'multipart/mixed', parts: [
+        { partId: '0', mimeType: 'text/plain', body: { size: 10 } },
+        { partId: '1', mimeType: 'image/jpeg', filename: 'flyer.jpg', body: { attachmentId: 'a1', size: 2000 } },
+        { partId: '2', mimeType: 'text/html', filename: 'x.html', body: { attachmentId: 'a2', size: 50 } },
+      ] } });
+    }
     if (url.hostname === 'api.github.com' && url.pathname === '/repos/owner/repo/dispatches') {
       calls.dispatches.push(JSON.parse(init.body));
       return new Response(null, { status: 204 });
@@ -109,7 +121,7 @@ function fakeWorld(tables) {
 const PENDING_HEADERS = ['id', 'from', 'source', 'message_id', 'title', 'summary', 'event_date', 'village', 'category',
   'status', 'people_in_image', 'own_text', 'people_ok'];
 const pendingTable = () => [
-  PENDING_HEADERS,
+  PENDING_HEADERS.slice(),
   ['m1-1', 'Hall <hall@example.org>', 'Gmail', 'm1', 'Quiz night', 'Quiz at the hall.', '2026-11-14', 'Rous Lench', 'event', 'pending', 'FALSE', '', ''],
   ['m2-1', 'Fete <fete@example.org>', 'Gmail', 'm2', 'Fete', 'Fete with photos.', '2026-12-01', 'Atch Lench', 'event', 'pending', 'TRUE', '', ''],
   ['m3-1', 'Old <old@example.org>', 'Gmail', 'm3', 'Old', 'Done.', '', '', 'notice', 'approved', 'FALSE', '', ''],
@@ -431,22 +443,104 @@ test('E2E: nothing in the panel can send the newsletter', async () => {
   assert.equal(calls.dispatches.length, 0);
 });
 
-test('E2E: state and session', async () => {
-  const calls = fakeWorld(tablesFor());
+test('E2E: state, session and the panel files', async () => {
+  const tables = tablesFor();
+  tables.Pending[0].push('official');
+  tables.Pending.forEach((r, i) => { if (i) r.push(i === 1 ? 'TRUE' : ''); });
+  tables.Pending[1][PENDING_HEADERS.indexOf('own_text')] = 'Their own words.';
+  tables.Replies = [
+    ['reply_id', 'message_id', 'thread_id', 'type', 'status', 'sent_at', 'policy_codes', 'to', 'subject', 'body'],
+    ['r1', 'mA', 'tA', 'answer', 'awaiting', '', '', 'a@x.org', 'Hall hire', 'Thanks!'],
+    ['h1', 'mA', 'tA', 'holding', 'sent', '2026-01-01 09:00', '', 'a@x.org', 'Hall hire', 'Holding'],
+    ['h2', 'mB', 'tB', 'holding', 'sent', '2026-01-01 09:00', 'closed', 'b@x.org', 'Closed one', 'Holding'],
+    ['h3', 'mC', 'tC', 'holding', 'sent', '2026-01-01 09:00', '', 'c@x.org', 'Answered', 'Holding'],
+    ['c3', 'mC', 'tC', 'answer', 'sent', '2026-01-02 09:00', '', 'c@x.org', 'Answered', 'Answer'],
+  ];
+  tables['Image fetch'] = [['drive_file_id', 'event', 'source_page', 'status'], ['driveAAAAAAAAAA2', 'Fete', 'https://fete.example', 'saved']];
+  tables.issues = [{ title: 'Watchdog alert', state: 'open', created_at: '2026-10-24T09:00:00Z', body: 'Found:\n\n- Website returned HTTP 500\n\nCloses itself.' }];
+  const calls = fakeWorld(tables);
   const r = await worker.fetch(await reqWith('/admin/api/state'), env());
   const s = await r.json();
-  assert.equal(r.status, 200);
-  assert.deepEqual(s.pending.rows.map((x) => x.id), ['m1-1', 'm2-1']);
+  assert.equal(r.status, 200, JSON.stringify(s));
+  assert.deepEqual(s.pending.rows.map((x) => [x.id, x._official, x._offers, x._trust]),
+    [['m1-1', true, true, 'hall@example.org'], ['m2-1', false, false, 'fete@example.org']]);
   assert.deepEqual(s.replies.rows.map((x) => x.reply_id), ['r1']);
-  assert.deepEqual(s.photos.rows.map((x) => x.drive_id), ['driveAAAAAAAAAA1', 'driveAAAAAAAAAA2']);
+  assert.deepEqual(s.owed.map((o) => [o.holding.reply_id, o.draft && o.draft.reply_id]), [['h1', 'r1']]);
+  assert.equal(s.owed[0].holding.body, undefined, 'owed rows carry only the listed fields');
+  assert.deepEqual(s.photos.rows.map((x) => [x.drive_id, Boolean(x._organiser)]), [['driveAAAAAAAAAA1', false], ['driveAAAAAAAAAA2', true]]);
   assert.deepEqual(s.holiday, { value: 'FALSE', on: false });
-  assert.equal(s.issue.snapshot, undefined);
+  assert.equal(s.newsletter.issue_date, '2026-10-23');
+  assert.equal(s.newsletter.snapshot, undefined);
+  assert.equal(s.health[0].status, 'OK');
+  assert.deepEqual(s.watchdog, { open: true, since: '2026-10-24T09:00:00Z', problems: ['Website returned HTTP 500'] });
   assert.equal(s.gids.Pending, 7);
-  assert.ok(calls.tokenSubs.every((x) => x === ''), 'Sheets uses the service account itself');
+  assert.equal(s.sheetId, 'sheet123');
+  assert.equal(calls.dispatches.length, 0);
+
   const sess = await (await worker.fetch(await reqWith('/admin/api/session'), env())).json();
   assert.equal(sess.email, ADMIN);
   assert.equal(await checkCsrf(env(), ADMIN, sess.csrf), true);
+
   const home = await worker.fetch(await reqWith('/admin'), env());
   assert.equal(home.status, 200);
   assert.match(home.headers.get('content-security-policy'), /frame-ancestors 'none'/);
+  assert.match(await home.text(), /src="\/admin\/app\.js/);
+  const js = await worker.fetch(await reqWith('/admin/app.js'), env());
+  assert.match(js.headers.get('content-type'), /javascript/);
+  const code = await js.text();
+  assert.doesNotThrow(() => new Function(code), 'the panel script parses');
+  assert.doesNotMatch(code, /innerHTML/, 'all text goes in as text nodes');
+  assert.doesNotMatch(code, /nlsend|nlbuild/, 'no newsletter send in the panel');
+  const css = await worker.fetch(await reqWith('/admin/app.css'), env());
+  assert.match(await css.text(), /prefers-color-scheme: dark/);
+});
+
+test('E2E: mail images lists only images, via the impersonated inbox', async () => {
+  fakeWorld(tablesFor());
+  const r = await worker.fetch(await reqWith('/admin/api/mail-images?m=abc123def'), env());
+  assert.deepEqual((await r.json()).images, [{ partId: '1', filename: 'flyer.jpg', type: 'image/jpeg', size: 2000 }]);
+  const bad = await worker.fetch(await reqWith('/admin/api/mail-images?m=../x'), env());
+  assert.equal(bad.status, 400);
+});
+
+test('Official items: typo fixes only, on the server', async () => {
+  assert.equal(isTypoFix('The parish council meets on Tuesday at 7pm in the hall.', 'The parish council meets on Tuesday at 7pm in the hall'), true);
+  assert.equal(isTypoFix('The parish councl meets on Tusday.', 'The parish council meets on Tuesday.'), true);
+  assert.equal(isTypoFix('The parish council meets on Tuesday.', 'Come along to a fun evening with the council, all welcome!'), false);
+  assert.equal(wordsChanged('a b c', 'a b c'), 0);
+
+  const tables = tablesFor();
+  tables.Pending[0].push('official');
+  tables.Pending.forEach((r, i) => { if (i) r.push(i === 1 ? 'TRUE' : ''); });
+  const calls = fakeWorld(tables);
+  let r = await editCell(env(), { tab: 'Pending', key: 'm1-1', field: 'summary', expected: 'Quiz at the hall.', value: 'Totally different words written by us instead.' });
+  assert.equal(r.status, 400);
+  assert.match(r.error, /typo/);
+  r = await editCell(env(), { tab: 'Pending', key: 'm1-1', field: 'summary', expected: 'Quiz at the hall.', value: 'Quiz at the Hall.' });
+  assert.equal(r.ok, true);
+  r = await editCell(env(), { tab: 'Pending', key: 'm1-1', field: 'village', expected: 'Rous Lench', value: 'Church Lench' });
+  assert.equal(r.ok, true, 'non-text fields are not limited');
+  r = await editCell(env(), { tab: 'Pending', key: 'm2-1', field: 'summary', expected: 'Fete with photos.', value: 'Anything at all for a normal item.' });
+  assert.equal(r.ok, true, 'non-official items are not limited');
+  assert.equal(calls.writes.length, 3);
+});
+
+test('Owed: same rule as scripts/ingest/replies.js owedReplies', async () => {
+  const { createRequire } = await import('node:module');
+  const require = createRequire(import.meta.url);
+  let script;
+  try {
+    script = require('../../scripts/ingest/replies.js');
+  } catch {
+    return; // needs npm ci; the E2E test above covers the Worker side
+  }
+  if (!script.owedReplies) return;
+  const rows = [
+    { reply_id: 'h1', message_id: 'mA', thread_id: 'tA', type: 'holding', status: 'sent', sent_at: '2026-01-01 09:00' },
+    { reply_id: 'r1', message_id: 'mA', thread_id: 'tA', type: 'answer', status: 'awaiting' },
+    { reply_id: 'h2', message_id: 'mB', thread_id: 'tB', type: 'holding', status: 'sent', sent_at: '2026-01-01 09:00', policy_codes: 'closed' },
+    { reply_id: 'h3', message_id: 'mC', thread_id: 'tC', type: 'holding', status: 'sent', sent_at: '2099-01-01 09:00' },
+  ];
+  const ids = (list) => list.map((o) => [o.holding.reply_id, o.draft && o.draft.reply_id]);
+  assert.deepEqual(ids(owedReplies(rows)), ids(script.owedReplies(rows)));
 });
