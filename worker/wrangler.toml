@@ -1,6 +1,10 @@
-# Cloudflare Worker: approval links, newsletter buttons, unsubscribe, schedule, watchdog.
+# Cloudflare Worker: approval links, newsletter buttons, unsubscribe, schedule, watchdog,
+# admin panel (/admin, behind Cloudflare Access).
 # Deployed by .github/workflows/deploy-worker.yml; secrets DISPATCH_TOKEN and
 # APPROVAL_SIGNING_KEY are pushed from GitHub secrets at deploy time.
+# Admin panel secrets, added by hand in the Cloudflare dashboard as type "Secret" (deploys
+# keep secrets but replace plain variables): GOOGLE_SA_KEY, GMAIL_USER, ADMIN_EMAILS,
+# ACCESS_TEAM_DOMAIN, ACCESS_AUD. Until all are set, /admin answers 403.
 name = "approvals"
 main = "src/index.js"
 compatibility_date = "2026-09-01"
@@ -32,6 +36,8 @@ NIGHTLY = "on"
 INGEST = "on"
 # Kill switch for the 07:00 UK daily approvals email: "off" to pause.
 DAILY = "on"
+# Lenches Pipeline Sheet, read and written by the admin panel (same ID as the workflows).
+SHEET_ID = "1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI"
 
 [observability]
 enabled = true
