@@ -51,7 +51,7 @@ description: Church Lench and Rous Lench village halls — history, hire charges
     {#- Jon's photos from photos.json (Photos tab): 3113 whole hall, plus 3110 (moved from Groups, 13 Oct) -#}
     <div class="gallery">
       {%- for p in photos %}{% if p.slug == "rous-lench-img-3113" or p.slug == "rous-lench-img-3110" %}
-      <img src="{{ p.src | url }}" alt="{{ p.alt | escape }}" width="{{ p.width }}" height="{{ p.height }}" loading="lazy">
+      <img id="photo-{{ p.slug }}" src="{{ p.src | url }}" alt="{{ p.alt | escape }}" width="{{ p.width }}" height="{{ p.height }}" loading="lazy">
       {%- endif %}{% endfor %}
     </div>
     <p>A characterful red-brick Victorian hall on the triangular village green. Built in 1885, it was known as Chafecote until its owner, Tom Burns, gave it to the village in 1947, and only later took the name Rous Lench Village Hall.</p>

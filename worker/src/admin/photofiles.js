@@ -15,12 +15,16 @@
 //     belong to it, not to Jon, and would be at risk if the account were ever deleted.
 //     Jon makes folders in Drive; the panel picks them up on Reload.
 //   - a published copy needs a second, explicit confirm (confirmPublished) before it moves
+//   - a rename never reuses a name: if any file under Lenches Photos (To delete included)
+//     has the same core name and extension, it is saved as core-N (numberedName); checked
+//     again at write time and once more after it, so two quick renames can't collide
 // Renaming is safe for published photos too: the run fixes a photo's slug (its web
 // address and committed file names) at first publish and keeps it, alt text is its own
 // column, and nothing else reads the Drive name.
 
 import { driveJson } from './google.js';
 import { readTable, checkedWrite } from './sheet.js';
+import { photoPages, pagesFor } from './photopages.js';
 
 export const FOLDER = 'application/vnd.google-apps.folder';
 export const TO_DELETE = 'To delete';
@@ -61,6 +65,25 @@ export function newFileName(current, typed) {
   const name = stem + ext;
   if (name === current) return { error: 'That is already its name' };
   return { name };
+}
+
+// A name's parts for clash checks: core (no extension, no trailing -N), N (null if
+// none) and extension, core and extension in lower case for comparing.
+export function nameParts(name) {
+  const { stem, ext } = splitExt(name);
+  const m = stem.match(/^(.+)-(\d+)$/);
+  const core = m ? m[1] : stem;
+  return { core, num: m ? Number(m[2]) : null, ext, key: `${low(core)}\u0000${low(ext)}` };
+}
+
+// The name to save as: wanted itself if no other file (names, the renamed file left out)
+// has its core and extension, else core-N with N one more than the highest in use
+// (a plain core counts as 1; gaps are not filled).
+export function numberedName(wanted, names) {
+  const w = nameParts(wanted);
+  const nums = names.map(nameParts).filter((p) => p.key === w.key).map((p) => p.num ?? 1);
+  if (!nums.length) return wanted;
+  return `${w.core}-${Math.max(...nums) + 1}${w.ext}`;
 }
 
 /* ---------------------------------------------------------------- folders -- */
@@ -137,6 +160,26 @@ async function loadTree(env) {
 
 /* ------------------------------------------------------------------ files -- */
 
+const MAX_PAGES = 20;
+
+// Every file (not folder) anywhere under root, To delete included: [{ id, name }] (paged).
+// Refuses rather than guess if there are more than it can check.
+async function filesUnder(env, root, tree) {
+  const out = [];
+  let page = '';
+  for (let n = 0; n < MAX_PAGES; n += 1) {
+    const q = encodeURIComponent(`mimeType != '${FOLDER}' and trashed = false`);
+    const fields = encodeURIComponent('nextPageToken,files(id,name,parents)');
+    const j = await driveJson(env, `?q=${q}&fields=${fields}&pageSize=1000&includeItemsFromAllDrives=true${page ? `&pageToken=${encodeURIComponent(page)}` : ''}`);
+    out.push(...(j.files || []).filter((f) => (f.parents || []).some((p) => inRoot(root, tree, p))));
+    page = j.nextPageToken || '';
+    if (!page) return out.map((f) => ({ id: f.id, name: f.name }));
+  }
+  throw new Error('Too many files in Drive to check the name is free: nothing renamed');
+}
+
+const otherNames = (files, id) => files.filter((f) => f.id !== id).map((f) => f.name);
+
 async function getFile(env, id) {
   return driveJson(env, `/${encodeURIComponent(id)}?fields=${encodeURIComponent(FILE_FIELDS)}`);
 }
@@ -190,6 +233,24 @@ export async function fileInfo(env, id) {
   };
 }
 
+// The name a rename would save as, with the clash check: { ok, name, wanted, numbered }.
+async function planName(env, s, id, typed) {
+  const n = newFileName(s.file.name, typed);
+  if (n.error) return fail(400, n.error);
+  const final = numberedName(n.name, otherNames(await filesUnder(env, s.root, s.tree), id));
+  if (final === s.file.name) return fail(400, 'That is already its name');
+  return { ok: true, name: final, wanted: n.name, numbered: final !== n.name };
+}
+
+// GET: "Will be saved as …" before Save. Nothing written.
+export async function previewName(env, { id, name }) {
+  const s = await start(env, id);
+  if (!s.ok) return s;
+  return planName(env, s, id, name);
+}
+
+const patchName = (env, id, name) => driveJson(env, `/${encodeURIComponent(id)}?fields=id,name`, { method: 'PATCH', body: { name } });
+
 export async function renameFile(env, { id, expected, name }) {
   const s = await start(env, id);
   if (!s.ok) return s;
@@ -197,15 +258,26 @@ export async function renameFile(env, { id, expected, name }) {
   if (s.file.name !== String(expected ?? '')) {
     return fail(409, 'Renamed in Drive since you loaded the page', { current: s.file.name });
   }
-  const n = newFileName(s.file.name, name);
-  if (n.error) return fail(400, n.error);
-  await driveJson(env, `/${encodeURIComponent(id)}?fields=id,name`, { method: 'PATCH', body: { name: n.name } });
+  // Checked again now, against Drive as it is at write time.
+  const plan = await planName(env, s, id, name);
+  if (!plan.ok) return plan;
+  let final = plan.name;
+  await patchName(env, id, final);
+  // A rename made in the same moment may have picked the same name: the file with the
+  // higher id gives way and takes the next number.
+  for (let n = 0; n < 3; n += 1) {
+    const files = await filesUnder(env, s.root, s.tree);
+    const same = files.filter((f) => f.id !== id && low(f.name) === low(final));
+    if (!same.length || same.every((f) => f.id > id)) break;
+    final = numberedName(final, otherNames(files, id));
+    await patchName(env, id, final);
+  }
   // The Sheet's filename follows on the next photos run; set it now if it still shows the old name.
   if (s.headers.includes('filename') && s.row.filename === s.file.name) {
-    await checkedWrite(env, { tab: 'Photos', keyCol: 'drive_id', key: id, field: 'filename', expected: s.file.name, value: n.name })
+    await checkedWrite(env, { tab: 'Photos', keyCol: 'drive_id', key: id, field: 'filename', expected: s.file.name, value: final })
       .catch((e) => console.log(`Photos filename for ${id} not updated: ${e.message}`));
   }
-  return { ok: true, name: n.name };
+  return { ok: true, name: final, wanted: plan.wanted, numbered: final !== plan.wanted };
 }
 
 async function changeFolder(env, id, from, to) {
@@ -292,12 +364,12 @@ export function dupGroup(rows, id) {
 
 export async function dupMembers(env, id) {
   if (!validId(id)) return fail(400, 'Bad file id');
-  const [{ rows }, { root, tree }] = await Promise.all([photoRow(env, id), loadTree(env)]);
+  const [{ rows }, { root, tree }, list] = await Promise.all([photoRow(env, id), loadTree(env), photoPages(env)]);
   const group = dupGroup(rows, id);
   if (!group.length) return fail(404, 'No Photos row for this file');
   const members = await Promise.all(group.map(async (r) => {
     const base = {
-      drive_id: r.drive_id, filename: r.filename || '', status: String(r.status || ''), published: published(r),
+      drive_id: r.drive_id, filename: r.filename || '', status: String(r.status || ''), published: published(r), pages: pagesFor(list, r),
       sheetPath: r.path || '', width: r.width || '', height: r.height || '',
     };
     let file;

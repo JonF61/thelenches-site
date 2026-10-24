@@ -92,6 +92,10 @@ textarea.f{min-height:120px;resize:vertical;line-height:1.4}
 .overlay{position:fixed;inset:0;background:var(--bg);z-index:10;overflow:auto;padding:12px 16px 80px}
 .overlay .bar{position:sticky;top:-12px;display:flex;align-items:center;gap:8px;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--line);margin-bottom:8px}
 .overlay .bar h2{flex:1;font-size:1.05rem;margin:0}
+.ask{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:15;display:flex;align-items:center;justify-content:center;padding:16px}
+.ask .box{background:var(--bg);color:var(--ink);max-width:560px;width:100%;max-height:90vh;overflow:auto;border-radius:10px;padding:16px;box-shadow:0 4px 20px rgba(0,0,0,.3)}
+.ask .msg{white-space:pre-line;margin:0 0 10px}
+.onsite a{overflow-wrap:anywhere}
 .toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:20;box-shadow:0 2px 10px rgba(0,0,0,.25)}
 .toast.bad{background:var(--bad);color:#fff}
 table.h{width:100%;border-collapse:collapse;font-size:.9rem}

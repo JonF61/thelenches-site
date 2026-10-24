@@ -38,7 +38,7 @@ description: Churches serving the Lenches, Harvington and Abbots Morton — the 
   {#- Photos come from src/_data/photos.json (Photos tab, target "churches"). Caption = church name by village. -#}
   <div class="gallery">
   {%- for p in photos %}{% if "churches" in p.targets %}
-    <figure style="margin:0">
+    <figure style="margin:0" id="photo-{{ p.slug }}">
       <a href="{{ p.src | url }}" data-viewer data-caption="{{ p.alt | escape }}"><img src="{{ p.src | url }}" alt="{{ p.alt | escape }}" width="{{ p.width }}" height="{{ p.height }}" loading="lazy"{% if p.height > p.width %} style="object-position:50% 20%"{% endif %}></a>
       <figcaption class="small muted">{{ churchNames[p.village] or p.village }}{% if p.credit %} &middot; {{ p.credit | escape }}{% endif %}</figcaption>
     </figure>

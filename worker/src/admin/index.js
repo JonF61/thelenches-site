@@ -6,7 +6,9 @@
 //   GET  /admin/api/session         { email, csrf }
 //   GET  /admin/api/state           Pending, Replies (awaiting and still owed), Photos (all
 //                                   in Drive) and the Lenches Photos folders, holiday mode,
-//                                   latest newsletter, Health, watchdog, Google account
+//                                   latest newsletter, Health, watchdog, Google account;
+//                                   each Photos row's _pages: the public pages it is on
+//                                   (photopages.js, from the site's photo-pages.json)
 //   GET  /admin/api/mail-images?m=  every image in one email (for a Pending item)
 //   POST /admin/api/edit            { tab, key, field, expected, value }: one plain field
 //                                   edit, refused (409, current value) if the cell changed
@@ -16,6 +18,8 @@
 //   GET  /admin/api/photo-file?id=  a Photos file's live Drive name and folder, and the
 //                                   Lenches Photos folders it can move to
 //   GET  /admin/api/photo-group?id= every copy in a possible-duplicate group
+//   GET  /admin/api/photo-name?id=&name=  the name a rename would save as (core-N if the
+//                                   name is in use anywhere under Lenches Photos)
 //   POST /admin/api/photo-file      { op: rename|move|discard, ... }: Drive file
 //                                   management, stale-checked, inside Lenches Photos only
 //                                   (photofiles.js); nothing is ever created, binned or deleted
@@ -31,7 +35,8 @@ import { getValues, sheetGids, gmailImage, gmailImageParts, driveImage, serviceA
 import { readTable, readSettingsPairs, editCell, checkedWrite } from './sheet.js';
 import { planPending, planReply, planPhoto, trustKeyFor, truthy } from './actions.js';
 import { owedReplies } from './owed.js';
-import { fileInfo, folderList, dupMembers, renameFile, moveFile, discardFile } from './photofiles.js';
+import { fileInfo, folderList, dupMembers, previewName, renameFile, moveFile, discardFile } from './photofiles.js';
+import { photoPages, pagesFor } from './photopages.js';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 
@@ -102,10 +107,10 @@ function organiserImages(t) {
 const pick = (row, keys) => Object.fromEntries(keys.filter((k) => k in row).map((k) => [k, row[k]]));
 
 async function state(env, email) {
-  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders] = await settled([
+  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite] = await settled([
     readTable(env, 'Pending'), readTable(env, 'Replies'), readTable(env, 'Photos'),
     readSettingsPairs(env), readTable(env, 'Health'), readTable(env, 'Issues'), sheetGids(env),
-    readSources(env), readTable(env, 'Image fetch'), watchdog(env), folderList(env),
+    readSources(env), readTable(env, 'Image fetch'), watchdog(env), folderList(env), photoPages(env),
   ]);
   const holiday = settings.error ? settings : (settings.find((p) => p.key === 'holiday_mode') || { value: '' });
   const filled = (t) => t.rows.filter((r) => Object.entries(r).some(([k, v]) => k !== '_row' && v !== ''));
@@ -153,6 +158,7 @@ async function state(env, email) {
           ...r,
           _waiting: PHOTO_WAITING.has(String(r.status || '').trim().toLowerCase()),
           _organiser: fromWeb[r.drive_id] || null,
+          _pages: pagesFor(onSite, r),
         })),
     },
     photoFolders: folders,
@@ -309,6 +315,9 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/state') return json(await state(env, auth.email));
       if (path === '/admin/api/photo-file') return fromResult(await fileInfo(env, String(url.searchParams.get('id') || '')));
       if (path === '/admin/api/photo-group') return fromResult(await dupMembers(env, String(url.searchParams.get('id') || '')));
+      if (path === '/admin/api/photo-name') {
+        return fromResult(await previewName(env, { id: String(url.searchParams.get('id') || ''), name: String(url.searchParams.get('name') || '') }));
+      }
       if (path.startsWith('/admin/img/')) return await image(env, path, url);
       return json({ error: 'Not found' }, 404);
     }
