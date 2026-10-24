@@ -5,7 +5,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '4';
+export const UI_VERSION = '5';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -826,7 +826,7 @@ export const CLIENT_JS = String.raw`
       e.preventDefault();
       if (dest.value === file.folderId) { toast('It is already in that folder'); return; }
       var to = folders.find(function (f) { return f.id === dest.value; });
-      if (file.published && !window.confirm('This photo is on the website. Its village and subject follow its folder; in a Rejected folder or a folder starting with _ it comes off the site on the next photos run.\n\nMove it to ' + to.path + '?')) return;
+      if (file.published && !window.confirm(file.name + ' is ON THE WEBSITE.\n\nMoving it to ' + to.path + ' changes the village and subject it is shown under on the site. In a Rejected folder or a folder starting with _ it comes off the site on the next daily photos run, and pages using it lose the picture. To undo, move it back: before that run nothing changes; after it, if it came off the site, also click Approve and the next run puts it back at the same web address.\n\nMove it?')) return;
       var res = await fileOp({ op: 'move', id: r.drive_id, expectedParent: file.folderId, to: dest.value });
       if (res.ok) {
         r.path = res.json.folder.replace(/^Lenches Photos( \/ )?/, '');
