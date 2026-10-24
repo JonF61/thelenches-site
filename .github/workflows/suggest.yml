@@ -1,0 +1,42 @@
+name: Image suggestions
+
+# Suggested images for Pending events that arrived without one (scripts/suggest).
+# Writes the "Image suggestions" tab only: no commit, nothing published or sent.
+on:
+  schedule:
+    - cron: '47 6-20/2 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: log what would be added, write nothing'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: suggest
+  cancel-in-progress: false
+
+jobs:
+  suggest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Suggest images
+        run: node scripts/suggest/index.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          DRY_RUN: ${{ inputs.dry_run }}
