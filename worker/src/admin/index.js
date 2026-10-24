@@ -16,9 +16,9 @@
 //   GET  /admin/api/photo-file?id=  a Photos file's live Drive name and folder, and the
 //                                   Lenches Photos folders it can move to
 //   GET  /admin/api/photo-group?id= every copy in a possible-duplicate group
-//   POST /admin/api/photo-file      { op: rename|move|folder|discard, ... }: Drive file
+//   POST /admin/api/photo-file      { op: rename|move|discard, ... }: Drive file
 //                                   management, stale-checked, inside Lenches Photos only
-//                                   (photofiles.js); nothing is ever binned or deleted
+//                                   (photofiles.js); nothing is ever created, binned or deleted
 //   GET  /admin/img/mail/MSG/PART   a Pending image (email attachment)
 //   GET  /admin/img/drive/ID[?size=N]  a Photos image (Drive thumbnail, else the file)
 // Nothing here can send the newsletter or change repository code: the only GitHub call
@@ -31,7 +31,7 @@ import { getValues, sheetGids, gmailImage, gmailImageParts, driveImage } from '.
 import { readTable, readSettingsPairs, editCell, checkedWrite } from './sheet.js';
 import { planPending, planReply, planPhoto, trustKeyFor, truthy } from './actions.js';
 import { owedReplies } from './owed.js';
-import { fileInfo, folderList, dupMembers, renameFile, moveFile, newFolder, discardFile } from './photofiles.js';
+import { fileInfo, folderList, dupMembers, renameFile, moveFile, discardFile } from './photofiles.js';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 
@@ -154,6 +154,7 @@ async function state(env, email) {
         })),
     },
     photoFolders: folders,
+    photosRoot: String(env.PHOTOS_FOLDER_ID || '').trim(),
   };
 }
 
@@ -239,7 +240,6 @@ const fromResult = (r) => (r.ok ? json(r) : json(r, r.status));
 const FILE_OPS = {
   rename: (env, b) => renameFile(env, { id: String(b.id || ''), expected: b.expected, name: b.name }),
   move: (env, b) => moveFile(env, { id: String(b.id || ''), expectedParent: b.expectedParent, to: b.to }),
-  folder: (env, b) => newFolder(env, { parent: b.parent, name: b.name }),
   discard: (env, b) => discardFile(env, {
     id: String(b.id || ''), expected: b.expected, expectedParent: b.expectedParent, confirmPublished: b.confirmPublished === true,
   }),

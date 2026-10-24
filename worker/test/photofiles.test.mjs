@@ -9,8 +9,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  cleanName, newFileName, newFolderName, folderTree, folderChoices, locate, dupGroup, hashDistance,
-  fileInfo, renameFile, moveFile, newFolder, discardFile, dupMembers, FOLDER,
+  cleanName, newFileName, folderTree, folderChoices, locate, dupGroup, hashDistance,
+  fileInfo, renameFile, moveFile, discardFile, dupMembers, FOLDER,
 } from '../src/admin/photofiles.js';
 import { resetTokenCache, driveJson, SCOPES } from '../src/admin/google.js';
 import { resetCertCache } from '../src/admin/access.js';
@@ -89,7 +89,6 @@ const photosTable = () => [
 function fakeWorld({ files = driveFiles(), photos = photosTable() } = {}) {
   const calls = { drive: [], writes: [], tokens: [] };
   const colIndex = (letters) => [...letters].reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0) - 1;
-  let made = 0;
   globalThis.fetch = async (input, init = {}) => {
     const url = new URL(String(input));
     const method = init.method || 'GET';
@@ -129,23 +128,17 @@ function fakeWorld({ files = driveFiles(), photos = photosTable() } = {}) {
         if (body && body.name) f.name = body.name;
         return Response.json(f);
       }
-      if (method === 'POST') {
-        made += 1;
-        const f = { id: `newFolder000${made}`, name: body.name, mimeType: body.mimeType, parents: body.parents };
-        files[f.id] = f;
-        return Response.json(f);
-      }
     }
     throw new Error(`Unexpected fetch ${method} ${url}`);
   };
   return { calls, files, photos };
 }
 
-// Nothing may ever bin or delete: only GET, PATCH and POST; no write to a trash endpoint
-// or with "trashed" in its body (the folder listing's "trashed = false" query is a read).
+// Nothing may ever be created, binned or deleted: only GET and PATCH; no write to a trash
+// endpoint or with "trashed" in its body (the folder listing's "trashed = false" is a read).
 function assertNeverBins(calls) {
   for (const c of calls.drive) {
-    assert.ok(['GET', 'PATCH', 'POST'].includes(c.method), c.method);
+    assert.ok(['GET', 'PATCH'].includes(c.method), c.method);
     if (c.method === 'GET') continue;
     assert.doesNotMatch(c.path + c.search, /trash/i);
     assert.ok(!c.body || !Object.keys(c.body).some((k) => /trash/i.test(k)), JSON.stringify(c.body));
@@ -169,9 +162,6 @@ test('Names: unsafe characters stripped, extension kept, length limited', () => 
   assert.equal(newFileName('a.jpg', 'x'.repeat(300)).name, `${'x'.repeat(80)}.jpg`);
   assert.ok(newFileName('a.jpg', ' / ').error);
   assert.ok(newFileName('a.jpg', 'a').error, 'unchanged');
-  assert.deepEqual(newFolderName(' Churches: old / new '), { name: 'Churches old new' });
-  assert.ok(newFolderName('to DELETE').error, 'reserved name');
-  assert.equal(newFolderName('y'.repeat(100)).name.length, 60);
 });
 
 /* ---------------------------------------------------------------- root -- */
@@ -200,10 +190,6 @@ test('Root: a file outside Lenches Photos is refused for every operation, nothin
   ]) assert.equal(r.status, 403, JSON.stringify(r));
   let r = await moveFile(env(), { id: 'photoOther00004', expectedParent: 'folderGeneral01', to: 'folderOutside01' });
   assert.equal(r.status, 403, 'destination outside the root');
-  r = await newFolder(env(), { parent: 'folderOutside01', name: 'Sneaky' });
-  assert.equal(r.status, 403);
-  r = await newFolder(env(), { parent: 'jonsMyDrive', name: 'Sneaky' });
-  assert.equal(r.status, 403);
   assert.equal(calls.drive.filter((c) => c.method !== 'GET').length, 0);
   assert.equal(calls.writes.length, 0);
 });
@@ -267,21 +253,9 @@ test('Move: stale-checked against the folder the page loaded; replaces the paren
   assertNeverBins(calls);
 });
 
-test('Folders: new folder only under Lenches Photos, name cleaned, no duplicate at the same level', async () => {
-  const { calls, files } = fakeWorld();
-  let r = await newFolder(env(), { parent: 'folderRousLench', name: 'churches' });
-  assert.equal(r.status, 409, 'same name, any case, at the same level');
-  r = await newFolder(env(), { parent: 'folderRousLench', name: 'To Delete' });
-  assert.equal(r.status, 400);
-  r = await newFolder(env(), { parent: 'folderRousLench', name: ' Village/hall ' });
-  assert.equal(r.ok, true);
-  assert.equal(r.path, 'Lenches Photos / Rous Lench / Village hall');
-  assert.deepEqual(files[r.id].parents, ['folderRousLench']);
-  r = await newFolder(env(), { parent: ROOT, name: 'Atch Lench' });
-  assert.equal(r.ok, true);
-  const info = await fileInfo(env(), 'photoOther00004');
-  assert.ok(info.folders.some((f) => f.path === 'Lenches Photos / Atch Lench'));
-  assertNeverBins(calls);
+test('Folders: the panel can never create a folder (they would belong to the account, not Jon)', async () => {
+  fakeWorld();
+  await assert.rejects(driveJson(env(), '?fields=id', { method: 'POST', body: { name: 'X', mimeType: FOLDER, parents: [ROOT] } }), /not allowed/);
 });
 
 /* ---------------------------------------------------------- duplicates -- */
@@ -318,20 +292,31 @@ test('Duplicates: a copy gone from Drive shows as missing', async () => {
 
 /* ---------------------------------------------------------- To delete -- */
 
-test('To delete: made directly under the root if missing, the copy moved, row marked rejected', async () => {
+// Jon's own To delete folder, directly under the root.
+const withBin = (files) => { files.binFolder0001 = folder('binFolder0001', 'To delete', ROOT); return files.binFolder0001; };
+
+test('To delete: missing = refused with a request to make it in Drive, nothing moved or created', async () => {
+  const { calls, files } = fakeWorld();
+  const r = await discardFile(env(), { id: 'photoChurchB002', expected: 'new', expectedParent: 'folderGeneral01' });
+  assert.equal(r.status, 409);
+  assert.equal(r.needsFolder, true);
+  assert.match(r.error, /Make a folder called "To delete"/);
+  assert.deepEqual(files.photoChurchB002.parents, ['folderGeneral01']);
+  assert.equal(calls.drive.filter((c) => c.method !== 'GET').length, 0);
+  assert.equal(calls.writes.length, 0);
+});
+
+test('To delete: the copy moved into Jon\'s folder, row marked rejected', async () => {
   const { calls, files, photos } = fakeWorld();
+  const bin = withBin(files);
   const r = await discardFile(env(), { id: 'photoChurchB002', expected: 'new', expectedParent: 'folderGeneral01' });
   assert.equal(r.ok, true, JSON.stringify(r));
-  const bin = Object.values(files).find((f) => f.name === 'To delete');
-  assert.ok(bin, 'To delete made');
-  assert.deepEqual(bin.parents, [ROOT]);
   assert.deepEqual(files.photoChurchB002.parents, [bin.id]);
   assert.equal(photos[2][PHOTO_HEADERS.indexOf('status')], 'rejected');
   // A second discard reuses the same To delete folder.
   const r2 = await discardFile(env(), { id: 'photoChurchC003', expected: 'new', expectedParent: 'folderGeneral01' });
   assert.equal(r2.ok, true);
   assert.deepEqual(files.photoChurchC003.parents, [bin.id]);
-  assert.equal(calls.drive.filter((c) => c.method === 'POST').length, 1);
   // Once there, it can't be renamed or moved from the panel, and isn't a move target.
   assert.equal((await renameFile(env(), { id: 'photoChurchB002', expected: 'IMG_3113 (1).jpg', name: 'x' })).status, 409);
   const info = await fileInfo(env(), 'photoOther00004');
@@ -354,6 +339,7 @@ test('To delete: stale status or folder refuses, nothing moved', async () => {
 
 test('Published guard: a published copy needs a second explicit confirm', async () => {
   const { calls, files, photos } = fakeWorld();
+  withBin(files);
   let r = await discardFile(env(), { id: 'photoChurchA001', expected: 'approved', expectedParent: 'folderChurches1' });
   assert.equal(r.status, 409);
   assert.equal(r.needsConfirm, true);
@@ -371,14 +357,17 @@ test('To delete: two such folders is refused rather than guessed', async () => {
   const { files } = fakeWorld();
   files.bin1 = folder('binFolder0001', 'To delete', ROOT);
   files.bin2 = folder('binFolder0002', 'to delete', ROOT);
-  await assert.rejects(discardFile(env(), { id: 'photoChurchB002', expected: 'new', expectedParent: 'folderGeneral01' }), /2 "To delete"/);
+  const r = await discardFile(env(), { id: 'photoChurchB002', expected: 'new', expectedParent: 'folderGeneral01' });
+  assert.equal(r.status, 409);
+  assert.match(r.error, /2 "To delete"/);
   assert.deepEqual(files.photoChurchB002.parents, ['folderGeneral01']);
 });
 
 /* ------------------------------------------------- identity and binning -- */
 
 test('Drive: own identity only (never impersonating), and binning or deleting is impossible', async () => {
-  const { calls } = fakeWorld();
+  const { calls, files } = fakeWorld();
+  withBin(files);
   await renameFile(env(), { id: 'photoOther00004', expected: 'hall.png', name: 'Hall' });
   await discardFile(env(), { id: 'photoChurchC003', expected: 'new', expectedParent: 'folderGeneral01' });
   const driveTokens = calls.tokens.filter((t) => /drive/.test(t.scope));
@@ -398,6 +387,8 @@ test('No source file ever calls delete, trash or emptyTrash on Drive', async () 
     .map((f) => fs.readFileSync(new URL(`../src/admin/${f}`, import.meta.url), 'utf8'))
     .join('\n').replace(/^\s*\/\/.*$/gm, ''); // code only, not comments
   assert.doesNotMatch(src, /method:\s*'DELETE'/);
+  const files = fs.readFileSync(new URL('../src/admin/photofiles.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(files, /method:\s*'POST'/, 'photofiles never creates anything in Drive');
   assert.doesNotMatch(src, /trashed:\s*true|emptyTrash|\/trash['`]/);
 });
 
@@ -420,6 +411,8 @@ test('Router: photo-file endpoints need Access and CSRF, then work', async () =>
   const csrf = await makeCsrf(env(), ADMIN);
   r = await post({ op: 'delete', id: 'photoOther00004' }, csrf);
   assert.equal(r.status, 400, 'no delete operation exists');
+  r = await post({ op: 'folder', parent: ROOT, name: 'New' }, csrf);
+  assert.equal(r.status, 400, 'no new-folder operation exists');
   r = await post({ op: 'move', id: 'photoOther00004', expectedParent: 'folderGeneral01', to: 'folderRousLench' }, csrf);
   assert.equal(r.status, 200);
   assert.deepEqual(files.photoOther00004.parents, ['folderRousLench']);

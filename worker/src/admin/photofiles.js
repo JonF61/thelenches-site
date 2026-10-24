@@ -1,6 +1,6 @@
 // worker/src/admin/photofiles.js
-// Photos file management for the admin panel: rename, change of folder, new folder, and
-// "Move to To delete" for duplicate copies. Drive calls go through google.js driveJson,
+// Photos file management for the admin panel: rename, change of folder, and "Move to
+// To delete" for duplicate copies. Drive calls go through google.js driveJson,
 // as the service account itself (shared on Lenches Photos as Editor).
 // Safety rules:
 //   - every file or folder touched must sit under the Lenches Photos root
@@ -9,8 +9,11 @@
 //   - only files with a Photos-tab row; never folders, never the root
 //   - stale checks: rename carries the Drive name the page loaded, a move the folder it
 //     loaded, a discard also the Photos status it loaded; any change since = 409, nothing written
-//   - "delete" is a move to "To delete" directly under the root (made if missing); nothing
-//     is ever binned or deleted, Jon empties that folder himself. The photos run ignores it.
+//   - "delete" is a move to "To delete" directly under the root; nothing is ever binned or
+//     deleted, Jon empties that folder himself. The photos run ignores it.
+//   - the panel never creates folders (To delete included): anything the account made would
+//     belong to it, not to Jon, and would be at risk if the account were ever deleted.
+//     Jon makes folders in Drive; the panel picks them up on Reload.
 //   - a published copy needs a second, explicit confirm (confirmPublished) before it moves
 // Renaming is safe for published photos too: the run fixes a photo's slug (its web
 // address and committed file names) at first publish and keeps it, alt text is its own
@@ -23,7 +26,6 @@ export const FOLDER = 'application/vnd.google-apps.folder';
 export const TO_DELETE = 'To delete';
 export const DUP_DISTANCE = 6;      // as scripts/photos/index.js
 const MAX_STEM = 80;
-const MAX_FOLDER = 60;
 const MAX_GROUP = 12;
 const FILE_FIELDS = 'id,name,mimeType,parents,size,createdTime,trashed,imageMediaMetadata(width,height)';
 
@@ -58,13 +60,6 @@ export function newFileName(current, typed) {
   if (!stem) return { error: 'Type a name' };
   const name = stem + ext;
   if (name === current) return { error: 'That is already its name' };
-  return { name };
-}
-
-export function newFolderName(typed) {
-  const name = cleanName(typed, MAX_FOLDER);
-  if (!name) return { error: 'Type a folder name' };
-  if (low(name) === low(TO_DELETE)) return { error: `"${TO_DELETE}" is kept for copies on their way out` };
   return { name };
 }
 
@@ -233,31 +228,13 @@ export async function moveFile(env, { id, expectedParent, to }) {
   return { ok: true, folderId: dest, folder: pathOf(s.root, s.tree, dest) };
 }
 
-async function createFolder(env, parent, name) {
-  const j = await driveJson(env, '?fields=id,name,parents', { method: 'POST', body: { name, mimeType: FOLDER, parents: [parent] } });
-  return j.id;
-}
-
-export async function newFolder(env, { parent, name }) {
-  const { root, tree } = await loadTree(env);
-  const p = String(parent || '');
-  if (!inRoot(root, tree, p)) return fail(403, 'That folder is not under Lenches Photos: refused');
-  if (p !== root && tree.get(p).toDelete) return fail(400, `No new folders in ${TO_DELETE}`);
-  const n = newFolderName(name);
-  if (n.error) return fail(400, n.error);
-  if (childrenOf(tree, p).some((f) => low(f.name) === low(n.name))) {
-    return fail(409, `There is already a folder called "${n.name}" there`);
-  }
-  const id = await createFolder(env, p, n.name);
-  return { ok: true, id, path: `${pathOf(root, tree, p)} / ${n.name}` };
-}
-
-// "To delete" directly under root: found, or made if missing. Two of them = refuse.
-async function toDeleteFolder(env, root, tree) {
+// "To delete" directly under root: { id }, or a refusal when there is none (Jon makes it
+// in Drive, so he owns it) or more than one.
+function toDeleteFolder(root, tree) {
   const found = childrenOf(tree, root).filter((f) => f.toDelete);
-  if (found.length > 1) throw Object.assign(new Error(`There are ${found.length} "${TO_DELETE}" folders in Lenches Photos: keep one`), { status: 409 });
-  if (found.length) return found[0].id;
-  return createFolder(env, root, TO_DELETE);
+  if (found.length > 1) return fail(409, `There are ${found.length} "${TO_DELETE}" folders in Lenches Photos: keep one`);
+  if (!found.length) return fail(409, `Make a folder called "${TO_DELETE}" directly in Lenches Photos in Google Drive first, then try again`, { needsFolder: true });
+  return { ok: true, id: found[0].id };
 }
 
 // Move one copy to To delete and mark its Photos row rejected (the run's value for
@@ -276,8 +253,9 @@ export async function discardFile(env, { id, expected, expectedParent, confirmPu
     if (s.where.parent !== String(expectedParent ?? '')) {
       return fail(409, 'Moved in Drive since you loaded the page', { current: s.where.parent, currentPath: s.where.path });
     }
-    const bin = await toDeleteFolder(env, s.root, s.tree);
-    await changeFolder(env, id, s.where.parent, bin);
+    const bin = toDeleteFolder(s.root, s.tree);
+    if (!bin.ok) return bin;
+    await changeFolder(env, id, s.where.parent, bin.id);
   }
   const w = await checkedWrite(env, { tab: 'Photos', keyCol: 'drive_id', key: id, field: 'status', expected: status, value: 'rejected' });
   if (!w.ok) return { ...w, error: `Moved to ${TO_DELETE}, but the Photos status was not set: ${w.error}` };
