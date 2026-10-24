@@ -186,12 +186,13 @@ module.exports = async function (eleventyConfig) {
 
   // Where each published photo appears (slug -> page links), for the admin panel's
   // "On the website" links: _site/photo-pages.json, public facts only (lib/photopages.js)
-  const { photoPages } = require("./lib/photopages.js");
+  const { photoPages, eventEnds } = require("./lib/photopages.js");
   eleventyConfig.on("eleventy.after", ({ results, dir }) => {
     const fs = require("fs");
     const path = require("path");
     const photos = JSON.parse(fs.readFileSync(path.join(__dirname, "src/_data/photos.json"), "utf8"));
     const out = photoPages(results, photos.map((p) => p.slug));
+    out.eventEnds = eventEnds(require("./lib/whatson.js").loadWhatson({ all: true }).events);
     fs.writeFileSync(path.join(dir.output, "photo-pages.json"), JSON.stringify(out, null, 1) + "\n");
   });
 

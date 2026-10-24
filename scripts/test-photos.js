@@ -51,7 +51,7 @@ drive.setClient({
   // made in Drive ("Amphitheatre", "Lenches Club") is a subject, never a village.
   const m = (p) => { const x = meaning(p.split('/').filter(Boolean)); return [x.village, x.subject, x.rejected]; };
   assert.deepStrictEqual(m('Rous Lench/Churches'), ['Rous Lench', 'Churches', false]);
-  assert.deepStrictEqual(m('Abbots Lench'), ['Abbots Lench', '', false]);
+  assert.deepStrictEqual(m('Abbots Lench'), ['Ab Lench', '', false]); // variant -> first name (lib/places.js)
   assert.deepStrictEqual(m('Bishampton/Events'), ['Bishampton', 'Events', false]);
   assert.deepStrictEqual(m('General/Events'), ['', 'Events', false]);
   assert.deepStrictEqual(m('Amphitheatre'), ['', 'Amphitheatre', false]);

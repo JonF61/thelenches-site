@@ -22,7 +22,11 @@
 //   GET  /admin/api/photo-group?id= every copy in a possible-duplicate group
 //   GET  /admin/api/photo-name?id=&name=  the name a rename would save as (core-N if the
 //                                   name is in use anywhere under Lenches Photos)
-//   POST /admin/api/photo-file      { op: rename|move|discard, ... }: Drive file
+//                                   toDelete: every file in To delete, with where it came
+//                                   from and when it moved (photofiles.js binList)
+//   GET  /admin/api/photo-tidy      the one-off tidy list: files in a Rejected folder, or
+//                                   marked rejected outside To delete (nothing moves)
+//   POST /admin/api/photo-file      { op: rename|move|discard|restore, ... }: Drive file
 //                                   management, stale-checked, inside Lenches Photos only
 //                                   (photofiles.js); nothing is ever created, binned or deleted
 //   GET  /admin/img/mail/MSG/PART   a Pending image (email attachment)
@@ -37,8 +41,10 @@ import { getValues, sheetGids, gmailImage, gmailImageParts, driveImage, serviceA
 import { readTable, readSettingsPairs, editCell, checkedWrite } from './sheet.js';
 import { planPending, planReply, planPhoto, trustKeyFor, truthy } from './actions.js';
 import { owedReplies } from './owed.js';
-import { fileInfo, folderList, dupMembers, previewName, renameFile, moveFile, discardFile } from './photofiles.js';
-import { photoPages, pagesFor } from './photopages.js';
+import {
+  fileInfo, folderList, dupMembers, previewName, renameFile, moveFile, discardFile, restoreFile, binList, tidyList,
+} from './photofiles.js';
+import { photoPages, pagesFor, eventEnd } from './photopages.js';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 
@@ -95,13 +101,14 @@ async function watchdog(env) {
   return { open: false, cleared: last ? last.closed_at : '' };
 }
 
-// Organisers' images: Image fetch rows saved to Drive, by Drive file id.
-function organiserImages(t) {
+// Organisers' images: Image fetch rows saved to Drive, by Drive file id. end = the
+// event's last day (end date, else date; '' if the row has no event), for "Past events".
+function organiserImages(t, onSite) {
   const out = {};
   if (t.error) return out;
   for (const r of t.rows) {
     const id = String(r.drive_file_id || '').trim();
-    if (id) out[id] = { event: r.event || '', source_page: r.source_page || '', credit: r.credit || '' };
+    if (id) out[id] = { event: r.event || '', source_page: r.source_page || '', credit: r.credit || '', end: eventEnd(onSite, r.event) };
   }
   return out;
 }
@@ -109,10 +116,12 @@ function organiserImages(t) {
 const pick = (row, keys) => Object.fromEntries(keys.filter((k) => k in row).map((k) => [k, row[k]]));
 
 async function state(env, email) {
-  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite] = await settled([
-    readTable(env, 'Pending'), readTable(env, 'Replies'), readTable(env, 'Photos'),
+  const photosRead = readTable(env, 'Photos');
+  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite, bin] = await settled([
+    readTable(env, 'Pending'), readTable(env, 'Replies'), photosRead,
     readSettingsPairs(env), readTable(env, 'Health'), readTable(env, 'Issues'), sheetGids(env),
     readSources(env), readTable(env, 'Image fetch'), watchdog(env), folderList(env), photoPages(env),
+    binList(env, photosRead),
   ]);
   const holiday = settings.error ? settings : (settings.find((p) => p.key === 'holiday_mode') || { value: '' });
   const filled = (t) => t.rows.filter((r) => Object.entries(r).some(([k, v]) => k !== '_row' && v !== ''));
@@ -137,7 +146,7 @@ async function state(env, email) {
     holding: pick(holding, REPLY_FIELDS),
     draft: draft ? pick(draft, REPLY_FIELDS) : null,
   }));
-  const fromWeb = organiserImages(web);
+  const fromWeb = organiserImages(web, onSite);
   return {
     email,
     sheetId: String(env.SHEET_ID || ''),
@@ -164,6 +173,9 @@ async function state(env, email) {
         })),
     },
     photoFolders: folders,
+    toDelete: bin,
+    // Today in the UK, for the Past events filter.
+    today: new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date()),
     photosRoot: String(env.PHOTOS_FOLDER_ID || '').trim(),
   };
 }
@@ -253,6 +265,7 @@ const FILE_OPS = {
   discard: (env, b) => discardFile(env, {
     id: String(b.id || ''), expected: b.expected, expectedParent: b.expectedParent, confirmPublished: b.confirmPublished === true,
   }),
+  restore: (env, b) => restoreFile(env, { id: String(b.id || ''), expectedParent: b.expectedParent }),
 };
 
 async function doFileOp(env, body) {
@@ -317,6 +330,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/state') return json(await state(env, auth.email));
       if (path === '/admin/api/photo-file') return fromResult(await fileInfo(env, String(url.searchParams.get('id') || '')));
       if (path === '/admin/api/photo-group') return fromResult(await dupMembers(env, String(url.searchParams.get('id') || '')));
+      if (path === '/admin/api/photo-tidy') return fromResult(await tidyList(env));
       if (path === '/admin/api/photo-name') {
         return fromResult(await previewName(env, { id: String(url.searchParams.get('id') || ''), name: String(url.searchParams.get('name') || '') }));
       }

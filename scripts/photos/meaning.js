@@ -13,13 +13,11 @@
 
 const low = (v) => String(v ?? '').trim().toLowerCase();
 
-// The five Lenches (Ab Lench also as Abbots Lench), as lib/lenches.js.
-const LENCH = /^(?:church|rous|ab|abbots|atch|sheriffs)\s+lench$/i;
-// Nearby places with their own folder: the event-image places (scripts/eventimages) plus
-// Bishampton, which already has one. Add a name here to make a new place folder a village.
-const PLACES = ['Harvington', 'Abbots Morton', 'Lenchwick', 'Radford', 'Evesham', 'Pershore', 'Inkberrow', 'Bishampton'];
+// The places with their own folder (the Lenches, nearby villages and towns) are listed in
+// lib/places.js; a variant name (Abbots Lench) gives the place's first name (Ab Lench).
+const { placeName } = require('../../lib/places');
 
-const isPlace = (name) => LENCH.test(String(name || '').trim()) || PLACES.some((p) => low(p) === low(name));
+const isPlace = (name) => Boolean(placeName(name));
 
 function meaning(segs) {
   const rejected = segs.some((s) => low(s) === 'rejected');
@@ -28,7 +26,7 @@ function meaning(segs) {
   let village = '';
   let subject = parts[1] || '';
   if (top && low(top) !== 'general') {
-    if (isPlace(top)) village = top;
+    if (isPlace(top)) village = placeName(top);
     else subject = top;
   }
   return { rejected, village, subject, path: segs.join(' / ') };

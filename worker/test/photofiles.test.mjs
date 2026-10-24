@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 
 import {
   cleanName, newFileName, folderTree, folderChoices, locate, dupGroup, hashDistance,
-  fileInfo, renameFile, moveFile, discardFile, dupMembers, FOLDER,
+  fileInfo, renameFile, moveFile, discardFile, dupMembers, FOLDER, restoreFile, binList, tidyList, originOf,
   nameParts, numberedName, previewName,
 } from '../src/admin/photofiles.js';
 import { pagesFor } from '../src/admin/photopages.js';
@@ -124,6 +124,12 @@ function fakeWorld({ files = driveFiles(), photos = photosTable(), site, onPatch
       const id = decodeURIComponent(url.pathname.split('/')[4] || '');
       if (method === 'GET' && !id) {
         const q = url.searchParams.get('q');
+        // One folder's files (the To delete listing).
+        const inParent = q.match(/^'([^']+)' in parents/);
+        if (inParent) {
+          const kids = Object.values(files).filter((f) => f.mimeType !== FOLDER && !f.trashed && (f.parents || []).includes(inParent[1]));
+          return Response.json({ files: kids.map(({ id, name, parents, properties, createdTime }) => ({ id, name, parents, properties, createdTime })) });
+        }
         // Every file, for the rename clash check (paged by pageSize when a test sets it).
         if (/mimeType != 'application\/vnd\.google-apps\.folder'/.test(q)) {
           const all = Object.values(files).filter((f) => f.mimeType !== FOLDER && !f.trashed);
@@ -143,6 +149,11 @@ function fakeWorld({ files = driveFiles(), photos = photosTable(), site, onPatch
         const remove = url.searchParams.get('removeParents');
         if (add) f.parents = [...f.parents.filter((p) => p !== remove), add];
         if (body && body.name) f.name = body.name;
+        if (body && body.properties) {
+          f.properties = { ...(f.properties || {}), ...body.properties };
+          for (const [k, v] of Object.entries(f.properties)) if (v === null) delete f.properties[k];
+          if (!Object.keys(f.properties).length) delete f.properties;
+        }
         if (onPatch) onPatch(f, files);
         return Response.json(f);
       }
@@ -710,4 +721,137 @@ test('Compare copies: each copy carries its pages (null when unknown)', async ()
   fakeWorld({ site: 500 });
   m = (await dupMembers(env(), 'photoChurchB002')).members;
   assert.equal(m.find((x) => x.drive_id === 'photoChurchA001').pages, null);
+});
+
+/* ------------------------------------------------ To delete view, Restore, tidy -- */
+
+test('To delete: a move records where from, when and the status before, on the file itself', async () => {
+  const { files } = fakeWorld();
+  const bin = withBin(files);
+  const r = await discardFile(env(), { id: 'photoChurchB002', expected: 'new', expectedParent: 'folderGeneral01' });
+  assert.equal(r.ok, true);
+  assert.equal(r.folderId, bin.id);
+  const p = files.photoChurchB002.properties;
+  assert.equal(p.lenchesFrom, 'folderGeneral01');
+  assert.equal(p.lenchesFromPath, 'General');
+  assert.equal(p.lenchesStatus, 'new');
+  assert.match(p.lenchesMovedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+});
+
+test('To delete view: each file with where it came from (recorded, else the Photos path) and when', async () => {
+  const { files, photos } = fakeWorld();
+  const bin = withBin(files);
+  await discardFile(env(), { id: 'photoChurchB002', expected: 'new', expectedParent: 'folderGeneral01' });
+  // Moved by hand in Drive: no record; the run noted the date and left the path as it was.
+  files.photoChurchA001.parents = [bin.id];
+  photos[1][PHOTO_HEADERS.indexOf('status')] = 'rejected';
+  photos[0].push('notes');
+  photos[1][PHOTO_HEADERS.length] = '2026-10-20 in To delete';
+  files.strayFile00001 = photo('strayFile00001', 'stray.jpg', bin.id);
+  const list = await binList(env(), Promise.resolve({ rows: photos.slice(1).map((r) => Object.fromEntries(photos[0].map((h, i) => [h, r[i] ?? '']))) }));
+  const by = Object.fromEntries(list.map((x) => [x.id, x]));
+  assert.deepEqual(by.photoChurchB002.from, { id: 'folderGeneral01', path: 'General', source: 'recorded' });
+  assert.equal(by.photoChurchB002.movedBy, 'panel');
+  assert.deepEqual(by.photoChurchA001.from, { id: 'folderChurches1', path: 'Rous Lench / Churches', source: 'sheet' });
+  assert.equal(by.photoChurchA001.movedAt, '2026-10-20');
+  assert.equal(by.photoChurchA001.movedBy, 'run');
+  assert.match(by.strayFile00001.from.error, /not known/);
+});
+
+test('Restore: back to its folder, status back, record cleared; stale-checked; never bins', async () => {
+  const { calls, files, photos } = fakeWorld();
+  const bin = withBin(files);
+  await discardFile(env(), { id: 'photoChurchB002', expected: 'new', expectedParent: 'folderGeneral01' });
+  assert.equal((await restoreFile(env(), { id: 'photoChurchB002', expectedParent: 'folderGeneral01' })).status, 409, 'stale');
+  const r = await restoreFile(env(), { id: 'photoChurchB002', expectedParent: bin.id });
+  assert.equal(r.ok, true, JSON.stringify(r));
+  assert.deepEqual(files.photoChurchB002.parents, ['folderGeneral01']);
+  assert.equal(photos[2][PHOTO_HEADERS.indexOf('status')], 'new');
+  assert.equal(files.photoChurchB002.properties, undefined);
+  assert.match(r.message, /Restored to General/);
+  // Not in To delete any more: refused.
+  assert.equal((await restoreFile(env(), { id: 'photoChurchB002', expectedParent: bin.id })).status, 409);
+  assertNeverBins(calls);
+});
+
+test('Restore: the old folder gone, or nothing known, is refused with nothing moved', async () => {
+  const { files } = fakeWorld();
+  const bin = withBin(files);
+  await discardFile(env(), { id: 'photoChurchC003', expected: 'new', expectedParent: 'folderGeneral01' });
+  delete files.folderGeneral01;
+  const r = await restoreFile(env(), { id: 'photoChurchC003', expectedParent: bin.id });
+  assert.equal(r.status, 409);
+  assert.match(r.error, /not in Lenches Photos any more/);
+  assert.deepEqual(files.photoChurchC003.parents, [bin.id]);
+  const tree = new Map();
+  assert.match(originOf(ROOT, tree, { properties: {} }, null).error, /not known/);
+});
+
+test('Restore: a photo that was on the website goes back approved (same slug), so the next run republishes', async () => {
+  const { files, photos } = fakeWorld();
+  const bin = withBin(files);
+  await discardFile(env(), { id: 'photoChurchA001', expected: 'approved', expectedParent: 'folderChurches1', confirmPublished: true });
+  assert.equal(photos[1][PHOTO_HEADERS.indexOf('status')], 'rejected');
+  const r = await restoreFile(env(), { id: 'photoChurchA001', expectedParent: bin.id });
+  assert.equal(r.ok, true);
+  assert.equal(r.status, 'approved');
+  assert.deepEqual(files.photoChurchA001.parents, ['folderChurches1']);
+  assert.equal(photos[1][PHOTO_HEADERS.indexOf('slug')], 'rous-lench-img-3113');
+});
+
+test('Rejected folders: no longer a move target (rejections go to To delete)', async () => {
+  const { files } = fakeWorld();
+  files.folderRejected1 = folder('folderRejected1', 'Rejected', ROOT);
+  const r = await moveFile(env(), { id: 'photoOther00004', expectedParent: 'folderGeneral01', to: 'folderRejected1' });
+  assert.equal(r.status, 400);
+  assert.match(r.error, /To delete/);
+  assert.deepEqual(files.photoOther00004.parents, ['folderGeneral01']);
+});
+
+test('Tidy: lists Rejected-folder files and rejected rows outside To delete; moves nothing; repeat-safe', async () => {
+  const { calls, files, photos } = fakeWorld();
+  const bin = withBin(files);
+  files.folderRejected1 = folder('folderRejected1', 'Rejected', ROOT);
+  files.oldShot0000001 = photo('oldShot0000001', 'Screen Shot.png', 'folderRejected1');
+  photos.push(['oldShot0000001', 'Rejected', 'Screen Shot.png', 'rejected', '', '', '', '']);
+  photos[4][PHOTO_HEADERS.indexOf('status')] = 'rejected'; // hall.png, rejected but still in General
+  let t = await tidyList(env());
+  assert.deepEqual(t.files.map((f) => [f.id, f.reason, f.path]), [
+    ['photoOther00004', 'Marked rejected', 'General'],
+    ['oldShot0000001', 'In a Rejected folder', 'Rejected'],
+  ]);
+  assert.equal(calls.drive.filter((c) => c.method !== 'GET').length, 0, 'listing moves nothing');
+  for (const f of t.files) {
+    const r = await discardFile(env(), { id: f.id, expected: f.status, expectedParent: f.folderId });
+    assert.equal(r.ok, true, JSON.stringify(r));
+  }
+  assert.deepEqual(files.oldShot0000001.parents, [bin.id]);
+  assert.equal(files.oldShot0000001.properties.lenchesFromPath, 'Rejected');
+  t = await tidyList(env());
+  assert.deepEqual(t.files, [], 'a second run finds nothing');
+  assertNeverBins(calls);
+});
+
+test('State: toDelete lists the bin, organisers\' images carry their event\'s last day', async () => {
+  const site = { generated: '2026-10-01T00:00:00Z', pages: {}, eventEnds: { '2026-10-10|Beer festival': '2026-10-12' } };
+  const { files, photos } = fakeWorld({ site });
+  const bin = withBin(files);
+  files.photoOther00004.parents = [bin.id];
+  const real = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    const u = new URL(String(input));
+    if (u.hostname === 'sheets.googleapis.com' && /Image%20fetch|Image fetch/.test(decodeURIComponent(u.pathname))) {
+      return Response.json({ values: [['event', 'source_page', 'credit', 'drive_file_id'],
+        ['2026-10-10|Beer festival', 'https://x', 'Club', 'photoChurchB002'], ['2026-10-30|Quiz', '', '', 'photoChurchC003']] });
+    }
+    return real(input, init);
+  };
+  const r = await worker.fetch(new Request(`${ORIGIN}/admin/api/state`, { headers: { 'cf-access-jwt-assertion': await accessJwt() } }), env());
+  const d = await r.json();
+  assert.deepEqual(d.toDelete.map((x) => x.id), ['photoOther00004']);
+  assert.match(d.today, /^\d{4}-\d{2}-\d{2}$/);
+  const row = (id) => d.photos.rows.find((x) => x.drive_id === id);
+  assert.equal(row('photoChurchB002')._organiser.end, '2026-10-12');
+  assert.equal(row('photoChurchC003')._organiser.end, '2026-10-30');
+  void photos;
 });
