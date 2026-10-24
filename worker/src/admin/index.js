@@ -6,7 +6,7 @@
 //   GET  /admin/api/session         { email, csrf }
 //   GET  /admin/api/state           Pending, Replies (awaiting and still owed), Photos (all
 //                                   in Drive) and the Lenches Photos folders, holiday mode,
-//                                   latest newsletter, Health, watchdog
+//                                   latest newsletter, Health, watchdog, Google account
 //   GET  /admin/api/mail-images?m=  every image in one email (for a Pending item)
 //   POST /admin/api/edit            { tab, key, field, expected, value }: one plain field
 //                                   edit, refused (409, current value) if the cell changed
@@ -27,7 +27,7 @@
 import { ACTIONS, decide, github } from '../core.js';
 import { verifyAccess } from './access.js';
 import { makeCsrf, checkCsrf, sameOrigin } from './csrf.js';
-import { getValues, sheetGids, gmailImage, gmailImageParts, driveImage } from './google.js';
+import { getValues, sheetGids, gmailImage, gmailImageParts, driveImage, serviceAccountEmail } from './google.js';
 import { readTable, readSettingsPairs, editCell, checkedWrite } from './sheet.js';
 import { planPending, planReply, planPhoto, trustKeyFor, truthy } from './actions.js';
 import { owedReplies } from './owed.js';
@@ -139,6 +139,8 @@ async function state(env, email) {
     newsletter,
     health: health.error ? health : filled(health).slice(-7).reverse(),
     watchdog: dog,
+    // The Google service account in use (the panel is admins only, behind Access).
+    googleAccount: serviceAccountEmail(env),
     pending: pend,
     replies: replies.error ? replies : { headers: replies.headers, rows: replies.rows.filter((r) => r.status === 'awaiting') },
     owed,
