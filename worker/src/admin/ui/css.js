@@ -65,6 +65,11 @@ nav.side button[aria-current="page"] .n{background:rgba(255,255,255,.25);color:i
 .imgs a.main-img{border-color:var(--accent)}
 .imgs img{display:block;height:140px;max-width:100%;object-fit:contain}
 .photo img{display:block;width:100%;max-height:360px;object-fit:contain;background:var(--panel2);border-radius:8px}
+.filebox{margin-top:14px;border-top:1px solid var(--line);padding-top:8px;font-size:.88rem}
+.filebox summary{cursor:pointer;font-weight:600;padding:4px 0}
+.filebox form{margin:4px 0 8px}
+.filebox label.f,.small label.f{font-size:.82rem;margin:8px 0 3px}
+.small textarea.f{min-height:64px}
 .copies{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
 .copies img{display:block;width:100%;height:200px;object-fit:contain;background:var(--panel2);border-radius:8px}
 .tick{display:flex;align-items:center;gap:8px;margin:8px 0;padding:8px 10px;border-radius:8px;background:var(--warn-bg);color:var(--warn)}
@@ -103,5 +108,12 @@ table.h td,table.h th{text-align:left;padding:6px 4px;border-bottom:1px solid va
   .detail .card{padding:18px}
   .two{grid-template-columns:1fr 1fr}
   .list.wide{flex:1;max-width:none;border-right:0}
+  nav.side{overflow:auto}
+  nav.side .folders{display:flex;flex-direction:column;gap:1px;margin:2px 0 8px}
+  nav.side .folders button{padding:4px 8px;font-size:.82rem;border-radius:6px}
+  nav.side .folders button span:first-child{overflow:hidden;text-overflow:ellipsis}
+  .detail .photo img{max-height:280px}
+  .filebox input.f,.filebox select.f,.small input.f,.small textarea.f{font-size:.88rem;padding:6px 8px}
+  .filebox .btn,.small .btn{font-size:.85rem;padding:6px 10px;min-height:34px}
 }
 `;
