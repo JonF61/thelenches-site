@@ -734,3 +734,24 @@ test('E2E suggest: a people-flagged image needs People OK; a decided item or one
   r = await post('/admin/api/suggest', { id: 'm1-1', sid: 'm2-1#0', expected: 'm1-1#3' });
   assert.equal(r.status, 400);
 });
+
+test('E2E suggest: unticking People OK after choosing a people-flagged image blocks Approve again', async () => {
+  const tables = suggestTables();
+  const calls = fakeWorld(tables);
+  await post('/admin/api/edit', { tab: 'Pending', key: 'm1-1', field: 'people_ok', expected: '', value: 'yes' });
+  let r = await post('/admin/api/suggest', { id: 'm1-1', sid: 'm1-1#3', expected: '' });
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  r = await post('/admin/api/edit', { tab: 'Pending', key: 'm1-1', field: 'people_ok', expected: 'yes', value: '' });
+  assert.equal(r.status, 200);
+  r = await post('/admin/api/action', { kind: 'pending', id: 'm1-1', action: 'approve' });
+  assert.equal(r.status, 409);
+  assert.match(r.json.error, /People OK/);
+  assert.equal(calls.dispatches.length, 0);
+  // A chosen image with no people approves without the tick; ticking again unblocks the flagged one.
+  await post('/admin/api/suggest', { id: 'm1-1', sid: 'm1-1#2', expected: 'm1-1#3' });
+  r = await post('/admin/api/action', { kind: 'pending', id: 'm1-1', action: 'approve' });
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  assert.equal(planPending({ action: 'approve', id: 'm1-1' }, { id: 'm1-1', status: 'pending', people_ok: '' }, { choicePeople: 'identifiable' }).status, 409);
+  assert.ok(planPending({ action: 'approve', id: 'm1-1' }, { id: 'm1-1', status: 'pending', people_ok: 'yes' }, { choicePeople: 'identifiable' }).p);
+  assert.ok(planPending({ action: 'reject', id: 'm1-1' }, { id: 'm1-1', status: 'pending', people_ok: '' }, { choicePeople: 'identifiable' }).p, 'reject never needs the tick');
+});

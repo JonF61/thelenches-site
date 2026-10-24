@@ -276,8 +276,15 @@ async function doAction(env, body) {
       readTable(env, 'Pending'), needSources ? readSources(env) : [],
     ]);
     const matches = rows.filter((r) => id && r.id === id);
-    plan = planPending({ action, id }, matches.length === 1 ? matches[0] : null,
-      { hasPeopleOk: headers.includes('people_ok'), sources });
+    const row = matches.length === 1 ? matches[0] : null;
+    // The chosen suggested image's people value, for the People OK check.
+    const choice = row && !hasOwnImage(row) ? String(row.image_choice || '').trim() : '';
+    let choicePeople = '';
+    if (choice && choice !== 'none') {
+      const s = (await readTable(env, SUGGEST_TAB)).rows.filter((x) => String(x.id) === choice && String(x.item) === id);
+      choicePeople = s.length === 1 ? String(s[0].people || '') : '';
+    }
+    plan = planPending({ action, id }, row, { hasPeopleOk: headers.includes('people_ok'), sources, choicePeople });
   } else if (kind === 'reply') {
     plan = planReply({ action, id, reason: body.reason, body: body.body });
   } else {
