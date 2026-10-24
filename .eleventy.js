@@ -184,6 +184,17 @@ module.exports = async function (eleventyConfig) {
     fmt(iso, { weekday: "short", day: "numeric", month: "short" })
   );
 
+  // Where each published photo appears (slug -> page links), for the admin panel's
+  // "On the website" links: _site/photo-pages.json, public facts only (lib/photopages.js)
+  const { photoPages } = require("./lib/photopages.js");
+  eleventyConfig.on("eleventy.after", ({ results, dir }) => {
+    const fs = require("fs");
+    const path = require("path");
+    const photos = JSON.parse(fs.readFileSync(path.join(__dirname, "src/_data/photos.json"), "utf8"));
+    const out = photoPages(results, photos.map((p) => p.slug));
+    fs.writeFileSync(path.join(dir.output, "photo-pages.json"), JSON.stringify(out, null, 1) + "\n");
+  });
+
   // "Friday 31 July 2026"
   eleventyConfig.addFilter("longDate", (iso) =>
     fmt(iso, { weekday: "long", day: "numeric", month: "long", year: "numeric" })

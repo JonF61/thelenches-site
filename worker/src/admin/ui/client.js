@@ -5,7 +5,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '7';
+export const UI_VERSION = '8';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -609,6 +609,36 @@ export const CLIENT_JS = String.raw`
 
   function consent(r) { return PHOTO_CONSENT.indexOf(lower(r.people)) >= 0; }
 
+  // Where a published photo is on the site (_pages from the state, pages in a copies
+  // group): one link per page, to the live page in a new tab. null = not known.
+  function onSite(pages) {
+    if (!Array.isArray(pages)) return h('div', { class: 'onsite meta' }, 'On the website (pages unknown)');
+    var ok = pages.filter(function (p) { return /^https:[/][/]/.test(str(p.url)); });
+    if (!ok.length) return h('div', { class: 'onsite meta' }, 'On the website (not used on any page)');
+    var links = [];
+    ok.forEach(function (p, i) {
+      if (i) links.push(' · ');
+      links.push(h('a', { href: p.url, target: '_blank', rel: 'noopener', onclick: function (e) { e.stopPropagation(); } }, str(p.label)));
+    });
+    return h('div', { class: 'onsite meta' }, 'On the website: ', links);
+  }
+
+  // Yes or no in a box over the page (over an overlay too), with the photo's page links.
+  function ask(message, pages, yes) {
+    return new Promise(function (resolve) {
+      var box;
+      var esc = function (e) { if (e.key === 'Escape') { e.stopPropagation(); done(false); } };
+      var done = function (v) { box.remove(); document.removeEventListener('keydown', esc, true); resolve(v); };
+      var no = h('button', { class: 'btn', onclick: function () { done(false); } }, 'Cancel');
+      box = h('div', { class: 'ask', role: 'alertdialog', 'aria-modal': 'true' },
+        h('div', { class: 'box' }, h('p', { class: 'msg' }, message), onSite(pages),
+          h('div', { class: 'actions' }, h('button', { class: 'btn danger', onclick: function () { done(true); } }, yes), no)));
+      document.addEventListener('keydown', esc, true);
+      document.body.appendChild(box);
+      no.focus();
+    });
+  }
+
   // The Photos menu: S.pf '' = waiting for a decision; else a folder path under Lenches
   // Photos ("Rous Lench / Churches"), matched against the Photos tab's path, subfolders included.
   function inFolder(r, path) { var p = str(r.path); return p === path || p.indexOf(path + ' / ') === 0; }
@@ -678,7 +708,8 @@ export const CLIENT_JS = String.raw`
   }
 
   function photoSummary(r) {
-    return [h('h2', null, str(r.filename)), h('div', { class: 'meta' }, [str(r.village), str(r.subject)].filter(Boolean).join(' · ')), photoBadges(r)];
+    return [h('h2', null, str(r.filename)), h('div', { class: 'meta' }, [str(r.village), str(r.subject)].filter(Boolean).join(' · ')), photoBadges(r),
+      str(r.published_at) ? onSite(r._pages) : null];
   }
 
   function photoCard(r, inDetail) {
@@ -711,11 +742,11 @@ export const CLIENT_JS = String.raw`
       h('button', { class: 'btn primary', disabled: blocked, title: blocked ? 'Tick "People OK" first' : null, onclick: function () {
         decide('approve', 'approved', 'Approved');
       } }, 'Approve'),
-      h('button', { class: 'btn danger', onclick: function () {
-        var msg = str(r.published_at)
-          ? str(r.filename) + ' is ON THE WEBSITE.\n\nRejecting it takes it off the site on the next daily photos run, and pages using it lose the picture. To undo, click Approve: before that run nothing changes; after it, the next run puts it back at the same web address.\n\nReject it?'
-          : 'Reject ' + str(r.filename) + '? It will not be published.';
-        if (window.confirm(msg)) decide('reject', 'rejected', 'Rejected');
+      h('button', { class: 'btn danger', onclick: async function () {
+        var yes = str(r.published_at)
+          ? await ask(str(r.filename) + ' is ON THE WEBSITE.\n\nRejecting it takes it off the site on the next daily photos run, and pages using it lose the picture. To undo, click Approve: before that run nothing changes; after it, the next run puts it back at the same web address.\n\nReject it?', r._pages, 'Reject')
+          : window.confirm('Reject ' + str(r.filename) + '? It will not be published.');
+        if (yes) decide('reject', 'rejected', 'Rejected');
       } }, 'Reject'),
       str(r.duplicate_of) ? h('button', { class: 'btn', onclick: function () { overlay('Possible duplicates', copiesView(r)); } }, 'Compare copies') : null,
       str(r.drive_link) ? h('a', { class: 'btn link', href: str(r.drive_link), target: '_blank', rel: 'noopener' }, 'Open in Drive') : null,
@@ -817,15 +848,43 @@ export const CLIENT_JS = String.raw`
 
     var parts = splitExt(file.name);
     var nid = 'fn-' + r.drive_id;
-    var nameIn = h('input', { class: 'f', id: nid, value: parts.stem, maxlength: 120 });
+    // "Will be saved as": the name after the clash check (core-N if the name is in use
+    // anywhere under Lenches Photos), fetched as you type; checked again on Save.
+    var willBe = h('p', { class: 'meta', 'aria-live': 'polite' });
+    var shown = '';
+    var seq = 0;
+    var timer = null;
+    var preview = function () {
+      clearTimeout(timer);
+      shown = '';
+      willBe.textContent = '';
+      if (!nameIn.value.trim() || nameIn.value.trim() === parts.stem) return;
+      var mine = ++seq;
+      timer = setTimeout(async function () {
+        var res = await api('/admin/api/photo-name?id=' + encodeURIComponent(r.drive_id) + '&name=' + encodeURIComponent(nameIn.value));
+        if (mine !== seq) return;
+        if (!res.ok) { willBe.textContent = bad(res); return; }
+        shown = res.json.name;
+        willBe.textContent = 'Will be saved as ' + shown + (res.json.numbered ? ' (' + res.json.wanted + ' is already in use)' : '');
+      }, 400);
+    };
+    var nameIn = h('input', { class: 'f', id: nid, value: parts.stem, maxlength: 120, oninput: preview });
     out.push(h('form', { onsubmit: async function (e) {
       e.preventDefault();
+      seq += 1;
+      clearTimeout(timer);
       var res = await fileOp({ op: 'rename', id: r.drive_id, expected: file.name, name: nameIn.value });
-      if (res.ok) { r.filename = res.json.name; toast('Renamed to ' + res.json.name); changed(r); }
+      if (res.ok) {
+        r.filename = res.json.name;
+        toast('Renamed to ' + res.json.name + (shown && shown !== res.json.name ? ' (' + shown + ' was taken meanwhile)'
+          : !shown && res.json.numbered ? ' (' + res.json.wanted + ' is already in use)' : ''));
+        changed(r);
+      }
       else { toast(res.status === 409 && res.json.current ? 'Renamed in Drive since you loaded it (now "' + res.json.current + '"). Not changed.' : bad(res), true); if (res.status === 409) changed(r); }
     } },
     h('label', { class: 'f', for: nid }, 'New name' + (parts.ext ? ' (' + parts.ext + ' is kept)' : '')),
     h('div', { class: 'toolbar' }, h('div', { class: 'spacer' }, nameIn), h('button', { class: 'btn', type: 'submit' }, 'Rename')),
+    willBe,
     h('p', { class: 'meta' }, file.published
       ? 'It stays at the same web address: the site keeps the name it was first published under.'
       : 'Characters such as / \\ : * ? " < > | are dropped.')));
@@ -836,7 +895,7 @@ export const CLIENT_JS = String.raw`
       e.preventDefault();
       if (dest.value === file.folderId) { toast('It is already in that folder'); return; }
       var to = folders.find(function (f) { return f.id === dest.value; });
-      if (file.published && !window.confirm(file.name + ' is ON THE WEBSITE.\n\nMoving it to ' + to.path + ' changes the village and subject it is shown under on the site. In a Rejected folder or a folder starting with _ it comes off the site on the next daily photos run, and pages using it lose the picture. To undo, move it back: before that run nothing changes; after it, if it came off the site, also click Approve and the next run puts it back at the same web address.\n\nMove it?')) return;
+      if (file.published && !(await ask(file.name + ' is ON THE WEBSITE.\n\nMoving it to ' + to.path + ' changes the village and subject it is shown under on the site. In a Rejected folder or a folder starting with _ it comes off the site on the next daily photos run, and pages using it lose the picture. To undo, move it back: before that run nothing changes; after it, if it came off the site, also click Approve and the next run puts it back at the same web address.\n\nMove it?', r._pages, 'Move'))) return;
       var res = await fileOp({ op: 'move', id: r.drive_id, expectedParent: file.folderId, to: dest.value });
       if (res.ok) {
         r.path = res.json.folder.replace(/^Lenches Photos( \/ )?/, '');
@@ -890,7 +949,8 @@ export const CLIENT_JS = String.raw`
       h('div', { class: 'badges' },
         h('span', { class: 'badge' }, 'Status: ' + (m.status || 'new')),
         m.published ? h('span', { class: 'badge bad' }, 'On the website') : h('span', { class: 'badge' }, 'Not published'),
-        m.toDelete ? h('span', { class: 'badge warn' }, 'In To delete') : null));
+        m.toDelete ? h('span', { class: 'badge warn' }, 'In To delete') : null),
+      m.published ? onSite(m.pages) : null);
     if (live) {
       add(c, h('div', { class: 'actions' },
         h('button', { class: 'btn primary', onclick: function () { keepOne(m, list, again); } }, 'Keep this one'),
@@ -907,7 +967,7 @@ export const CLIENT_JS = String.raw`
     var name = m.name || m.filename;
     var body = { op: 'discard', id: m.drive_id, expected: m.status, expectedParent: m.folderId };
     if (m.published) {
-      if (!window.confirm(name + ' is ON THE WEBSITE. Moving it takes it off the site on the next photos run, and any page that names it loses the picture.\n\nTake it down and move it to To delete?')) return false;
+      if (!(await ask(name + ' is ON THE WEBSITE. Moving it takes it off the site on the next photos run, and any page that names it loses the picture.\n\nTake it down and move it to To delete?', m.pages, 'Take down and move'))) return false;
       body.confirmPublished = true;
     }
     var res = await fileOp(body);

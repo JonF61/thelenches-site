@@ -11,7 +11,9 @@ import assert from 'node:assert/strict';
 import {
   cleanName, newFileName, folderTree, folderChoices, locate, dupGroup, hashDistance,
   fileInfo, renameFile, moveFile, discardFile, dupMembers, FOLDER,
+  nameParts, numberedName, previewName,
 } from '../src/admin/photofiles.js';
+import { pagesFor } from '../src/admin/photopages.js';
 import { resetTokenCache, driveJson, SCOPES } from '../src/admin/google.js';
 import { resetCertCache } from '../src/admin/access.js';
 import { bytesToB64url, jsonToB64url } from '../src/admin/b64.js';
@@ -49,6 +51,7 @@ const env = () => ({
   DISPATCH_TOKEN: 'gh-token',
   REPO: 'owner/repo',
   SHEET_ID: 'sheet123',
+  SITE_URL: 'https://thelenches.org.uk/',
   PHOTOS_FOLDER_ID: ROOT,
   GMAIL_USER: 'inbox@example.org',
   GOOGLE_SA_KEY: JSON.stringify({ client_email: 'sa@example.iam.gserviceaccount.com', private_key: saPem }),
@@ -86,13 +89,19 @@ const photosTable = () => [
   ['photoOutside005', 'Private', 'private.jpg', 'new', '', '', '', ''],
 ];
 
-function fakeWorld({ files = driveFiles(), photos = photosTable() } = {}) {
-  const calls = { drive: [], writes: [], tokens: [] };
+// site: the public photo-pages.json the build writes (a Response status number = that error).
+function fakeWorld({ files = driveFiles(), photos = photosTable(), site, onPatch } = {}) {
+  const calls = { drive: [], writes: [], tokens: [], site: [] };
   const colIndex = (letters) => [...letters].reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0) - 1;
   globalThis.fetch = async (input, init = {}) => {
     const url = new URL(String(input));
     const method = init.method || 'GET';
     if (url.hostname === TEAM) return Response.json({ keys: [accessJwk] });
+    if (url.hostname === 'thelenches.org.uk') {
+      calls.site.push({ method, path: url.pathname });
+      if (site === undefined || typeof site === 'number') return new Response('nope', { status: site || 404 });
+      return Response.json(site);
+    }
     if (url.href === 'https://oauth2.googleapis.com/token') {
       const claims = JSON.parse(Buffer.from(new URLSearchParams(init.body).get('assertion').split('.')[1], 'base64url').toString());
       calls.tokens.push({ scope: claims.scope, sub: claims.sub || '' });
@@ -115,6 +124,14 @@ function fakeWorld({ files = driveFiles(), photos = photosTable() } = {}) {
       const id = decodeURIComponent(url.pathname.split('/')[4] || '');
       if (method === 'GET' && !id) {
         const q = url.searchParams.get('q');
+        // Every file, for the rename clash check (paged by pageSize when a test sets it).
+        if (/mimeType != 'application\/vnd\.google-apps\.folder'/.test(q)) {
+          const all = Object.values(files).filter((f) => f.mimeType !== FOLDER && !f.trashed);
+          const size = Number(url.searchParams.get('pageSize'));
+          const from = Number(url.searchParams.get('pageToken') || 0);
+          const next = from + size < all.length ? String(from + size) : undefined;
+          return Response.json({ files: all.slice(from, from + size).map(({ id, name, parents }) => ({ id, name, parents })), nextPageToken: next });
+        }
         assert.match(q, /mimeType = 'application\/vnd\.google-apps\.folder'/);
         return Response.json({ files: Object.values(files).filter((f) => f.mimeType === FOLDER && f.id !== ROOT && !f.trashed) });
       }
@@ -126,6 +143,7 @@ function fakeWorld({ files = driveFiles(), photos = photosTable() } = {}) {
         const remove = url.searchParams.get('removeParents');
         if (add) f.parents = [...f.parents.filter((p) => p !== remove), add];
         if (body && body.name) f.name = body.name;
+        if (onPatch) onPatch(f, files);
         return Response.json(f);
       }
     }
@@ -209,7 +227,7 @@ test('Rename: stale-checked against the Drive name, extension kept, Sheet filena
   assert.equal(r.current, 'hall.png');
   assert.equal(files.photoOther00004.name, 'hall.png');
   r = await renameFile(env(), { id: 'photoOther00004', expected: 'hall.png', name: 'Village hall: front' });
-  assert.deepEqual(r, { ok: true, name: 'Village hall front.png' });
+  assert.deepEqual(r, { ok: true, name: 'Village hall front.png', wanted: 'Village hall front.png', numbered: false });
   assert.equal(files.photoOther00004.name, 'Village hall front.png');
   assert.equal(photos[4][2], 'Village hall front.png');
   const patch = calls.drive.find((c) => c.method === 'PATCH');
@@ -465,4 +483,166 @@ test('Edit: Photos description and alt text are editable, stale-checked and leng
   r = await edit({ field: 'slug', expected: '', value: 'new-slug' });
   assert.equal(r.status, 400, 'other columns stay read-only');
   assert.equal(calls.writes.length, 2);
+});
+
+/* ----------------------------------------------------- rename numbering -- */
+
+test('Numbering: core name is the name without extension or trailing -N', () => {
+  assert.deepEqual(nameParts('Bonfire-12.JPG'), { core: 'Bonfire', num: 12, ext: '.JPG', key: 'bonfire\u0000.jpg' });
+  assert.deepEqual(nameParts('bonfire.jpg').num, null);
+  assert.equal(nameParts('a-2-3.jpg').core, 'a-2', 'only the last -N');
+  assert.equal(nameParts('-5.jpg').core, '-5', 'a bare number is a core');
+});
+
+test('Numbering: no clash, plain clash, existing -2/-5, case, other extensions, no gap filling', () => {
+  assert.equal(numberedName('bonfire.jpg', ['hall.jpg', 'bonfires.jpg', 'my bonfire.jpg']), 'bonfire.jpg', 'no clash');
+  assert.equal(numberedName('bonfire.jpg', ['bonfire.jpg']), 'bonfire-2.jpg', 'a plain core counts as 1');
+  assert.equal(numberedName('bonfire.jpg', ['bonfire.jpg', 'bonfire-2.jpg']), 'bonfire-3.jpg');
+  assert.equal(numberedName('bonfire.jpg', ['bonfire-2.jpg', 'bonfire-5.jpg']), 'bonfire-6.jpg', 'highest + 1, gaps not filled');
+  assert.equal(numberedName('bonfire.jpg', ['bonfire-5.jpg']), 'bonfire-6.jpg', 'a numbered copy alone is a clash too');
+  assert.equal(numberedName('Bonfire.jpg', ['BONFIRE.JPG', 'bonFire-3.Jpg']), 'Bonfire-4.jpg', 'case-insensitive; typed case kept');
+  assert.equal(numberedName('bonfire.jpg', ['bonfire.png', 'bonfire.jpeg', 'bonfire']), 'bonfire.jpg', 'other extensions do not clash');
+  assert.equal(numberedName('bonfire-2.jpg', ['bonfire.jpg', 'bonfire-2.jpg']), 'bonfire-3.jpg', 'a typed number follows the same rule');
+  assert.equal(numberedName('bonfire-2.jpg', ['hall.jpg']), 'bonfire-2.jpg', 'a typed number with no clash is kept');
+});
+
+const bonfireFiles = (extra) => {
+  const f = driveFiles();
+  f.binFolder0001 = folder('binFolder0001', 'To delete', ROOT);
+  Object.assign(f, extra(f));
+  return f;
+};
+
+test('Rename: a name in use anywhere under Lenches Photos (To delete included) is saved as core-N', async () => {
+  const files = bonfireFiles(() => ({
+    fileBonfire0001: photo('fileBonfire0001', 'Bonfire.JPG', 'folderChurches1'),
+    fileBonfire0002: photo('fileBonfire0002', 'bonfire-4.jpg', 'binFolder0001'),
+    fileBonfire0003: photo('fileBonfire0003', 'bonfire-9.jpg', 'folderOutside01'),
+    fileBonfire0004: photo('fileBonfire0004', 'bonfire-7.png', 'folderGeneral01'),
+  }));
+  const w = fakeWorld({ files });
+  const r = await renameFile(env(), { id: 'photoChurchB002', expected: 'IMG_3113 (1).jpg', name: 'bonfire' });
+  assert.deepEqual(r, { ok: true, name: 'bonfire-5.jpg', wanted: 'bonfire.jpg', numbered: true },
+    'To delete counted; outside Lenches Photos and other extensions not');
+  assert.equal(files.photoChurchB002.name, 'bonfire-5.jpg');
+  assert.equal(w.photos[2][2], 'bonfire-5.jpg', 'Sheet filename follows');
+  assert.equal(files.fileBonfire0001.name, 'Bonfire.JPG', 'existing files never renamed');
+  assert.equal(files.fileBonfire0002.name, 'bonfire-4.jpg');
+  assertNeverBins(w.calls);
+});
+
+test('Rename: the file itself does not clash with its own name (a case change)', async () => {
+  const files = driveFiles();
+  files.photoChurchB002.name = 'bonfire.jpg';
+  fakeWorld({ files, photos: photosTable().map((row) => (row[0] === 'photoChurchB002' ? [...row.slice(0, 2), 'bonfire.jpg', ...row.slice(3)] : row)) });
+  const r = await renameFile(env(), { id: 'photoChurchB002', expected: 'bonfire.jpg', name: 'Bonfire' });
+  assert.equal(r.name, 'Bonfire.jpg');
+});
+
+test('Rename: "Will be saved as" preview writes nothing; Save re-checks Drive at write time', async () => {
+  const files = bonfireFiles(() => ({ fileBonfire0001: photo('fileBonfire0001', 'bonfire.jpg', 'folderGeneral01') }));
+  const { calls } = fakeWorld({ files });
+  const p = await previewName(env(), { id: 'photoChurchB002', name: 'bonfire' });
+  assert.deepEqual(p, { ok: true, name: 'bonfire-2.jpg', wanted: 'bonfire.jpg', numbered: true });
+  assert.ok(!calls.drive.some((c) => c.method !== 'GET') && !calls.writes.length, 'preview writes nothing');
+  // Another rename takes bonfire-2 before this one is saved.
+  files.fileBonfire0002 = photo('fileBonfire0002', 'bonfire-2.jpg', 'binFolder0001');
+  const r = await renameFile(env(), { id: 'photoChurchB002', expected: 'IMG_3113 (1).jpg', name: 'bonfire' });
+  assert.equal(r.name, 'bonfire-3.jpg');
+  assert.equal(files.photoChurchB002.name, 'bonfire-3.jpg');
+  assert.equal((await previewName(env(), { id: 'photoOther00004', name: 'bonfire' })).name, 'bonfire.png', 'preview keeps the file\'s own extension');
+});
+
+test('Rename: two renames in the same moment cannot end with the same name', async () => {
+  // A rename of a lower-id file lands on the same name just as this one is written.
+  const files = bonfireFiles(() => ({
+    fileBonfire0001: photo('fileBonfire0001', 'bonfire.jpg', 'folderGeneral01'),
+    aaOtherFile0001: photo('aaOtherFile0001', 'x.jpg', 'folderGeneral01'),
+  }));
+  let raced = false;
+  fakeWorld({ files, onPatch: (f, all) => { if (!raced && f.id === 'photoChurchB002') { raced = true; all.aaOtherFile0001.name = f.name; } } });
+  const r = await renameFile(env(), { id: 'photoChurchB002', expected: 'IMG_3113 (1).jpg', name: 'bonfire' });
+  assert.equal(files.aaOtherFile0001.name, 'bonfire-2.jpg');
+  assert.equal(r.name, 'bonfire-3.jpg', 'the higher id gives way');
+  assert.equal(files.photoChurchB002.name, 'bonfire-3.jpg');
+
+  // The other way round: this file has the lower id, so it keeps the name.
+  const files2 = bonfireFiles(() => ({
+    fileBonfire0001: photo('fileBonfire0001', 'bonfire.jpg', 'folderGeneral01'),
+    zzOtherFile0001: photo('zzOtherFile0001', 'x.jpg', 'folderGeneral01'),
+  }));
+  fakeWorld({ files: files2, onPatch: (f, all) => { if (f.id === 'photoChurchB002') all.zzOtherFile0001.name = f.name; } });
+  const r2 = await renameFile(env(), { id: 'photoChurchB002', expected: 'IMG_3113 (1).jpg', name: 'bonfire' });
+  assert.equal(r2.name, 'bonfire-2.jpg');
+});
+
+test('Rename: more files than can be checked is refused, nothing renamed', async () => {
+  const files = driveFiles();
+  for (let i = 0; i < 20001; i += 1) files[`bulk${String(i).padStart(8, '0')}`] = photo(`bulk${String(i).padStart(8, '0')}`, `b${i}.jpg`, 'folderGeneral01');
+  const { calls } = fakeWorld({ files });
+  await assert.rejects(renameFile(env(), { id: 'photoChurchB002', expected: 'IMG_3113 (1).jpg', name: 'bonfire' }), /Too many files/);
+  assert.ok(!calls.drive.some((c) => c.method === 'PATCH'));
+});
+
+test('Router: photo-name preview needs Access and is a GET only', async () => {
+  fakeWorld();
+  const url = `${ORIGIN}/admin/api/photo-name?id=photoChurchB002&name=${encodeURIComponent('IMG_3113')}`;
+  assert.equal((await worker.fetch(new Request(url), env())).status, 403);
+  const r = await worker.fetch(new Request(url, { headers: { 'cf-access-jwt-assertion': await accessJwt() } }), env());
+  assert.equal(r.status, 200);
+  assert.deepEqual(await r.json(), { ok: true, name: 'IMG_3113-2.jpg', wanted: 'IMG_3113.jpg', numbered: true });
+});
+
+/* ------------------------------------------------------ on the website -- */
+
+const SITE_LIST = {
+  generated: '2026-10-20T06:00:00Z',
+  pages: {
+    'rous-lench-img-3113': [
+      { label: 'Village Halls: Rous Lench Village Hall', url: '/halls/#photo-rous-lench-img-3113' },
+      { label: 'Elsewhere', url: 'https://evil.example/' },
+    ],
+  },
+};
+
+test('On the website: links per page, absolute on the live site; other sites dropped', () => {
+  const list = { ...SITE_LIST, base: 'https://thelenches.org.uk/' };
+  const row = { slug: 'rous-lench-img-3113', published_at: '2026-09-02T05:41:00Z' };
+  assert.deepEqual(pagesFor(list, row), [{ label: 'Village Halls: Rous Lench Village Hall', url: 'https://thelenches.org.uk/halls/#photo-rous-lench-img-3113' }]);
+  assert.deepEqual(pagesFor(list, { slug: 'not-used', published_at: '2026-09-02T05:41:00Z' }), [], 'published, on no page');
+  assert.deepEqual(pagesFor(list, { slug: 'x', published_at: '' }), [], 'not published');
+  assert.equal(pagesFor(list, { ...row, published_at: '2026-10-21T05:00:00Z' }), null, 'published after the list was built: unknown');
+  assert.equal(pagesFor({ error: 'HTTP 404' }, row), null, 'list unavailable: unknown');
+  assert.equal(pagesFor(list, { ...row, slug: '' }), null, 'no slug yet: unknown');
+});
+
+test('State: each Photos row carries _pages from the public photo-pages.json', async () => {
+  const { calls } = fakeWorld({ site: SITE_LIST });
+  const r = await worker.fetch(new Request(`${ORIGIN}/admin/api/state`, { headers: { 'cf-access-jwt-assertion': await accessJwt() } }), env());
+  const rows = (await r.json()).photos.rows;
+  assert.deepEqual(rows.find((x) => x.drive_id === 'photoChurchA001')._pages,
+    [{ label: 'Village Halls: Rous Lench Village Hall', url: 'https://thelenches.org.uk/halls/#photo-rous-lench-img-3113' }]);
+  assert.deepEqual(rows.find((x) => x.drive_id === 'photoChurchB002')._pages, []);
+  assert.deepEqual(calls.site, [{ method: 'GET', path: '/photo-pages.json' }], 'only reads the public file; nothing sent');
+});
+
+test('State: list unavailable = pages unknown (null), the rest of the panel still loads', async () => {
+  for (const site of [404, { nonsense: true }]) {
+    fakeWorld({ site });
+    const r = await worker.fetch(new Request(`${ORIGIN}/admin/api/state`, { headers: { 'cf-access-jwt-assertion': await accessJwt() } }), env());
+    assert.equal(r.status, 200);
+    const s = await r.json();
+    assert.equal(s.photos.rows.find((x) => x.drive_id === 'photoChurchA001')._pages, null);
+    assert.equal(s.photos.rows.length, 5);
+  }
+});
+
+test('Compare copies: each copy carries its pages (null when unknown)', async () => {
+  fakeWorld({ site: SITE_LIST });
+  let m = (await dupMembers(env(), 'photoChurchB002')).members;
+  assert.equal(m.find((x) => x.drive_id === 'photoChurchA001').pages.length, 1);
+  assert.deepEqual(m.find((x) => x.drive_id === 'photoChurchB002').pages, []);
+  fakeWorld({ site: 500 });
+  m = (await dupMembers(env(), 'photoChurchB002')).members;
+  assert.equal(m.find((x) => x.drive_id === 'photoChurchA001').pages, null);
 });
