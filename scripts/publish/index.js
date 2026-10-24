@@ -21,6 +21,12 @@
 // stay listed until "end" if that is later than the usual expiry. Their roads are looked up
 // once for the Roads page map and cached in src/_data/roadgeo.json (roadgeo.js), with any
 // coordinates from Pending road_coords or the link used first.
+// Suggested images (scripts/suggest): an item with no email image whose image_choice names an
+// "Image suggestions" row gets that image on approval: an own photo is copied from
+// src/images/photos, an organiser's or Pexels image is downloaded (scripts/suggest/web.js
+// guards). Its caption goes to image_credit (and image_credit_url) unless already filled, and
+// the item carries image.credit / image.creditUrl for the site and newsletter captions.
+// image_choice "none" = no image.
 'use strict';
 
 const fs = require('fs');
@@ -33,11 +39,14 @@ const { localSource } = require('../../lib/sources');
 const { loadWhatson } = require('../../lib/whatson');
 const { isRoad, guessRoad, parseCoords, coordsFromUrl } = require('../../lib/roads');
 const { updateRoadGeo } = require('./roadgeo');
+const { fetchImage } = require('../suggest/web');
 
 const TZ = 'Europe/London';
 const ROOT = path.join(__dirname, '..', '..');
 const DATA_FILE = path.join(ROOT, 'src', '_data', 'pipeline.json');
 const IMAGE_DIR = path.join(ROOT, 'src', 'images', 'items');
+const PHOTO_DIR = path.join(ROOT, 'src', 'images', 'photos');
+const SUGGESTIONS = 'Image suggestions';
 const IMAGE_URL = '/images/items';
 const IMAGE_EDGE = 1200;  // longest side, px
 const NOTICE_DAYS = 21;   // notices show until their date, and for at least this long
@@ -75,16 +84,46 @@ async function saveImage(row) {
     const raw = await g.getAttachmentData(msg.id, att);
     const { data: raster } = await toRaster(raw, att.mimeType, att.filename);
     if (!raster) throw new Error(`${att.filename || 'attachment'} can't be shown as an image`);
-    const webp = await sharp(raster)
-      .rotate()
-      .resize({ width: IMAGE_EDGE, height: IMAGE_EDGE, fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 80 })
-      .toBuffer();
-    fs.mkdirSync(IMAGE_DIR, { recursive: true });
-    fs.writeFileSync(dest, webp);
-    console.log(`Image saved for ${row.id} (${Math.round(webp.length / 1024)} KB).`);
+    await writeItemImage(row.id, raster);
   }
   return `${IMAGE_URL}/${file}`;
+}
+
+// Resized WebP of any image as /images/items/<id>.webp.
+async function writeItemImage(id, raster) {
+  const webp = await sharp(raster)
+    .rotate()
+    .resize({ width: IMAGE_EDGE, height: IMAGE_EDGE, fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer();
+  fs.mkdirSync(IMAGE_DIR, { recursive: true });
+  fs.writeFileSync(path.join(IMAGE_DIR, `${id}.webp`), webp);
+  console.log(`Image saved for ${id} (${Math.round(webp.length / 1024)} KB).`);
+  return `${IMAGE_URL}/${id}.webp`;
+}
+
+// The image Jon chose in the panel's "Suggested images" strip (image_choice), saved as the
+// item's own image. suggestions: Map id -> Image suggestions row, or null if the tab is unreadable.
+async function chosenImage(row, suggestions) {
+  const choice = str(row.image_choice);
+  const s = suggestions && suggestions.get(choice);
+  if (!s || str(s.item) !== str(row.id)) throw new Error(`suggestion ${choice} not found in the ${SUGGESTIONS} tab`);
+  let raster;
+  if (s.source === 'own') {
+    const m = str(s.url).match(/^\/images\/photos\/([a-z0-9-]{1,150})\.webp$/);
+    if (!m) throw new Error(`suggestion ${choice}: not one of our photos`);
+    raster = fs.readFileSync(path.join(PHOTO_DIR, `${m[1]}.webp`));
+  } else if (s.source === 'organiser' || s.source === 'library') {
+    raster = (await fetchImage(str(s.url), { robots: s.source === 'organiser' })).buffer;
+  } else {
+    throw new Error(`suggestion ${choice} has no image`);
+  }
+  const url = await writeItemImage(row.id, raster);
+  const fields = { image_url: url };
+  if (!str(row.image_credit) && str(s.caption)) fields.image_credit = str(s.caption);
+  if (!str(row.image_credit_url) && safeUrl(s.credit_url)) fields.image_credit_url = str(s.credit_url);
+  if (!str(row.alt_text) && str(s.alt)) fields.alt_text = str(s.alt);
+  return { url, fields };
 }
 
 // JPEG copy of a saved item WebP, for the newsletter. Only for our own
@@ -107,13 +146,21 @@ async function ensureJpeg(url, id, failures) {
   }
 }
 
-async function imageFor(row, failures) {
+async function imageFor(row, failures, suggestions) {
   const current = str(row.image_url);
   if (current.toLowerCase() === 'none' || current.startsWith('failed')) return '';
   if (current.startsWith('/') || /^https:\/\//i.test(current)) return current;
-  if (!str(row.image_part_id) || !str(row.message_id)) return '';
+  const choice = str(row.image_choice);
+  const chosen = !str(row.image_part_id) && choice && choice.toLowerCase() !== 'none';
+  if (!chosen && (!str(row.image_part_id) || !str(row.message_id))) return '';
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(row.id)) return '';
   try {
+    if (chosen) {
+      const { url, fields } = await chosenImage(row, suggestions);
+      await g.updateRow('Pending', row._row, fields);
+      Object.assign(row, fields);
+      return url;
+    }
     const url = await saveImage(row);
     await g.updateRow('Pending', row._row, { image_url: url });
     return url;
@@ -137,6 +184,15 @@ async function main() {
 
   const out = { events: [], notices: [] };
   const failures = [];
+  // Only needed when an item has a chosen suggestion; a missing tab fails just those items.
+  let suggestions = null;
+  if (rows.some((r) => str(r.image_choice) && str(r.image_choice).toLowerCase() !== 'none')) {
+    try {
+      suggestions = new Map((await g.readTable(SUGGESTIONS)).map((s) => [str(s.id), s]));
+    } catch (err) {
+      console.warn(`${SUGGESTIONS} tab unreadable: ${err.message}`);
+    }
+  }
   const roadsWanted = [];
 
   for (const row of byKey.values()) {
@@ -178,9 +234,11 @@ async function main() {
       if (source) item.source = source;
     }
     if (url) item.link = { text: str(row.link_text) || 'More details', url };
-    const img = await imageFor(row, failures);
+    const img = await imageFor(row, failures, suggestions);
     if (img) {
       item.image = { url: img, alt: str(row.alt_text) };
+      if (str(row.image_credit)) item.image.credit = str(row.image_credit).slice(0, 120);
+      if (item.image.credit && /^https:\/\//i.test(str(row.image_credit_url))) item.image.creditUrl = str(row.image_credit_url);
       await ensureJpeg(img, row.id, failures);
     }
     out[list].push({ item, start });
@@ -224,7 +282,11 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error('Fatal:', err && err.stack ? err.stack : err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('Fatal:', err && err.stack ? err.stack : err);
+    process.exit(1);
+  });
+}
+
+module.exports = { imageFor, chosenImage };

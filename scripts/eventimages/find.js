@@ -291,4 +291,6 @@ async function findImage(link) {
   return { fail: tried.length ? `no usable image (${tried.slice(0, 4).join('; ')})` : 'no image on the page', page };
 }
 
-module.exports = { findImage };
+module.exports = {
+  findImage, parseRobots, attrs, decode, metaGetter, absolute, BLOCKED_HOSTS, STOCK_HOSTS, BAD_WORDS, UA,
+};

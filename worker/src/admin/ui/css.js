@@ -75,6 +75,17 @@ nav.side button[aria-current="page"] .n{background:rgba(255,255,255,.25);color:i
 .small textarea.f{min-height:64px}
 .copies{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
 .copies img{display:block;width:100%;height:200px;object-fit:contain;background:var(--panel2);border-radius:8px}
+.suggest{margin:12px 0 4px;padding-top:8px;border-top:1px solid var(--line)}
+.suggest h3{margin:0 0 6px}
+.sg-list{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.sg{margin:0;display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:8px;border:2px solid var(--line);background:var(--panel2);min-width:0}
+.sg.chosen{border-color:var(--accent)}
+.sg img,.sg .sg-none{display:block;width:100%;height:120px;object-fit:contain;background:var(--panel);border-radius:6px}
+.sg .sg-none{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.85rem}
+.sg-src{font-size:.78rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.03em}
+.sg figcaption{font-size:.82rem;display:flex;flex-direction:column;gap:4px;overflow-wrap:anywhere;flex:1}
+.sg-links{display:flex;flex-wrap:wrap;gap:4px 10px}
+.sg .btn{justify-content:center}
 .tick{display:flex;align-items:center;gap:8px;margin:8px 0;padding:8px 10px;border-radius:8px;background:var(--warn-bg);color:var(--warn)}
 .tick input{width:22px;height:22px;accent-color:var(--accent)}
 .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}

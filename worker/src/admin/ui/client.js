@@ -6,12 +6,14 @@
 // drop onto folders (desktop), Move to… (phone), each move stale-checked, with Undo.
 // To delete (last in the Photos menu): what is in it, where from and when, Restore; Reject,
 // drag, Move to… and "Move to To delete" all move a photo there, always after a confirm.
+// Suggested images: on a Queue card for an event with no image, the run's suggestions (own
+// photo, organiser's site, library) with Choose and "None of these" (stale-checked writes).
 // Past events: organisers' images whose event is over. After any action the middle list
 // keeps its scroll, selection and open folders (render reuses unchanged cards).
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '10';
+export const UI_VERSION = '11';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -447,6 +449,7 @@ export const CLIENT_JS = String.raw`
     if (extra.length) add(c, h('div', { class: 'meta' }, extra.join(' · ')));
     add(c, images(r));
     if (truthy(r.people_in_image)) add(c, peopleTick('Pending', r.id, r, 'The image shows people or children. Tick only if they are happy to appear.'));
+    add(c, suggestStrip(r));
     add(c, h('label', { class: 'f', for: 'cat-' + r.id }, 'Category'));
     add(c, categorySelect(r));
     add(c, itemActions(r, inDetail));
@@ -478,6 +481,62 @@ export const CLIENT_JS = String.raw`
         if (!res.ok) box.appendChild(h('span', { class: 'meta' }, 'Images could not be loaded.'));
       });
     }
+    return box;
+  }
+
+  var SUGGEST_LABELS = { own: 'Own photo', organiser: 'Organiser\'s site', library: 'Library' };
+  var flaggedPeople = function (s) { return s.people === 'identifiable' || s.people === 'unknown'; };
+
+  function suggestStrip(r) {
+    var list = r._suggest;
+    if (!list) return null;
+    var choice = str(r.image_choice);
+    var canChoose = S.data.pending.headers.indexOf('image_choice') >= 0;
+    var box = h('section', { class: 'suggest', 'aria-label': 'Suggested images' }, h('h3', null, 'Suggested images'));
+    if (!list.length) { add(box, h('p', { class: 'meta' }, 'None found for this event.')); return box; }
+    if (!canChoose) add(box, h('div', { class: 'note warn' }, 'Add an image_choice column at the end of Pending to choose here.'));
+    var choose = function (sid) {
+      return async function () {
+        if (S.busy) return;
+        S.busy = true;
+        var res = await api('/admin/api/suggest', { id: r.id, sid: sid, expected: choice });
+        S.busy = false;
+        if (res.ok) { r.image_choice = res.json.value; toast(res.json.message || 'Saved'); }
+        else {
+          if (res.json.current !== undefined) r.image_choice = res.json.current;
+          toast(res.status === 409 && res.json.current !== undefined ? 'Changed in the Sheet since you loaded the page. Not saved.' : (res.json.error || 'Not saved'), true);
+        }
+        render();
+      };
+    };
+    var anyFlag = false;
+    var tiles = list.map(function (s) {
+      var chosen = choice === s.id;
+      var flag = flaggedPeople(s);
+      if (flag) anyFlag = true;
+      var blocked = flag && !truthy(r.people_ok);
+      var label = SUGGEST_LABELS[s.source] || s.source;
+      var links = [];
+      if (s.source === 'library') links.push(h('a', { href: 'https://www.pexels.com', target: '_blank', rel: 'noopener noreferrer' }, 'Photos provided by Pexels'));
+      if (/^https:\/\//i.test(str(s.page))) links.push(h('a', { href: str(s.page), target: '_blank', rel: 'noopener noreferrer' }, s.source === 'library' ? 'Photo page' : 'Source page'));
+      return h('figure', { class: 'sg' + (chosen ? ' chosen' : '') },
+        h('span', { class: 'sg-src' }, label),
+        /^data:image\/jpeg;base64,/.test(str(s.thumb))
+          ? h('img', { src: str(s.thumb), alt: str(s.alt) || ('Suggested image: ' + label) })
+          : h('div', { class: 'sg-none' }, 'No preview'),
+        h('figcaption', null,
+          str(s.caption) ? h('div', { class: 'sg-credit' }, str(s.caption)) : null,
+          flag ? h('span', { class: 'badge bad' }, 'May show people') : null,
+          links.length ? h('div', { class: 'sg-links' }, links) : null),
+        h('button', { class: 'btn' + (chosen ? ' primary' : ''), disabled: chosen || blocked || !canChoose,
+          title: blocked ? 'Tick "People OK" first' : null, 'aria-pressed': chosen ? 'true' : 'false', onclick: choose(s.id) },
+        chosen ? 'Chosen' : 'Choose'));
+    });
+    add(box, h('div', { class: 'sg-list' }, tiles));
+    if (anyFlag && !truthy(r.people_in_image)) add(box, peopleTick('Pending', r.id, r, 'A suggested image may show people. Tick only if that is all right to publish.'));
+    add(box, h('div', { class: 'actions' },
+      h('button', { class: 'btn', disabled: choice === 'none' || !canChoose, 'aria-pressed': choice === 'none' ? 'true' : 'false', onclick: choose('none') },
+        choice === 'none' ? 'No image chosen' : 'None of these')));
     return box;
   }
 

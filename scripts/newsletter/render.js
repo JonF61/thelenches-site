@@ -88,10 +88,14 @@ function sectionHead(title) {
 }
 
 // The picture links to the item on the site (lib/anchors.js), when there is one.
+// A suggested image's credit (img.credit) goes underneath in small muted type, as on the site.
 function imageRow(img, width, href) {
   const tag = `<img src="${esc(img.src)}" width="${width}" alt="${esc(img.alt)}" `
     + `style="display:block;width:100%;max-width:${width}px;height:auto;border:0;outline:none;text-decoration:none;">`;
-  return href ? `<a href="${esc(href)}" style="display:block;text-decoration:none;">${tag}</a>` : tag;
+  const pic = href ? `<a href="${esc(href)}" style="display:block;text-decoration:none;">${tag}</a>` : tag;
+  if (!img.credit) return pic;
+  const credit = img.creditUrl ? a(img.creditUrl, img.credit, C.muted) : esc(img.credit);
+  return `${pic}<div style="font-family:${SANS};font-size:11px;line-height:1.4;color:${C.muted};padding-top:3px;">${credit}</div>`;
 }
 
 // "Lenches" badge (site: .lenches-badge in src/events.njk). A table cell, not a styled

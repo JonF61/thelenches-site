@@ -21,6 +21,7 @@ const welcome = require('./welcome');
 const rss = require('./rss');
 const trust = require('./trusted');
 const { offersChoice } = require('../../lib/wording');
+const { extractLinks } = require('../suggest/organiser');
 
 const MAX_RETRIES = 3;            // after this, a failing message is left for the diagnostic
 const MAX_MESSAGES_PER_RUN = 25;  // caps run time and spend; the rest wait for the next run
@@ -220,6 +221,8 @@ async function processMessage(id, ctx) {
       road: item.road,
       end_date: item.end_date,
       road_coords: item.road_coords,
+      // Web links in the email, for image suggestions (scripts/suggest); ignored if the Sheet lacks the column.
+      links: extractLinks(msg.text).join(' '),
       // Holiday mode: nobody is choosing, so official and verbatim items use their words.
       wording: ctx.holiday && offersChoice(item) ? 'own' : '',
     };

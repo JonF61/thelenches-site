@@ -195,14 +195,21 @@ function select({ issueDate, pending, whatson, bins, siteupdates, issues, settin
   const roads = [];
   const elsewhere = [];
 
-  function emailImage(url, alt, key, flyerCount) {
+  // credit: the caption for a suggested image (Pending image_credit / image.credit), if any.
+  function emailImage(url, alt, key, flyerCount, credit, creditUrl) {
     if (!/^\/images\/items\/[A-Za-z0-9_-]{1,100}\.webp$/.test(str(url))) return null;
     if (Math.max(num(flyerCount), imaged.get(key) || 0) >= MAX_IMAGE) return null;
     const src = jpegFor ? jpegFor(str(url)) : '';
-    return src ? { src, alt: str(alt) } : null;
+    if (!src) return null;
+    const img = { src, alt: str(alt) };
+    if (str(credit)) {
+      img.credit = str(credit).slice(0, 120);
+      if (/^https:\/\//i.test(str(creditUrl))) img.creditUrl = str(creditUrl);
+    }
+    return img;
   }
-  const imageFor = (row, key) => emailImage(row.image_url, row.alt_text, key, row.flyer_count);
-  const whatsonImage = (it, key) => (it.image ? emailImage(it.image.url, it.image.alt, key, 0) : null);
+  const imageFor = (row, key) => emailImage(row.image_url, row.alt_text, key, row.flyer_count, row.image_credit, row.image_credit_url);
+  const whatsonImage = (it, key) => (it.image ? emailImage(it.image.url, it.image.alt, key, 0, it.image.credit, it.image.creditUrl) : null);
 
   // ---- Pending: approved/auto rows; later rows win, as on the site.
   const byKey = new Map();

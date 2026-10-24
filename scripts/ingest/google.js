@@ -466,6 +466,7 @@ module.exports = {
   addressOf,
   sendMail,
   readTable,
+  readHeaders,
   readSettings,
   fromNameFor,
   getSheetGid,

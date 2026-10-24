@@ -9,6 +9,9 @@
 //                                   latest newsletter, Health, watchdog, Google account;
 //                                   each Photos row's _pages: the public pages it is on
 //                                   (photopages.js, from the site's photo-pages.json)
+//                                   each Pending event with no image: _suggest, its rows in
+//                                   Image suggestions (thumbnails are data: JPEGs made by the
+//                                   pipeline; the browser never loads anything from outside)
 //                                   photoFolders: [{ id, parent, names }] live from Drive,
 //                                   for the Photos menu and the drop/Move to… targets
 //   GET  /admin/api/mail-images?m=  every image in one email (for a Pending item)
@@ -17,6 +20,11 @@
 //   POST /admin/api/action          { kind: pending|reply|photo, id, action, reason?, body?,
 //                                   expected? }: decisions go through core.js decide(),
 //                                   the same path as the signed email links
+//   POST /admin/api/suggest         { id, sid, expected }: Choose a suggested image (sid = an
+//                                   Image suggestions id) or "None of these" (sid "none") for a
+//                                   Pending event with no image: a stale-checked image_choice
+//                                   write (actions.js planSuggest); an organiser's or Pexels
+//                                   image is also queued once for Lenches Photos (Image fetch)
 //   GET  /admin/api/photo-file?id=  a Photos file's live Drive name and folder, and the
 //                                   Lenches Photos folders it can move to
 //   GET  /admin/api/photo-group?id= every copy in a possible-duplicate group
@@ -37,9 +45,11 @@
 import { ACTIONS, decide, github } from '../core.js';
 import { verifyAccess } from './access.js';
 import { makeCsrf, checkCsrf, sameOrigin } from './csrf.js';
-import { getValues, sheetGids, gmailImage, gmailImageParts, driveImage, serviceAccountEmail } from './google.js';
+import { getValues, sheetGids, gmailImage, gmailImageParts, driveImage, serviceAccountEmail, appendValues } from './google.js';
 import { readTable, readSettingsPairs, editCell, checkedWrite } from './sheet.js';
-import { planPending, planReply, planPhoto, trustKeyFor, truthy } from './actions.js';
+import {
+  planPending, planReply, planPhoto, planSuggest, trustKeyFor, truthy, hasOwnImage, SUGGEST_TAB, SUGGEST_SOURCES,
+} from './actions.js';
 import { owedReplies } from './owed.js';
 import {
   fileInfo, folderList, dupMembers, previewName, renameFile, moveFile, discardFile, restoreFile, binList, tidyList,
@@ -113,16 +123,38 @@ function organiserImages(t, onSite) {
   return out;
 }
 
+// Suggestion fields the panel shows (never the run's working columns).
+const SUGGEST_FIELDS = ['id', 'source', 'rank', 'caption', 'credit', 'page', 'licence', 'people', 'thumb', 'alt', 'status'];
+const THUMB = /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/;
+
+// Image suggestions by Pending id: { id: [suggestion, ...] } ("none" rows give an empty list).
+function suggestionsByItem(t) {
+  const out = {};
+  if (!t || t.error) return out;
+  for (const r of t.rows) {
+    const item = String(r.item || '').trim();
+    if (!item) continue;
+    out[item] = out[item] || [];
+    if (!SUGGEST_SOURCES[r.source]) continue;
+    const s = pick(r, SUGGEST_FIELDS);
+    if (!THUMB.test(String(s.thumb || ''))) s.thumb = '';
+    out[item].push(s);
+  }
+  for (const k of Object.keys(out)) out[k].sort((a, b) => (Number(a.rank) || 0) - (Number(b.rank) || 0));
+  return out;
+}
+
 const pick = (row, keys) => Object.fromEntries(keys.filter((k) => k in row).map((k) => [k, row[k]]));
 
 async function state(env, email) {
   const photosRead = readTable(env, 'Photos');
-  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite, bin] = await settled([
+  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite, bin, sugg] = await settled([
     readTable(env, 'Pending'), readTable(env, 'Replies'), photosRead,
     readSettingsPairs(env), readTable(env, 'Health'), readTable(env, 'Issues'), sheetGids(env),
     readSources(env), readTable(env, 'Image fetch'), watchdog(env), folderList(env), photoPages(env),
-    binList(env, photosRead),
+    binList(env, photosRead), readTable(env, SUGGEST_TAB),
   ]);
+  const suggested = suggestionsByItem(sugg);
   const holiday = settings.error ? settings : (settings.find((p) => p.key === 'holiday_mode') || { value: '' });
   const filled = (t) => t.rows.filter((r) => Object.entries(r).some(([k, v]) => k !== '_row' && v !== ''));
 
@@ -139,6 +171,8 @@ async function state(env, email) {
         _trust: trustKeyFor(r, src),
         _official: truthy(r.official),
         _offers: Boolean(String(r.own_text || '').trim()) && (truthy(r.official) || truthy(r.verbatim_requested)),
+        // Suggested images: only for events with no image of their own that the run has looked at.
+        _suggest: String(r.category || '').trim().toLowerCase() === 'event' && !hasOwnImage(r) && suggested[r.id] ? suggested[r.id] : null,
       })),
     };
   }
@@ -256,6 +290,38 @@ async function doAction(env, body) {
   return json({ ok: true, message: `${ACTIONS[plan.p.a][1]}. It takes a minute or two to show in the Sheet.` });
 }
 
+async function doSuggest(env, body) {
+  const id = String(body.id ?? '');
+  const sid = String(body.sid ?? '');
+  const [{ headers, rows }, sugg] = await Promise.all([
+    readTable(env, 'Pending'), sid === 'none' ? { rows: [] } : readTable(env, SUGGEST_TAB),
+  ]);
+  const matches = rows.filter((r) => id && r.id === id);
+  const found = sugg.rows.filter((r) => sid && String(r.id) === sid);
+  const plan = planSuggest({ id, sid }, matches.length === 1 ? matches[0] : null, found.length === 1 ? found[0] : null,
+    { hasChoice: headers.includes('image_choice'), hasPeopleOk: headers.includes('people_ok') });
+  if (plan.error) return json({ ok: false, ...plan }, plan.status);
+  const r = await checkedWrite(env, {
+    tab: 'Pending', keyCol: 'id', key: id, field: 'image_choice', expected: body.expected, value: plan.value, onlyStatus: 'pending',
+  });
+  if (!r.ok) return json(r, r.status);
+  if (plan.value === 'none') return json({ ok: true, value: r.value, message: 'No image for this item.' });
+  let message = 'Chosen. It becomes the image when you approve the item.';
+  if (plan.save) {
+    try {
+      const fetchHeaders = (await readTable(env, 'Image fetch')).headers;
+      if (!fetchHeaders.includes('url')) throw new Error('the Image fetch tab has no url column');
+      await appendValues(env, 'Image fetch', [fetchHeaders.map((h) => (h && plan.save[h] !== undefined ? plan.save[h] : ''))]);
+      await checkedWrite(env, { tab: SUGGEST_TAB, keyCol: 'id', key: sid, field: 'status', expected: found[0].status || '', value: 'saved' });
+      message += ' A copy goes to Lenches Photos within the hour.';
+    } catch (e) {
+      console.error(`Suggest save ${sid}: ${e.message}`);
+      message += ` Saving a copy to Lenches Photos failed (${e.message}): choose it again to retry.`;
+    }
+  }
+  return json({ ok: true, value: r.value, message });
+}
+
 const fromResult = (r) => (r.ok ? json(r) : json(r, r.status));
 
 // Photos file management: one operation per request.
@@ -346,6 +412,7 @@ export async function handleAdmin(request, env) {
       if (!body) return json({ ok: false, error: 'Bad request' }, 400);
       if (path === '/admin/api/edit') return await doEdit(env, body);
       if (path === '/admin/api/action') return await doAction(env, body);
+      if (path === '/admin/api/suggest') return await doSuggest(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(env, body);
       return json({ ok: false, error: 'Not found' }, 404);
     }
