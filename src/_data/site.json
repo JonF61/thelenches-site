@@ -9,7 +9,7 @@
   "noindex": false,
   "teamUrl": "https://approvals.lenches.workers.dev/admin",
   "feedbackUrl": "https://approvals.lenches.workers.dev/f",
-  "turnstileSiteKey": "",
+  "turnstileSiteKey": "0x4AAAAAAFleBJ36URNQhdUv",
   "nav": [
     { "title": "Home", "url": "/" },
     { "title": "Events", "url": "/events/" },
