@@ -1458,7 +1458,7 @@ export const CLIENT_JS = String.raw`
   }
 
   function photoSummary(r) {
-    return [h('h2', null, str(r.filename)), h('div', { class: 'meta' }, [str(r.village), str(r.subject)].filter(Boolean).join(' · ')), photoBadges(r),
+    return [h('h2', { class: 'fname', title: str(r.filename) }, str(r.filename)), h('div', { class: 'meta' }, [str(r.village), str(r.subject)].filter(Boolean).join(' · ')), photoBadges(r),
       str(r.published_at) ? onSite(r._pages) : null];
   }
 
