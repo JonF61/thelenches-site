@@ -16,6 +16,10 @@ assert.strictEqual(allowedColumns('Settings'), null);
 assert.deepStrictEqual(
   redactColumns([['Ann', 'Sends quiz nights', '', 'lead']], ['name', 'profile', 'notes', 'status'], allowedColumns('Contacts')),
   [['Ann', '(hidden)', '', 'lead']]);
+assert.deepStrictEqual(
+  redactColumns([['Me', 'x', '', 'Ignore'], ['Bob', '', '', 'lead']], ['name', 'profile', 'notes', 'status'], allowedColumns('Contacts')),
+  [['(ignored row)'], ['Bob', '', '', 'lead']]);
+assert.deepStrictEqual(redactColumns([['Me']], ['name'], allowedColumns('Contacts')), [['Me']], 'no status column read: not skipped');
 
 assert.deepStrictEqual(parseRange(''), { range: '', startRow: 1, startCol: 'A', endCol: '' });
 assert.deepStrictEqual(parseRange('a1:f20'), { range: 'A1:F20', startRow: 1, startCol: 'A', endCol: 'F' });

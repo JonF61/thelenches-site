@@ -77,14 +77,15 @@ async function main() {
     else adds.push(row);
   }
 
-  // Contributions may have changed for people who didn't write this time.
+  // Contributions or status (dormant) may have changed for people who didn't write this time.
   for (const ex of existingRows) {
     const email = c.norm(ex.email);
     if (!email || senders.has(email) || c.locked(ex)) continue;
     const contrib = c.contributionsFor(email, pending, g.addressOf);
-    if (String(contrib.count) !== String(ex.contribution_count || 0) || contrib.list !== String(ex.contributions || '')) {
+    const status = c.statusFor(ex.status, contrib.count, ex.last_contact, c.ymd(Date.now()));
+    if (status || String(contrib.count) !== String(ex.contribution_count || 0) || contrib.list !== String(ex.contributions || '')) {
       const row = { contributions: contrib.list, contribution_count: contrib.count, updated_at: stamp };
-      if (c.norm(ex.status) === 'lead' && contrib.count) row.status = 'contributor';
+      if (status) row.status = status;
       updates.push({ rowNumber: ex._row, row });
     }
   }

@@ -12,7 +12,10 @@
 //   first_contact       YYYY-MM-DD of their first email to website@
 //   last_contact        YYYY-MM-DD of their latest email to website@
 //   message_count       emails to website@ counted
-//   status              contributor | lead | dormant | ignore (set by hand; ignore = never touched again)
+//   status              set by code while it is blank, contributor, lead or dormant:
+//                       dormant = nothing from them for DORMANT_DAYS; else contributor if they
+//                       have Pending items, else lead. Any other value (e.g. ignore) is kept;
+//                       ignore = the row is never touched again and Read Sheet tab skips it.
 //   notes               Jon's own notes; never written by code
 //   profile_source      auto = code may rewrite name/organisation/village/role/profile;
 //                       anything else (e.g. manual) = left alone
@@ -27,6 +30,8 @@ const WEBSITE = 'website@thelenches.org.uk';
 const MAX_RECIPIENTS = 10;      // a reply-all to a bigger list is not someone writing to us
 const MAX_CONTRIBUTIONS = 40;   // listed in the cell (the count covers all)
 const PROFILE_FIELDS = ['name', 'organisation', 'village', 'role', 'profile'];
+const DORMANT_DAYS = 365;
+const AUTO_STATUSES = ['', 'contributor', 'lead', 'dormant'];
 
 // Never contacts: our own mail, platforms and services.
 const EXCLUDED_DOMAINS = /(^|\.)(thelenches\.org\.uk|facebook\.com|facebookmail\.com|mailerlite\.com|feedrabbit\.com|google\.com|github\.com|cloudflare\.com|anthropic\.com|123-reg\.co\.uk)$/i;
@@ -95,9 +100,23 @@ function groupBySender(messages) {
   return by;
 }
 
+// Status code would give: dormant after DORMANT_DAYS without an email, else by contributions.
+function autoStatus(contributionCount, lastContact, todayYmd) {
+  const days = (Date.parse(todayYmd) - Date.parse(lastContact)) / 864e5;
+  if (lastContact && days > DORMANT_DAYS) return 'dormant';
+  return Number(contributionCount) > 0 ? 'contributor' : 'lead';
+}
+
+// New status for a row, or null to leave it (a value set by hand).
+function statusFor(current, contributionCount, lastContact, todayYmd) {
+  if (!AUTO_STATUSES.includes(norm(current))) return null;
+  const s = autoStatus(contributionCount, lastContact, todayYmd);
+  return s === norm(current) ? null : s;
+}
+
 // The fields code writes for one contact. existing: current Sheet row or null.
 // profile: Claude's { name, organisation, village, role, profile } or null (not asked this run).
-function mergeRow(existing, sender, contrib, profile, nowUk) {
+function mergeRow(existing, sender, contrib, profile, nowUk, todayYmd = ymd(Date.now())) {
   const ex = existing || {};
   const dates = sender.messages.map((m) => ymd(m.internalDate));
   const first = [ex.first_contact, dates[0]].filter(Boolean).sort()[0] || '';
@@ -112,12 +131,9 @@ function mergeRow(existing, sender, contrib, profile, nowUk) {
     message_count: (existing ? Number(ex.message_count) || 0 : 0) + (existing ? newCount : sender.messages.length),
     updated_at: nowUk,
   };
-  if (!existing) {
-    out.status = contrib.count ? 'contributor' : 'lead';
-    out.profile_source = 'auto';
-  } else if (norm(ex.status) === 'lead' && contrib.count) {
-    out.status = 'contributor';
-  }
+  const status = statusFor(existing ? ex.status : '', contrib.count, last, todayYmd);
+  if (status) out.status = status;
+  if (!existing) out.profile_source = 'auto';
   const auto = !existing || norm(ex.profile_source) === 'auto';
   if (auto && profile) {
     for (const f of PROFILE_FIELDS) if (String(profile[f] || '').trim()) out[f] = String(profile[f]).trim();
@@ -132,6 +148,6 @@ function locked(existing) {
 }
 
 module.exports = {
-  TAB, HEADERS, WEBSITE, PROFILE_FIELDS,
-  norm, ymd, excludedAddress, skipReason, displayName, contributionsFor, groupBySender, mergeRow, locked,
+  TAB, HEADERS, WEBSITE, PROFILE_FIELDS, DORMANT_DAYS,
+  norm, ymd, excludedAddress, skipReason, displayName, contributionsFor, groupBySender, mergeRow, locked, autoStatus, statusFor,
 };
