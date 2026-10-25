@@ -10,10 +10,12 @@
 // photo, organiser's site, library) with Choose and "None of these" (stale-checked writes).
 // Past events: organisers' images whose event is over. After any action the middle list
 // keeps its scroll, selection and open folders (render reuses unchanged cards).
+// Contacts: a list (search; status, village and organisation filters; newest contact first)
+// and a page per contact; each field saves on its own, stale-checked.
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '16';
+export const UI_VERSION = '17';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -23,7 +25,7 @@ export const CLIENT_JS = String.raw`
     picked: {}, ff: '', openF: {}, drag: null, busy: false, order: {}, shown: '' };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
-  var VIEWS = [['queue', 'Queue'], ['replies', 'Replies'], ['owed', 'Owed'], ['photos', 'Photos'], ['feedback', 'Feedback'], ['health', 'Health']];
+  var VIEWS = [['queue', 'Queue'], ['replies', 'Replies'], ['owed', 'Owed'], ['photos', 'Photos'], ['feedback', 'Feedback'], ['contacts', 'Contacts'], ['health', 'Health']];
   var FLAG_LABELS = {
     own_wording: 'Asked for own wording', too_early: 'Too early', after_deadline: 'After deadline',
     flyer_limit: 'Flyer limit', newsletter_limit: 'Newsletter limit', people_in_image: 'People in image',
@@ -135,6 +137,7 @@ export const CLIENT_JS = String.raw`
       S.data = r.json;
       S.done = {};
       S.files = {};
+      S.contacts = null;
       render();
       if (!quiet) toast('Up to date');
     } catch (e) {
@@ -292,7 +295,7 @@ export const CLIENT_JS = String.raw`
       owed: Array.isArray(d.owed) ? d.owed.filter(function (o) { return !S.done['reply:' + o.holding.reply_id]; }).length : '!',
       photos: d.photos && !d.photos.error ? d.photos.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length : '!',
       feedback: d.feedback && !d.feedback.error ? fbRows(d, 'waiting').length + fbRows(d, 'reply').length : '!',
-      health: null
+      contacts: null, health: null
     };
   }
 
@@ -315,6 +318,7 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'photos') return split(photosList(d), 'photo');
     if (S.view === 'health') return [h('div', { class: 'list wide' }, healthView(d))];
     if (S.view === 'feedback') return [h('div', { class: 'list wide' }, feedbackView(d))];
+    if (S.view === 'contacts') return [h('div', { class: 'list wide' }, contactsView())];
     return split(queueList(d), 'pending');
   }
 
@@ -1983,6 +1987,181 @@ export const CLIENT_JS = String.raw`
     h('p', { class: 'meta' }, 'To ' + str(r.email) + ', from website@. It is sent exactly as it stands.'),
     h('label', { class: 'f', for: 'fbe' }, 'Reply'), text,
     h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'submit' }, 'Send edited reply')));
+  }
+
+  /* ------------------------------------------------------------ contacts -- */
+
+  // Contacts tab (scripts/contacts fills it daily; ignore rows never reach the page).
+  // Loaded when the screen opens. Each Save is one stale-checked cell write; a profile
+  // field also sets profile_source to "manual" so the daily run stops rewriting it.
+  var C_FIELDS = [['name', 'Name'], ['organisation', 'Organisation'], ['village', 'Village'], ['role', 'Role'], ['profile', 'Profile']];
+  var C_AUTO = ['contributor', 'lead', 'dormant'];
+  var C_LIMITS = { name: 120, organisation: 120, village: 60, role: 120, profile: 2000, notes: 5000 };
+
+  async function loadContacts() {
+    S.cLoading = true;
+    var r = await api('/admin/api/contacts');
+    S.cLoading = false;
+    S.contacts = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'contacts') render();
+  }
+
+  function cDay(s) {
+    var v = str(s);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+    return new Date(v + 'T12:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  function plural(n, one, many) { var k = Number(n) || 0; return k + ' ' + (k === 1 ? one : many); }
+  function cBadge(st) {
+    var s = lower(st);
+    return h('span', { class: 'badge ' + (s === 'contributor' ? 'ok' : s === 'lead' ? 'info' : s === 'dormant' ? '' : s ? 'warn' : '') }, str(st) || 'new');
+  }
+  function cFind(email) {
+    var t = S.contacts;
+    if (!t || t.error) return null;
+    return t.rows.find(function (r) { return r.email === email; }) || null;
+  }
+
+  function contactsView() {
+    var t = S.contacts;
+    if (!t) {
+      if (!S.cLoading) loadContacts();
+      return [h('p', { class: 'loading' }, 'Loading contacts…')];
+    }
+    if (t.error) return [errorNote(t, 'Contacts'), h('button', { class: 'btn', onclick: function () { S.contacts = null; render(); } }, 'Try again')];
+    var open = S.contact ? cFind(S.contact) : null;
+    if (open) return contactPage(open);
+    S.contact = '';
+    return contactList(t.rows);
+  }
+
+  function contactList(rows) {
+    var F = S.cf || (S.cf = { q: '', status: '', village: '', org: '' });
+    var opts = function (key) {
+      var seen = {};
+      rows.forEach(function (r) { var v = str(r[key]); if (v) seen[v] = true; });
+      return Object.keys(seen).sort(function (a, b) { return a.localeCompare(b); });
+    };
+    var sel = function (label, key, list) {
+      var id = 'cf-' + key;
+      var el = h('select', { class: 'f', id: id, onchange: function () { F[key] = el.value; draw(); } },
+        h('option', { value: '' }, 'All'), list.map(function (v) { return h('option', { value: v, selected: F[key] === v ? true : null }, v); }));
+      return h('div', { class: 'cfilter' }, h('label', { class: 'f', for: id }, label), el);
+    };
+    var q = h('input', { class: 'f', type: 'search', placeholder: 'Search name, email, organisation, role, notes…', value: F.q,
+      'aria-label': 'Search contacts', oninput: function () { F.q = q.value; draw(); } });
+    var statuses = opts('status').map(lower).filter(function (v, i, a) { return a.indexOf(v) === i; });
+    var head = h('p', { class: 'meta' });
+    var box = h('div', { class: 'clist' });
+    var draw = function () {
+      var words = lower(F.q).split(/\s+/).filter(Boolean);
+      var hits = rows.filter(function (r) {
+        if (F.status && lower(r.status) !== F.status) return false;
+        if (F.village && str(r.village) !== F.village) return false;
+        if (F.org && str(r.organisation) !== F.org) return false;
+        var hay = lower([r.name, r.email, r.organisation, r.village, r.role, r.profile, r.notes, r.contributions, r.status].join(' '));
+        return words.every(function (w) { return hay.indexOf(w) >= 0; });
+      });
+      head.textContent = hits.length === rows.length ? plural(rows.length, 'person', 'people') : hits.length + ' of ' + plural(rows.length, 'person', 'people');
+      box.replaceChildren.apply(box, hits.length ? hits.map(contactRow) : [h('p', { class: 'empty' }, rows.length ? 'Nobody matches.' : 'No contacts yet.')]);
+    };
+    draw();
+    return [h('h2', { class: 'section' }, 'Contacts'), head, q,
+      h('div', { class: 'cfilters' }, sel('Status', 'status', statuses), sel('Village', 'village', opts('village')), sel('Organisation', 'org', opts('organisation'))),
+      box];
+  }
+
+  function contactRow(r) {
+    var title = str(r.name) || str(r.email);
+    var bits = [str(r.role), str(r.village), str(r.last_contact) ? 'last ' + cDay(r.last_contact) : '',
+      plural(r.contribution_count, 'item', 'items') + ', ' + plural(r.message_count, 'email', 'emails')].filter(Boolean);
+    return h('button', { class: 'card crow', onclick: function () { S.contact = r.email; render(); window.scrollTo(0, 0); } },
+      h('div', { class: 'crow-top' }, h('b', null, title), str(r.organisation) ? h('span', null, ' · ' + str(r.organisation)) : null, cBadge(r.status)),
+      h('div', { class: 'meta' }, bits.join(' · ')));
+  }
+
+  function cSaveError(res, what) {
+    return res.status === 409 && res.json.current !== undefined
+      ? what + ' was changed in the Sheet since you loaded the page (now "' + res.json.current + '"). Not saved.'
+      : what + ': ' + (res.json.error || ('HTTP ' + res.status));
+  }
+
+  async function cSave(r, field, value, what) {
+    var res = await api('/admin/api/contact', { email: r.email, field: field, expected: str(r[field]) === '' ? '' : r[field], value: value });
+    if (res.ok) {
+      r[field] = res.json.value;
+      if (res.json.profileSource) r.profile_source = res.json.profileSource;
+      toast(res.json.message === 'Saved.' ? what + ' saved' : res.json.message);
+    } else {
+      toast(cSaveError(res, what), true);
+      if (res.status === 409 && res.json.current !== undefined) r[field] = res.json.current;
+    }
+    render();
+    return res.ok;
+  }
+
+  function cField(r, field, label, hint) {
+    var id = 'c-' + field;
+    var multi = field === 'profile' || field === 'notes';
+    var el = multi ? h('textarea', { class: 'f', id: id, rows: field === 'notes' ? 4 : 5, maxlength: C_LIMITS[field] }, str(r[field]))
+      : h('input', { class: 'f', id: id, maxlength: C_LIMITS[field], value: str(r[field]) });
+    return h('form', { class: 'cfield', onsubmit: async function (e) {
+      e.preventDefault();
+      if (el.value.trim() === str(r[field])) { toast('No changes to save'); return; }
+      await cSave(r, field, el.value, label);
+    } },
+    h('label', { class: 'f', for: id }, label, hint ? h('span', { class: 'meta' }, ' ' + hint) : null),
+    h('div', { class: 'crow-edit' }, el, h('button', { class: 'btn', type: 'submit' }, 'Save')));
+  }
+
+  function cStatus(r) {
+    var cur = lower(r.status);
+    var mode = !cur || C_AUTO.indexOf(cur) >= 0 ? 'auto' : cur === 'ignore' ? 'ignore' : 'own';
+    var pick = h('select', { class: 'f', id: 'c-status', onchange: function () { own.hidden = pick.value !== 'own'; } },
+      [['auto', 'Automatic (the daily run sets contributor, lead or dormant)'], ['ignore', 'Ignore (the next run clears this contact)'], ['own', 'A status of your own…']]
+        .map(function (o) { return h('option', { value: o[0], selected: mode === o[0] ? true : null }, o[1]); }));
+    var own = h('input', { class: 'f', id: 'c-status-own', maxlength: 40, placeholder: 'e.g. key contact', 'aria-label': 'Your status',
+      value: mode === 'own' ? str(r.status) : '' });
+    own.hidden = mode !== 'own';
+    return h('form', { class: 'cfield', onsubmit: async function (e) {
+      e.preventDefault();
+      var want = pick.value === 'auto' ? '' : pick.value === 'ignore' ? 'ignore' : own.value.trim();
+      if (pick.value === 'own') {
+        if (!want) { toast('Type your status first', true); return; }
+        if (C_AUTO.indexOf(want.toLowerCase()) >= 0 || want.toLowerCase() === 'ignore' || want.toLowerCase() === 'auto') { toast('"' + want + '" is one of the set choices: pick it from the list', true); return; }
+      }
+      if (pick.value === 'auto' && mode === 'auto') { toast('Already automatic'); return; }
+      if (want === str(r.status)) { toast('No changes to save'); return; }
+      if (want === 'ignore' && !window.confirm('Mark this contact as ignore?\n\nThe next daily contacts run clears the row down to the email address and status, and they disappear from this list. They are never added again unless you change the status in the Sheet.')) return;
+      var ok = await cSave(r, 'status', want, 'Status');
+      if (ok && want === 'ignore') { S.contacts.rows = S.contacts.rows.filter(function (x) { return x !== r; }); S.contact = ''; render(); }
+    } },
+    h('label', { class: 'f', for: 'c-status' }, 'Status ', cBadge(r.status)),
+    h('div', { class: 'crow-edit' }, pick, h('button', { class: 'btn', type: 'submit' }, 'Save')), own);
+  }
+
+  function contactPage(r) {
+    var manual = lower(r.profile_source) !== 'auto';
+    var list = str(r.contributions) ? str(r.contributions).split('; ') : [];
+    var more = (Number(r.contribution_count) || 0) - list.length;
+    return [
+      h('button', { class: 'btn link', onclick: function () { S.contact = ''; render(); } }, '‹ Contacts'),
+      h('div', { class: 'card' },
+        h('h2', null, str(r.name) || str(r.email)),
+        h('div', { class: 'meta' }, str(r.email)),
+        h('p', { class: 'meta' }, ['First contact ' + (cDay(r.first_contact) || 'unknown'), 'last ' + (cDay(r.last_contact) || 'unknown'),
+          plural(r.message_count, 'email', 'emails'), plural(r.contribution_count, 'item', 'items')].join(' · ')),
+        h('p', { class: 'meta' }, 'Profile: ', h('b', null, manual ? 'edited by you (' + (str(r.profile_source) || 'blank') + ')' : 'written by Claude (auto)'),
+          manual ? ' — the daily run leaves the profile fields alone.' : ' — saving any profile field stops the daily run rewriting them.'),
+        C_FIELDS.map(function (f) { return cField(r, f[0], f[1]); }),
+        cStatus(r),
+        cField(r, 'notes', 'Notes', '(yours; never touched by code)'),
+        h('div', { class: 'actions' }, sheetLink('Contacts', r._row))),
+      h('div', { class: 'card' },
+        h('h2', null, 'Contributions (' + (Number(r.contribution_count) || 0) + ')'),
+        list.length ? h('ul', { class: 'clist-items' }, list.map(function (c) { return h('li', null, c); })) : h('p', { class: 'meta' }, 'Nothing in Pending from this address.'),
+        more > 0 ? h('p', { class: 'meta' }, 'and ' + more + ' older.') : null)
+    ];
   }
 
   /* --------------------------------------------------------------- health -- */

@@ -30,6 +30,10 @@
 //                                   Pending event with no image: a stale-checked image_choice
 //                                   write (actions.js planSuggest); an organiser's or Pexels
 //                                   image is also queued once for Lenches Photos (Image fetch)
+//   GET  /admin/api/contacts        the Contacts tab, ignore rows left out (contacts.js)
+//   POST /admin/api/contact         { email, field, expected, value }: one stale-checked edit of
+//                                   a contact's name, organisation, village, role, profile (each
+//                                   also sets profile_source "manual"), notes or status
 //   GET  /admin/api/photo-file?id=  a Photos file's live Drive name and folder, and the
 //                                   Lenches Photos folders it can move to
 //   GET  /admin/api/photo-group?id= every copy in a possible-duplicate group
@@ -63,6 +67,7 @@ import {
 import { photoPages, pagesFor, eventEnd } from './photopages.js';
 import { feedbackRows, planFeedback, planNote } from './feedback.js';
 import { FEEDBACK_TAB } from '../feedback.js';
+import { CONTACTS_TAB, contactRows, planContact } from './contacts.js';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 
@@ -365,6 +370,20 @@ async function doSuggest(env, body) {
   return json({ ok: true, value: r.value, message });
 }
 
+async function doContact(env, body) {
+  const email = String(body.email ?? '');
+  const { rows } = await readTable(env, CONTACTS_TAB);
+  const matches = rows.filter((r) => email && String(r.email ?? '') === email);
+  const plan = planContact({ field: body.field, value: body.value }, matches.length === 1 ? matches[0] : null);
+  if (plan.error) return json({ ok: false, ...plan }, plan.status);
+  if (plan.value === null) return json({ ok: true, value: String(matches[0].status ?? ''), message: 'Already automatic.' });
+  const r = await checkedWrite(env, {
+    tab: CONTACTS_TAB, keyCol: 'email', key: email, field: plan.field, expected: body.expected, value: plan.value, also: plan.also,
+  });
+  if (!r.ok) return json(r, r.status);
+  return json({ ok: true, value: r.value, profileSource: plan.also ? plan.also.profile_source : undefined, message: 'Saved.' });
+}
+
 const fromResult = (r) => (r.ok ? json(r) : json(r, r.status));
 
 // Photos file management: one operation per request.
@@ -437,6 +456,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/mail-images') return await mailImages(env, url);
       if (path === '/admin/api/session') return json({ email: auth.email, csrf: await makeCsrf(env, auth.email) });
       if (path === '/admin/api/state') return json(await state(env, auth.email));
+      if (path === '/admin/api/contacts') return json(contactRows(await readTable(env, CONTACTS_TAB)));
       if (path === '/admin/api/photo-file') return fromResult(await fileInfo(env, String(url.searchParams.get('id') || '')));
       if (path === '/admin/api/photo-group') return fromResult(await dupMembers(env, String(url.searchParams.get('id') || '')));
       if (path === '/admin/api/photo-tidy') return fromResult(await tidyList(env));
@@ -457,6 +477,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/action') return await doAction(env, body);
       if (path === '/admin/api/suggest') return await doSuggest(env, body);
       if (path === '/admin/api/feedback-note') return await doNote(env, body);
+      if (path === '/admin/api/contact') return await doContact(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(env, body);
       return json({ ok: false, error: 'Not found' }, 404);
     }

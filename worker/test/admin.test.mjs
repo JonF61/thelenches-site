@@ -771,3 +771,95 @@ test('E2E suggest: unticking People OK after choosing a people-flagged image blo
   assert.ok(planPending({ action: 'approve', id: 'm1-1' }, { id: 'm1-1', status: 'pending', people_ok: 'yes' }, { choicePeople: 'identifiable' }).p);
   assert.ok(planPending({ action: 'reject', id: 'm1-1' }, { id: 'm1-1', status: 'pending', people_ok: '' }, { choicePeople: 'identifiable' }).p, 'reject never needs the tick');
 });
+
+/* ----------------------------------------------------------- contacts -- */
+
+const CONTACT_HEADERS = ['email', 'name', 'organisation', 'village', 'role', 'profile', 'contributions',
+  'contribution_count', 'first_contact', 'last_contact', 'message_count', 'status', 'notes', 'profile_source', 'updated_at'];
+const contactTables = () => ({
+  ...tablesFor(),
+  Contacts: [
+    CONTACT_HEADERS.slice(),
+    ['old@example.org', 'Ann', 'PCC', 'Ab Lench', '', 'Sends notices.', '', '3', '2024-01-02', '2025-08-02', '5', 'dormant', '', 'auto', 'x'],
+    ['hall@example.org', 'Jane', 'Lenches Club', 'Church Lench', 'Secretary', 'Quiz flyers.', '2026-10-21 Quiz night (event, published)', '1', '2026-03-04', '2026-10-21', '12', 'contributor', 'Nice', 'auto', 'x'],
+    ['gone@example.org', '', '', '', '', '', '', '', '', '', '', 'ignore', '', '', ''],
+    ['vip@example.org', 'Bob', '', 'Rous Lench', '', '', '', '0', '2026-10-01', '2026-10-03', '1', 'key contact', '', 'manual', 'x'],
+  ],
+});
+
+test('E2E contacts: list leaves out ignore rows, newest contact first, no updated_at', async () => {
+  fakeWorld(contactTables());
+  const r = await worker.fetch(await reqWith('/admin/api/contacts'), env());
+  assert.equal(r.status, 200);
+  const j = await r.json();
+  assert.deepEqual(j.rows.map((x) => x.email), ['hall@example.org', 'vip@example.org', 'old@example.org']);
+  assert.ok(!('updated_at' in j.rows[0]));
+  assert.equal(j.rows[0]._row, 3);
+});
+
+test('E2E contacts: a profile field save is stale-checked and sets profile_source manual in the same write', async () => {
+  const tables = contactTables();
+  const calls = fakeWorld(tables);
+  let r = await post('/admin/api/contact', { email: 'hall@example.org', field: 'role', expected: 'Secretary', value: 'Chair, Lenches Club' });
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  assert.equal(r.json.profileSource, 'manual');
+  assert.deepEqual(calls.writes, [
+    { range: "'Contacts'!E3", values: [['Chair, Lenches Club']] },
+    { range: "'Contacts'!N3", values: [['manual']] },
+  ]);
+  // Stale: the run (or the Sheet) changed it since the page loaded.
+  r = await post('/admin/api/contact', { email: 'hall@example.org', field: 'role', expected: 'Secretary', value: 'X' });
+  assert.equal(r.status, 409);
+  assert.equal(r.json.current, 'Chair, Lenches Club');
+  // Notes never touch profile_source.
+  calls.writes.length = 0;
+  tables.Contacts[2][13] = 'auto';
+  r = await post('/admin/api/contact', { email: 'hall@example.org', field: 'notes', expected: 'Nice', value: 'Nice.\nCall after 6.' });
+  assert.equal(r.status, 200);
+  assert.deepEqual(calls.writes, [{ range: "'Contacts'!M3", values: [['Nice.\nCall after 6.']] }]);
+  assert.equal(calls.dispatches.length, 0);
+});
+
+test('E2E contacts: status choices; refusals', async () => {
+  const tables = contactTables();
+  const calls = fakeWorld(tables);
+  const st = () => tables.Contacts.map((x) => x[11]);
+  // Automatic on an automatic status: nothing written.
+  let r = await post('/admin/api/contact', { email: 'hall@example.org', field: 'status', expected: 'contributor', value: '' });
+  assert.equal(r.status, 200);
+  assert.equal(calls.writes.length, 0);
+  // A run status can't be set by hand.
+  r = await post('/admin/api/contact', { email: 'vip@example.org', field: 'status', expected: 'key contact', value: 'lead' });
+  assert.equal(r.status, 400);
+  // Own value, back to automatic (blank), then ignore.
+  r = await post('/admin/api/contact', { email: 'hall@example.org', field: 'status', expected: 'contributor', value: 'Key contact' });
+  assert.equal(r.status, 200);
+  assert.equal(st()[2], 'Key contact');
+  r = await post('/admin/api/contact', { email: 'hall@example.org', field: 'status', expected: 'Key contact', value: '' });
+  assert.equal(st()[2], '');
+  r = await post('/admin/api/contact', { email: 'vip@example.org', field: 'status', expected: 'key contact', value: 'ignore' });
+  assert.equal(r.status, 200);
+  assert.equal(st()[4], 'ignore');
+  // An ignore row, an unknown contact, a column that isn't editable, too long.
+  for (const [body, code] of [
+    [{ email: 'gone@example.org', field: 'notes', expected: '', value: 'x' }, 409],
+    [{ email: 'nobody@example.org', field: 'notes', expected: '', value: 'x' }, 404],
+    [{ email: 'old@example.org', field: 'email', expected: 'old@example.org', value: 'x@y.z' }, 400],
+    [{ email: 'old@example.org', field: 'contribution_count', expected: '3', value: '9' }, 400],
+    [{ email: 'old@example.org', field: 'profile_source', expected: 'auto', value: 'manual' }, 400],
+    [{ email: 'old@example.org', field: 'village', expected: 'Ab Lench', value: 'x'.repeat(61) }, 400],
+  ]) {
+    r = await post('/admin/api/contact', body);
+    assert.equal(r.status, code, JSON.stringify(body));
+  }
+  assert.equal(calls.writes.length, 3);
+});
+
+test('E2E contacts: refused without CSRF or Access', async () => {
+  const calls = fakeWorld(contactTables());
+  let r = await worker.fetch(await reqWith('/admin/api/contact', { method: 'POST', body: { email: 'hall@example.org', field: 'notes', expected: 'Nice', value: 'x' } }), env());
+  assert.equal(r.status, 403);
+  r = await worker.fetch(await reqWith('/admin/api/contacts', { token: 'bad' }), env());
+  assert.equal(r.status, 403);
+  assert.equal(calls.writes.length, 0);
+});
