@@ -13,7 +13,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '12';
+export const UI_VERSION = '13';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -23,7 +23,7 @@ export const CLIENT_JS = String.raw`
     picked: {}, ff: '', openF: {}, drag: null, busy: false, order: {}, shown: '' };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
-  var VIEWS = [['queue', 'Queue'], ['replies', 'Replies'], ['owed', 'Owed'], ['photos', 'Photos'], ['health', 'Health']];
+  var VIEWS = [['queue', 'Queue'], ['replies', 'Replies'], ['owed', 'Owed'], ['photos', 'Photos'], ['feedback', 'Feedback'], ['health', 'Health']];
   var FLAG_LABELS = {
     own_wording: 'Asked for own wording', too_early: 'Too early', after_deadline: 'After deadline',
     flyer_limit: 'Flyer limit', newsletter_limit: 'Newsletter limit', people_in_image: 'People in image',
@@ -252,6 +252,8 @@ export const CLIENT_JS = String.raw`
           h('b', null, 'Diagnostic'), hl ? hs + ' · ' + when(hl.date) : 'no runs'),
         h('div', { class: 'chip' }, h('span', { class: 'dot ' + (dog.error ? 'warn' : dog.open ? 'bad' : 'ok') }),
           h('b', null, 'Watchdog'), dog.error ? 'not readable' : dog.open ? 'alert since ' + when(dog.since) : 'clear'),
+        h('button', { class: 'chip', onclick: function () { S.view = 'feedback'; closeOverlay(); render(); window.scrollTo(0, 0); } },
+          h('b', null, 'Feedback'), fbCountText(d)),
         h('button', { class: 'btn', onclick: function () { load(); } }, 'Reload')));
   }
 
@@ -277,6 +279,7 @@ export const CLIENT_JS = String.raw`
       queue: n(d.pending, 'pending', 'id'), replies: n(d.replies, 'reply', 'reply_id'),
       owed: Array.isArray(d.owed) ? d.owed.filter(function (o) { return !S.done['reply:' + o.holding.reply_id]; }).length : '!',
       photos: d.photos && !d.photos.error ? d.photos.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length : '!',
+      feedback: d.feedback && !d.feedback.error ? fbRows(d, 'waiting').length : '!',
       health: null
     };
   }
@@ -298,6 +301,7 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'owed') return [h('div', { class: 'list wide' }, owedList(d))];
     if (S.view === 'photos') return split(photosList(d), 'photo');
     if (S.view === 'health') return [h('div', { class: 'list wide' }, healthView(d))];
+    if (S.view === 'feedback') return [h('div', { class: 'list wide' }, feedbackView(d))];
     return split(queueList(d), 'pending');
   }
 
@@ -1746,6 +1750,162 @@ export const CLIENT_JS = String.raw`
     for (var i = 0; i < others.length; i += 1) await discard(others[i]);
     again();
     render();
+  }
+
+  /* ------------------------------------------------------------- feedback -- */
+
+  // Reader feedback (Feedback tab). _state comes from the server (admin/feedback.js):
+  // waiting, postponed, approved (awaiting build), reply (a reply draft waiting).
+  var FB_TYPES = { update: 'Suggested update', correction: 'Correction', other: 'Other feedback' };
+
+  function fbRows(d, state) {
+    if (!d.feedback || d.feedback.error) return [];
+    return d.feedback.rows.filter(function (r) { return r._state === state && !S.done['feedback:' + r.id]; });
+  }
+  function fbCountText(d) {
+    if (!d.feedback || d.feedback.error) return 'not readable';
+    var n = fbRows(d, 'waiting').length;
+    var m = fbRows(d, 'reply').length;
+    return (n ? n + ' waiting' : 'none waiting') + (m ? ' · ' + m + ' repl' + (m === 1 ? 'y' : 'ies') : '');
+  }
+  // Highest rating first (not rated yet last), then oldest first.
+  function fbOrder(a, b) {
+    var ra = Number(a.rating) || 0;
+    var rb = Number(b.rating) || 0;
+    return rb - ra || str(a.received).localeCompare(str(b.received));
+  }
+  function postponedTo(r) { var m = lower(r.status).match(/^postponed until (\d{4}-\d{2}-\d{2})$/); return m ? m[1] : ''; }
+
+  function feedbackView(d) {
+    var t = d.feedback;
+    if (!t || t.error) return [errorNote(t || { error: 'not loaded' }, 'Feedback')];
+    var els = [h('p', { class: 'meta' }, 'From the "Suggest an update" form on every page. Claude rates suggestions and corrections at the next ingestion run (every two hours).')];
+    var section = function (title, rows, empty) {
+      els.push(h('h2', { class: 'section' }, title + ' (' + rows.length + ')'));
+      if (!rows.length && empty) els.push(h('p', { class: 'empty' }, empty));
+      rows.forEach(function (r) { els.push(fbCard(r)); });
+    };
+    section('Waiting', fbRows(d, 'waiting').sort(fbOrder), 'Nothing waiting.');
+    var replies = fbRows(d, 'reply');
+    if (replies.length) section('Reply drafts', replies);
+    section('Approved, awaiting build', fbRows(d, 'approved'), 'Nothing approved and waiting.');
+    var later = fbRows(d, 'postponed').sort(function (a, b) { return postponedTo(a).localeCompare(postponedTo(b)); });
+    if (later.length) {
+      els.push(h('h2', { class: 'section' }, 'Postponed (' + later.length + ')'),
+        h('button', { class: 'btn link', onclick: function () { S.fbLater = !S.fbLater; render(); } }, S.fbLater ? 'Hide postponed' : 'Show postponed'));
+      if (S.fbLater) later.forEach(function (r) { els.push(fbCard(r)); });
+    }
+    return els;
+  }
+
+  function fbCard(r) {
+    var b = [h('span', { class: 'badge' + (r.type === 'correction' ? ' warn' : '') }, FB_TYPES[r.type] || str(r.type) || 'Feedback')];
+    if (str(r.rating)) b.push(h('span', { class: 'badge ' + (Number(r.rating) >= 4 ? 'ok' : Number(r.rating) <= 2 ? 'bad' : 'info') }, 'Rating ' + str(r.rating) + '/5'));
+    else if (r.type !== 'other') b.push(h('span', { class: 'badge' }, 'Not rated yet'));
+    if (postponedTo(r)) b.push(h('span', { class: 'badge' }, 'Postponed until ' + day(postponedTo(r))));
+    if (str(r.email)) b.push(h('span', { class: 'badge info' }, 'Email given'));
+    var page = /^https:[/][/]/.test(str(r.page_url))
+      ? h('a', { href: r.page_url, target: '_blank', rel: 'noopener' }, str(r.page_title) || str(r.page_url)) : str(r.page_title) || 'page unknown';
+    var c = h('div', { class: 'card' },
+      h('h2', null, page),
+      h('div', { class: 'meta' }, 'Received ' + when(r.received) + (str(r.email) ? ' · ' + str(r.email) : '')),
+      h('div', { class: 'badges' }, b),
+      h('div', { class: 'fbtext' }, str(r.message)));
+    if (str(r.commentary)) add(c, h('div', { class: 'meta' }, h('b', null, 'Claude: '), str(r.commentary)));
+    if (str(r.notes)) add(c, h('div', { class: 'fbnotes' }, h('b', null, 'Notes'), h('div', { class: 'fbtext' }, str(r.notes))));
+    if (r._state === 'reply') {
+      add(c, h('div', { class: 'fbdraft' }, h('b', null, str(r.reply_draft) ? 'Reply draft to ' + str(r.email) : 'Drafting the reply…'),
+        str(r.reply_draft) ? h('div', { class: 'fbtext' }, str(r.reply_draft)) : null));
+    }
+    add(c, h('div', { class: 'actions' }, fbActions(r), sheetLink('Feedback', r._row)));
+    return c;
+  }
+
+  function fbActions(r) {
+    var go = function (action, extra, done) { return act('feedback', r.id, action, extra, done); };
+    var note = h('button', { class: 'btn', onclick: function () { overlay('Add note', fbNoteForm(r)); } }, 'Add note');
+    if (r._state === 'waiting' || r._state === 'postponed') {
+      return [
+        h('button', { class: 'btn primary', onclick: function () { go('approve', null, 'Approved'); } }, 'Approve'),
+        h('button', { class: 'btn danger', onclick: function () {
+          if (window.confirm('Reject this feedback? Nothing is sent to them' + (str(r.email) ? ', and their email address is deleted.' : '.'))) go('reject', null, 'Rejected');
+        } }, 'Reject'),
+        h('button', { class: 'btn', onclick: function () { overlay('Postpone', fbPostponeForm(r)); } }, 'Postpone'),
+        note];
+    }
+    if (r._state === 'approved') {
+      return [
+        h('button', { class: 'btn primary', onclick: function () {
+          var msg = str(r.email)
+            ? 'Mark implemented?\n\nHolly drafts a reply to ' + str(r.email) + ' saying what changed, from your notes (add a note first if you have not). The draft waits here for Send, Edit or Skip.'
+            : 'Mark implemented? No email was given, so no reply is drafted.';
+          if (window.confirm(msg)) go('done', null, 'Implemented');
+        } }, 'Mark implemented'),
+        note];
+    }
+    if (r._state === 'reply') {
+      var ready = Boolean(str(r.reply_draft));
+      return [
+        h('button', { class: 'btn primary', disabled: !ready, onclick: function () {
+          if (window.confirm('Send this reply to ' + str(r.email) + ' as it stands?')) go('send', null, 'Reply sent');
+        } }, 'Send'),
+        h('button', { class: 'btn', disabled: !ready, onclick: function () { overlay('Edit reply', fbEditForm(r)); } }, 'Edit'),
+        h('button', { class: 'btn danger', onclick: function () {
+          if (window.confirm('Skip the reply? Nothing is sent, and their email address is deleted.')) go('skip', null, 'Reply skipped');
+        } }, 'Skip'),
+        note];
+    }
+    return [note];
+  }
+
+  function fbPostponeForm(r) {
+    var tomorrow = new Date(Date.parse(str(S.data.today) + 'T12:00:00Z') + 86400000).toISOString().slice(0, 10);
+    var date = h('input', { class: 'f', id: 'fbd', type: 'date', min: tomorrow, required: true });
+    return h('form', { onsubmit: function (e) {
+      e.preventDefault();
+      if (!date.value) { toast('Choose a date', true); return; }
+      act('feedback', r.id, 'postpone', { date: date.value }, 'Postponed');
+    } },
+    h('p', { class: 'meta' }, 'Hidden from Waiting until this date, then it comes back.'),
+    h('label', { class: 'f', for: 'fbd' }, 'Postpone until'), date,
+    h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'submit' }, 'Postpone')));
+  }
+
+  function fbNoteForm(r) {
+    var text = h('textarea', { class: 'f', id: 'fbn', rows: 4, maxlength: 500, required: true });
+    var busy = false;
+    return h('form', { onsubmit: async function (e) {
+      e.preventDefault();
+      if (busy) return;
+      if (text.value.trim().length < 2) { toast('Type a note first', true); return; }
+      busy = true;
+      var res = await api('/admin/api/feedback-note', { id: r.id, expected: str(r.notes) === '' ? '' : r.notes, note: text.value });
+      busy = false;
+      if (!res.ok) {
+        toast(res.status === 409 ? 'The notes changed in the Sheet since you loaded the page. Nothing saved; reloaded.' : (res.json.error || ('HTTP ' + res.status)), true);
+        if (res.status === 409) { closeOverlay(); load(true); }
+        return;
+      }
+      r.notes = res.json.value;
+      toast('Note added');
+      closeOverlay();
+      render();
+    } },
+    h('p', { class: 'meta' }, 'Added under the notes with today\'s date and time; earlier notes are kept. Holly uses the notes to say what changed when you mark it implemented. Never sent as written.'),
+    h('label', { class: 'f', for: 'fbn' }, 'Note'), text,
+    h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'submit' }, 'Add note')));
+  }
+
+  function fbEditForm(r) {
+    var text = h('textarea', { class: 'f', id: 'fbe', rows: 14, maxlength: 3000 }, str(r.reply_draft));
+    return h('form', { onsubmit: function (e) {
+      e.preventDefault();
+      if (text.value.trim().length < 10) { toast('The reply is empty', true); return; }
+      act('feedback', r.id, 'edit', { body: text.value }, 'Reply sent (edited)');
+    } },
+    h('p', { class: 'meta' }, 'To ' + str(r.email) + ', from website@. It is sent exactly as it stands.'),
+    h('label', { class: 'f', for: 'fbe' }, 'Reply'), text,
+    h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'submit' }, 'Send edited reply')));
   }
 
   /* --------------------------------------------------------------- health -- */

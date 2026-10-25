@@ -1,0 +1,101 @@
+{#- Reader feedback form ("Suggest an update"), above the sign-up band on every page.
+    Posts to the approvals Worker (POST /f, worker/src/feedback.js), which checks Cloudflare
+    Turnstile and appends a row to the Feedback tab; Jon sees it in the admin panel.
+    Collapsed in a <details>, so it opens in place with or without JavaScript. The page's
+    address and title go with it. Turnstile loads only when the form is opened; without
+    JavaScript the Worker answers with a page offering the email address instead.
+    Hidden until site.json has feedbackUrl and turnstileSiteKey. -#}
+{% if site.feedbackUrl and site.turnstileSiteKey %}
+{% set fbTitle = title or "Home" %}
+<section class="feedback" aria-label="Feedback on this page">
+  <details class="fb">
+    <summary class="fb-pill">Suggest an update</summary>
+    <form class="fb-form" method="post" action="{{ site.feedbackUrl }}" data-sitekey="{{ site.turnstileSiteKey }}">
+      <fieldset class="fb-types">
+        <legend>What would you like to tell us about this page?</legend>
+        <input type="radio" name="type" id="fb-t-update" value="update" checked><label for="fb-t-update">Suggest an update</label>
+        <input type="radio" name="type" id="fb-t-correction" value="correction"><label for="fb-t-correction">Correction</label>
+        <input type="radio" name="type" id="fb-t-other" value="other"><label for="fb-t-other">Other feedback</label>
+      </fieldset>
+      <label class="fb-label" for="fb-message">Your message</label>
+      <textarea id="fb-message" name="message" rows="4" maxlength="2000" required></textarea>
+      <label class="fb-label" for="fb-email">Your email <span class="fb-opt">(optional)</span></label>
+      <input id="fb-email" name="email" type="email" maxlength="200" autocomplete="email" aria-describedby="fb-email-hint">
+      <p class="fb-hint" id="fb-email-hint">so we can tell you when it's done</p>
+      <div class="fb-hp" aria-hidden="true"><label for="fb-website">Leave this empty</label><input id="fb-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+      <input type="hidden" name="page_url" value="{{ site.url }}{{ page.url }}">
+      <input type="hidden" name="page_title" value="{{ fbTitle }}">
+      <input type="hidden" name="js" value="">
+      <div class="fb-ts"></div>
+      <button type="submit" class="btn fb-send">Send</button>
+      <p class="fb-status" role="status" aria-live="polite"></p>
+      <p class="fb-privacy">We use what you send only to improve the website, and your email only to reply. <a href="{{ '/privacy/' | url }}">Privacy policy</a></p>
+    </form>
+  </details>
+</section>
+{#- Once per page: the Home page and the layout never both include this partial. -#}
+<script>
+(function () {
+  var form = document.querySelector('.fb-form');
+  if (!form || !window.fetch || !window.FormData) return;
+  var details = form.closest('details'), status = form.querySelector('.fb-status');
+  var box = form.querySelector('.fb-ts'), button = form.querySelector('.fb-send');
+  var widget = null, token = '', waiting = [];
+  form.elements.js.value = '1';
+  function say(text, bad) { status.textContent = text; status.className = 'fb-status' + (bad ? ' bad' : text ? ' ok' : ''); }
+  function got(t) { token = t || ''; var w = waiting; waiting = []; w.forEach(function (f) { f(token); }); }
+  function render() {
+    if (widget !== null || !window.turnstile) return;
+    widget = window.turnstile.render(box, {
+      sitekey: form.getAttribute('data-sitekey'), appearance: 'interaction-only', theme: 'light',
+      callback: got, 'expired-callback': function () { token = ''; },
+      'error-callback': function () { got(''); }
+    });
+  }
+  // Turnstile loads only when someone opens the form.
+  function load() {
+    if (document.getElementById('fb-turnstile')) return;
+    window.fbTurnstileReady = render;
+    var s = document.createElement('script');
+    s.id = 'fb-turnstile';
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=fbTurnstileReady';
+    s.async = true;
+    s.onerror = function () { say('The robot check could not load. Please email {{ site.email }} instead.', true); };
+    document.head.appendChild(s);
+  }
+  details.addEventListener('toggle', function () { if (details.open) load(); });
+  if (details.open) load();
+  function tokenSoon() {
+    if (token) return Promise.resolve(token);
+    return new Promise(function (resolve) {
+      waiting.push(resolve);
+      setTimeout(function () { resolve(token); }, 15000);
+    });
+  }
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (button.disabled) return;
+    button.disabled = true;
+    say('Sending…');
+    tokenSoon().then(function (t) {
+      if (!t) throw new Error('We couldn\'t confirm you\'re not a robot. Please try again in a moment.');
+      var data = new FormData(form);
+      data.set('cf-turnstile-response', t);
+      return fetch(form.action, { method: 'POST', body: data }).then(function (r) {
+        return r.json().catch(function () { return { ok: false, message: 'Sorry, something went wrong. Please try again later.' }; });
+      });
+    }).then(function (res) {
+      if (!res.ok) throw new Error(res.message || 'Sorry, something went wrong. Please try again later.');
+      form.reset();
+      say(res.message || 'Thank you, we\'ve got your message.');
+    }).catch(function (err) {
+      say(err && err.message && !/fetch|network/i.test(err.message) ? err.message : 'Sorry, your message couldn\'t be sent. Please check your connection and try again.', true);
+    }).then(function () {
+      button.disabled = false;
+      token = '';
+      if (widget !== null && window.turnstile) window.turnstile.reset(widget);
+    });
+  });
+})();
+</script>
+{% endif %}

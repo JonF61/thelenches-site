@@ -162,6 +162,15 @@ export async function appendValues(env, tab, rows) {
   await google(env, SCOPES.sheets, url, { method: 'POST', body: JSON.stringify({ values: rows }) });
 }
 
+// A new, empty tab at the end (no existing tab moves). Used only for the Feedback tab.
+export async function addTab(env, title) {
+  const url = `${SHEETS}/${sheetId(env)}:batchUpdate`;
+  await google(env, SCOPES.sheets, url, {
+    method: 'POST',
+    body: JSON.stringify({ requests: [{ addSheet: { properties: { title } } }] }),
+  });
+}
+
 // { tabTitle: gid } for links straight to a row.
 export async function sheetGids(env) {
   const url = `${SHEETS}/${sheetId(env)}?fields=${encodeURIComponent('sheets.properties(sheetId,title)')}`;

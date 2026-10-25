@@ -61,8 +61,9 @@
 
   <div id="main" tabindex="-1">
     {{ content | safe }}
-    {#- Home page places its own sign-up box; every other page gets it at the bottom. -#}
-    {% if page.url != "/" %}<div class="container signup-foot">{% include "signup.njk" %}</div>{% endif %}
+    {#- Home page places its own sign-up box (and the feedback form above it); every other
+        page gets both at the bottom. -#}
+    {% if page.url != "/" %}<div class="container signup-foot">{% include "feedback.njk" %}{% include "signup.njk" %}</div>{% endif %}
   </div>
 
   <footer class="site-footer">

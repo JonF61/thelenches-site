@@ -20,7 +20,17 @@ export const ACTIONS = {
   nlsend: ['Send newsletter', 'Send started', 'approve'],
   nlbuild: ['Rebuild newsletter', 'Rebuild started', 'approve'],
   unsub: ['Unsubscribe', 'Unsubscribed', 'reject'],
+  // Reader feedback (Feedback tab), admin panel only: no signed email links carry these.
+  fb_approve: ['Approve', 'Approved', 'approve'],
+  fb_reject: ['Reject', 'Rejected', 'reject'],
+  fb_postpone: ['Postpone', 'Postponed', 'approve'],
+  fb_done: ['Mark implemented', 'Marked implemented', 'approve'],
+  fb_send: ['Send reply', 'Reply sent', 'approve'],
+  fb_edit: ['Send edited reply', 'Edited reply sent', 'approve'],
+  fb_skip: ['Skip reply', 'Reply skipped', 'reject'],
 };
+
+export const FEEDBACK_ACTIONS = ['fb_approve', 'fb_reject', 'fb_postpone', 'fb_done', 'fb_send', 'fb_edit', 'fb_skip'];
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -30,7 +40,8 @@ export function validPayload(p) {
   if (p.a === 'nlsend' || p.a === 'nlbuild') {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(p.i)) return false;
   }
-  if (p.a === 'edit' && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
+  if ((p.a === 'edit' || p.a === 'fb_edit') && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
+  if (p.a === 'fb_postpone' && !/^\d{4}-\d{2}-\d{2}$/.test(String(p.d || ''))) return false;
   if (p.a === 'trust') {
     const k = String(p.k || '');
     if (k.length > 300 || !(/^[^\s@<>]+@[^\s@<>]+$/.test(k) || /^https?:\/\/\S+$/i.test(k))) return false;
@@ -90,11 +101,14 @@ export function dispatchFor(p, reason = '', body = '') {
   if (p.a === 'nlbuild') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true }];
   if ((p.a === 'skip' || p.a === 'redraft') && reason) return ['approval', { id: p.i, action: p.a, reason }];
   if (p.a === 'edit') return ['approval', { id: p.i, action: p.a, body, reason }];
+  // approval.yml passes only id, action, reason and body: the postpone date rides in reason.
+  if (p.a === 'fb_postpone') return ['approval', { id: p.i, action: p.a, reason: p.d }];
+  if (p.a === 'fb_edit') return ['approval', { id: p.i, action: p.a, body }];
   return ['approval', { id: p.i, action: p.a }];
 }
 
-// One decision (approve, reject, trust, send, skip, edit, redraft, close, nlsend, nlbuild)
-// to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
+// One decision (approve, reject, trust, send, skip, edit, redraft, close, nlsend, nlbuild,
+// and the reader feedback fb_* actions) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
 export async function decide(env, p, reason = '', body = '') {
   const [eventType, payload] = dispatchFor(p, reason, body);
   return dispatch(env, eventType, payload, 2);

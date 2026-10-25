@@ -59,6 +59,9 @@ nav.side button[aria-current="page"] .n{background:rgba(255,255,255,.25);color:i
 .badge.warn{background:var(--warn-bg);color:var(--warn);border-color:transparent}
 .badge.info{background:var(--info-bg);color:var(--info);border-color:transparent}
 .badge.ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}
+button.chip{font:inherit;color:inherit;cursor:pointer}
+.fbtext{white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0}
+.fbnotes,.fbdraft{margin:8px 0;padding:8px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px}
 .text{white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0}
 .two{display:grid;gap:10px}
 .two>div{background:var(--panel2);border-radius:8px;padding:8px 10px}
