@@ -46,7 +46,6 @@ livingCards:
     <p class="muted">Everything here is collected from local groups, organisations and residents, and kept as accurate and up to date as we can manage.</p>
   </section>
 
-  {% include "feedback.njk" %}
   {% include "signup.njk" %}
 
   <section class="home-cards">
@@ -66,5 +65,8 @@ livingCards:
   </section>
 
   {% include "lenches-map.njk" %}
+
+  {#- Feedback form at the foot of the page, below the map (other pages: above the sign-up band). -#}
+  <div class="home-feedback">{% include "feedback.njk" %}</div>
 
 </main>
