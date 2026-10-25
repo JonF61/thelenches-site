@@ -1,0 +1,47 @@
+name: Read Sheet tab
+
+# Prints one tab of the Lenches Pipeline Sheet to this log as CSV with row numbers
+# (scripts/sheettab). Read-only: spreadsheets.readonly scope. Refuses the Subscribers,
+# Do Not Send, Sends, Replies and Feedback tabs and masks email addresses elsewhere.
+on:
+  workflow_dispatch:
+    inputs:
+      tab:
+        description: 'Tab name, e.g. Settings'
+        required: true
+        type: string
+      range:
+        description: 'Optional range, e.g. A1:F20 (blank = whole tab)'
+        required: false
+        type: string
+        default: ''
+      max_rows:
+        description: 'Max rows to print (default 50, at most 500)'
+        required: false
+        type: string
+        default: '50'
+
+permissions:
+  contents: read
+
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Read tab
+        run: node scripts/sheettab/index.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          TAB: ${{ inputs.tab }}
+          RANGE: ${{ inputs.range }}
+          MAX_ROWS: ${{ inputs.max_rows }}
