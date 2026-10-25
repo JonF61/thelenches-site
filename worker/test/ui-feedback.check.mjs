@@ -35,7 +35,7 @@ function stateData() {
     feedback: { headers: [], rows: [
       fb('fb-1', 'waiting', { _row: 2, rating: '4', commentary: 'Useful fix, two minutes to make; check the number with the hall first.', email: 'reader@example.org' }),
       fb('fb-2', 'waiting', { _row: 3, type: 'other', page_title: 'Home', page_url: 'https://thelenches.org.uk/', message: 'Lovely site, thank you.' }),
-      fb('fb-3', 'waiting', { _row: 4, type: 'update', rating: '2', commentary: 'Nice idea but a lot of work for few readers.', message: 'Could you add bus times?' }),
+      fb('fb-3', 'waiting', { _row: 4, type: 'update', rating: '2', commentary: 'Nice idea but a lot of work for few readers.', message: 'Could you add bus times?', email: 'bus@example.org' }),
       fb('fb-4', 'approved', { _row: 5, status: 'approved', rating: '5', commentary: 'Quick win.', notes: '2026-10-24 20:01 Ask Sue for the new times', email: 'x@example.org' }),
       fb('fb-5', 'reply', { _row: 6, status: 'implemented', rating: '4', email: 'r@example.org',
         reply_draft: 'Hi there,\n\nThanks for letting us know. We\'ve changed the number to 01386 111111.\nhttps://thelenches.org.uk/halls/\n\nBest wishes,\nHolly\nLenches website assistant' }),
@@ -96,6 +96,9 @@ try {
     await page.waitForFunction(() => !document.querySelector('.overlay'));
     await page.locator('.main .card', { hasText: 'Lovely site' }).getByRole('button', { name: 'Approve' }).click();
     await page.locator('.main .card', { hasText: 'bus times' }).getByRole('button', { name: 'Reject' }).click();
+    await page.fill('#fbr', 'Too much upkeep');
+    await page.locator('.overlay button[type=submit]').click();
+    await page.waitForFunction(() => !document.querySelector('.overlay'));
     await page.locator('.main .card', { hasText: 'Ask Sue' }).getByRole('button', { name: 'Mark implemented' }).click();
     const reply = page.locator('.main .card', { hasText: 'Reply draft to r@example.org' });
     await reply.getByRole('button', { name: 'Edit' }).click();
@@ -103,11 +106,11 @@ try {
     await page.locator('.overlay button[type=submit]').click();
     await page.waitForFunction(() => !document.querySelector('.overlay'));
 
-    const actions = posts.filter((p) => p.path === '/admin/api/action').map((p) => [p.kind, p.id, p.action, p.date || p.body || '']);
+    const actions = posts.filter((p) => p.path === '/admin/api/action').map((p) => [p.kind, p.id, p.action, p.date || p.body || p.reason || '']);
     assert.deepEqual(actions, [
       ['feedback', 'fb-1', 'postpone', '2026-11-08'],
       ['feedback', 'fb-2', 'approve', ''],
-      ['feedback', 'fb-3', 'reject', ''],
+      ['feedback', 'fb-3', 'reject', 'Too much upkeep'],
       ['feedback', 'fb-4', 'done', ''],
       ['feedback', 'fb-5', 'edit', 'Hi there,\n\nAll fixed now.'],
     ]);

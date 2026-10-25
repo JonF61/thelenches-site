@@ -13,7 +13,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '13';
+export const UI_VERSION = '14';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -1803,6 +1803,7 @@ export const CLIENT_JS = String.raw`
     if (str(r.rating)) b.push(h('span', { class: 'badge ' + (Number(r.rating) >= 4 ? 'ok' : Number(r.rating) <= 2 ? 'bad' : 'info') }, 'Rating ' + str(r.rating) + '/5'));
     else if (r.type !== 'other') b.push(h('span', { class: 'badge' }, 'Not rated yet'));
     if (postponedTo(r)) b.push(h('span', { class: 'badge' }, 'Postponed until ' + day(postponedTo(r))));
+    if (r._state === 'reply') b.push(h('span', { class: 'badge ' + (lower(r.status) === 'rejected' ? 'bad' : 'ok') }, lower(r.status) === 'rejected' ? 'Rejected' : 'Implemented'));
     if (str(r.email)) b.push(h('span', { class: 'badge info' }, 'Email given'));
     var page = /^https:[/][/]/.test(str(r.page_url))
       ? h('a', { href: r.page_url, target: '_blank', rel: 'noopener' }, str(r.page_title) || str(r.page_url)) : str(r.page_title) || 'page unknown';
@@ -1827,9 +1828,7 @@ export const CLIENT_JS = String.raw`
     if (r._state === 'waiting' || r._state === 'postponed') {
       return [
         h('button', { class: 'btn primary', onclick: function () { go('approve', null, 'Approved'); } }, 'Approve'),
-        h('button', { class: 'btn danger', onclick: function () {
-          if (window.confirm('Reject this feedback? Nothing is sent to them' + (str(r.email) ? ', and their email address is deleted.' : '.'))) go('reject', null, 'Rejected');
-        } }, 'Reject'),
+        h('button', { class: 'btn danger', onclick: function () { overlay('Reject', fbRejectForm(r)); } }, 'Reject'),
         h('button', { class: 'btn', onclick: function () { overlay('Postpone', fbPostponeForm(r)); } }, 'Postpone'),
         note];
     }
@@ -1856,6 +1855,16 @@ export const CLIENT_JS = String.raw`
         note];
     }
     return [note];
+  }
+
+  function fbRejectForm(r) {
+    var why = h('input', { class: 'f', id: 'fbr', maxlength: 300 });
+    return h('form', { onsubmit: function (e) { e.preventDefault(); act('feedback', r.id, 'reject', { reason: why.value }, 'Rejected'); } },
+      h('p', null, str(r.email)
+        ? 'Holly drafts a short reply to ' + str(r.email) + ' saying we won’t be making this change. It waits under Reply drafts for Send, Edit or Skip; nothing is sent until then.'
+        : 'No email was given, so no reply is drafted.'),
+      str(r.email) ? [h('label', { class: 'f', for: 'fbr' }, 'Why? (optional; Holly uses it for the reply, never sent as written)'), why] : null,
+      h('div', { class: 'actions' }, h('button', { class: 'btn danger', type: 'submit' }, 'Reject')));
   }
 
   function fbPostponeForm(r) {

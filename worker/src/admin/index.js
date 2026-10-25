@@ -21,7 +21,7 @@
 //   POST /admin/api/action          { kind: pending|reply|photo, id, action, reason?, body?,
 //                                   expected? }: decisions go through core.js decide(),
 //                                   the same path as the signed email links
-//   POST /admin/api/action          kind feedback: approve, reject, postpone (date), done
+//   POST /admin/api/action          kind feedback: approve, reject (reason?), postpone (date), done
 //                                   (Mark implemented), send, edit (body), skip: also decide()
 //   POST /admin/api/feedback-note   { id, expected, note }: a timestamped note appended to
 //                                   the Feedback row's notes (stale-checked, never overwrites)
@@ -310,7 +310,7 @@ async function doAction(env, body) {
   } else if (kind === 'feedback') {
     const { rows } = await readFeedback(env);
     const matches = rows.filter((r) => id && r.id === id);
-    plan = planFeedback({ action, id, date: body.date, body: body.body }, matches.length === 1 ? matches[0] : null, ukToday());
+    plan = planFeedback({ action, id, date: body.date, body: body.body, reason: body.reason }, matches.length === 1 ? matches[0] : null, ukToday());
   } else {
     return json({ ok: false, error: `Unknown kind "${kind}"` }, 400);
   }
