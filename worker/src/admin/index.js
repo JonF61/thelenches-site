@@ -34,6 +34,8 @@
 //   POST /admin/api/contact         { email, field, expected, value }: one stale-checked edit of
 //                                   a contact's name, organisation, village, role, profile (each
 //                                   also sets profile_source "manual"), notes or status
+//   POST /admin/api/contact-delete  { email, expected }: removes the contact's row (status still as
+//                                   loaded) and logs it in Deleted contacts (made if missing)
 //   GET  /admin/api/photo-file?id=  a Photos file's live Drive name and folder, and the
 //                                   Lenches Photos folders it can move to
 //   GET  /admin/api/photo-group?id= every copy in a possible-duplicate group
@@ -55,7 +57,9 @@
 import { ACTIONS, decide, github } from '../core.js';
 import { verifyAccess } from './access.js';
 import { makeCsrf, checkCsrf, sameOrigin } from './csrf.js';
-import { getValues, sheetGids, gmailImage, gmailImageParts, driveImage, serviceAccountEmail, appendValues } from './google.js';
+import {
+  getValues, sheetGids, gmailImage, gmailImageParts, driveImage, serviceAccountEmail, appendValues, addTab, deleteRow,
+} from './google.js';
 import { readTable, readSettingsPairs, editCell, checkedWrite } from './sheet.js';
 import {
   planPending, planReply, planPhoto, planSuggest, trustKeyFor, truthy, hasOwnImage, SUGGEST_TAB, SUGGEST_SOURCES,
@@ -67,7 +71,9 @@ import {
 import { photoPages, pagesFor, eventEnd } from './photopages.js';
 import { feedbackRows, planFeedback, planNote } from './feedback.js';
 import { FEEDBACK_TAB } from '../feedback.js';
-import { CONTACTS_TAB, contactRows, planContact } from './contacts.js';
+import {
+  CONTACTS_TAB, DELETED_TAB, DELETED_HEADERS, contactRows, planContact, planDelete,
+} from './contacts.js';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 
@@ -376,12 +382,44 @@ async function doContact(env, body) {
   const matches = rows.filter((r) => email && String(r.email ?? '') === email);
   const plan = planContact({ field: body.field, value: body.value }, matches.length === 1 ? matches[0] : null);
   if (plan.error) return json({ ok: false, ...plan }, plan.status);
-  if (plan.value === null) return json({ ok: true, value: String(matches[0].status ?? ''), message: 'Already automatic.' });
   const r = await checkedWrite(env, {
     tab: CONTACTS_TAB, keyCol: 'email', key: email, field: plan.field, expected: body.expected, value: plan.value, also: plan.also,
   });
   if (!r.ok) return json(r, r.status);
   return json({ ok: true, value: r.value, profileSource: plan.also ? plan.also.profile_source : undefined, message: 'Saved.' });
+}
+
+// The Deleted contacts tab's headers, making the tab on the first delete.
+async function deletedHeaders(env) {
+  try {
+    const { headers } = await readTable(env, DELETED_TAB);
+    if (headers.includes('email') && headers.includes('deleted_at')) return headers;
+    if (headers.some(Boolean)) throw new Error('the Deleted contacts tab has no email / deleted_at headers');
+  } catch (e) {
+    if (!(e.status === 400 && /Unable to parse range/i.test(e.message))) throw e;
+    await addTab(env, DELETED_TAB);
+  }
+  await appendValues(env, DELETED_TAB, [DELETED_HEADERS]);
+  return DELETED_HEADERS;
+}
+
+async function doContactDelete(env, body) {
+  const email = String(body.email ?? '');
+  const find = async () => (await readTable(env, CONTACTS_TAB)).rows.filter((r) => email && String(r.email ?? '') === email);
+  let matches = await find();
+  const plan = planDelete({ expected: body.expected }, matches.length === 1 ? matches[0] : null);
+  if (plan.error) return json({ ok: false, ...plan }, plan.status);
+  // Logged first: if the row delete then fails, the log alone changes nothing visible.
+  const headers = await deletedHeaders(env);
+  const entry = { email, deleted_at: new Date().toISOString() };
+  await appendValues(env, DELETED_TAB, [headers.map((h) => entry[h] ?? '')]);
+  // Re-found just before deleting, so the row number is current.
+  matches = await find();
+  if (matches.length !== 1) return json({ ok: false, error: 'The contact moved in the Sheet: reload the page' }, 409);
+  const gids = await sheetGids(env);
+  if (gids[CONTACTS_TAB] === undefined) return json({ ok: false, error: 'No Contacts tab' }, 404);
+  await deleteRow(env, gids[CONTACTS_TAB], matches[0]._row);
+  return json({ ok: true, message: 'Deleted from Contacts. Their newsletter subscription is unchanged.' });
 }
 
 const fromResult = (r) => (r.ok ? json(r) : json(r, r.status));
@@ -478,6 +516,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/suggest') return await doSuggest(env, body);
       if (path === '/admin/api/feedback-note') return await doNote(env, body);
       if (path === '/admin/api/contact') return await doContact(env, body);
+      if (path === '/admin/api/contact-delete') return await doContactDelete(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(env, body);
       return json({ ok: false, error: 'Not found' }, 404);
     }

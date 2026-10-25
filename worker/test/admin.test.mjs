@@ -92,6 +92,7 @@ function fakeWorld(tables) {
         const [, tab, range] = m;
         if (tab === 'Settings' && range === 'E1:F100') return Response.json({ values: tables.SettingsKV });
         if (tab === 'Settings') return Response.json({ values: tables.SettingsSources || [['source', 'match', 'mode']] });
+        if (!(tab in tables) && tab === 'Deleted contacts') return new Response('Unable to parse range: Deleted contacts', { status: 400 });
         return Response.json({ values: tables[tab] });
       }
       const ap = decodeURIComponent(url.pathname).match(/\/values\/'(.+)'!A1:append$/);
@@ -115,7 +116,21 @@ function fakeWorld(tables) {
         }
         return Response.json({});
       }
-      return Response.json({ sheets: [{ properties: { title: 'Pending', sheetId: 7 } }] });
+      if (url.pathname.endsWith(':batchUpdate') && method === 'POST') {
+        for (const rq of JSON.parse(init.body).requests) {
+          calls.structure = calls.structure || [];
+          calls.structure.push(rq);
+          if (rq.addSheet) tables[rq.addSheet.properties.title] = [];
+          if (rq.deleteDimension) {
+            const { sheetId, startIndex, endIndex } = rq.deleteDimension.range;
+            assert.equal(sheetId, 11, 'Contacts gid');
+            assert.equal(endIndex - startIndex, 1, 'one row');
+            tables.Contacts.splice(startIndex, 1);
+          }
+        }
+        return Response.json({});
+      }
+      return Response.json({ sheets: [{ properties: { title: 'Pending', sheetId: 7 } }, { properties: { title: 'Contacts', sheetId: 11 } }] });
     }
     if (url.hostname === 'api.github.com' && url.pathname === '/repos/owner/repo/issues') {
       return Response.json(tables.issues || []);
@@ -824,18 +839,13 @@ test('E2E contacts: status choices; refusals', async () => {
   const tables = contactTables();
   const calls = fakeWorld(tables);
   const st = () => tables.Contacts.map((x) => x[11]);
-  // Automatic on an automatic status: nothing written.
-  let r = await post('/admin/api/contact', { email: 'hall@example.org', field: 'status', expected: 'contributor', value: '' });
+  // A listed status (any case) is stored lower case; an own value as typed; blank allowed.
+  let r = await post('/admin/api/contact', { email: 'hall@example.org', field: 'status', expected: 'contributor', value: 'Organiser' });
   assert.equal(r.status, 200);
-  assert.equal(calls.writes.length, 0);
-  // A run status can't be set by hand.
-  r = await post('/admin/api/contact', { email: 'vip@example.org', field: 'status', expected: 'key contact', value: 'lead' });
-  assert.equal(r.status, 400);
-  // Own value, back to automatic (blank), then ignore.
-  r = await post('/admin/api/contact', { email: 'hall@example.org', field: 'status', expected: 'contributor', value: 'Key contact' });
-  assert.equal(r.status, 200);
-  assert.equal(st()[2], 'Key contact');
-  r = await post('/admin/api/contact', { email: 'hall@example.org', field: 'status', expected: 'Key contact', value: '' });
+  assert.equal(st()[2], 'organiser');
+  r = await post('/admin/api/contact', { email: 'hall@example.org', field: 'status', expected: 'organiser', value: 'Former committee' });
+  assert.equal(st()[2], 'Former committee');
+  r = await post('/admin/api/contact', { email: 'hall@example.org', field: 'status', expected: 'Former committee', value: '' });
   assert.equal(st()[2], '');
   r = await post('/admin/api/contact', { email: 'vip@example.org', field: 'status', expected: 'key contact', value: 'ignore' });
   assert.equal(r.status, 200);
@@ -848,11 +858,43 @@ test('E2E contacts: status choices; refusals', async () => {
     [{ email: 'old@example.org', field: 'contribution_count', expected: '3', value: '9' }, 400],
     [{ email: 'old@example.org', field: 'profile_source', expected: 'auto', value: 'manual' }, 400],
     [{ email: 'old@example.org', field: 'village', expected: 'Ab Lench', value: 'x'.repeat(61) }, 400],
+    [{ email: 'old@example.org', field: 'status', expected: 'dormant', value: 'x'.repeat(41) }, 400],
+    [{ email: 'old@example.org', field: 'status', expected: 'lead', value: 'media' }, 409],
   ]) {
     r = await post('/admin/api/contact', body);
     assert.equal(r.status, code, JSON.stringify(body));
   }
-  assert.equal(calls.writes.length, 3);
+  assert.equal(calls.writes.length, 4);
+});
+
+test('E2E contacts: Delete logs the deletion (making the tab once), then removes just that row', async () => {
+  const tables = contactTables();
+  const calls = fakeWorld(tables);
+  // Stale: the status changed since the page loaded -> nothing logged or deleted.
+  let r = await post('/admin/api/contact-delete', { email: 'hall@example.org', expected: 'lead' });
+  assert.equal(r.status, 409);
+  assert.equal(r.json.current, 'contributor');
+  assert.equal(calls.appends.length, 0);
+  assert.ok(!calls.structure);
+  r = await post('/admin/api/contact-delete', { email: 'hall@example.org', expected: 'contributor' });
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  assert.match(r.json.message, /newsletter subscription is unchanged/);
+  assert.deepEqual(calls.structure.map((q) => Object.keys(q)[0]), ['addSheet', 'deleteDimension']);
+  assert.equal(calls.structure[0].addSheet.properties.title, 'Deleted contacts');
+  assert.deepEqual(tables['Deleted contacts'][0], ['email', 'deleted_at']);
+  assert.equal(tables['Deleted contacts'][1][0], 'hall@example.org');
+  assert.ok(Math.abs(Date.parse(tables['Deleted contacts'][1][1]) - Date.now()) < 60000);
+  assert.deepEqual(tables.Contacts.map((x) => x[0]), ['email', 'old@example.org', 'gone@example.org', 'vip@example.org']);
+  // A second delete reuses the tab; an ignore row or unknown contact is refused.
+  r = await post('/admin/api/contact-delete', { email: 'vip@example.org', expected: 'key contact' });
+  assert.equal(r.status, 200);
+  assert.equal(calls.structure.filter((q) => q.addSheet).length, 1);
+  assert.equal(tables['Deleted contacts'].length, 3);
+  assert.equal((await post('/admin/api/contact-delete', { email: 'gone@example.org', expected: 'ignore' })).status, 409);
+  assert.equal((await post('/admin/api/contact-delete', { email: 'nobody@example.org', expected: '' })).status, 404);
+  assert.deepEqual(tables.Contacts.map((x) => x[0]), ['email', 'old@example.org', 'gone@example.org']);
+  assert.equal(calls.writes.length, 0);
+  assert.equal(calls.dispatches.length, 0);
 });
 
 test('E2E contacts: refused without CSRF or Access', async () => {

@@ -12,11 +12,13 @@
 //   first_contact       YYYY-MM-DD of their first email to website@
 //   last_contact        YYYY-MM-DD of their latest email to website@
 //   message_count       emails to website@ counted
-//   status              set by code while it is blank, contributor, lead or dormant:
-//                       dormant = nothing from them for DORMANT_DAYS; else contributor if they
-//                       have Pending items, else lead. Any other value (e.g. ignore) is kept;
-//                       ignore = the row is cleared to just email and status (a "deleted"
-//                       contact that a later run can't re-add) and Read Sheet tab skips it.
+//   status              what they are to us: contributor, lead (a potential contributor),
+//                       collaborator, official, organiser, business, media or other. Claude
+//                       picks it for a new contact; code never changes it once set (set by
+//                       hand in the panel or Sheet). ignore = the row is cleared to just email
+//                       and status (a "deleted" contact that a later run can't re-add) and Read
+//                       Sheet tab skips it. Someone who writes only to subscribe, ask a question
+//                       and so on (Claude: "none") is never added.
 //   notes               Jon's own notes; never written by code
 //   profile_source      auto = code may rewrite name/organisation/village/role/profile;
 //                       anything else (e.g. manual) = left alone
@@ -31,8 +33,16 @@ const WEBSITE = 'website@thelenches.org.uk';
 const MAX_RECIPIENTS = 10;      // a reply-all to a bigger list is not someone writing to us
 const MAX_CONTRIBUTIONS = 40;   // listed in the cell (the count covers all)
 const PROFILE_FIELDS = ['name', 'organisation', 'village', 'role', 'profile'];
-const DORMANT_DAYS = 365;
-const AUTO_STATUSES = ['', 'contributor', 'lead', 'dormant'];
+// Status choices (the panel's dropdown offers the same, plus ignore).
+const STATUSES = ['contributor', 'lead', 'collaborator', 'official', 'organiser', 'business', 'media', 'other'];
+// Statuses from phase 1 (worked out by code) that the one-off RECLASSIFY run may replace.
+const OLD_AUTO = ['', 'contributor', 'lead', 'dormant'];
+// Mail from before this UK date is never read (agreed 25 Oct 2026, after Jon's one-off tidy of
+// the tab): so deleted contacts can't come back from old mail, even on a FULL run.
+const CUTOFF = '2026-10-26';
+// The panel's Delete logs each deletion here; mail from that address sent before then is ignored.
+const DELETED_TAB = 'Deleted contacts';
+const DELETED_HEADERS = ['email', 'deleted_at'];
 
 // Never contacts: our own mail, platforms and services.
 const EXCLUDED_DOMAINS = /(^|\.)(thelenches\.org\.uk|facebook\.com|facebookmail\.com|mailerlite\.com|feedrabbit\.com|google\.com|github\.com|cloudflare\.com|anthropic\.com|123-reg\.co\.uk)$/i;
@@ -69,6 +79,27 @@ function skipReason(msg, labelled = false) {
   return '';
 }
 
+// Why this (otherwise counted) message is too old to read, or ''. deleted: Map email -> ms.
+function tooOld(msg, deleted = new Map()) {
+  if (ymd(msg.internalDate) < CUTOFF) return 'before cut-off';
+  const d = deleted.get(norm(msg.fromAddress));
+  if (d !== undefined && Number(msg.internalDate) <= d) return 'before deletion';
+  return '';
+}
+
+// Deleted contacts tab rows -> Map email -> latest deletion time (ms).
+function deletedMap(rows) {
+  const out = new Map();
+  for (const r of rows || []) {
+    const e = norm(r.email);
+    const t = Date.parse(String(r.deleted_at || ''));
+    if (e && !Number.isNaN(t) && !(out.get(e) >= t)) out.set(e, t);
+  }
+  return out;
+}
+
+const validStatus = (s) => (STATUSES.includes(norm(s)) ? norm(s) : '');
+
 // Display name from "Name <a@b>", '' if none.
 function displayName(from) {
   const m = String(from || '').match(/^\s*"?([^"<]*?)"?\s*</);
@@ -101,23 +132,18 @@ function groupBySender(messages) {
   return by;
 }
 
-// Status code would give: dormant after DORMANT_DAYS without an email, else by contributions.
-function autoStatus(contributionCount, lastContact, todayYmd) {
-  const days = (Date.parse(todayYmd) - Date.parse(lastContact)) / 864e5;
-  if (lastContact && days > DORMANT_DAYS) return 'dormant';
-  return Number(contributionCount) > 0 ? 'contributor' : 'lead';
+// New status for a row: Claude's choice, only while the status is blank; else null (kept).
+function statusFor(current, proposed) {
+  if (norm(current)) return null;
+  return validStatus(proposed) || null;
 }
 
-// New status for a row, or null to leave it (a value set by hand).
-function statusFor(current, contributionCount, lastContact, todayYmd) {
-  if (!AUTO_STATUSES.includes(norm(current))) return null;
-  const s = autoStatus(contributionCount, lastContact, todayYmd);
-  return s === norm(current) ? null : s;
-}
+// Whether a new sender goes on the list: only if Claude placed them (not "none" or failed).
+const shouldAdd = (profile) => Boolean(profile && validStatus(profile.status));
 
 // The fields code writes for one contact. existing: current Sheet row or null.
-// profile: Claude's { name, organisation, village, role, profile } or null (not asked this run).
-function mergeRow(existing, sender, contrib, profile, nowUk, todayYmd = ymd(Date.now())) {
+// profile: Claude's { name, organisation, village, role, profile, status } or null (not asked this run).
+function mergeRow(existing, sender, contrib, profile, nowUk) {
   const ex = existing || {};
   const dates = sender.messages.map((m) => ymd(m.internalDate));
   const first = [ex.first_contact, dates[0]].filter(Boolean).sort()[0] || '';
@@ -132,7 +158,7 @@ function mergeRow(existing, sender, contrib, profile, nowUk, todayYmd = ymd(Date
     message_count: (existing ? Number(ex.message_count) || 0 : 0) + (existing ? newCount : sender.messages.length),
     updated_at: nowUk,
   };
-  const status = statusFor(existing ? ex.status : '', contrib.count, last, todayYmd);
+  const status = statusFor(existing ? ex.status : '', profile && profile.status);
   if (status) out.status = status;
   if (!existing) out.profile_source = 'auto';
   const auto = !existing || norm(ex.profile_source) === 'auto';
@@ -158,6 +184,7 @@ function clearIgnored(existing) {
 }
 
 module.exports = {
-  TAB, HEADERS, WEBSITE, PROFILE_FIELDS, DORMANT_DAYS,
-  norm, ymd, excludedAddress, skipReason, displayName, contributionsFor, groupBySender, mergeRow, locked, clearIgnored, autoStatus, statusFor,
+  TAB, HEADERS, WEBSITE, PROFILE_FIELDS, STATUSES, OLD_AUTO, CUTOFF, DELETED_TAB, DELETED_HEADERS,
+  norm, ymd, excludedAddress, skipReason, tooOld, deletedMap, validStatus, displayName, contributionsFor, groupBySender,
+  mergeRow, locked, clearIgnored, statusFor, shouldAdd,
 };
