@@ -4,6 +4,7 @@
 // Desktop: sidebar, list in the middle, the selected item's detail on the right.
 // Photos: a collapsible folder tree (sidebar; full-screen Move to… list on phones),
 // tick boxes, a multi-select bar, drag and drop onto folders, and an Undo pop-up.
+// Contacts: a searchable list with filters, and a page per contact with Save per field.
 
 export const CLIENT_CSS = String.raw`
 :root{
@@ -179,4 +180,18 @@ table.h td,table.h th{text-align:left;padding:6px 4px;border-bottom:1px solid va
   .filebox input.f,.filebox select.f,.small input.f,.small textarea.f{font-size:.88rem;padding:6px 8px}
   .filebox .btn,.small .btn{font-size:.85rem;padding:6px 10px;min-height:34px}
 }
+.cfilters{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}
+.cfilter{flex:1 1 160px;min-width:0}
+.cfilter label.f{margin:4px 0 3px;font-size:.82rem}
+.clist{display:flex;flex-direction:column;gap:8px}
+.card.crow{display:block;width:100%;text-align:left;cursor:pointer}
+.card.crow:hover{border-color:var(--accent)}
+.crow-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.crow-top .badge{margin-left:auto}
+.crow-edit{display:flex;gap:8px;align-items:flex-start}
+.crow-edit .btn{flex:none}
+.cfield input.f[hidden]{display:none}
+.cfield #c-status-own{margin-top:6px}
+.clist-items{margin:6px 0 0;padding-left:20px}
+.clist-items li{margin:3px 0}
 `;

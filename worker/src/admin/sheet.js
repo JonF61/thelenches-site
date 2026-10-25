@@ -176,12 +176,17 @@ function officialGuard(row, field, current, value) {
 // Writes one cell of the row whose keyCol cell is key, only if it still holds expected
 // (and, with onlyStatus, only while the row's status is that). Value already cleaned.
 // guard(row, field, current, value): returns a reason to refuse, or ''.
+// also: { otherField: value } written in the same request (not stale-checked; e.g.
+// Contacts profile_source), refused if the tab lacks any of those columns.
 export async function checkedWrite(env, {
-  tab, keyCol, key, field, expected, value, onlyStatus = '', guard = null,
+  tab, keyCol, key, field, expected, value, onlyStatus = '', guard = null, also = null,
 }) {
   const { headers, rows } = await readTable(env, tab);
   const col = headers.indexOf(field);
   if (col < 0) return fail(400, `${tab} has no "${field}" column`);
+  const extra = Object.entries(also || {}).map(([f, v]) => [headers.indexOf(f), f, v]);
+  const missing = extra.find(([c]) => c < 0);
+  if (missing) return fail(400, `${tab} has no "${missing[1]}" column`);
   const matches = key ? rows.filter((r) => String(r[keyCol] ?? '') === String(key)) : [];
   if (matches.length !== 1) return fail(404, `${matches.length ? 'More than one' : 'No'} ${tab} row with ${keyCol} "${key}"`);
   const [row] = matches;
@@ -194,6 +199,7 @@ export async function checkedWrite(env, {
   }
   const refused = guard ? guard(row, field, current, value) : '';
   if (refused) return fail(400, refused);
-  await writeCells(env, [{ range: `${quoteTab(tab)}!${colLetter(col)}${row._row}`, values: [[value]] }]);
+  await writeCells(env, [[col, value], ...extra.map(([c, , v]) => [c, v])]
+    .map(([c, v]) => ({ range: `${quoteTab(tab)}!${colLetter(c)}${row._row}`, values: [[v]] })));
   return { ok: true, value };
 }
