@@ -1,6 +1,6 @@
 # CLAUDE.md — standing instructions for Claude Code
 
-Read this first in every session. The full Project Plan is a Claude Doc (https://claude.ai/artifact/Qo9N1MsFpUonnnQcb6ZX6S: tabs Project Plan, Project Instructions, Build history) that you can read and edit with the Claude Docs connector when the session has it; this file carries what you need. It is large: read its outline, then only the sections you need. Jon (the owner) also works with Claude in a claude.ai Project chat that reads your pull requests, so **the PR description is how your work reaches that chat**.
+Read this first in every session. The full Project Plan is a Claude Doc (https://claude.ai/artifact/Qo9N1MsFpUonnnQcb6ZX6S: tabs Project Plan, Project Instructions, Build history, Kryten and Holly) that you can read and edit with the Claude Docs connector when the session has it; this file carries what you need. It is large: read its outline, then only the sections you need. Jon (the owner) also works with Claude in a claude.ai Project chat that reads your pull requests, so **the PR description is how your work reaches that chat**.
 
 ## The project
 - thelenches.org.uk: community website + weekly newsletter for the Lenches villages (Worcestershire). Eleventy v3 + Nunjucks, GitHub Pages, commits to main rebuild automatically. `pathPrefix` must stay "/".
@@ -60,3 +60,5 @@ Minimal notice (`src/items/notices/hall-car-park-resurfacing.json`):
 Write it for the project chat, which will read it from GitHub: what changed (files and behaviour), anything Jon must do by hand (Sheet headers, settings, workflow pastes), how it was tested, and what to check on the next live/shadow run. Keep it factual and complete; Jon shouldn't need to paste anything back.
 
 Then, once merged, add an entry to the Plan doc's **Build history** tab in its style (a `### <title> (PR numbers, date)` heading and one dense bullet: what changed, files, columns, first live result), and update the Project Plan tab if the plan itself changed. If the connector isn't available, say so to Jon.
+
+**Kryten and Holly tab** (in the Plan doc): the message log between you and Holly (Date · From → To · Message · Status Open/Answered/Done, newest first). At the start of each session that touches the Plan doc, check it for Open rows addressed to Kryten and act on or answer them; add a row when Holly needs to know or do something, linking to the PR or Build history entry rather than repeating it.
