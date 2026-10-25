@@ -6,14 +6,20 @@
 //   Profile fields (name, organisation, village, role, profile): saving one also sets
 //   profile_source to "manual", in the same write, so the daily run stops rewriting them.
 //   notes: Jon's own; code never writes it.
-//   status: "auto" (blank, the run sets contributor / lead / dormant), "ignore" (the next
-//   run clears the row to email and status) or a value of Jon's own that the run keeps.
-//   contributor, lead and dormant can't be set by hand: the run would change them back.
+//   status: one of STATUSES (Claude picks one for a new contact; code never changes it once
+//   set), "ignore" (the next run clears the row to email and status, blocked for good), a
+//   value of Jon's own, or blank (Not set).
+// Delete: removes the row from the Sheet and logs { email, deleted_at } in Deleted contacts, so
+// the run never re-adds them from mail sent before then (only new mail as a contributor can).
+// Their newsletter subscription (Subscribers tab) is not touched.
 // Ignore rows never leave the server (nothing of them is shown; scripts/contacts clears them).
 
 export const CONTACTS_TAB = 'Contacts';
 export const PROFILE_FIELDS = ['name', 'organisation', 'village', 'role', 'profile'];
-export const AUTO_STATUSES = ['contributor', 'lead', 'dormant'];
+// Same list as scripts/contacts/contacts.js STATUSES.
+export const STATUSES = ['contributor', 'lead', 'collaborator', 'official', 'organiser', 'business', 'media', 'other'];
+export const DELETED_TAB = 'Deleted contacts';
+export const DELETED_HEADERS = ['email', 'deleted_at'];
 // Cells the panel shows (all of the tab's own columns but updated_at).
 const FIELDS = ['email', ...PROFILE_FIELDS, 'contributions', 'contribution_count', 'first_contact', 'last_contact',
   'message_count', 'status', 'notes', 'profile_source'];
@@ -46,20 +52,25 @@ export function planContact({ field, value }, row) {
   if (isIgnore(row)) return refuse(409, 'This contact is marked ignore');
   const f = String(field || '');
   if (f === 'status') {
-    const s = oneLine(value);
-    const low = s.toLowerCase();
-    if (low === '' || low === 'auto') {
-      // Already automatic: nothing to write (the run keeps it up to date).
-      return { field: 'status', value: AUTO_STATUSES.includes(str(row.status).toLowerCase()) ? null : '', also: null };
-    }
-    if (AUTO_STATUSES.includes(low)) return refuse(400, `"${low}" is set by the daily run: choose Automatic`);
-    if (low === 'ignore') return { field: 'status', value: 'ignore', also: null };
-    if (s.length > MAX_STATUS) return refuse(400, `Status: up to ${MAX_STATUS} characters`);
-    return { field: 'status', value: s, also: null };
+    const v = oneLine(value);
+    const low = v.toLowerCase();
+    if (v.length > MAX_STATUS) return refuse(400, `Status: up to ${MAX_STATUS} characters`);
+    return { field: 'status', value: STATUSES.includes(low) || low === 'ignore' ? low : v, also: null };
   }
   if (!(f in LIMITS)) return refuse(400, `${f} can't be edited here`);
   const v = MULTI.has(f) ? multiLine(value) : oneLine(value);
   if (v.length > LIMITS[f]) return refuse(400, `${f}: up to ${LIMITS[f]} characters`);
   const also = PROFILE_FIELDS.includes(f) ? { profile_source: 'manual' } : null;
   return { field: f, value: v, also };
+}
+
+// Delete one contact: refused unless it is exactly one row and its status is still the one
+// the page loaded (so a row changed in the Sheet meanwhile is never deleted unseen).
+export function planDelete({ expected }, row) {
+  if (!row) return refuse(404, 'No such contact: reload the page');
+  if (isIgnore(row)) return refuse(409, 'This contact is marked ignore');
+  if (String(row.status ?? '') !== String(expected ?? '')) {
+    return { ...refuse(409, 'Changed in the Sheet since you loaded the page'), current: String(row.status ?? '') };
+  }
+  return { ok: true };
 }

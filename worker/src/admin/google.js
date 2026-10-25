@@ -162,12 +162,22 @@ export async function appendValues(env, tab, rows) {
   await google(env, SCOPES.sheets, url, { method: 'POST', body: JSON.stringify({ values: rows }) });
 }
 
-// A new, empty tab at the end (no existing tab moves). Used only for the Feedback tab.
+// A new, empty tab at the end (no existing tab moves). Used for Feedback and Deleted contacts.
 export async function addTab(env, title) {
   const url = `${SHEETS}/${sheetId(env)}:batchUpdate`;
   await google(env, SCOPES.sheets, url, {
     method: 'POST',
     body: JSON.stringify({ requests: [{ addSheet: { properties: { title } } }] }),
+  });
+}
+
+// Removes one whole row (1-based) from the tab with this gid; rows below move up.
+// Used only by the Contacts Delete (contacts.js), after re-checking the row's key.
+export async function deleteRow(env, gid, row) {
+  const url = `${SHEETS}/${sheetId(env)}:batchUpdate`;
+  await google(env, SCOPES.sheets, url, {
+    method: 'POST',
+    body: JSON.stringify({ requests: [{ deleteDimension: { range: { sheetId: gid, dimension: 'ROWS', startIndex: row - 1, endIndex: row } } }] }),
   });
 }
 

@@ -7,7 +7,7 @@
 const assert = require('assert');
 const { isRefused, allowedColumns, redactColumns, parseRange, maskEmails, toCsv, colLetters, colIndex } = require('./sheettab/index');
 
-for (const t of ['Subscribers', 'do not send', ' Sends ', 'REPLIES', 'Feedback']) assert.ok(isRefused(t), t);
+for (const t of ['Subscribers', 'do not send', ' Sends ', 'REPLIES', 'Feedback', 'Deleted Contacts']) assert.ok(isRefused(t), t);
 for (const t of ['Settings', 'Pending', 'Contacts', 'Reply feedback', 'Feedback log']) assert.ok(!isRefused(t), t);
 
 assert.ok(allowedColumns(' contacts ').includes('name'));

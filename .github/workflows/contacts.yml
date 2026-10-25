@@ -2,8 +2,9 @@ name: Contacts
 
 # Keeps the Contacts tab (scripts/contacts): one row per person who writes to website@,
 # with a Claude-written profile and what they have contributed. Daily run reads the last
-# 8 days; a manual run with full = true reads all mail to website@ (the first backfill).
-# Logs print counts only.
+# 8 days; a manual run with full = true reads all mail to website@ from the cut-off
+# (26 Oct 2026) on. reclassify = true is a one-off: Claude sets each row's status from
+# what the row holds (no mail read). Logs print counts only.
 on:
   schedule:
     - cron: "41 4 * * *"
@@ -11,6 +12,11 @@ on:
     inputs:
       full:
         description: 'Read all mail to website@ (true) or the last 8 days (false)'
+        required: false
+        type: boolean
+        default: false
+      reclassify:
+        description: 'One-off: Claude sets the status of rows still on a phase-1 status (no mail read)'
         required: false
         type: boolean
         default: false
@@ -48,3 +54,4 @@ jobs:
           CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
           FULL: ${{ inputs.full }}
           DRY_RUN: ${{ inputs.dry_run }}
+          RECLASSIFY: ${{ inputs.reclassify }}

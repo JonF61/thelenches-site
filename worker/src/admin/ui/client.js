@@ -15,7 +15,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '17';
+export const UI_VERSION = '18';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -1995,7 +1995,12 @@ export const CLIENT_JS = String.raw`
   // Loaded when the screen opens. Each Save is one stale-checked cell write; a profile
   // field also sets profile_source to "manual" so the daily run stops rewriting it.
   var C_FIELDS = [['name', 'Name'], ['organisation', 'Organisation'], ['village', 'Village'], ['role', 'Role'], ['profile', 'Profile']];
-  var C_AUTO = ['contributor', 'lead', 'dormant'];
+  // Same list as admin/contacts.js STATUSES; value -> label and a line for the dropdown.
+  var C_STATUSES = [['contributor', 'Contributor', 'sends events, notices or photos'], ['lead', 'Lead', 'a potential contributor'],
+    ['collaborator', 'Collaborator', 'helps run the site or newsletter'], ['official', 'Official', 'council, councillor, police'],
+    ['organiser', 'Organiser', 'runs a club, group, hall or event'], ['business', 'Business', 'a local business or trade'],
+    ['media', 'Media', 'newsletter, Facebook group, press'], ['other', 'Other', '']];
+  var C_KNOWN = C_STATUSES.map(function (x) { return x[0]; }).concat(['ignore', '']);
   var C_LIMITS = { name: 120, organisation: 120, village: 60, role: 120, profile: 2000, notes: 5000 };
 
   async function loadContacts() {
@@ -2014,7 +2019,15 @@ export const CLIENT_JS = String.raw`
   function plural(n, one, many) { var k = Number(n) || 0; return k + ' ' + (k === 1 ? one : many); }
   function cBadge(st) {
     var s = lower(st);
-    return h('span', { class: 'badge ' + (s === 'contributor' ? 'ok' : s === 'lead' ? 'info' : s === 'dormant' ? '' : s ? 'warn' : '') }, str(st) || 'new');
+    var known = C_STATUSES.find(function (x) { return x[0] === s; });
+    return h('span', { class: 'badge ' + (s === 'contributor' || s === 'collaborator' ? 'ok' : s === 'lead' ? 'info' : known || !s ? '' : 'warn') },
+      known ? known[1] : str(st) || 'Not set');
+  }
+  // No email for a year (from today in the UK).
+  function cQuiet(r) {
+    var last = str(r.last_contact);
+    var today = str(S.data && S.data.today);
+    return /^\d{4}-\d{2}-\d{2}$/.test(last) && today && (Date.parse(today) - Date.parse(last)) / 864e5 > 365;
   }
   function cFind(email) {
     var t = S.contacts;
@@ -2075,9 +2088,28 @@ export const CLIENT_JS = String.raw`
     var title = str(r.name) || str(r.email);
     var bits = [str(r.role), str(r.village), str(r.last_contact) ? 'last ' + cDay(r.last_contact) : '',
       plural(r.contribution_count, 'item', 'items') + ', ' + plural(r.message_count, 'email', 'emails')].filter(Boolean);
-    return h('button', { class: 'card crow', onclick: function () { S.contact = r.email; render(); window.scrollTo(0, 0); } },
-      h('div', { class: 'crow-top' }, h('b', null, title), str(r.organisation) ? h('span', null, ' · ' + str(r.organisation)) : null, cBadge(r.status)),
-      h('div', { class: 'meta' }, bits.join(' · ')));
+    return h('div', { class: 'card crow' },
+      h('button', { class: 'crow-open', onclick: function () { S.contact = r.email; render(); window.scrollTo(0, 0); } },
+        h('div', { class: 'crow-top' }, h('b', null, title), str(r.organisation) ? h('span', null, ' · ' + str(r.organisation)) : null,
+          h('span', { class: 'crow-badges' }, cQuiet(r) ? h('span', { class: 'badge warn' }, 'Quiet a year') : null, cBadge(r.status))),
+        h('div', { class: 'meta' }, bits.join(' · '))),
+      h('button', { class: 'btn crow-del', 'aria-label': 'Delete ' + title, onclick: function () { cDelete(r); } }, 'Delete'));
+  }
+
+  // Removes the row from the Sheet (logged in Deleted contacts so old mail can't bring them back).
+  async function cDelete(r) {
+    var title = str(r.name) || str(r.email);
+    if (!window.confirm('Delete ' + title + ' from Contacts?\n\nThis removes the row from the Sheet. They are only added again if they write in as a contributor after today. Their newsletter subscription is not affected.')) return;
+    var res = await api('/admin/api/contact-delete', { email: r.email, expected: str(r.status) === '' ? '' : r.status });
+    if (res.ok) {
+      S.contacts.rows = S.contacts.rows.filter(function (x) { return x !== r; });
+      if (S.contact === r.email) S.contact = '';
+      toast(res.json.message || 'Deleted');
+    } else {
+      toast(res.status === 409 && res.json.current !== undefined ? title + ' was changed in the Sheet since you loaded the page. Not deleted; reloaded.' : (res.json.error || ('HTTP ' + res.status)), true);
+      if (res.status === 409) S.contacts = null;
+    }
+    render();
   }
 
   function cSaveError(res, what) {
@@ -2116,27 +2148,28 @@ export const CLIENT_JS = String.raw`
 
   function cStatus(r) {
     var cur = lower(r.status);
-    var mode = !cur || C_AUTO.indexOf(cur) >= 0 ? 'auto' : cur === 'ignore' ? 'ignore' : 'own';
+    var mode = C_KNOWN.indexOf(cur) >= 0 ? cur : 'own';
     var pick = h('select', { class: 'f', id: 'c-status', onchange: function () { own.hidden = pick.value !== 'own'; } },
-      [['auto', 'Automatic (the daily run sets contributor, lead or dormant)'], ['ignore', 'Ignore (the next run clears this contact)'], ['own', 'A status of your own…']]
-        .map(function (o) { return h('option', { value: o[0], selected: mode === o[0] ? true : null }, o[1]); }));
-    var own = h('input', { class: 'f', id: 'c-status-own', maxlength: 40, placeholder: 'e.g. key contact', 'aria-label': 'Your status',
+      h('option', { value: '', selected: mode === '' ? true : null }, 'Not set'),
+      C_STATUSES.map(function (o) { return h('option', { value: o[0], selected: mode === o[0] ? true : null }, o[1] + (o[2] ? ' — ' + o[2] : '')); }),
+      h('option', { value: 'ignore', selected: mode === 'ignore' ? true : null }, 'Ignore — blocked for good (the next run clears them)'),
+      h('option', { value: 'own', selected: mode === 'own' ? true : null }, 'A status of your own…'));
+    var own = h('input', { class: 'f', id: 'c-status-own', maxlength: 40, placeholder: 'e.g. former committee', 'aria-label': 'Your status',
       value: mode === 'own' ? str(r.status) : '' });
     own.hidden = mode !== 'own';
     return h('form', { class: 'cfield', onsubmit: async function (e) {
       e.preventDefault();
-      var want = pick.value === 'auto' ? '' : pick.value === 'ignore' ? 'ignore' : own.value.trim();
+      var want = pick.value === 'own' ? own.value.trim() : pick.value;
       if (pick.value === 'own') {
         if (!want) { toast('Type your status first', true); return; }
-        if (C_AUTO.indexOf(want.toLowerCase()) >= 0 || want.toLowerCase() === 'ignore' || want.toLowerCase() === 'auto') { toast('"' + want + '" is one of the set choices: pick it from the list', true); return; }
+        if (C_KNOWN.indexOf(want.toLowerCase()) >= 0) { toast('"' + want + '" is in the list: pick it there', true); return; }
       }
-      if (pick.value === 'auto' && mode === 'auto') { toast('Already automatic'); return; }
       if (want === str(r.status)) { toast('No changes to save'); return; }
-      if (want === 'ignore' && !window.confirm('Mark this contact as ignore?\n\nThe next daily contacts run clears the row down to the email address and status, and they disappear from this list. They are never added again unless you change the status in the Sheet.')) return;
+      if (want === 'ignore' && !window.confirm('Mark this contact as ignore?\n\nThe next daily contacts run clears the row down to the email address and status, and they disappear from this list. They are never added again unless you change the status in the Sheet. (To let them back if they contribute later, use Delete instead.)')) return;
       var ok = await cSave(r, 'status', want, 'Status');
       if (ok && want === 'ignore') { S.contacts.rows = S.contacts.rows.filter(function (x) { return x !== r; }); S.contact = ''; render(); }
     } },
-    h('label', { class: 'f', for: 'c-status' }, 'Status ', cBadge(r.status)),
+    h('label', { class: 'f', for: 'c-status' }, 'Status ', cBadge(r.status), cQuiet(r) ? h('span', { class: 'badge warn' }, 'Quiet a year') : null),
     h('div', { class: 'crow-edit' }, pick, h('button', { class: 'btn', type: 'submit' }, 'Save')), own);
   }
 
@@ -2156,7 +2189,8 @@ export const CLIENT_JS = String.raw`
         C_FIELDS.map(function (f) { return cField(r, f[0], f[1]); }),
         cStatus(r),
         cField(r, 'notes', 'Notes', '(yours; never touched by code)'),
-        h('div', { class: 'actions' }, sheetLink('Contacts', r._row))),
+        h('div', { class: 'actions' }, sheetLink('Contacts', r._row),
+          h('button', { class: 'btn', onclick: function () { cDelete(r); } }, 'Delete contact'))),
       h('div', { class: 'card' },
         h('h2', null, 'Contributions (' + (Number(r.contribution_count) || 0) + ')'),
         list.length ? h('ul', { class: 'clist-items' }, list.map(function (c) { return h('li', null, c); })) : h('p', { class: 'meta' }, 'Nothing in Pending from this address.'),

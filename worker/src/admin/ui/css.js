@@ -184,10 +184,12 @@ table.h td,table.h th{text-align:left;padding:6px 4px;border-bottom:1px solid va
 .cfilter{flex:1 1 160px;min-width:0}
 .cfilter label.f{margin:4px 0 3px;font-size:.82rem}
 .clist{display:flex;flex-direction:column;gap:8px}
-.card.crow{display:block;width:100%;text-align:left;cursor:pointer}
+.card.crow{display:flex;align-items:center;gap:10px}
 .card.crow:hover{border-color:var(--accent)}
+.crow-open{flex:1;min-width:0;background:none;border:0;padding:0;text-align:left;cursor:pointer}
+.crow-del{flex:none;font-size:.85rem;padding:6px 10px;min-height:34px}
 .crow-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
-.crow-top .badge{margin-left:auto}
+.crow-badges{margin-left:auto;display:flex;gap:6px}
 .crow-edit{display:flex;gap:8px;align-items:flex-start}
 .crow-edit .btn{flex:none}
 .cfield input.f[hidden]{display:none}

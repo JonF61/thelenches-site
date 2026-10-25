@@ -1,8 +1,9 @@
 // worker/test/ui-contacts.check.mjs
 // Browser check of the panel's Contacts screen (ui/client.js) against a mock API, on desktop
 // and phone sizes: the list (newest contact first, search, status / village / organisation
-// filters), a contact page, and what each Save posts (the value the page loaded as expected,
-// profile_source shown as manual after a profile save, status choices, ignore after a confirm).
+// filters, "Quiet a year"), Delete from the list (confirm, then gone), a contact page, and what
+// each Save posts (the value the page loaded as expected, profile_source shown as manual after a
+// profile save, the status dropdown, an own status, ignore after a confirm).
 // Saves screenshots (SHOTS=dir). Needs Playwright (not a site dependency):
 // Run: node worker/test/ui-contacts.check.mjs
 import http from 'node:http';
@@ -58,6 +59,7 @@ const server = http.createServer(async (req, res) => {
   for await (const ch of req) body += ch;
   const b = body ? JSON.parse(body) : {};
   posts.push({ path: url.pathname, ...b });
+  if (url.pathname === '/admin/api/contact-delete') return send({ ok: true, message: 'Deleted from Contacts. Their newsletter subscription is unchanged.' });
   if (b.field === 'village') return send({ ok: false, error: 'Changed in the Sheet since you loaded the page', current: 'Atch Lench' }, 'application/json', 409);
   const profile = ['name', 'organisation', 'village', 'role', 'profile'].includes(b.field);
   return send({ ok: true, value: String(b.value).trim(), profileSource: profile ? 'manual' : undefined, message: 'Saved.' });
@@ -79,6 +81,8 @@ try {
     assert.deepEqual(await names(), ['Jane Smith', 'Bob Jones', 'Val Price', 'Ann Brown'], 'newest contact first');
     assert.match(await page.locator('.main').innerText(), /4 people/);
     assert.match(await page.locator('.crow').first().innerText(), /Secretary · Church Lench · last 21 Oct 2026 · 7 items, 12 emails/);
+    assert.match(await page.locator('.crow').first().innerText(), /Contributor/);
+    assert.equal(await page.locator('.crow', { hasText: 'Quiet a year' }).count(), 2, 'Val and Ann');
     await page.fill('input[type=search]', 'quiz');
     assert.deepEqual(await names(), ['Jane Smith']);
     await page.fill('input[type=search]', '');
@@ -93,8 +97,14 @@ try {
     await page.selectOption('#cf-org', '');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `contacts-list-${name}.png`), fullPage: true });
 
+    // Delete from the list: confirm, posted with the status loaded, gone from the list.
+    await page.locator('.crow', { hasText: 'Bob Jones' }).getByRole('button', { name: 'Delete' }).click();
+    await page.locator('.toast', { hasText: 'Deleted from Contacts' }).waitFor();
+    assert.match(dialogs.pop(), /Delete Bob Jones from Contacts\?[\s\S]*newsletter subscription is not affected/);
+    assert.deepEqual(await names(), ['Jane Smith', 'Val Price', 'Ann Brown']);
+
     // Contact page.
-    await page.locator('.crow', { hasText: 'Jane Smith' }).click();
+    await page.locator('.crow', { hasText: 'Jane Smith' }).locator('.crow-open').click();
     const main = page.locator('.main');
     await main.getByText('Contributions (7)').waitFor();
     let text = await main.innerText();
@@ -117,11 +127,16 @@ try {
     await page.locator('form.cfield', { has: page.locator('#c-village') }).getByRole('button', { name: 'Save' }).click();
     await page.waitForFunction(() => document.querySelector('#c-village').value === 'Atch Lench');
     assert.match(await page.locator('.toast').innerText(), /changed in the Sheet.*Atch Lench.*Not saved/);
-    // Status: own value refused if it's a run status; then a real one.
-    await page.selectOption('#c-status', 'own');
-    await page.fill('#c-status-own', 'lead');
+    // Status: the dropdown; an own value refused if it is in the list; then a real one.
+    assert.equal(await page.locator('#c-status').inputValue(), 'contributor');
+    await page.selectOption('#c-status', 'organiser');
     await page.locator('form.cfield', { has: page.locator('#c-status') }).getByRole('button', { name: 'Save' }).click();
-    assert.match(await page.locator('.toast').innerText(), /set choices/);
+    await page.locator('.toast', { hasText: 'Status saved' }).waitFor();
+    assert.equal(await page.locator('#c-status').inputValue(), 'organiser');
+    await page.selectOption('#c-status', 'own');
+    await page.fill('#c-status-own', 'Lead');
+    await page.locator('form.cfield', { has: page.locator('#c-status') }).getByRole('button', { name: 'Save' }).click();
+    assert.match(await page.locator('.toast').innerText(), /in the list/);
     await page.fill('#c-status-own', 'Key contact');
     await page.locator('form.cfield', { has: page.locator('#c-status') }).getByRole('button', { name: 'Save' }).click();
     await page.locator('.toast', { hasText: 'Status saved' }).waitFor();
@@ -132,14 +147,16 @@ try {
     await page.locator('form.cfield', { has: page.locator('#c-status') }).getByRole('button', { name: 'Save' }).click();
     await page.locator('.crow').first().waitFor();
     assert.match(dialogs.pop(), /clears the row/);
-    assert.deepEqual(await names(), ['Bob Jones', 'Val Price', 'Ann Brown']);
+    assert.deepEqual(await names(), ['Val Price', 'Ann Brown']);
 
+    assert.deepEqual(posts.filter((p) => p.path === '/admin/api/contact-delete').map((p) => [p.email, p.expected]), [['bob@example.org', 'lead']]);
     const sent = posts.filter((p) => p.path === '/admin/api/contact').map((p) => [p.email, p.field, p.expected, p.value]);
     assert.deepEqual(sent, [
       ['jane@example.org', 'role', 'Secretary', 'Chair'],
       ['jane@example.org', 'notes', '', 'Call after 6'],
       ['jane@example.org', 'village', 'Church Lench', 'Rous Lench'],
-      ['jane@example.org', 'status', 'contributor', 'Key contact'],
+      ['jane@example.org', 'status', 'contributor', 'organiser'],
+      ['jane@example.org', 'status', 'organiser', 'Key contact'],
       ['jane@example.org', 'status', 'Key contact', 'ignore'],
     ]);
     await page.close();

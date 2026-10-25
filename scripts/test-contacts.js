@@ -6,10 +6,9 @@
 
 const assert = require('assert');
 const c = require('./contacts/contacts');
-const { buildText } = require('./contacts/profile');
+const { buildText, classifyText, STATUS_ENUM } = require('./contacts/profile');
 const { addressOf } = require('./ingest/google');
 
-const T = '2026-10-25';
 const day = (s) => Date.parse(`${s}T10:00:00Z`);
 const msg = (o) => ({
   fromAddress: addressOf(o.from), auto: {}, recipients: c.WEBSITE, subject: 'Quiz night',
@@ -60,9 +59,9 @@ assert.strictEqual(contrib.count, 2);
 assert.strictEqual(contrib.list, '2026-10-05 Quiz night (event, pending); 2026-09-01 Harvest supper (event, published)');
 
 // New row.
-const profile = { name: 'Ann Hughes', organisation: 'Lenches WI', village: 'Church Lench', role: 'secretary', profile: 'Sends WI events.' };
-const row = c.mergeRow(null, ann, contrib, profile, '2026-10-25 09:00', T);
-assert.strictEqual(row.status, 'contributor');
+const profile = { name: 'Ann Hughes', organisation: 'Lenches WI', village: 'Church Lench', role: 'secretary', profile: 'Sends WI events.', status: 'organiser' };
+const row = c.mergeRow(null, ann, contrib, profile, '2026-10-25 09:00');
+assert.strictEqual(row.status, 'organiser', "Claude's choice");
 assert.strictEqual(row.profile_source, 'auto');
 assert.strictEqual(row.first_contact, '2026-09-01');
 assert.strictEqual(row.last_contact, '2026-10-05');
@@ -70,39 +69,55 @@ assert.strictEqual(row.message_count, 2);
 assert.strictEqual(row.name, 'Ann Hughes');
 assert.strictEqual(row.organisation, 'Lenches WI');
 assert.ok(!('notes' in row), 'notes never written');
-const lead = c.mergeRow(null, groups.get('bob@x.com'), { list: '', count: 0 }, null, 'now', T);
-assert.strictEqual(lead.status, 'lead');
-assert.strictEqual(lead.name, 'Bob', 'display name when no profile');
+const bare = c.mergeRow(null, groups.get('bob@x.com'), { list: '', count: 0 }, null, 'now');
+assert.ok(!('status' in bare), 'no status without Claude');
+assert.strictEqual(bare.name, 'Bob', 'display name when no profile');
 
-// Existing row: only new messages counted, manual profile kept, lead promoted.
+// Existing row: only new messages counted, manual profile kept, status never changed once set.
 const existing = { email: 'ann@example.com', name: 'Ann', profile: 'Hand-written', profile_source: 'manual', status: 'lead', first_contact: '2026-08-01', last_contact: '2026-09-01', message_count: '5' };
-const upd = c.mergeRow(existing, ann, contrib, profile, 'now', T);
+const upd = c.mergeRow(existing, ann, contrib, profile, 'now');
 assert.strictEqual(upd.message_count, 6, 'only the 5 Oct email is new');
 assert.strictEqual(upd.first_contact, '2026-08-01');
 assert.strictEqual(upd.last_contact, '2026-10-05');
-assert.strictEqual(upd.status, 'contributor');
+assert.ok(!('status' in upd), 'a set status is kept');
 assert.ok(!('profile' in upd) && !('name' in upd), 'manual profile left alone');
-const auto = c.mergeRow({ ...existing, profile_source: 'auto', status: 'dormant' }, ann, contrib, profile, 'now', T);
+const auto = c.mergeRow({ ...existing, profile_source: 'auto', status: '' }, ann, contrib, profile, 'now');
 assert.strictEqual(auto.profile, 'Sends WI events.');
-assert.strictEqual(auto.status, 'contributor', 'a dormant contact who writes again wakes up');
-const kept = c.mergeRow({ ...existing, status: 'VIP' }, ann, contrib, profile, 'now', T);
-assert.ok(!('status' in kept), 'a status set by hand is kept');
-const old = c.mergeRow(null, { email: 'o@x.com', name: '', messages: [msg({ from: 'o@x.com', internalDate: day('2019-05-01') })] }, { list: '', count: 0 }, null, 'now', T);
-assert.strictEqual(old.status, 'dormant');
+assert.strictEqual(auto.status, 'organiser', 'a blank status is filled');
+assert.ok(!('status' in c.mergeRow({ ...existing, status: 'dormant' }, ann, contrib, profile, 'now')), 'old phase-1 values kept too');
 
-// Dormant after a year without an email.
-assert.strictEqual(c.autoStatus(0, '2025-10-24', T), 'dormant');
-assert.strictEqual(c.autoStatus(3, '2025-10-26', T), 'contributor');
-assert.strictEqual(c.autoStatus(0, '2026-10-01', T), 'lead');
-assert.strictEqual(c.statusFor('lead', 0, '2019-01-01', T), 'dormant');
-assert.strictEqual(c.statusFor('Lead', 0, '2026-10-01', T), null, 'unchanged');
-assert.strictEqual(c.statusFor('ignore', 0, '2019-01-01', T), null);
-assert.strictEqual(c.statusFor('dormant', 2, '2026-10-20', T), 'contributor');
+// Status rules.
+assert.strictEqual(c.statusFor('', 'Media'), 'media');
+assert.strictEqual(c.statusFor('', 'none'), null);
+assert.strictEqual(c.statusFor('', 'dormant'), null, 'not a choice any more');
+assert.strictEqual(c.statusFor('key contact', 'lead'), null);
+assert.ok(c.shouldAdd({ status: 'lead' }) && !c.shouldAdd({ status: 'none' }) && !c.shouldAdd(null), 'only people Claude places');
+assert.deepStrictEqual(STATUS_ENUM.filter((x) => x !== 'none').sort(), [...c.STATUSES].sort(), 'Claude chooses from the same list');
+
+// Cut-off and deletions.
+assert.strictEqual(c.CUTOFF, '2026-10-26');
+assert.strictEqual(c.tooOld(msg({ from: 'a@b.com', internalDate: Date.parse('2026-10-25T23:30:00Z') })), 'before cut-off', '25 Oct 23:30 UK (GMT from 25 Oct)');
+assert.strictEqual(c.tooOld(msg({ from: 'a@b.com', internalDate: Date.parse('2026-10-26T00:30:00Z') })), '', '26 Oct 00:30 UK');
+const deleted = c.deletedMap([
+  { email: 'Gone@x.com', deleted_at: '2026-11-20T10:00:00.000Z' },
+  { email: 'gone@x.com', deleted_at: '2026-11-01T10:00:00.000Z' },
+  { email: 'bad@x.com', deleted_at: 'soon' },
+]);
+assert.deepStrictEqual([...deleted.keys()], ['gone@x.com']);
+assert.strictEqual(c.tooOld(msg({ from: 'gone@x.com', internalDate: Date.parse('2026-11-15T10:00:00Z') }), deleted), 'before deletion', 'latest deletion wins');
+assert.strictEqual(c.tooOld(msg({ from: 'gone@x.com', internalDate: Date.parse('2026-11-21T10:00:00Z') }), deleted), '', 'new mail after deletion counts');
+assert.strictEqual(c.tooOld(msg({ from: 'other@x.com', internalDate: Date.parse('2026-11-15T10:00:00Z') }), deleted), '');
+
+// Ignore rows.
 assert.ok(c.locked({ status: 'Ignore' }));
 assert.deepStrictEqual(c.clearIgnored({ _row: 3, email: 'x@y.com', name: 'X', profile: 'p', notes: ' ', status: 'ignore', message_count: 2 }),
   { name: '', profile: '', message_count: '' });
 assert.strictEqual(c.clearIgnored({ _row: 3, email: 'x@y.com', status: 'ignore', name: '' }), null, 'already clear');
 assert.ok(!c.locked(null) && !c.locked({ status: 'lead' }));
+
+// Reclassify reads only the row (notes included, as Jon's context).
+const ct = classifyText({ name: 'Phil', role: 'former treasurer', notes: 'Left the board', email: 'p@x.com' });
+assert.ok(ct.includes('notes: Left the board') && ct.includes('profile: (blank)') && !ct.includes('p@x.com'));
 
 // Claude input carries what we know and the emails, within budget.
 const text = buildText(ann, { ...existing, profile: 'Old profile' }, contrib.list);
