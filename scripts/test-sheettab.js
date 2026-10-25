@@ -5,10 +5,17 @@
 'use strict';
 
 const assert = require('assert');
-const { isRefused, parseRange, maskEmails, toCsv, colLetters, colIndex } = require('./sheettab/index');
+const { isRefused, allowedColumns, redactColumns, parseRange, maskEmails, toCsv, colLetters, colIndex } = require('./sheettab/index');
 
-for (const t of ['Subscribers', 'do not send', ' Sends ', 'REPLIES', 'Feedback', 'Contacts']) assert.ok(isRefused(t), t);
-for (const t of ['Settings', 'Pending', 'Reply feedback', 'Feedback log']) assert.ok(!isRefused(t), t);
+for (const t of ['Subscribers', 'do not send', ' Sends ', 'REPLIES', 'Feedback']) assert.ok(isRefused(t), t);
+for (const t of ['Settings', 'Pending', 'Contacts', 'Reply feedback', 'Feedback log']) assert.ok(!isRefused(t), t);
+
+assert.ok(allowedColumns(' contacts ').includes('name'));
+assert.ok(!allowedColumns('Contacts').includes('profile') && !allowedColumns('Contacts').includes('notes'));
+assert.strictEqual(allowedColumns('Settings'), null);
+assert.deepStrictEqual(
+  redactColumns([['Ann', 'Sends quiz nights', '', 'lead']], ['name', 'profile', 'notes', 'status'], allowedColumns('Contacts')),
+  [['Ann', '(hidden)', '', 'lead']]);
 
 assert.deepStrictEqual(parseRange(''), { range: '', startRow: 1, startCol: 'A', endCol: '' });
 assert.deepStrictEqual(parseRange('a1:f20'), { range: 'A1:F20', startRow: 1, startCol: 'A', endCol: 'F' });

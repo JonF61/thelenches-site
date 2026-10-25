@@ -2,17 +2,34 @@
 // Read one tab of the Lenches Pipeline Sheet and print it to the log as CSV, for Kryten to
 // quote exact cells (read-sheet-tab.yml). Read-only: its own client with the
 // spreadsheets.readonly scope, never scripts/ingest/google.js. Logs may be public, so tabs
-// holding subscriber or reader data are refused and email addresses are masked.
+// holding subscriber or reader data are refused, Contacts shows names and roles only, and
+// email addresses are masked.
 // Env: GOOGLE_SA_KEY, SHEET_ID, TAB (required); RANGE (e.g. A1:F20), MAX_ROWS (default 50).
 'use strict';
 
 const READONLY_SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
-const REFUSED_TABS = ['subscribers', 'do not send', 'sends', 'replies', 'feedback', 'contacts'];
+const REFUSED_TABS = ['subscribers', 'do not send', 'sends', 'replies', 'feedback'];
+// Tabs printed with only these columns (by header); every other cell shows "(hidden)".
+// Contacts: names and roles only, never profile, contributions or notes (agreed 25 Oct).
+const PARTIAL_TABS = {
+  contacts: ['email', 'name', 'organisation', 'village', 'role', 'contribution_count',
+    'first_contact', 'last_contact', 'message_count', 'status', 'profile_source', 'updated_at'],
+};
 const MAX_ROWS_CAP = 500;
 const MAX_CELL = 500;
 
 function isRefused(tab) {
   return REFUSED_TABS.includes(String(tab).trim().toLowerCase());
+}
+
+function allowedColumns(tab) {
+  return PARTIAL_TABS[String(tab).trim().toLowerCase()] || null;
+}
+
+// Blank the cells of columns whose header (headerRow, same columns as rows) is not allowed.
+function redactColumns(rows, headerRow, allowed) {
+  const ok = (i) => allowed.includes(String((headerRow || [])[i] || '').trim().toLowerCase());
+  return rows.map((r) => r.map((v, i) => (ok(i) || v === '' || v == null ? v : '(hidden)')));
 }
 
 // A1-style range within the one tab only: letters and digits, never a "!" or another tab.
@@ -88,9 +105,15 @@ async function main() {
   })).data.values || [];
   const rows = await get(range ? `${quoteTab(title)}!${range}` : quoteTab(title));
   const header = startRow > 1 ? (await get(`${quoteTab(title)}!${startCol}1:${endCol}1`))[0] || [] : null;
+  const allowed = allowedColumns(title);
+  let shown = rows;
+  if (allowed) {
+    const headerRow = header || rows[0] || [];
+    shown = header ? redactColumns(rows, headerRow, allowed) : [rows[0] || [], ...redactColumns(rows.slice(1), headerRow, allowed)];
+  }
 
   console.log(`Tab: ${title}${range ? ` · range ${range}` : ''} · ${rows.length} rows read`);
-  console.log(toCsv({ rows, header, startRow, startCol, maxRows }));
+  console.log(toCsv({ rows: shown, header, startRow, startCol, maxRows }));
 }
 
 if (require.main === module) {
@@ -100,4 +123,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { isRefused, parseRange, maskEmails, toCsv, colLetters, colIndex };
+module.exports = { isRefused, allowedColumns, redactColumns, parseRange, maskEmails, toCsv, colLetters, colIndex };
