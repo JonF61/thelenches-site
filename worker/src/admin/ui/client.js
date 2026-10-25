@@ -13,7 +13,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '15';
+export const UI_VERSION = '16';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -248,13 +248,25 @@ export const CLIENT_JS = String.raw`
       h('div', { class: 'strip' },
         h('div', { class: 'chip' }, h('b', null, 'Holiday mode'), holSwitch, hol.error ? 'not readable' : (hol.on ? 'ON' : 'off')),
         nlChip,
-        h('div', { class: 'chip' }, h('span', { class: 'dot ' + (hs === 'OK' ? 'ok' : hs === 'FIXED' ? 'warn' : 'bad') }),
-          h('b', null, 'Diagnostic'), hl ? hs + ' · ' + when(hl.date) : 'no runs'),
+        h('div', { class: 'chip' }, h('span', { class: 'dot ' + (hs === 'OK' || hs === 'CLEARED' ? 'ok' : hs === 'FIXED' ? 'warn' : 'bad') }),
+          h('b', null, 'Diagnostic'), hl ? hs + ' · ' + when(hl.date) : 'no runs',
+          hl && hs !== 'OK' && hs !== 'CLEARED' ? h('button', { class: 'btn link', title: 'Mark this run\'s problems as dealt with', onclick: clearDiagnostic }, 'Clear') : null),
         h('div', { class: 'chip' }, h('span', { class: 'dot ' + (dog.error ? 'warn' : dog.open ? 'bad' : 'ok') }),
           h('b', null, 'Watchdog'), dog.error ? 'not readable' : dog.open ? 'alert since ' + when(dog.since) : 'clear'),
         h('button', { class: 'chip', onclick: function () { S.view = 'feedback'; closeOverlay(); render(); window.scrollTo(0, 0); } },
           h('b', null, 'Feedback'), fbCountText(d)),
         h('button', { class: 'btn', onclick: function () { load(); } }, 'Reload')));
+  }
+
+  // Marks the latest diagnostic run's problems as dealt with (Health status CLEARED).
+  async function clearDiagnostic() {
+    var hl = S.data.health[0];
+    var list = str(hl.problems) ? '\n\n' + str(hl.problems).split(' | ').join('\n') : '';
+    if (!window.confirm('Clear the diagnostic flag?' + list + '\n\nThis marks these problems as dealt with. The next daily check runs as usual and flags anything still wrong.')) return;
+    var r = await edit('Health', hl.date, 'status', hl.status, 'CLEARED');
+    if (r.ok) toast('Diagnostic flag cleared');
+    else toast(r.status === 409 ? 'The Health row changed in the Sheet. Nothing changed; reloaded.' : r.error, true);
+    load(true);
   }
 
   async function toggleHoliday() {

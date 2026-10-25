@@ -101,7 +101,10 @@ async function readHealth() {
 
   let line = `Pipeline health (${date}): ${summary}`;
   if (stale) line += `. STALE: latest check is over ${HEALTH_STALE_HOURS}h old, so the daily diagnostic may not be running.`;
-  const level = (stale || status === 'PROBLEMS' || problems.length) ? 'bad' : (status === 'OK' ? 'ok' : 'warn');
+  // CLEARED: Jon cleared the flag by hand in the admin panel (the problems stay listed).
+  if (status === 'CLEARED' && !stale) line += ' (cleared by hand in the admin panel)';
+  const level = stale ? 'bad' : status === 'CLEARED' ? 'ok'
+    : (status === 'PROBLEMS' || problems.length) ? 'bad' : (status === 'OK' ? 'ok' : 'warn');
   const tag = stale ? 'stale' : (level === 'bad' ? 'PROBLEMS' : '');
   return { line, problems, level, tag };
 }

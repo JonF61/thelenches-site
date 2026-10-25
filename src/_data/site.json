@@ -10,6 +10,31 @@
   "teamUrl": "https://approvals.lenches.workers.dev/admin",
   "feedbackUrl": "https://approvals.lenches.workers.dev/f",
   "turnstileSiteKey": "0x4AAAAAAFleBJ36URNQhdUv",
+  "footer": [
+    { "title": "Around the villages", "links": [
+      { "title": "Home", "url": "/" },
+      { "title": "Events", "url": "/events/" },
+      { "title": "Notices", "url": "/notices/" },
+      { "title": "Roads", "url": "/living-here/roads/" },
+      { "title": "Bins", "url": "/bins/" }
+    ] },
+    { "title": "Community", "links": [
+      { "title": "Groups & Clubs", "url": "/groups/" },
+      { "title": "Village Halls", "url": "/halls/" },
+      { "title": "Churches", "url": "/churches/" }
+    ] },
+    { "title": "Living here", "links": [
+      { "title": "Health & emergencies", "url": "/living-here/health/" },
+      { "title": "Getting around", "url": "/living-here/getting-around/" },
+      { "title": "Council & planning", "url": "/living-here/council/" },
+      { "title": "Schools", "url": "/living-here/schools/" },
+      { "title": "Walks & footpaths", "url": "/living-here/walks/" }
+    ] },
+    { "title": "About", "links": [
+      { "title": "Contact & About", "url": "/contact/" },
+      { "title": "Privacy", "url": "/privacy/" }
+    ] }
+  ],
   "nav": [
     { "title": "Home", "url": "/" },
     { "title": "Events", "url": "/events/" },

@@ -285,6 +285,22 @@ test('Edit: refused with the current value when the cell changed since loading',
   assert.equal(calls.writes.length, 0);
 });
 
+test('Edit: Diagnostic Clear sets the latest Health row to CLEARED, stale-checked, nothing else', async () => {
+  const tables = tablesFor();
+  tables.Health = [['date', 'status', 'summary'], ['2026-10-24 06:00', 'OK', 'OK'], ['2026-10-25 06:00', 'PROBLEMS', '2 problem(s)']];
+  const calls = fakeWorld(tables);
+  let r = await editCell(env(), { tab: 'Health', key: '2026-10-25 06:00', field: 'status', expected: 'PROBLEMS', value: 'CLEARED' });
+  assert.deepEqual(r, { ok: true, value: 'CLEARED' });
+  assert.deepEqual(calls.writes, [{ range: "'Health'!B3", values: [['CLEARED']] }]);
+  r = await editCell(env(), { tab: 'Health', key: '2026-10-25 06:00', field: 'status', expected: 'PROBLEMS', value: 'CLEARED' });
+  assert.equal(r.status, 409, 'stale');
+  r = await editCell(env(), { tab: 'Health', key: '2026-10-24 06:00', field: 'status', expected: 'OK', value: 'PROBLEMS' });
+  assert.equal(r.status, 400, 'only CLEARED');
+  r = await editCell(env(), { tab: 'Health', key: '2026-10-24 06:00', field: 'summary', expected: 'OK', value: 'x' });
+  assert.equal(r.status, 400, 'only the status');
+  assert.equal(calls.writes.length, 1);
+});
+
 test('Edit: rows found by id even when moved; columns by header even when reordered', async () => {
   const tables = tablesFor();
   // Swap two columns and move the row down.
