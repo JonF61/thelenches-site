@@ -32,23 +32,25 @@ export function postponedUntil(row) {
 
 const addDays = (ymd, n) => new Date(Date.parse(`${ymd}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
 
-// Where a row sits on the screen, or '' when it is finished (implemented or rejected with
-// its reply sent or skipped, or no email to reply to).
+// Where a row sits on the screen ('' = not a feedback row at all).
 //   waiting    new, or postponed until today or earlier
 //   postponed  hidden until its date
 //   approved   approved, awaiting build
 //   reply      implemented or rejected, a reply draft waiting for Send / Edit / Skip
+//              (also when the reader has written back: scripts/readerfeedback attachReply)
+//   done       finished (rejected or implemented, reply sent or skipped or no email): History
 export function feedbackState(row, today) {
+  if (!str(row.id)) return '';
   const s = str(row.status).toLowerCase();
-  if (WAITING.has(s)) return str(row.id) && str(row.message) ? 'waiting' : '';
+  if (WAITING.has(s)) return str(row.message) ? 'waiting' : '';
   const until = postponedUntil(row);
   if (until) return until <= today ? 'waiting' : 'postponed';
   if (s === 'approved') return 'approved';
-  if (s === 'implemented' || s === 'rejected') return str(row.email) && !str(row.reply_sent) ? 'reply' : '';
-  return '';
+  if (s === 'implemented' || s === 'rejected') return str(row.email) && !str(row.reply_sent) ? 'reply' : 'done';
+  return 'done';
 }
 
-// The rows the screen shows, each with _state. A missing tab (no feedback yet) is empty.
+// Every row, each with _state (History needs the finished ones). A missing tab is empty.
 export function feedbackRows(table, today) {
   if (!table || table.error) return table;
   return {

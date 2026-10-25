@@ -16,7 +16,7 @@ import { tableFrom } from './admin/sheet.js';
 
 export const FEEDBACK_TAB = 'Feedback';
 export const FEEDBACK_HEADERS = ['id', 'received', 'type', 'page_url', 'page_title', 'message', 'email', 'rating',
-  'commentary', 'status', 'notes', 'decided', 'implemented', 'reply_draft', 'reply_sent'];
+  'commentary', 'status', 'notes', 'decided', 'implemented', 'reply_draft', 'reply_sent', 'thread_id', 'conversation'];
 // Stored type -> label (the form's pills).
 export const FEEDBACK_TYPES = { update: 'Suggest an update', correction: 'Correction', other: 'Other feedback' };
 

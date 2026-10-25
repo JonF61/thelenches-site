@@ -175,6 +175,7 @@ test('POST /f: creates the Feedback tab and appends one row by header name', asy
   assert.match(j.message, /email you/);
   assert.deepEqual(calls.added, ['Feedback']);
   assert.deepEqual(tabs.Feedback[0], FEEDBACK_HEADERS);
+  assert.deepEqual(FEEDBACK_HEADERS.slice(-2), ['thread_id', 'conversation']);
   assert.equal(calls.appends.length, 1);
   const row = Object.fromEntries(FEEDBACK_HEADERS.map((h, i) => [h, calls.appends[0].rows[0][i]]));
   assert.match(row.id, /^fb-\d{8}-[a-z0-9]{6}$/);
@@ -278,12 +279,14 @@ test('feedbackState sorts rows into the screen sections', () => {
   assert.equal(feedbackState(row({ status: 'postponed until 2026-10-25' }), TODAY), 'waiting');
   assert.equal(feedbackState(row({ status: 'approved' }), TODAY), 'approved');
   assert.equal(feedbackState(row({ status: 'implemented', reply_draft: 'Hi' }), TODAY), 'reply');
-  assert.equal(feedbackState(row({ status: 'implemented', reply_sent: '2026-10-25 10:00' }), TODAY), '');
-  assert.equal(feedbackState(row({ status: 'implemented', email: '' }), TODAY), '');
-  assert.equal(feedbackState(row({ status: 'rejected', email: '' }), TODAY), '');
+  assert.equal(feedbackState(row({ status: 'implemented', reply_sent: '2026-10-25 10:00' }), TODAY), 'done');
+  assert.equal(feedbackState(row({ status: 'implemented', email: '' }), TODAY), 'done');
+  assert.equal(feedbackState(row({ status: 'rejected', email: '' }), TODAY), 'done');
   assert.equal(feedbackState(row({ status: 'rejected', reply_draft: 'Hi' }), TODAY), 'reply', 'a rejection reply waits too');
-  assert.equal(feedbackState(row({ status: 'rejected', reply_sent: 'skipped 2026-10-25 10:00' }), TODAY), '');
-  assert.deepEqual(feedbackRows({ headers: [], rows: [row(), row({ status: 'rejected', email: '' })] }, TODAY).rows.map((r) => r._state), ['waiting']);
+  assert.equal(feedbackState(row({ status: 'rejected', reply_sent: 'skipped 2026-10-25 10:00' }), TODAY), 'done');
+  assert.equal(feedbackState(row({ status: 'implemented', reply_sent: '', email: 'back@example.org', conversation: '[2026-10-25 10:00] Reader:\nThanks' }), TODAY), 'reply', 'the reader wrote back');
+  assert.equal(feedbackState(row({ id: '' }), TODAY), '');
+  assert.deepEqual(feedbackRows({ headers: [], rows: [row(), row({ status: 'rejected', email: '' }), row({ id: '' })] }, TODAY).rows.map((r) => r._state), ['waiting', 'done']);
 });
 
 test('planFeedback -> decide(): every action goes to approval.yml with the item id', async () => {

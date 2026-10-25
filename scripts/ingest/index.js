@@ -116,6 +116,10 @@ function decideStatus(item, mode, holiday) {
 async function processMessage(id, ctx) {
   const msg = await g.getMessage(id);
   const received = londonDateTime(msg.internalDate);
+  // A reader writing back to a feedback reply (same Gmail thread): added to that Feedback
+  // item's conversation with a Holly draft for Jon; never a new item or enquiry.
+  const fb = await readerFeedback.attachReply(msg, ctx, received);
+  if (fb) return fb;
   const source = matchSource(msg, ctx.sources);
   if (!source) {
     return { status: 'skipped', received, source: '', items: 0, error: 'No matching source in Settings' };
