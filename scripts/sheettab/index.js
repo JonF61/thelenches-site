@@ -2,8 +2,8 @@
 // Read one tab of the Lenches Pipeline Sheet and print it to the log as CSV, for Kryten to
 // quote exact cells (read-sheet-tab.yml). Read-only: its own client with the
 // spreadsheets.readonly scope, never scripts/ingest/google.js. Logs may be public, so tabs
-// holding subscriber or reader data are refused, Contacts shows names and roles only, and
-// email addresses are masked.
+// holding subscriber or reader data are refused, Contacts shows names and roles only (rows with
+// status ignore not at all), and email addresses are masked.
 // Env: GOOGLE_SA_KEY, SHEET_ID, TAB (required); RANGE (e.g. A1:F20), MAX_ROWS (default 50).
 'use strict';
 
@@ -26,10 +26,16 @@ function allowedColumns(tab) {
   return PARTIAL_TABS[String(tab).trim().toLowerCase()] || null;
 }
 
-// Blank the cells of columns whose header (headerRow, same columns as rows) is not allowed.
+// Blank the cells of columns whose header (headerRow, same columns as rows) is not allowed,
+// and the whole of any row whose status is "ignore" (e.g. Jon's own addresses).
 function redactColumns(rows, headerRow, allowed) {
-  const ok = (i) => allowed.includes(String((headerRow || [])[i] || '').trim().toLowerCase());
-  return rows.map((r) => r.map((v, i) => (ok(i) || v === '' || v == null ? v : '(hidden)')));
+  const h = (headerRow || []).map((x) => String(x || '').trim().toLowerCase());
+  const ok = (i) => allowed.includes(h[i]);
+  const statusCol = h.indexOf('status');
+  return rows.map((r) => {
+    if (statusCol >= 0 && String(r[statusCol] || '').trim().toLowerCase() === 'ignore') return ['(ignored row)'];
+    return r.map((v, i) => (ok(i) || v === '' || v == null ? v : '(hidden)'));
+  });
 }
 
 // A1-style range within the one tab only: letters and digits, never a "!" or another tab.
@@ -109,6 +115,10 @@ async function main() {
   let shown = rows;
   if (allowed) {
     const headerRow = header || rows[0] || [];
+    // Without the status column an ignored row can't be recognised, so refuse.
+    if (rows.length && !headerRow.some((x) => String(x || '').trim().toLowerCase() === 'status')) {
+      throw new Error(`Read the ${title} tab with a range that includes its status column`);
+    }
     shown = header ? redactColumns(rows, headerRow, allowed) : [rows[0] || [], ...redactColumns(rows.slice(1), headerRow, allowed)];
   }
 

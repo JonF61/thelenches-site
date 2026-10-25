@@ -9,6 +9,7 @@ const c = require('./contacts/contacts');
 const { buildText } = require('./contacts/profile');
 const { addressOf } = require('./ingest/google');
 
+const T = '2026-10-25';
 const day = (s) => Date.parse(`${s}T10:00:00Z`);
 const msg = (o) => ({
   fromAddress: addressOf(o.from), auto: {}, recipients: c.WEBSITE, subject: 'Quiz night',
@@ -60,7 +61,7 @@ assert.strictEqual(contrib.list, '2026-10-05 Quiz night (event, pending); 2026-0
 
 // New row.
 const profile = { name: 'Ann Hughes', organisation: 'Lenches WI', village: 'Church Lench', role: 'secretary', profile: 'Sends WI events.' };
-const row = c.mergeRow(null, ann, contrib, profile, '2026-10-25 09:00');
+const row = c.mergeRow(null, ann, contrib, profile, '2026-10-25 09:00', T);
 assert.strictEqual(row.status, 'contributor');
 assert.strictEqual(row.profile_source, 'auto');
 assert.strictEqual(row.first_contact, '2026-09-01');
@@ -69,21 +70,34 @@ assert.strictEqual(row.message_count, 2);
 assert.strictEqual(row.name, 'Ann Hughes');
 assert.strictEqual(row.organisation, 'Lenches WI');
 assert.ok(!('notes' in row), 'notes never written');
-const lead = c.mergeRow(null, groups.get('bob@x.com'), { list: '', count: 0 }, null, 'now');
+const lead = c.mergeRow(null, groups.get('bob@x.com'), { list: '', count: 0 }, null, 'now', T);
 assert.strictEqual(lead.status, 'lead');
 assert.strictEqual(lead.name, 'Bob', 'display name when no profile');
 
 // Existing row: only new messages counted, manual profile kept, lead promoted.
 const existing = { email: 'ann@example.com', name: 'Ann', profile: 'Hand-written', profile_source: 'manual', status: 'lead', first_contact: '2026-08-01', last_contact: '2026-09-01', message_count: '5' };
-const upd = c.mergeRow(existing, ann, contrib, profile, 'now');
+const upd = c.mergeRow(existing, ann, contrib, profile, 'now', T);
 assert.strictEqual(upd.message_count, 6, 'only the 5 Oct email is new');
 assert.strictEqual(upd.first_contact, '2026-08-01');
 assert.strictEqual(upd.last_contact, '2026-10-05');
 assert.strictEqual(upd.status, 'contributor');
 assert.ok(!('profile' in upd) && !('name' in upd), 'manual profile left alone');
-const auto = c.mergeRow({ ...existing, profile_source: 'auto', status: 'dormant' }, ann, contrib, profile, 'now');
+const auto = c.mergeRow({ ...existing, profile_source: 'auto', status: 'dormant' }, ann, contrib, profile, 'now', T);
 assert.strictEqual(auto.profile, 'Sends WI events.');
-assert.ok(!('status' in auto), 'status set by hand is kept');
+assert.strictEqual(auto.status, 'contributor', 'a dormant contact who writes again wakes up');
+const kept = c.mergeRow({ ...existing, status: 'VIP' }, ann, contrib, profile, 'now', T);
+assert.ok(!('status' in kept), 'a status set by hand is kept');
+const old = c.mergeRow(null, { email: 'o@x.com', name: '', messages: [msg({ from: 'o@x.com', internalDate: day('2019-05-01') })] }, { list: '', count: 0 }, null, 'now', T);
+assert.strictEqual(old.status, 'dormant');
+
+// Dormant after a year without an email.
+assert.strictEqual(c.autoStatus(0, '2025-10-24', T), 'dormant');
+assert.strictEqual(c.autoStatus(3, '2025-10-26', T), 'contributor');
+assert.strictEqual(c.autoStatus(0, '2026-10-01', T), 'lead');
+assert.strictEqual(c.statusFor('lead', 0, '2019-01-01', T), 'dormant');
+assert.strictEqual(c.statusFor('Lead', 0, '2026-10-01', T), null, 'unchanged');
+assert.strictEqual(c.statusFor('ignore', 0, '2019-01-01', T), null);
+assert.strictEqual(c.statusFor('dormant', 2, '2026-10-20', T), 'contributor');
 assert.ok(c.locked({ status: 'Ignore' }));
 assert.ok(!c.locked(null) && !c.locked({ status: 'lead' }));
 
