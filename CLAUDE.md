@@ -45,7 +45,7 @@ Minimal notice (`src/items/notices/hall-car-park-resurfacing.json`):
 
 ## Hard rules
 - Never edit `.github/workflows/` (Jon pastes workflow files himself) or `package.json` (the lockfile must be regenerated on a runner; `npm ci` everywhere).
-- Work on a branch and open one pull request; Jon merges.
+- Work on a branch and open one pull request. Kryten merges it (GitHub MCP merge tool) only after asking Jon and getting a yes for that PR each time; approval for one PR never covers another. Jon may also merge himself.
 - Before pushing: `npm ci`, Eleventy build, and offline tests/sample renders of anything you changed (mock the Claude API and Google calls). Show Jon previews of visual or email changes.
 - Anonymity: nothing public or sent to anyone but Jon may name him or expose jon@. System mail uses from_name "The Lenches Website and Newsletter Team"; Holly signs as "Lenches website assistant".
 - Statements from parish councils, councillors and other official bodies are published in their own words: only obvious typos and broken links fixed.
