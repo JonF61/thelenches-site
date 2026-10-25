@@ -15,7 +15,8 @@
 //   status              set by code while it is blank, contributor, lead or dormant:
 //                       dormant = nothing from them for DORMANT_DAYS; else contributor if they
 //                       have Pending items, else lead. Any other value (e.g. ignore) is kept;
-//                       ignore = the row is never touched again and Read Sheet tab skips it.
+//                       ignore = the row is cleared to just email and status (a "deleted"
+//                       contact that a later run can't re-add) and Read Sheet tab skips it.
 //   notes               Jon's own notes; never written by code
 //   profile_source      auto = code may rewrite name/organisation/village/role/profile;
 //                       anything else (e.g. manual) = left alone
@@ -147,7 +148,16 @@ function locked(existing) {
   return Boolean(existing) && norm(existing.status) === 'ignore';
 }
 
+// Fields to blank on an ignore row (everything but email and status), or null if already clear.
+function clearIgnored(existing) {
+  const out = {};
+  for (const h of HEADERS) {
+    if (h !== 'email' && h !== 'status' && String(existing[h] ?? '').trim()) out[h] = '';
+  }
+  return Object.keys(out).length ? out : null;
+}
+
 module.exports = {
   TAB, HEADERS, WEBSITE, PROFILE_FIELDS, DORMANT_DAYS,
-  norm, ymd, excludedAddress, skipReason, displayName, contributionsFor, groupBySender, mergeRow, locked, autoStatus, statusFor,
+  norm, ymd, excludedAddress, skipReason, displayName, contributionsFor, groupBySender, mergeRow, locked, clearIgnored, autoStatus, statusFor,
 };

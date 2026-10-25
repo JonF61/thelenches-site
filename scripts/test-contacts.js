@@ -99,6 +99,9 @@ assert.strictEqual(c.statusFor('Lead', 0, '2026-10-01', T), null, 'unchanged');
 assert.strictEqual(c.statusFor('ignore', 0, '2019-01-01', T), null);
 assert.strictEqual(c.statusFor('dormant', 2, '2026-10-20', T), 'contributor');
 assert.ok(c.locked({ status: 'Ignore' }));
+assert.deepStrictEqual(c.clearIgnored({ _row: 3, email: 'x@y.com', name: 'X', profile: 'p', notes: ' ', status: 'ignore', message_count: 2 }),
+  { name: '', profile: '', message_count: '' });
+assert.strictEqual(c.clearIgnored({ _row: 3, email: 'x@y.com', status: 'ignore', name: '' }), null, 'already clear');
 assert.ok(!c.locked(null) && !c.locked({ status: 'lead' }));
 
 // Claude input carries what we know and the emails, within budget.

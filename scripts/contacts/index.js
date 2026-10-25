@@ -77,6 +77,13 @@ async function main() {
     else adds.push(row);
   }
 
+  // Ignore rows: cleared to email and status, so nothing about them is kept.
+  let cleared = 0;
+  for (const ex of existingRows) {
+    const clear = c.locked(ex) && c.clearIgnored(ex);
+    if (clear) { updates.push({ rowNumber: ex._row, row: clear }); cleared++; }
+  }
+
   // Contributions or status (dormant) may have changed for people who didn't write this time.
   for (const ex of existingRows) {
     const email = c.norm(ex.email);
@@ -90,7 +97,7 @@ async function main() {
     }
   }
 
-  console.log(`${adds.length} new, ${updates.length} updated, ${ignored} ignored, ${profiled} profiles written, ${failed} failed${dry ? ' (dry run: nothing written)' : ''}.`);
+  console.log(`${adds.length} new, ${updates.length} updated, ${ignored} ignored, ${cleared} ignore rows cleared, ${profiled} profiles written, ${failed} failed${dry ? ' (dry run: nothing written)' : ''}.`);
   if (dry) return;
   for (const u of updates) await g.updateRow(c.TAB, u.rowNumber, u.row);
   if (adds.length) await g.appendRows(c.TAB, adds);
