@@ -32,7 +32,7 @@
   {% if pageImage %}<meta name="twitter:image" content="{{ pageImage }}">
   <meta name="twitter:image:alt" content="{{ pageImageAlt }}">{% endif %}
 
-  <link rel="stylesheet" href="{{ '/style.css' | url }}">
+  <link rel="stylesheet" href="{{ '/style.css' | url }}?v={{ cssv }}">
   {#- Set before first paint so the phone menu starts closed without a jump; without JavaScript the menu is always shown. -#}
   <script>document.documentElement.classList.add('js')</script>
 </head>
