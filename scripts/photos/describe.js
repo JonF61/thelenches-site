@@ -1,20 +1,23 @@
 // scripts/photos/describe.js
 // One Sonnet call per new photo (on a 1024px thumbnail): draft alt text, a note
-// for the editor, a people/children check that gates publishing, and a stock check.
+// for the editor, a people/children check that gates publishing, a stock check, and
+// whether the file name fits the picture, with a better one if not (naming.js).
 'use strict';
 
 const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5';
 
 const SYSTEM = `You look at photos for The Lenches, a group of villages in Worcestershire, England, before they go on the community website.
 Reply with one JSON object and nothing else:
-{"alt_text": "...", "description": "...", "people": "none|distant|identifiable", "children": false, "kind": "photo|screenshot|document|graphic", "stock": "likely|possible|unlikely"}
+{"alt_text": "...", "description": "...", "people": "none|distant|identifiable", "children": false, "kind": "photo|screenshot|document|graphic", "stock": "likely|possible|unlikely", "name_fits": true, "suggested_name": "..."}
 
 alt_text: at most 125 characters, British English, saying what is visible for someone using a screen reader. Don't start with "Image of" or "Photo of". You may use the village name from the folder hint, but don't name a specific building, business or person unless the name is legible in the image.
 description: one plain sentence for the editor, mentioning anything that matters for publishing (blur, poor light, text in the image, season, a recognisable car number plate).
 people: "none" if nobody is visible; "distant" if people are visible but too small, blurred or turned away to be recognised; "identifiable" if anyone's face could be recognised.
 children: true if anyone visible appears to be under 18.
 kind: "screenshot" for captures of screens, maps or web pages; "document" for flyers, posters or text-heavy images; "graphic" for logos and illustrations; otherwise "photo".
-stock: "likely" if there is a stock-library watermark or credit, or it looks like a generic studio or model shot rather than a real local scene, event or act; "possible" if it might be; otherwise "unlikely".`;
+stock: "likely" if there is a stock-library watermark or credit, or it looks like a generic studio or model shot rather than a real local scene, event or act; "possible" if it might be; otherwise "unlikely".
+name_fits: false if the current file name (given below) doesn't describe what is shown: a camera, phone, WhatsApp or screenshot name, a code or hash, or words about something else; otherwise true.
+suggested_name: a file name for this picture whatever name_fits says: 2 to 6 plain words in British English, capitals only for names and the first word, no file extension, no date, no punctuation except hyphens and apostrophes, e.g. "St Peter west door", "Village hall harvest supper", "Ab Lench Road in snow". You may use the village from the folder hint; don't name a building, business or person unless the name is legible in the image.`;
 
 let clientCache;
 function claude() {
@@ -27,17 +30,17 @@ function claude() {
 
 const oneLine = (s, max) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
 
-async function describePhoto(jpeg, { village, subject }) {
+async function describePhoto(jpeg, { village, subject, filename }) {
   const hint = [village, subject].filter(Boolean).join(' / ') || 'none';
   const res = await claude().messages.create({
     model: MODEL,
-    max_tokens: 400,
+    max_tokens: 500,
     system: SYSTEM,
     messages: [{
       role: 'user',
       content: [
         { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: jpeg.toString('base64') } },
-        { type: 'text', text: `Folder hint: ${hint}` },
+        { type: 'text', text: `Folder hint: ${hint}\nCurrent file name: ${oneLine(filename, 200) || 'none'}` },
       ],
     }],
   });
@@ -54,6 +57,8 @@ async function describePhoto(jpeg, { village, subject }) {
     people: d.children === true ? 'children' : people,
     kind: ['photo', 'screenshot', 'document', 'graphic'].includes(d.kind) ? d.kind : 'photo',
     stock: ['likely', 'possible', 'unlikely'].includes(d.stock) ? d.stock : 'unlikely',
+    name_fits: d.name_fits !== false,
+    suggested_name: oneLine(d.suggested_name, 100),
   };
 }
 

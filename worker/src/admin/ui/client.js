@@ -1617,14 +1617,21 @@ export const CLIENT_JS = String.raw`
         willBe.textContent = 'Will be saved as ' + shown + (res.json.numbered ? ' (' + res.json.wanted + ' is already in use)' : '');
       }, 400);
     };
-    var nameIn = h('input', { class: 'f', id: nid, value: parts.stem, maxlength: 120, oninput: preview });
+    // Pre-filled only with the photos run's suggestion for a name that doesn't describe
+    // the picture (Photos tab suggested_name; '-' = the name is fine); else empty.
+    var sugg = str(r.suggested_name).trim();
+    if (sugg === '-' || str(r.filename) !== file.name || sugg.toLowerCase() === parts.stem.toLowerCase()) sugg = '';
+    var nameIn = h('input', { class: 'f', id: nid, value: sugg, maxlength: 120, placeholder: 'Type a new name', oninput: preview });
+    if (sugg) preview();
     out.push(h('form', { onsubmit: async function (e) {
       e.preventDefault();
       seq += 1;
       clearTimeout(timer);
+      if (!nameIn.value.trim()) { toast('Type a new name first', true); return; }
       var res = await fileOp({ op: 'rename', id: r.drive_id, expected: file.name, name: nameIn.value });
       if (res.ok) {
         r.filename = res.json.name;
+        r.suggested_name = '-';
         toast('Renamed to ' + res.json.name + (shown && shown !== res.json.name ? ' (' + shown + ' was taken meanwhile)'
           : !shown && res.json.numbered ? ' (' + res.json.wanted + ' is already in use)' : ''));
         changed(r);
@@ -1633,6 +1640,7 @@ export const CLIENT_JS = String.raw`
     } },
     h('label', { class: 'f', for: nid }, 'New name' + (parts.ext ? ' (' + parts.ext + ' is kept)' : '')),
     h('div', { class: 'toolbar' }, h('div', { class: 'spacer' }, nameIn), h('button', { class: 'btn', type: 'submit' }, 'Rename')),
+    sugg ? h('p', { class: 'meta' }, 'Suggested from the picture, as the current name doesn\'t describe it. Check or change it, then press Rename.') : null,
     willBe,
     h('p', { class: 'meta' }, file.published
       ? 'It stays at the same web address: the site keeps the name it was first published under.'

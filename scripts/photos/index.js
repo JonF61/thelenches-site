@@ -8,7 +8,9 @@
 //     its files get no new rows, and a row whose file is there is rejected, not missing.
 //     Files saved by the Image fetch tab (event images from the web) get target,
 //     credit and, for performer promo shots, people_ok pre-filled from that row.
-//  2. Describe new rows: dHash (duplicates), Sonnet alt text, note, people and stock check.
+//  2. Describe new rows: dHash (duplicates), Sonnet alt text, note, people and stock check,
+//     and a suggested file name (naming.js) when the name doesn't describe the picture.
+//     Rows described before suggested_name existed get one later, within the same cap.
 //  3. Publish rows with status "approved": 1400px WebP + JPEG, all metadata
 //     (GPS, EXIF) stripped, to src/images/photos/<slug>; anything else that is
 //     live is removed. People/children/unknown need people_ok (yes/TRUE).
@@ -23,6 +25,7 @@ const { dHash, hashDistance } = require('../ingest/images');
 const drive = require('./drive');
 const { describePhoto } = require('./describe');
 const { meaning } = require('./meaning');
+const naming = require('./naming');
 
 const TAB = 'Photos';
 const WEB_TAB = 'Image fetch';
@@ -52,6 +55,16 @@ const today = () => now().slice(0, 10);
 const low = (v) => String(v ?? '').trim().toLowerCase();
 const isTrue = (v) => ['true', 'yes', 'y'].includes(low(v));
 const validHash = (h) => /^[0-9a-f]{16}$/.test(String(h || ''));
+
+// The 1024px JPEG Claude looks at.
+function claudeThumb(buf) {
+  return sharp(buf, { failOn: 'none' })
+    .rotate()
+    .resize({ width: CLAUDE_EDGE, height: CLAUDE_EDGE, fit: 'inside', withoutEnlargement: true })
+    .flatten({ background: '#ffffff' })
+    .jpeg({ quality: 80 })
+    .toBuffer();
+}
 
 // Drive's EXIF time "2014:07:07 10:53:11" -> "2014-07-07 10:53".
 function exifTime(t) {
@@ -153,6 +166,9 @@ async function main() {
   });
   const missingHeaders = REQUIRED.filter((h) => !headers.includes(h));
   if (missingHeaders.length) throw new Error(`${TAB} tab is missing headers: ${missingHeaders.join(', ')}`);
+  // Optional (added 25 Oct, at the end of the tab): without it no names are suggested.
+  const suggesting = headers.includes('suggested_name');
+  if (!suggesting) console.log(`No suggested_name header in the ${TAB} tab: file names are not suggested.`);
   fs.mkdirSync(IMG_DIR, { recursive: true });
 
   let failures = 0;
@@ -225,7 +241,8 @@ async function main() {
     const m = meaning(f.segs);
     const fields = {};
     if (row.path !== m.path) Object.assign(fields, { path: m.path, village: m.village, subject: m.subject });
-    if (row.filename !== f.name) fields.filename = f.name;
+    // Renamed (in the panel or in Drive): the name was chosen, so suggest nothing.
+    if (row.filename !== f.name) Object.assign(fields, { filename: f.name, suggested_name: naming.FINE });
     if (f.modifiedTime && row.drive_modified !== f.modifiedTime) {
       Object.assign(fields, { drive_modified: f.modifiedTime, dhash: '' }); // edited in Drive: look again
     }
@@ -236,6 +253,7 @@ async function main() {
   await flush();
 
   /* --------------------------------------------------------- 2. Describe -- */
+  const looked = new Set(); // sent to Claude this run (a failed description waits for the next)
   for (const row of rows) {
     if (stats.described >= MAX_DESCRIBE) {
       console.log(`Describe cap (${MAX_DESCRIBE}) reached: the rest wait for the next run.`);
@@ -246,6 +264,7 @@ async function main() {
     const f = byId.get(row.drive_id);
     if (!f) continue;
     stats.described++;
+    looked.add(row.drive_id);
     try {
       if (Number(f.size) > MAX_BYTES) {
         set(row, { dhash: 'too large', notes: `${today()} larger than 50 MB: save a smaller copy` });
@@ -256,14 +275,9 @@ async function main() {
       const hash = await dHash(buf);
       const dup = rows.find((o) => o !== row && validHash(o.dhash) && hashDistance(o.dhash, hash) <= DUP_DISTANCE);
       const fields = { dhash: hash, duplicate_of: dup ? `${dup.filename} (${dup.path || 'top level'})` : '' };
-      const thumb = await sharp(buf, { failOn: 'none' })
-        .rotate()
-        .resize({ width: CLAUDE_EDGE, height: CLAUDE_EDGE, fit: 'inside', withoutEnlargement: true })
-        .flatten({ background: '#ffffff' })
-        .jpeg({ quality: 80 })
-        .toBuffer();
+      const thumb = await claudeThumb(buf);
       try {
-        const d = await describePhoto(thumb, { village: row.village, subject: row.subject });
+        const d = await describePhoto(thumb, { village: row.village, subject: row.subject, filename: f.name });
         const fromWeb = web.has(row.drive_id);
         const notes = [
           fromWeb ? 'From the web' : '',
@@ -278,6 +292,7 @@ async function main() {
         }
         fields.notes = notes.filter(Boolean).join('; ');
         if (!String(row.alt_text || '').trim()) fields.alt_text = d.alt_text;
+        if (suggesting) fields.suggested_name = naming.suggestion(f.name, d);
       } catch (err) {
         failures++;
         Object.assign(fields, { people: 'unknown', notes: `${today()} description failed: ${err.message}`.slice(0, 300) });
@@ -286,6 +301,28 @@ async function main() {
     } catch (err) {
       failures++;
       set(row, { dhash: 'unreadable', notes: `${today()} couldn't read (clear dhash to retry): ${err.message}`.slice(0, 300) });
+    }
+    await flush();
+  }
+
+  // Rows described before suggested_name existed: look again for a name only.
+  for (const row of suggesting ? rows : []) {
+    const st = low(row.status);
+    if (!row.drive_id || looked.has(row.drive_id) || !validHash(row.dhash) || String(row.suggested_name || '').trim()
+      || ['rejected', 'missing', 'unsupported'].includes(st)) continue;
+    const f = byId.get(row.drive_id);
+    if (!f || Number(f.size) > MAX_BYTES) continue;
+    if (stats.described >= MAX_DESCRIBE) {
+      console.log(`Describe cap (${MAX_DESCRIBE}) reached: names for older photos wait for the next run.`);
+      break;
+    }
+    stats.described++;
+    try {
+      const d = await describePhoto(await claudeThumb(await drive.download(f)), { village: row.village, subject: row.subject, filename: f.name });
+      set(row, { suggested_name: naming.suggestion(f.name, d) });
+    } catch (err) {
+      failures++; // left blank: tried again next run
+      console.log(`Name suggestion failed for ${f.name}: ${err.message}`);
     }
     await flush();
   }
