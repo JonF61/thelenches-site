@@ -50,6 +50,14 @@ export const EDITS = {
     },
     guard: (...a) => officialGuard(...a),
   },
+  // Diagnostic flag: the panel's "Clear" marks the latest run's problems as dealt with
+  // (status CLEARED); the next daily run writes a new row as usual.
+  Health: {
+    key: 'date',
+    fields: {
+      status: oneOf('CLEARED'),
+    },
+  },
   Photos: {
     key: 'drive_id',
     fields: {
