@@ -7,7 +7,7 @@
 const assert = require('assert');
 const { isRefused, parseRange, maskEmails, toCsv, colLetters, colIndex } = require('./sheettab/index');
 
-for (const t of ['Subscribers', 'do not send', ' Sends ', 'REPLIES', 'Feedback']) assert.ok(isRefused(t), t);
+for (const t of ['Subscribers', 'do not send', ' Sends ', 'REPLIES', 'Feedback', 'Contacts']) assert.ok(isRefused(t), t);
 for (const t of ['Settings', 'Pending', 'Reply feedback', 'Feedback log']) assert.ok(!isRefused(t), t);
 
 assert.deepStrictEqual(parseRange(''), { range: '', startRow: 1, startCol: 'A', endCol: '' });
