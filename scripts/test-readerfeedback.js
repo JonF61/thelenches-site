@@ -15,7 +15,7 @@ const test = (name, fn) => tests.push([name, fn]);
 
 const NOW = Date.parse('2026-10-25T12:00:00Z');
 const HEADERS = ['id', 'received', 'type', 'page_url', 'page_title', 'message', 'email', 'rating',
-  'commentary', 'status', 'notes', 'decided', 'implemented', 'reply_draft', 'reply_sent'];
+  'commentary', 'status', 'notes', 'decided', 'implemented', 'reply_draft', 'reply_sent', 'thread_id', 'conversation'];
 
 // A fake Feedback tab and mail box behind rf.deps.
 function world(rows, { claude = [], tab = true, pageHtml = '<main><h1>Village halls</h1><p>Phone 01386 000000</p></main>' } = {}) {
@@ -40,7 +40,11 @@ function world(rows, { claude = [], tab = true, pageHtml = '<main><h1>Village ha
     },
     readSettings: async () => ({ settings: { from_name: 'The Lenches Website and Newsletter Team' } }),
     fromNameFor: (s) => s.from_name,
-    sendMail: async (m) => { calls.sent.push(m); return 'gm1'; },
+    sendMail: async (m) => { calls.sent.push(m); return m.withThread ? { id: 'gm1', threadId: m.threadId || 'th-new' } : 'gm1'; },
+    threadMessageIds: async () => ['in1', 'out1'],
+    getMessage: async (id) => (id === 'in1'
+      ? { id, fromAddress: 'reader@example.org', rfcMessageId: '<in1@mail.example.org>', references: '<out0@thelenches.org.uk>' }
+      : { id, fromAddress: 'website@thelenches.org.uk', rfcMessageId: '<out1@thelenches.org.uk>' }),
   };
   rf.deps.replies = {
     ...replies,
@@ -245,6 +249,81 @@ test('Reject with an email: Holly drafts a kind reply from the reason, kept for 
   await rf.decide('fb-20261025-abc123', 'fb_skip');
   assert.strictEqual(w.calls.sent.length, 0);
   assert.strictEqual(w.table[0].email, '');
+});
+
+test('Send keeps the Gmail thread and starts the conversation log', async () => {
+  const w = world([row({ status: 'implemented', reply_draft: 'Hi there,\n\nFixed.\n\nBest wishes,\nHolly' })]);
+  await rf.decide('fb-20261025-abc123', 'fb_send');
+  assert.strictEqual(w.calls.sent[0].threadId, undefined, 'a first reply starts a new thread');
+  assert.strictEqual(w.table[0].thread_id, 'th-new');
+  assert.strictEqual(w.table[0].conversation, '[2026-10-25 12:00] Holly:\nHi there,\n\nFixed.\n\nBest wishes,\nHolly');
+});
+
+const inbound = (extra = {}) => ({
+  id: 'in2', threadId: 'th-1', internalDate: Date.parse('2026-10-26T09:12:00Z'), from: 'Reader <Reader@Example.org>',
+  fromAddress: 'reader@example.org', subject: 'Re: Your correction for The Lenches website', auto: {},
+  text: 'Thanks! Could you add the booking link too?\n\nOn Sun, 25 Oct 2026, Holly wrote:\n> Hi there', ...extra,
+});
+const conversed = (extra = {}) => row({
+  status: 'implemented', email: '', reply_sent: '2026-10-25 12:00', thread_id: 'th-1',
+  reply_draft: 'Hi there,\n\nFixed.', conversation: '[2026-10-25 12:00] Holly:\nHi there,\n\nFixed.', ...extra,
+});
+
+test('A reader writing back: added to the conversation, address restored, Holly drafts an answer', async () => {
+  const w = world([conversed(), row({ id: 'fb-other', thread_id: 'th-2' })], {
+    claude: ['Thanks for getting back to us. We\'ll take a look at adding the booking link.'],
+  });
+  const ctx = {};
+  const out = await rf.attachReply(inbound(), ctx, '2026-10-26 09:12');
+  assert.strictEqual(out.status, 'ok');
+  assert.strictEqual(out.source, 'Reader feedback');
+  const r = w.table[0];
+  assert.strictEqual(r.email, 'reader@example.org');
+  assert.strictEqual(r.reply_sent, '');
+  assert.ok(r.conversation.endsWith('[2026-10-26 09:12] Reader:\nThanks! Could you add the booking link too?'), 'quoted history stripped');
+  assert.ok(r.reply_draft.startsWith('Hi there,\n\nThanks for getting back to us.'));
+  assert.ok(r.reply_draft.endsWith('Best wishes,\nHolly\nLenches website assistant'));
+  const input = JSON.parse(w.calls.prompts[0].messages[0].content);
+  assert.match(input.conversation, /Holly:\nHi there/);
+  assert.strictEqual(input.latest_message, 'Thanks! Could you add the booking link too?');
+  assert.strictEqual(w.calls.sent.length, 0, 'never sent without Jon');
+  assert.strictEqual(await rf.attachReply(inbound({ threadId: 'th-unknown' }), ctx, ''), null, 'other mail goes on as normal');
+
+  // Jon sends the answer: same thread, In-Reply-To their message, email cleared again.
+  await rf.decide('fb-20261025-abc123', 'fb_send');
+  const m = w.calls.sent[0];
+  assert.strictEqual(m.threadId, 'th-1');
+  assert.strictEqual(m.subject, 'Re: Your correction for The Lenches website');
+  assert.strictEqual(m.headers['In-Reply-To'], '<in1@mail.example.org>');
+  assert.strictEqual(m.headers.References, '<out0@thelenches.org.uk> <in1@mail.example.org>');
+  assert.strictEqual(w.table[0].email, '');
+  assert.match(w.table[0].conversation, /\] Reader:[\s\S]*\] Holly:\nHi there,\n\nThanks for getting back/);
+});
+
+test('A reader writing back: auto-replies and our own messages are ignored; Close logs it', async () => {
+  let w = world([conversed()]);
+  let out = await rf.attachReply(inbound({ auto: { autoSubmitted: 'auto-replied' } }), {}, '');
+  assert.strictEqual(out.status, 'skipped');
+  out = await rf.attachReply(inbound({ fromAddress: 'website@thelenches.org.uk' }), {}, '');
+  assert.strictEqual(out.status, 'skipped');
+  assert.strictEqual(w.calls.updates.length, 0);
+
+  w = world([conversed()], { claude: [new Error('down')] });
+  await rf.attachReply(inbound(), {}, '');
+  assert.match(w.table[0].reply_draft, /We've read your message/, 'plain fallback');
+  await rf.decide('fb-20261025-abc123', 'fb_skip');
+  assert.strictEqual(w.table[0].email, '');
+  assert.match(w.table[0].conversation, /\] Closed:\nNo reply sent\.$/);
+  assert.strictEqual(w.calls.sent.length, 0);
+});
+
+test('addToConversation drops the oldest messages when the cell is full', () => {
+  let c = '';
+  for (let i = 0; i < 30; i += 1) c = rf.addToConversation(c, 'Reader', 'x'.repeat(2000), `2026-10-${String(i + 1).padStart(2, '0')} 10:00`);
+  assert.ok(c.length <= 45000);
+  assert.ok(c.startsWith('[2026-10-'));
+  assert.ok(c.endsWith('x'));
+  assert.ok(!c.includes('[2026-10-01 10:00]'));
 });
 
 test('Send refuses a reply that names the team (anonymity)', async () => {

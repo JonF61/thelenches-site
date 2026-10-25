@@ -13,7 +13,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '14';
+export const UI_VERSION = '15';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -279,7 +279,7 @@ export const CLIENT_JS = String.raw`
       queue: n(d.pending, 'pending', 'id'), replies: n(d.replies, 'reply', 'reply_id'),
       owed: Array.isArray(d.owed) ? d.owed.filter(function (o) { return !S.done['reply:' + o.holding.reply_id]; }).length : '!',
       photos: d.photos && !d.photos.error ? d.photos.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length : '!',
-      feedback: d.feedback && !d.feedback.error ? fbRows(d, 'waiting').length : '!',
+      feedback: d.feedback && !d.feedback.error ? fbRows(d, 'waiting').length + fbRows(d, 'reply').length : '!',
       health: null
     };
   }
@@ -290,7 +290,8 @@ export const CLIENT_JS = String.raw`
       var b = h('button', {
         'aria-current': S.view === v[0] ? 'page' : null,
         onclick: function () { S.view = v[0]; closeOverlay(); render(); window.scrollTo(0, 0); }
-      }, v[1], c[v[0]] === null ? null : h('span', { class: 'n' }, String(c[v[0]])));
+      }, v[1], c[v[0]] === null ? null : h('span', { class: v[0] === 'feedback' && c.feedback > 0 ? 'n attn' : 'n',
+        title: v[0] === 'feedback' && c.feedback > 0 ? 'Needs your attention' : null }, String(c[v[0]])));
       // Photos: its Drive folders listed below it on desktop (a dropdown on phones).
       return v[0] === 'photos' && S.view === 'photos' && wide() ? [b, folderTree(d, {})] : b;
     }));
@@ -1774,6 +1775,7 @@ export const CLIENT_JS = String.raw`
     var rb = Number(b.rating) || 0;
     return rb - ra || str(a.received).localeCompare(str(b.received));
   }
+  function when2(s) { return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(str(s)) ? when(s) : str(s); }
   function postponedTo(r) { var m = lower(r.status).match(/^postponed until (\d{4}-\d{2}-\d{2})$/); return m ? m[1] : ''; }
 
   function feedbackView(d) {
@@ -1786,7 +1788,7 @@ export const CLIENT_JS = String.raw`
       rows.forEach(function (r) { els.push(fbCard(r)); });
     };
     section('Waiting', fbRows(d, 'waiting').sort(fbOrder), 'Nothing waiting.');
-    var replies = fbRows(d, 'reply');
+    var replies = fbRows(d, 'reply').sort(function (a, b) { return Number(fbTheyReplied(b)) - Number(fbTheyReplied(a)); });
     if (replies.length) section('Reply drafts', replies);
     section('Approved, awaiting build', fbRows(d, 'approved'), 'Nothing approved and waiting.');
     var later = fbRows(d, 'postponed').sort(function (a, b) { return postponedTo(a).localeCompare(postponedTo(b)); });
@@ -1795,7 +1797,45 @@ export const CLIENT_JS = String.raw`
         h('button', { class: 'btn link', onclick: function () { S.fbLater = !S.fbLater; render(); } }, S.fbLater ? 'Hide postponed' : 'Show postponed'));
       if (S.fbLater) later.forEach(function (r) { els.push(fbCard(r)); });
     }
+    var done = fbRows(d, 'done').sort(function (a, b) { return fbLast(b).localeCompare(fbLast(a)); });
+    if (done.length) {
+      els.push(h('h2', { class: 'section' }, 'History (' + done.length + ')'),
+        h('button', { class: 'btn link', onclick: function () { S.fbHist = !S.fbHist; render(); } }, S.fbHist ? 'Hide history' : 'Show history'));
+      if (S.fbHist) {
+        var q = h('input', { class: 'f', type: 'search', placeholder: 'Search history', value: S.fbQ || '', 'aria-label': 'Search history',
+          oninput: function () { S.fbQ = q.value; draw(); } });
+        var box = h('div');
+        var draw = function () {
+          var words = lower(S.fbQ).split(/\s+/).filter(Boolean);
+          var hits = done.filter(function (r) {
+            var hay = lower([r.page_title, r.page_url, r.message, r.notes, r.conversation, r.reply_draft, r.status, r.type].join(' '));
+            return words.every(function (w) { return hay.indexOf(w) >= 0; });
+          });
+          box.replaceChildren.apply(box, hits.length ? hits.map(fbCard) : [h('p', { class: 'empty' }, 'Nothing matches.')]);
+        };
+        draw();
+        els.push(q, box);
+      }
+    }
     return els;
+  }
+
+  // Latest date on a row, for History's newest-first order.
+  function fbLast(r) {
+    return [r.received, r.decided, r.implemented, str(r.reply_sent).replace(/^skipped /, '')].map(str).sort().pop() || '';
+  }
+  // The conversation cell as [{ when, who, text }], oldest first.
+  function fbConversation(r) {
+    var c = str(r.conversation);
+    if (!c) return [];
+    return c.split(/\n\n(?=\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}\] [A-Za-z]+:\n)/).map(function (block) {
+      var m = block.match(/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2})\] ([A-Za-z]+):\n([\s\S]*)$/);
+      return m ? { when: m[1], who: m[2], text: m[3] } : { when: '', who: '', text: block };
+    });
+  }
+  function fbTheyReplied(r) {
+    var c = fbConversation(r);
+    return r._state === 'reply' && c.length > 0 && c[c.length - 1].who === 'Reader';
   }
 
   function fbCard(r) {
@@ -1803,7 +1843,8 @@ export const CLIENT_JS = String.raw`
     if (str(r.rating)) b.push(h('span', { class: 'badge ' + (Number(r.rating) >= 4 ? 'ok' : Number(r.rating) <= 2 ? 'bad' : 'info') }, 'Rating ' + str(r.rating) + '/5'));
     else if (r.type !== 'other') b.push(h('span', { class: 'badge' }, 'Not rated yet'));
     if (postponedTo(r)) b.push(h('span', { class: 'badge' }, 'Postponed until ' + day(postponedTo(r))));
-    if (r._state === 'reply') b.push(h('span', { class: 'badge ' + (lower(r.status) === 'rejected' ? 'bad' : 'ok') }, lower(r.status) === 'rejected' ? 'Rejected' : 'Implemented'));
+    if (r._state === 'reply' || r._state === 'done') b.push(h('span', { class: 'badge ' + (lower(r.status) === 'rejected' ? 'bad' : 'ok') }, lower(r.status) === 'rejected' ? 'Rejected' : lower(r.status) === 'implemented' ? 'Implemented' : str(r.status)));
+    if (fbTheyReplied(r)) b.push(h('span', { class: 'badge warn' }, 'They replied'));
     if (str(r.email)) b.push(h('span', { class: 'badge info' }, 'Email given'));
     var page = /^https:[/][/]/.test(str(r.page_url))
       ? h('a', { href: r.page_url, target: '_blank', rel: 'noopener' }, str(r.page_title) || str(r.page_url)) : str(r.page_title) || 'page unknown';
@@ -1814,8 +1855,22 @@ export const CLIENT_JS = String.raw`
       h('div', { class: 'fbtext' }, str(r.message)));
     if (str(r.commentary)) add(c, h('div', { class: 'meta' }, h('b', null, 'Claude: '), str(r.commentary)));
     if (str(r.notes)) add(c, h('div', { class: 'fbnotes' }, h('b', null, 'Notes'), h('div', { class: 'fbtext' }, str(r.notes))));
+    if (r._state === 'done') {
+      var dates = [str(r.decided) ? 'Decided ' + when2(r.decided) : '', str(r.implemented) ? 'implemented ' + when2(r.implemented) : '',
+        /^skipped /.test(str(r.reply_sent)) ? 'no reply sent' : str(r.reply_sent) ? 'reply sent ' + when2(r.reply_sent) : ''].filter(Boolean).join(' · ');
+      if (dates) add(c, h('div', { class: 'meta' }, dates));
+    }
+    var conv = fbConversation(r);
+    if (conv.length) {
+      add(c, h('div', { class: 'fbnotes' }, h('b', null, 'Conversation'), conv.map(function (m) {
+        return h('div', { class: 'fbmsg' }, h('div', { class: 'meta' }, (m.who === 'Reader' ? 'They wrote' : m.who === 'Holly' ? 'We sent' : m.who) + (m.when ? ' · ' + when2(m.when) : '')),
+          h('div', { class: 'fbtext' }, m.text));
+      })));
+    } else if (r._state === 'done' && str(r.reply_sent) && !/^skipped /.test(str(r.reply_sent)) && str(r.reply_draft)) {
+      add(c, h('div', { class: 'fbnotes' }, h('b', null, 'Reply sent'), h('div', { class: 'fbtext' }, str(r.reply_draft))));
+    }
     if (r._state === 'reply') {
-      add(c, h('div', { class: 'fbdraft' }, h('b', null, str(r.reply_draft) ? 'Reply draft to ' + str(r.email) : 'Drafting the reply…'),
+      add(c, h('div', { class: 'fbdraft' }, h('b', null, str(r.reply_draft) ? (fbTheyReplied(r) ? 'Holly\'s answer to ' : 'Reply draft to ') + str(r.email) : 'Drafting the reply…'),
         str(r.reply_draft) ? h('div', { class: 'fbtext' }, str(r.reply_draft)) : null));
     }
     add(c, h('div', { class: 'actions' }, fbActions(r), sheetLink('Feedback', r._row)));
@@ -1844,14 +1899,15 @@ export const CLIENT_JS = String.raw`
     }
     if (r._state === 'reply') {
       var ready = Boolean(str(r.reply_draft));
+      var conv = fbConversation(r).length > 0;
       return [
         h('button', { class: 'btn primary', disabled: !ready, onclick: function () {
           if (window.confirm('Send this reply to ' + str(r.email) + ' as it stands?')) go('send', null, 'Reply sent');
         } }, 'Send'),
         h('button', { class: 'btn', disabled: !ready, onclick: function () { overlay('Edit reply', fbEditForm(r)); } }, 'Edit'),
         h('button', { class: 'btn danger', onclick: function () {
-          if (window.confirm('Skip the reply? Nothing is sent, and their email address is deleted.')) go('skip', null, 'Reply skipped');
-        } }, 'Skip'),
+          if (window.confirm((conv ? 'Close the conversation without replying?' : 'Skip the reply?') + ' Nothing is sent, and their email address is deleted.')) go('skip', null, conv ? 'Closed' : 'Reply skipped');
+        } }, conv ? 'Close, no reply' : 'Skip'),
         note];
     }
     return [note];

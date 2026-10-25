@@ -289,8 +289,9 @@ const RESERVED = ['from', 'to', 'cc', 'bcc', 'subject', 'mime-version', 'content
 //   fromName  display name; default DEFAULT_FROM_NAME.
 //   threadId  Gmail thread to file the sent message in (replies).
 //   headers   extra headers, e.g. { 'In-Reply-To': ..., 'Auto-Submitted': 'auto-replied' }.
+//   withThread  return { id, threadId } instead of the id alone (reader feedback replies).
 // Returns the Gmail message ID. Not retried automatically, so a blip can never send twice.
-async function sendMail({ to, subject, text, html, fromName, from, threadId, headers }) {
+async function sendMail({ to, subject, text, html, fromName, from, threadId, headers, withThread = false }) {
   const user = process.env.GMAIL_USER;
   if (!user) throw new Error('GMAIL_USER is not set');
   const sender = oneLine(from || user).toLowerCase();
@@ -332,7 +333,18 @@ async function sendMail({ to, subject, text, html, fromName, from, threadId, hea
   const raw = Buffer.from(lines.join('\r\n'), 'utf8').toString('base64url');
   const requestBody = threadId ? { raw, threadId: oneLine(threadId) } : { raw };
   const res = await gmailSender().users.messages.send({ userId: 'me', requestBody });
-  return res.data.id;
+  return withThread ? { id: res.data.id, threadId: res.data.threadId } : res.data.id;
+}
+
+// Message IDs in a Gmail thread, oldest first ([] if it has gone).
+async function threadMessageIds(threadId) {
+  try {
+    const res = await gmail().users.threads.get({ userId: 'me', id: threadId, format: 'minimal' });
+    return (res.data.messages || []).map((m) => m.id);
+  } catch (err) {
+    if (err && (err.code === 404 || err.status === 404)) return [];
+    throw err;
+  }
 }
 
 /* --------------------------------------------------------------- Sheets -- */
@@ -461,6 +473,7 @@ module.exports = {
   searchMessageIds,
   sendAsAddresses,
   getMessage,
+  threadMessageIds,
   getAttachmentData,
   gmailLink,
   addressOf,

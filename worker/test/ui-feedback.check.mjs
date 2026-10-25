@@ -40,6 +40,12 @@ function stateData() {
       fb('fb-5', 'reply', { _row: 6, status: 'implemented', rating: '4', email: 'r@example.org',
         reply_draft: 'Hi there,\n\nThanks for letting us know. We\'ve changed the number to 01386 111111.\nhttps://thelenches.org.uk/halls/\n\nBest wishes,\nHolly\nLenches website assistant' }),
       fb('fb-6', 'postponed', { _row: 7, status: 'postponed until 2026-11-20', type: 'update', message: 'Add the Christmas lights switch-on' }),
+      fb('fb-7', 'reply', { _row: 8, status: 'rejected', email: 'back@example.org', message: 'Add more photos of the hall',
+        conversation: '[2026-10-25 17:40] Holly:\nHi there,\n\nThanks for the suggestion. We won\'t be adding more photos this time.\n\n[2026-10-26 09:12] Reader:\nFair enough, could you add the hall\'s booking link instead?',
+        reply_draft: 'Hi there,\n\nThanks for getting back to us. We\'ll take a look at the booking link.\n\nBest wishes,\nHolly\nLenches website assistant' }),
+      fb('fb-8', 'done', { _row: 9, status: 'implemented', decided: '2026-10-20 10:00', implemented: '2026-10-21 09:00', reply_sent: '2026-10-21 09:30',
+        message: 'The bin day is wrong for Atch Lench', reply_draft: 'Hi there,\n\nThanks, we have fixed the bin day.\n\nBest wishes,\nHolly' }),
+      fb('fb-9', 'done', { _row: 10, status: 'rejected', decided: '2026-10-19 10:00', message: 'Please list my business' }),
     ] },
   };
 }
@@ -72,10 +78,20 @@ try {
     await page.goto(`${base}/admin`);
     const chip = page.locator('button.chip', { hasText: 'Feedback' });
     await chip.waitFor();
-    assert.match(await chip.innerText(), /3 waiting · 1 reply/);
+    assert.match(await chip.innerText(), /3 waiting · 2 replies/);
+    const navN = page.locator('nav.side button', { hasText: 'Feedback' }).locator('.n');
+    assert.equal(await navN.innerText(), '5', 'waiting plus reply drafts');
+    assert.match(await navN.getAttribute('class'), /attn/);
     await chip.click();
     const text = await page.locator('.main').textContent();
-    for (const s of ['Waiting (3)', 'Reply drafts (1)', 'Approved, awaiting build (1)', 'Postponed (1)']) assert.ok(text.includes(s), s);
+    for (const s of ['Waiting (3)', 'Reply drafts (2)', 'Approved, awaiting build (1)', 'Postponed (1)', 'History (2)']) assert.ok(text.includes(s), s);
+    assert.ok(!text.includes('bin day is wrong'), 'history hidden until shown');
+    // They replied: first among the drafts, with the conversation and Close, no reply.
+    const back = page.locator('.main .card', { hasText: 'booking link instead' });
+    assert.ok(await back.getByText('They replied').isVisible());
+    assert.ok(await back.getByText('We sent').first().isVisible());
+    assert.ok(await back.getByRole('button', { name: 'Close, no reply' }).isVisible());
+    assert.ok(text.indexOf('booking link instead') < text.indexOf('changed the number'), 'they-replied first');
     assert.ok(!text.includes('Christmas lights'), 'postponed hidden until shown');
     // Highest rating first, unrated last.
     const titles = await page.locator('.main .card h2').allInnerTexts();
@@ -83,7 +99,14 @@ try {
     assert.ok(text.indexOf('Rating 4/5') < text.indexOf('Rating 2/5'));
     assert.equal(await page.locator('.main .card h2 a').first().getAttribute('href'), 'https://thelenches.org.uk/halls/');
     assert.ok(text.includes('Claude: Useful fix'));
+    await page.getByRole('button', { name: 'Show history' }).click();
+    assert.ok((await page.locator('.main').textContent()).includes('bin day is wrong'));
+    assert.ok(await page.locator('.main .card', { hasText: 'bin day is wrong' }).getByText('Reply sent', { exact: true }).isVisible());
+    await page.fill('input[type=search]', 'business');
+    await page.waitForFunction(() => !document.querySelector('.main').textContent.includes('bin day is wrong'));
+    assert.ok((await page.locator('.main').textContent()).includes('Please list my business'));
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `feedback-${name}.png`), fullPage: true });
+    await page.getByRole('button', { name: 'Hide history' }).click();
 
     const card = (n) => page.locator('.main .card').nth(n);
     await card(0).getByRole('button', { name: 'Add note' }).click();
@@ -116,7 +139,7 @@ try {
     ]);
     const note = posts.find((p) => p.path === '/admin/api/feedback-note');
     assert.deepEqual([note.id, note.expected, note.note], ['fb-1', '', 'Rang the hall']);
-    assert.match(await page.locator('nav.side').innerText(), /Feedback\s*0/);
+    assert.match(await page.locator('nav.side').innerText(), /Feedback\s*1/, 'the reader who wrote back still waits');
     await page.close();
   }
   console.log('ui-feedback: all checks passed');
