@@ -256,6 +256,6 @@ export async function handleFeedback(request, env, { fetchImpl = fetch, now = Da
     console.error(`Feedback not saved: ${e.message}`);
     return fail(502, 'Sorry, something went wrong and your message wasn\'t saved. Please try again later, or email website@thelenches.org.uk.');
   }
-  const done = v.value.email ? `${thanks} If we make a change, we'll email you.` : thanks;
+  const done = v.value.email ? `${thanks} We'll email you to let you know what happens.` : thanks;
   return reply(env, js, { ok: true, message: done, back });
 }

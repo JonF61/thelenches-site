@@ -104,6 +104,7 @@ export function dispatchFor(p, reason = '', body = '') {
   // approval.yml passes only id, action, reason and body: the postpone date rides in reason.
   if (p.a === 'fb_postpone') return ['approval', { id: p.i, action: p.a, reason: p.d }];
   if (p.a === 'fb_edit') return ['approval', { id: p.i, action: p.a, body }];
+  if (p.a === 'fb_reject' && reason) return ['approval', { id: p.i, action: p.a, reason }];
   return ['approval', { id: p.i, action: p.a }];
 }
 

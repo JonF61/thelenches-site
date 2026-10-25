@@ -101,7 +101,7 @@ test('parseRating accepts only 1 to 5 with a commentary', () => {
   assert.strictEqual(rf.parseRating('{"rating": "2.5", "commentary": "x"}'), null);
 });
 
-test('run(): emails cleared after a reply or skip, on reject, and after 6 months', async () => {
+test('run(): emails cleared after a reply or skip and after 6 months, kept for a waiting rejection reply', async () => {
   const { table } = world([
     row({ id: 'a', status: 'implemented', reply_sent: '2026-10-20 10:00', rating: '3' }),
     row({ id: 'b', status: 'implemented', reply_sent: 'skipped 2026-10-20 10:00', rating: '3' }),
@@ -111,12 +111,12 @@ test('run(): emails cleared after a reply or skip, on reject, and after 6 months
     row({ id: 'f', status: 'implemented', rating: '3' }),
   ]);
   await rf.run();
-  assert.deepStrictEqual(table.map((r) => r.email ? 'kept' : 'cleared'), ['cleared', 'cleared', 'cleared', 'cleared', 'kept', 'kept']);
+  assert.deepStrictEqual(table.map((r) => r.email ? 'kept' : 'cleared'), ['cleared', 'cleared', 'kept', 'cleared', 'kept', 'kept']);
 });
 
 /* ------------------------------------------------------------- decisions -- */
 
-test('approve, reject, postpone: only from new or postponed; reject clears the email', async () => {
+test('approve, reject, postpone: only from new or postponed', async () => {
   let w = world([row()]);
   await rf.decide('fb-20261025-abc123', 'fb_approve');
   assert.strictEqual(w.table[0].status, 'approved');
@@ -125,10 +125,11 @@ test('approve, reject, postpone: only from new or postponed; reject clears the e
   assert.strictEqual(w.table[0].status, 'approved');
   assert.strictEqual(w.calls.updates.length, 1);
 
-  w = world([row()]);
+  w = world([row({ email: '' })]);
   await rf.decide('fb-20261025-abc123', 'fb_reject');
   assert.strictEqual(w.table[0].status, 'rejected');
-  assert.strictEqual(w.table[0].email, '');
+  assert.strictEqual(w.table[0].reply_draft, '', 'no email, no draft');
+  assert.strictEqual(w.calls.prompts.length, 0);
   assert.strictEqual(w.calls.sent.length, 0, 'nothing sent on reject');
 
   w = world([row()]);
@@ -215,6 +216,35 @@ test('Edit sends Jon\'s text; Skip sends nothing; neither before Mark implemente
   await rf.decide('fb-20261025-abc123', 'fb_skip');
   assert.strictEqual(w.calls.sent.length, 0);
   assert.strictEqual(w.calls.updates.length, 0);
+});
+
+test('Reject with an email: Holly drafts a kind reply from the reason, kept for Send; Skip clears', async () => {
+  let w = world([row({ notes: '2026-10-24 18:00 Checked with the hall' })], {
+    claude: ['Thanks for taking the time to tell us. The hall confirmed the number on the page is still right, so we\'ll leave it as it is.'],
+  });
+  await rf.decide('fb-20261025-abc123', 'fb_reject', 'Hall says the old number is still correct');
+  const r = w.table[0];
+  assert.strictEqual(r.status, 'rejected');
+  assert.strictEqual(r.email, 'reader@example.org', 'kept until the reply goes or is skipped');
+  assert.strictEqual(r.notes, '2026-10-24 18:00 Checked with the hall\n2026-10-25 12:00 Rejected: Hall says the old number is still correct');
+  assert.ok(r.reply_draft.startsWith('Hi there,\n\nThanks for taking the time'));
+  assert.ok(r.reply_draft.endsWith('Best wishes,\nHolly\nLenches website assistant'));
+  const input = JSON.parse(w.calls.prompts[0].messages[0].content);
+  assert.strictEqual(input.reason, 'Hall says the old number is still correct');
+  assert.strictEqual(input.notes, undefined, 'notes are not given for a rejection');
+  assert.match(w.calls.prompts[0].system, /won't be making this/);
+  assert.strictEqual(w.calls.sent.length, 0, 'nothing sent on reject');
+  await rf.decide('fb-20261025-abc123', 'fb_send');
+  assert.strictEqual(w.calls.sent.length, 1);
+  assert.strictEqual(w.table[0].email, '');
+
+  w = world([row()], { claude: [new Error('overloaded')] });
+  await rf.decide('fb-20261025-abc123', 'fb_reject');
+  assert.ok(w.table[0].reply_draft.includes('won\'t be making that change this time'), 'plain fallback, no reason');
+  assert.ok(!/Rejected:/.test(w.table[0].notes), 'no reason, no note');
+  await rf.decide('fb-20261025-abc123', 'fb_skip');
+  assert.strictEqual(w.calls.sent.length, 0);
+  assert.strictEqual(w.table[0].email, '');
 });
 
 test('Send refuses a reply that names the team (anonymity)', async () => {

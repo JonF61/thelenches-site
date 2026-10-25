@@ -280,14 +280,17 @@ test('feedbackState sorts rows into the screen sections', () => {
   assert.equal(feedbackState(row({ status: 'implemented', reply_draft: 'Hi' }), TODAY), 'reply');
   assert.equal(feedbackState(row({ status: 'implemented', reply_sent: '2026-10-25 10:00' }), TODAY), '');
   assert.equal(feedbackState(row({ status: 'implemented', email: '' }), TODAY), '');
-  assert.equal(feedbackState(row({ status: 'rejected' }), TODAY), '');
-  assert.deepEqual(feedbackRows({ headers: [], rows: [row(), row({ status: 'rejected' })] }, TODAY).rows.map((r) => r._state), ['waiting']);
+  assert.equal(feedbackState(row({ status: 'rejected', email: '' }), TODAY), '');
+  assert.equal(feedbackState(row({ status: 'rejected', reply_draft: 'Hi' }), TODAY), 'reply', 'a rejection reply waits too');
+  assert.equal(feedbackState(row({ status: 'rejected', reply_sent: 'skipped 2026-10-25 10:00' }), TODAY), '');
+  assert.deepEqual(feedbackRows({ headers: [], rows: [row(), row({ status: 'rejected', email: '' })] }, TODAY).rows.map((r) => r._state), ['waiting']);
 });
 
 test('planFeedback -> decide(): every action goes to approval.yml with the item id', async () => {
   const cases = [
     ['approve', row(), {}, { id: 'fb-20261025-abc123', action: 'fb_approve' }],
     ['reject', row(), {}, { id: 'fb-20261025-abc123', action: 'fb_reject' }],
+    ['reject', row(), { reason: 'Not something\nwe cover' }, { id: 'fb-20261025-abc123', action: 'fb_reject', reason: 'Not something we cover' }],
     ['postpone', row(), { date: '2026-11-08' }, { id: 'fb-20261025-abc123', action: 'fb_postpone', reason: '2026-11-08' }],
     ['done', row({ status: 'approved' }), {}, { id: 'fb-20261025-abc123', action: 'fb_done' }],
     ['send', row({ status: 'implemented', reply_draft: 'Hi there' }), {}, { id: 'fb-20261025-abc123', action: 'fb_send' }],
@@ -300,11 +303,12 @@ test('planFeedback -> decide(): every action goes to approval.yml with the item 
     const plan = planFeedback({ action, id: r.id, ...extra }, r, TODAY);
     assert.ok(plan.p, `${action}: ${plan.error}`);
     assert.ok(validPayload(plan.p), action);
-    assert.deepEqual(dispatchFor(plan.p, '', plan.body), ['approval', expected], action);
-    assert.equal(await decide({ ...env(), REPO: 'owner/repo' }, plan.p, '', plan.body), true);
+    assert.deepEqual(dispatchFor(plan.p, plan.reason || '', plan.body), ['approval', expected], action);
+    assert.equal(await decide({ ...env(), REPO: 'owner/repo' }, plan.p, plan.reason || '', plan.body), true);
   }
   assert.deepEqual(calls.dispatches.map((d) => d.event_type), cases.map(() => 'approval'));
   assert.deepEqual(calls.dispatches.map((d) => d.client_payload.action), cases.map((c) => `fb_${c[0]}`));
+  assert.ok(planFeedback({ action: 'send', id: 'x' }, row({ status: 'rejected', reply_draft: 'Hi there' }), TODAY).p, 'send after reject');
 });
 
 test('planFeedback refuses the wrong state, bad dates and unknown actions', () => {

@@ -2,10 +2,12 @@
 // The panel's Feedback screen (reader feedback form, worker/src/feedback.js). Rows live in
 // the Feedback tab; status moves new -> approved -> implemented, or new -> rejected, or
 // new -> "postponed until YYYY-MM-DD" (hidden until that date, then waiting again).
+// Implemented and rejected items with an email get a reply draft (Holly) for Send / Edit /
+// Skip; Reject takes an optional reason, never sent as written, that the draft is built from.
 //   Approve, Reject, Postpone, Mark implemented, and the reply's Send, Edit and Skip are
 //   decisions: core.js decide() -> approval.yml -> scripts/approve -> scripts/readerfeedback,
-//   the one approval path. Mark implemented drafts the reply there (only if an email was
-//   given); nothing is ever sent on reject or postpone.
+//   the one approval path. Mark implemented and Reject draft the reply there (only if an
+//   email was given); nothing is sent until Send or Edit, and nothing on postpone.
 //   Add note is a stale-checked append to the notes cell (timestamped; the old text is
 //   always kept, and a cell changed since the page loaded refuses the write).
 
@@ -16,6 +18,7 @@ const POSTPONED = /^postponed until (\d{4}-\d{2}-\d{2})$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_POSTPONE_DAYS = 366;
 const MAX_NOTE = 500;
+const MAX_REASON = 300;
 const MAX_NOTES_CELL = 20000;
 const WAITING = new Set(['', 'new']);
 
@@ -29,19 +32,19 @@ export function postponedUntil(row) {
 
 const addDays = (ymd, n) => new Date(Date.parse(`${ymd}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
 
-// Where a row sits on the screen, or '' when it is finished (rejected, or implemented with
+// Where a row sits on the screen, or '' when it is finished (implemented or rejected with
 // its reply sent or skipped, or no email to reply to).
 //   waiting    new, or postponed until today or earlier
 //   postponed  hidden until its date
 //   approved   approved, awaiting build
-//   reply      implemented, a reply draft waiting for Send / Edit / Skip
+//   reply      implemented or rejected, a reply draft waiting for Send / Edit / Skip
 export function feedbackState(row, today) {
   const s = str(row.status).toLowerCase();
   if (WAITING.has(s)) return str(row.id) && str(row.message) ? 'waiting' : '';
   const until = postponedUntil(row);
   if (until) return until <= today ? 'waiting' : 'postponed';
   if (s === 'approved') return 'approved';
-  if (s === 'implemented') return str(row.email) && !str(row.reply_sent) ? 'reply' : '';
+  if (s === 'implemented' || s === 'rejected') return str(row.email) && !str(row.reply_sent) ? 'reply' : '';
   return '';
 }
 
@@ -56,7 +59,7 @@ export function feedbackRows(table, today) {
 
 // Action -> the decide() payload. row: the Feedback row (null if not found).
 // Returns { p, body } or { error, status }.
-export function planFeedback({ action, id, date, body }, row, today) {
+export function planFeedback({ action, id, date, body, reason }, row, today) {
   const a = `fb_${String(action || '')}`;
   if (!['fb_approve', 'fb_reject', 'fb_postpone', 'fb_done', 'fb_send', 'fb_edit', 'fb_skip'].includes(a)) {
     return refuse(400, `Unknown action "${action}"`);
@@ -72,6 +75,11 @@ export function planFeedback({ action, id, date, body }, row, today) {
       if (d <= today) return refuse(400, 'Choose a date after today');
       if (d > addDays(today, MAX_POSTPONE_DAYS)) return refuse(400, 'Choose a date within a year');
       p.d = d;
+    }
+    if (a === 'fb_reject') {
+      const r = cleanReason(reason, MAX_REASON);
+      if (!validPayload(p)) return refuse(400, 'Invalid feedback id');
+      return { p, reason: r, body: '' };
     }
   } else if (a === 'fb_done') {
     if (state !== 'approved') return refuse(409, `This feedback is "${str(row.status)}", not approved`);
