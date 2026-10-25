@@ -105,6 +105,19 @@
     "taken": "2021-01-24"
   },
   {
+    "slug": "church-lench-events-2026-03-26-lenches-newsletter-26th-march-2026-64",
+    "src": "/images/photos/church-lench-events-2026-03-26-lenches-newsletter-26th-march-2026-64.webp",
+    "jpg": "/images/photos/church-lench-events-2026-03-26-lenches-newsletter-26th-march-2026-64.jpg",
+    "width": 310,
+    "height": 240,
+    "alt": "Group of volunteers in green polo shirts sitting on brick tiered seating, waving and cheering outdoors",
+    "credit": "",
+    "village": "Church Lench",
+    "subject": "Events",
+    "targets": [],
+    "taken": ""
+  },
+  {
     "slug": "church-lench-events-gloquiz",
     "src": "/images/photos/church-lench-events-gloquiz.webp",
     "jpg": "/images/photos/church-lench-events-gloquiz.jpg",
@@ -312,6 +325,45 @@
     "targets": [
       "churches"
     ],
+    "taken": "2014-07-07"
+  },
+  {
+    "slug": "rous-lench-rous-lench-village-hall",
+    "src": "/images/photos/rous-lench-rous-lench-village-hall.webp",
+    "jpg": "/images/photos/rous-lench-rous-lench-village-hall.jpg",
+    "width": 1400,
+    "height": 933,
+    "alt": "Ornate Victorian brick cottage with tall chimney and gothic windows in Rous Lench, behind hedges",
+    "credit": "",
+    "village": "Rous Lench",
+    "subject": "",
+    "targets": [],
+    "taken": "2014-07-07"
+  },
+  {
+    "slug": "rous-lench-st-peters",
+    "src": "/images/photos/rous-lench-st-peters.webp",
+    "jpg": "/images/photos/rous-lench-st-peters.jpg",
+    "width": 1400,
+    "height": 933,
+    "alt": "Stone parish church with bell turret at Rous Lench, surrounded by gravestones and trees",
+    "credit": "",
+    "village": "Rous Lench",
+    "subject": "",
+    "targets": [],
+    "taken": "2014-07-07"
+  },
+  {
+    "slug": "rous-lench-st-peters-2",
+    "src": "/images/photos/rous-lench-st-peters-2.webp",
+    "jpg": "/images/photos/rous-lench-st-peters-2.jpg",
+    "width": 1400,
+    "height": 933,
+    "alt": "Stone church with bell tower in Rous Lench, surrounded by trees and a churchyard with gravestones",
+    "credit": "",
+    "village": "Rous Lench",
+    "subject": "",
+    "targets": [],
     "taken": "2014-07-07"
   }
 ]
