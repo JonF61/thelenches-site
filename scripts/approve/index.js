@@ -19,6 +19,9 @@
 //                     ANTHROPIC_API_KEY, WORKER_URL and APPROVAL_SIGNING_KEY in approval.yml.
 //   close             "Close, no reply needed" on an email still owed a reply
 //                     (replies.closeOwed). Nothing is sent.
+//   fb_approve, fb_reject, fb_postpone (REASON = the date), fb_done, fb_send, fb_edit
+//   (BODY), fb_skip   Reader feedback (Feedback tab), admin panel only: see
+//                     scripts/readerfeedback. fb_done drafts Holly's reply (Claude).
 // Rejecting an item whose acknowledgement said it was on its way drafts a "sorry, we
 // couldn't use it after all" reply for Jon's Approve/Edit/Reject (replies.planSorry).
 // Replayed or duplicate clicks therefore do nothing.
@@ -28,6 +31,7 @@ const g = require('../ingest/google');
 const replies = require('../ingest/replies');
 const trust = require('../ingest/trusted');
 const { sendReplyCard } = require('../ingest/urgent');
+const readerFeedback = require('../readerfeedback');
 
 const TZ = 'Europe/London';
 const WORDING = { approve_own: 'own', approve_rewrite: 'rewrite' };
@@ -96,6 +100,10 @@ async function main() {
 
   if (ITEM_ACTIONS.includes(action)) return decideItem(id, action);
   if (action === 'trust') return trustSource(id);
+  if (action.startsWith('fb_')) {
+    return readerFeedback.decide(id, action, String(process.env.REASON || '').trim().slice(0, 20),
+      String(process.env.BODY || '').replace(/\r\n?/g, '\n').trim().slice(0, 3000));
+  }
   const reason = String(process.env.REASON || '').replace(/[\u0000-\u001f]+/g, ' ').trim()
     .slice(0, action === 'redraft' ? 500 : 300);
   if (['send', 'skip'].includes(action)) return replies.decideReply(id, action, reason);

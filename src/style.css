@@ -201,3 +201,34 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 .newsletter-archive{list-style:none;padding:0;margin:0;columns:2;column-gap:2rem}
 .newsletter-archive li{break-inside:avoid;padding:.35rem 0}
 @media (max-width:600px){.newsletter-archive{columns:1}}
+
+/* Reader feedback form (src/_includes/feedback.njk): a pill that opens in place. */
+.feedback{margin:0 0 1rem}
+.fb > summary{list-style:none}
+.fb > summary::-webkit-details-marker{display:none}
+.fb-pill{display:inline-flex;align-items:center;gap:.45rem;min-height:44px;background:var(--green);color:var(--cream);border-radius:999px;padding:.5rem 1.2rem;font-weight:600;cursor:pointer;user-select:none}
+.fb-pill::before{content:"+";font-size:1.15rem;line-height:1;color:var(--cream)}
+.fb[open] > .fb-pill::before{content:"\2212"}
+.fb-pill:hover{background:var(--green-dark)}
+.fb-pill:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.fb-form{margin-top:.75rem;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:1.1rem 1.25rem;max-width:640px}
+.fb-types{border:0;padding:0;margin:0 0 .75rem;display:flex;flex-wrap:wrap;gap:.4rem}
+.fb-types legend{font-weight:600;margin-bottom:.45rem;padding:0}
+.fb-types input{position:absolute;opacity:0;width:1px;height:1px}
+.fb-types label{display:inline-flex;align-items:center;min-height:40px;padding:.35rem .95rem;border:1.5px solid var(--accent);border-radius:999px;color:var(--accent-text);background:var(--card);cursor:pointer;font-weight:500}
+.fb-types input:checked + label{background:var(--green);border-color:var(--green);color:var(--cream)}
+.fb-types input:focus-visible + label{outline:3px solid var(--accent);outline-offset:2px}
+.fb-label{display:block;font-weight:600;margin:.6rem 0 .25rem}
+.fb-opt{font-weight:400;color:var(--muted)}
+.fb-form textarea,.fb-form input[type=email]{width:100%;font:inherit;padding:.55rem .7rem;border:1.5px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink)}
+.fb-form textarea:focus,.fb-form input[type=email]:focus{outline:3px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
+.fb-hint{margin:.2rem 0 0;font-size:.88rem;color:var(--muted)}
+.fb-hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.fb-ts{margin:.6rem 0 0}
+.fb-send{margin-top:.8rem;font:inherit;font-weight:600}
+.fb-send[disabled]{opacity:.6;cursor:progress}
+.fb-status{margin:.6rem 0 0;font-weight:500}
+.fb-status:empty{display:none}
+.fb-status.ok{color:var(--green-dark)}
+.fb-status.bad{color:#A33B2B}
+.fb-privacy{margin:.6rem 0 0;font-size:.85rem;color:var(--muted)}

@@ -8,6 +8,8 @@
   "ogImageAlt": "The Lenches villages in Worcestershire, seen from the air",
   "noindex": false,
   "teamUrl": "https://approvals.lenches.workers.dev/admin",
+  "feedbackUrl": "https://approvals.lenches.workers.dev/f",
+  "turnstileSiteKey": "",
   "nav": [
     { "title": "Home", "url": "/" },
     { "title": "Events", "url": "/events/" },

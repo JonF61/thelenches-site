@@ -15,7 +15,12 @@ description: How the Lenches website and community mailing list collect, use and
     <p>The Lenches Community Mailing List is operated as part of the website <a href="https://thelenches.org.uk/">thelenches.org.uk</a>, which serves the local community. The Lenches Club CIC (Ab Lench Road, Church Lench, WR11 4UQ) is collaborating with us to manage a joint mailing list to provide news, events, and community information. The Data Controller responsible for your data is Jonathan Fletcher, who can be contacted at <a href="mailto:website@thelenches.org.uk">website@thelenches.org.uk</a>.</p>
 
     <h2>3. What data we collect</h2>
+    {#- The feedback wording shows only once the form itself is live (site.json turnstileSiteKey). -#}
+    {% if site.feedbackUrl and site.turnstileSiteKey %}
+    <p>This website has no analytics and no tracking. Its only form is &ldquo;Suggest an update&rdquo; at the foot of each page, which sends us your message, the page you were on and, only if you choose to give it, your email address. We collect and process the following personal data only when you ask to join our mailing list, email us, or give your email address in that form:</p>
+    {% else %}
     <p>This website contains no forms, no analytics and no tracking, so it collects no personal data from visitors. We collect and process the following personal data only when you ask to join our mailing list, or when you email us:</p>
+    {% endif %}
     <ul>
       <li>Name</li>
       <li>Email address</li>
@@ -48,6 +53,7 @@ description: How the Lenches website and community mailing list collect, use and
 
     <h2>8. Data retention</h2>
     <p>We will retain your personal data for as long as you remain subscribed to our mailing list. You may unsubscribe at any time, and your data will be deleted unless required to be retained for legal reasons.</p>
+    {% if site.feedbackUrl and site.turnstileSiteKey %}<p>If you give your email address in the &ldquo;Suggest an update&rdquo; form, we hold it only so we can reply to tell you when we&rsquo;ve acted on your message. It is deleted once that reply has been sent, if we decide not to make a change, or after 6 months at the latest. Your message is kept without it, as a record of changes to the website.</p>{% endif %}
 
     <h2>9. Your rights</h2>
     <p>Under UK GDPR, you have the right to:</p>
@@ -66,6 +72,7 @@ description: How the Lenches website and community mailing list collect, use and
     <h2>11. Cookies and website tracking</h2>
     <p>This website does not set any cookies and does not use analytics or tracking of any kind. We do not build a profile of visitors, and nothing you do on this site is recorded by us.</p>
     <p>Some pages link out to other organisations &mdash; for example Google Calendar for hall and club bookings, and ticketing, club and parish websites. Those services set their own cookies once you follow the link, and are covered by their own privacy policies rather than this one.</p>
+    {% if site.feedbackUrl and site.turnstileSiteKey %}<p>The &ldquo;Suggest an update&rdquo; form uses Cloudflare Turnstile to check that messages come from people rather than robots. It loads only when you open the form, sending your IP address and some browser details to Cloudflare, whose own privacy policy applies.</p>{% endif %}
     <p>The map on our Roads page uses map images from OpenStreetMap and map software delivered by Cloudflare (cdnjs), so viewing that page sends your IP address to the OpenStreetMap Foundation and to Cloudflare, whose own privacy policies apply.</p>
     <p>We do not track whether newsletter emails are opened or whether links in them are clicked. To unsubscribe, reply to any newsletter with the word UNSUBSCRIBE, or email <a href="mailto:website@thelenches.org.uk">website@thelenches.org.uk</a>.</p>
 

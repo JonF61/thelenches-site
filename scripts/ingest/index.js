@@ -22,6 +22,7 @@ const rss = require('./rss');
 const trust = require('./trusted');
 const { offersChoice } = require('../../lib/wording');
 const { extractLinks } = require('../suggest/organiser');
+const readerFeedback = require('../readerfeedback');
 
 const MAX_RETRIES = 3;            // after this, a failing message is left for the diagnostic
 const MAX_MESSAGES_PER_RUN = 25;  // caps run time and spend; the rest wait for the next run
@@ -390,6 +391,13 @@ async function main() {
     await replies.sendDueReplies(settings, holiday);
   } catch (err) {
     console.error(`Replies: ${(err && err.message) || err}`);
+    process.exitCode = 1;
+  }
+  // Reader feedback form: Claude rates new suggestions and corrections; old emails cleared.
+  try {
+    await readerFeedback.run();
+  } catch (err) {
+    console.error(`Reader feedback: ${(err && err.message) || err}`);
     process.exitCode = 1;
   }
   // First run after holiday mode goes off: one email listing what Holly sent meanwhile.

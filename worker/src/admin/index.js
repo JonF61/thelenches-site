@@ -14,12 +14,17 @@
 //                                   pipeline; the browser never loads anything from outside)
 //                                   photoFolders: [{ id, parent, names }] live from Drive,
 //                                   for the Photos menu and the drop/Move to… targets
+//                                   feedback: Feedback rows still needing Jon (feedback.js)
 //   GET  /admin/api/mail-images?m=  every image in one email (for a Pending item)
 //   POST /admin/api/edit            { tab, key, field, expected, value }: one plain field
 //                                   edit, refused (409, current value) if the cell changed
 //   POST /admin/api/action          { kind: pending|reply|photo, id, action, reason?, body?,
 //                                   expected? }: decisions go through core.js decide(),
 //                                   the same path as the signed email links
+//   POST /admin/api/action          kind feedback: approve, reject, postpone (date), done
+//                                   (Mark implemented), send, edit (body), skip: also decide()
+//   POST /admin/api/feedback-note   { id, expected, note }: a timestamped note appended to
+//                                   the Feedback row's notes (stale-checked, never overwrites)
 //   POST /admin/api/suggest         { id, sid, expected }: Choose a suggested image (sid = an
 //                                   Image suggestions id) or "None of these" (sid "none") for a
 //                                   Pending event with no image: a stale-checked image_choice
@@ -40,7 +45,8 @@
 //   GET  /admin/img/mail/MSG/PART   a Pending image (email attachment)
 //   GET  /admin/img/drive/ID[?size=N]  a Photos image (Drive thumbnail, else the file)
 // Nothing here can send the newsletter or change repository code: the only GitHub call
-// is decide(), for the item and reply actions listed in actions.js.
+// is decide(), for the item and reply actions listed in actions.js and the Feedback
+// actions in feedback.js.
 
 import { ACTIONS, decide, github } from '../core.js';
 import { verifyAccess } from './access.js';
@@ -55,6 +61,8 @@ import {
   fileInfo, folderList, dupMembers, previewName, renameFile, moveFile, discardFile, restoreFile, binList, tidyList,
 } from './photofiles.js';
 import { photoPages, pagesFor, eventEnd } from './photopages.js';
+import { feedbackRows, planFeedback, planNote } from './feedback.js';
+import { FEEDBACK_TAB } from '../feedback.js';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 
@@ -71,6 +79,7 @@ const SECURITY_HEADERS = {
 const NEWSLETTER_FIELDS = ['_row', 'issue_id', 'issue_date', 'status', 'subject', 'sent_at', 'recipients', 'notes'];
 const REPLY_FIELDS = ['_row', 'reply_id', 'message_id', 'to', 'type', 'status', 'subject', 'sent_at', 'created_at'];
 const WATCHDOG_TITLE = 'Watchdog alert';
+const ukToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
 // Photos rows still waiting for a decision.
 const PHOTO_WAITING = new Set(['', 'new']);
 
@@ -146,13 +155,23 @@ function suggestionsByItem(t) {
 
 const pick = (row, keys) => Object.fromEntries(keys.filter((k) => k in row).map((k) => [k, row[k]]));
 
+// The Feedback tab; none yet (made by the first submission) reads as empty.
+async function readFeedback(env) {
+  try {
+    return await readTable(env, FEEDBACK_TAB);
+  } catch (e) {
+    if (e.status === 400 && /Unable to parse range/i.test(e.message)) return { headers: [], rows: [] };
+    throw e;
+  }
+}
+
 async function state(env, email) {
   const photosRead = readTable(env, 'Photos');
-  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite, bin, sugg] = await settled([
+  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite, bin, sugg, fb] = await settled([
     readTable(env, 'Pending'), readTable(env, 'Replies'), photosRead,
     readSettingsPairs(env), readTable(env, 'Health'), readTable(env, 'Issues'), sheetGids(env),
     readSources(env), readTable(env, 'Image fetch'), watchdog(env), folderList(env), photoPages(env),
-    binList(env, photosRead), readTable(env, SUGGEST_TAB),
+    binList(env, photosRead), readTable(env, SUGGEST_TAB), readFeedback(env),
   ]);
   const suggested = suggestionsByItem(sugg);
   const holiday = settings.error ? settings : (settings.find((p) => p.key === 'holiday_mode') || { value: '' });
@@ -208,8 +227,9 @@ async function state(env, email) {
     },
     photoFolders: folders,
     toDelete: bin,
+    feedback: feedbackRows(fb, ukToday()),
     // Today in the UK, for the Past events filter.
-    today: new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date()),
+    today: ukToday(),
     photosRoot: String(env.PHOTOS_FOLDER_ID || '').trim(),
   };
 }
@@ -287,6 +307,10 @@ async function doAction(env, body) {
     plan = planPending({ action, id }, row, { hasPeopleOk: headers.includes('people_ok'), sources, choicePeople });
   } else if (kind === 'reply') {
     plan = planReply({ action, id, reason: body.reason, body: body.body });
+  } else if (kind === 'feedback') {
+    const { rows } = await readFeedback(env);
+    const matches = rows.filter((r) => id && r.id === id);
+    plan = planFeedback({ action, id, date: body.date, body: body.body }, matches.length === 1 ? matches[0] : null, ukToday());
   } else {
     return json({ ok: false, error: `Unknown kind "${kind}"` }, 400);
   }
@@ -295,6 +319,18 @@ async function doAction(env, body) {
     return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
   }
   return json({ ok: true, message: `${ACTIONS[plan.p.a][1]}. It takes a minute or two to show in the Sheet.` });
+}
+
+async function doNote(env, body) {
+  const id = String(body.id ?? '');
+  const { rows } = await readFeedback(env);
+  const matches = rows.filter((r) => id && r.id === id);
+  const plan = planNote({ note: body.note, expected: body.expected }, matches.length === 1 ? matches[0] : null);
+  if (plan.error) return json({ ok: false, ...plan }, plan.status);
+  const r = await checkedWrite(env, {
+    tab: FEEDBACK_TAB, keyCol: 'id', key: id, field: 'notes', expected: body.expected, value: plan.value,
+  });
+  return r.ok ? json({ ok: true, value: r.value, message: 'Note added.' }) : json(r, r.status);
 }
 
 async function doSuggest(env, body) {
@@ -420,6 +456,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/edit') return await doEdit(env, body);
       if (path === '/admin/api/action') return await doAction(env, body);
       if (path === '/admin/api/suggest') return await doSuggest(env, body);
+      if (path === '/admin/api/feedback-note') return await doNote(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(env, body);
       return json({ ok: false, error: 'Not found' }, 404);
     }

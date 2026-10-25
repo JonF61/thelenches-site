@@ -1746,4 +1746,12 @@ module.exports = {
   FALLBACK_TYPES,
   REPLY_FROM,
   AWAIT_HOURS,
+  // For reader feedback replies (scripts/readerfeedback): same voice, sign-off and checks.
+  fill,
+  greeting,
+  textToHtml,
+  withVoice,
+  claude,
+  MODEL,
+  exposesTeam,
 };

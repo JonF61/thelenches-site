@@ -5,6 +5,9 @@
 //   GET  /u?t=TOKEN  unsubscribe confirm page (people clicking the footer link)
 //   POST /u?t=TOKEN  one-click unsubscribe (RFC 8058: mail providers POST here) or the
 //                    confirm page's button; fires repository_dispatch "unsubscribe"
+//   POST /f          reader feedback form (feedback.js): Turnstile, rate limit, validation,
+//                    then a Feedback tab row. Public: Cloudflare Access must never cover
+//                    /f, /a or /u (readers and mail providers have no Access login).
 //   /admin, /admin/*  admin panel (admin/index.js): Cloudflare Access only, decisions go
 //                    through the same decide() as POST /a (core.js)
 //   cron WATCHDOG_CRON  ingestion and daily diagnostic still running, site up, and on
@@ -36,6 +39,7 @@ import {
   ACTIONS, validPayload, github, dispatch, decide, cleanReason, cleanBody,
 } from './core.js';
 import { handleAdmin } from './admin/index.js';
+import { handleFeedback } from './feedback.js';
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -488,6 +492,7 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === '/a') return handleApproval(request, env);
     if (url.pathname === '/u') return handleUnsubscribe(request, env);
+    if (url.pathname === '/f') return handleFeedback(request, env);
     if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) return handleAdmin(request, env);
     return new Response('Lenches approvals', { headers: { 'content-type': 'text/plain' } });
   },
