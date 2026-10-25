@@ -2,7 +2,7 @@ name: Read Sheet tab
 
 # Prints one tab of the Lenches Pipeline Sheet to this log as CSV with row numbers
 # (scripts/sheettab). Read-only: spreadsheets.readonly scope. Refuses the Subscribers,
-# Do Not Send, Sends, Replies and Feedback tabs and masks email addresses elsewhere.
+# Do Not Send, Sends, Replies, Feedback and Contacts tabs and masks email addresses elsewhere.
 on:
   workflow_dispatch:
     inputs:

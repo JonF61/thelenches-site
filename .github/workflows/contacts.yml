@@ -1,0 +1,50 @@
+name: Contacts
+
+# Keeps the Contacts tab (scripts/contacts): one row per person who writes to website@,
+# with a Claude-written profile and what they have contributed. Daily run reads the last
+# 8 days; a manual run with full = true reads all mail to website@ (the first backfill).
+# Logs print counts only.
+on:
+  schedule:
+    - cron: "41 4 * * *"
+  workflow_dispatch:
+    inputs:
+      full:
+        description: 'Read all mail to website@ (true) or the last 8 days (false)'
+        required: false
+        type: boolean
+        default: false
+      dry_run:
+        description: 'Count only: no Claude calls, nothing written to the Sheet'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: contacts
+  cancel-in-progress: false
+
+jobs:
+  contacts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Update Contacts tab
+        run: node scripts/contacts/index.js
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: jon@thelenches.org.uk
+          CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
+          FULL: ${{ inputs.full }}
+          DRY_RUN: ${{ inputs.dry_run }}

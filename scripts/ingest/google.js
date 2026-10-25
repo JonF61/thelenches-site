@@ -119,6 +119,18 @@ async function searchMessageIds(q, max = 50) {
   return (res.data.messages || []).map((m) => m.id);
 }
 
+// All message IDs matching a Gmail search, every page (contacts backfill).
+async function searchAllMessageIds(q) {
+  const ids = [];
+  let pageToken;
+  do {
+    const res = await gmail().users.messages.list({ userId: 'me', q, maxResults: 500, pageToken });
+    for (const m of res.data.messages || []) ids.push(m.id);
+    pageToken = res.data.nextPageToken;
+  } while (pageToken);
+  return ids;
+}
+
 // "Send mail as" addresses GMAIL_USER may use (lower case): the primary address plus
 // aliases that are verified or need no verification (same-domain aliases).
 async function sendAsAddresses() {
@@ -471,6 +483,7 @@ async function updateRow(tab, rowNumber, fields) {
 module.exports = {
   listMessageIds,
   searchMessageIds,
+  searchAllMessageIds,
   sendAsAddresses,
   getMessage,
   threadMessageIds,

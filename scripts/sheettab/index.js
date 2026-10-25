@@ -7,7 +7,7 @@
 'use strict';
 
 const READONLY_SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
-const REFUSED_TABS = ['subscribers', 'do not send', 'sends', 'replies', 'feedback'];
+const REFUSED_TABS = ['subscribers', 'do not send', 'sends', 'replies', 'feedback', 'contacts'];
 const MAX_ROWS_CAP = 500;
 const MAX_CELL = 500;
 
