@@ -23,7 +23,7 @@ Read this first in every session. **Kryten (you) is the single agent for this pr
 - Apps Script: always open it from the live Sheet (Extensions → Apps Script). The nightly backup copies the Sheet and its bound script, so script.google.com lists several "Lenches backup" projects; running a function in a copy works on the copy's Sheet. The live bound script also holds mailerlite-images (finished; its MailerLite token deleted 21 Oct) and review (the Image review web app); reference copies are in `apps-script/`.
 - The Claude API key expires 4 Nov 2026 (Todoist task due 2 Nov): renew the repo secret and delete the Apps Script copy.
 - Gmail (jon@): read and search via the Gmail connector; when verifying mail, spot-check recent days only. Never send from it without Jon asking.
-- GitHub Actions: read run and job logs with the GitHub MCP tools rather than asking Jon to paste them. When Jon types a manual-run override, he fills the box before clicking Run workflow. Verify workflow files Jon has pasted with get_file_contents; never web-fetch the live site to check a change.
+- GitHub Actions: read run and job logs with the GitHub MCP tools rather than asking Jon to paste them. When Jon types a manual-run override, he fills the box before clicking Run workflow. Never web-fetch the live site to check a change.
 - Code search (search_code) can check one function without reading a whole file. worcestershire.gov.uk pages cost ~10k tokens per fetch (huge menus): prefer search snippets. The county Find a school tool hung on Search on 20 Oct.
 
 ## Content and Sheet operations
@@ -65,7 +65,7 @@ Minimal notice (`src/items/notices/hall-car-park-resurfacing.json`):
 ```
 
 ## Hard rules
-- Never edit `.github/workflows/` (Jon pastes workflow files himself) or `package.json` (the lockfile must be regenerated on a runner; `npm ci` everywhere).
+- Never edit `package.json` (the lockfile must be regenerated on a runner; `npm ci` everywhere).
 - Work on a branch and open one pull request. Kryten merges it (GitHub MCP merge tool) without asking, once the pre-push checks below have passed and any GitHub checks on the PR are green; Jon may also merge himself. Say in the reply that it was merged.
 - Before pushing: `npm ci`, Eleventy build, and offline tests/sample renders of anything you changed (mock the Claude API and Google calls). Show Jon previews of visual or email changes.
 - Anonymity: nothing public or sent to anyone but Jon may name him or expose jon@. System mail uses from_name "The Lenches Website and Newsletter Team"; Holly signs as "Lenches website assistant".
@@ -74,13 +74,13 @@ Minimal notice (`src/items/notices/hall-car-park-resurfacing.json`):
 - Sheet: code reads columns by header name. Never rename or move headers or tabs; add new columns at the END only. The grid ends at the last column and tidyTabs hides technical columns, so tell Jon to unhide and insert columns before typing headers, with exact cells and header text.
 - Cloudflare cron day-of-week is 1=Sunday..7=Saturday: always write day names (WED,THU).
 - Commits made with GITHUB_TOKEN don't trigger other workflows.
-- GitHub Actions concurrency groups keep only one waiting run: a newer queued run cancels the waiting one, even with `cancel-in-progress: false`. Where every dispatch must run (e.g. approval.yml), key the group per item (`approval-${{ github.event.client_payload.id }}`); when proposing workflow text for Jon to paste, never use a shared group for such workflows (22 Oct: rapid Approve/Reject taps were silently dropped).
+- GitHub Actions concurrency groups keep only one waiting run: a newer queued run cancels the waiting one, even with `cancel-in-progress: false`. Where every dispatch must run (e.g. approval.yml), key the group per item (`approval-${{ github.event.client_payload.id }}`); never use a shared group for such workflows (22 Oct: rapid Approve/Reject taps were silently dropped).
 - When you make a significant visible site change, propose an entry for `src/_data/siteupdates.json` (Jon decides; never reuse a key).
 
 ## Finishing a job
 **PR description**: the record of the work. What changed (files and behaviour), anything Jon must do by hand (Sheet cells, settings, workflow pastes), how it was tested, and what to check on the next live/shadow run. Keep it factual and complete.
 
-**Workflow files**: you can't commit `.github/workflows/`; give Jon the complete file, paste-ready, with click-by-click steps, then verify his commit.
+**Workflow files**: commit `.github/workflows/` changes yourself in the PR, like any other file (Jon agreed 25 Oct; first done in PR 60), and dispatch manual workflows yourself with the GitHub MCP actions tools. Name every workflow file changed in the PR description. Running a workflow that sends email, publishes or writes to the Sheet still needs Jon's go-ahead unless the job asked for it.
 
 **Plan doc**, once merged and without being asked: add an entry to the **Build history** tab in its style (a `### <title> (PR numbers, date)` heading and one dense bullet: what changed, files, columns, first live result) and make targeted edits to the Project Plan tab (status, design) if the plan changed. Keep the Plan lean: once something is built and tested, condense it there to a line or two and keep the detail in Build history. When a working rule changes, update this file in the same PR. If the connector isn't available, say so to Jon.
 
