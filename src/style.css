@@ -52,8 +52,9 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 .submit-note{margin:1rem 0 2.5rem}
 
 /* Home */
-.intro-head{font-size:clamp(1.2rem,2.2vw,1.45rem);line-height:1.35;color:var(--green-dark);margin:0 0 .4rem;max-width:40ch}
+.intro-head{font-size:clamp(1.2rem,2.2vw,1.45rem);line-height:1.35;color:var(--green-dark);margin:0 0 .4rem}
 .intro .muted{margin:0 0 1.25rem}
+.intro-news{margin:0 0 .4rem}
 .home-skyline{margin:.25rem 0 .75rem}
 .home-skyline svg{display:block;width:100%;height:auto}
 .home-aerial{margin:0 0 1.5rem}
