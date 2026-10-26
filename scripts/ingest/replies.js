@@ -789,7 +789,7 @@ async function appendReply(ctx, row) {
   await g.appendRows('Replies', [row]);
   ctx.replies.push(row);
   const notes = logNotes(row.notes);
-  console.log(`Reply ${row.reply_id}: ${row.status}${notes ? ` (${notes})` : ''}`);
+  console.log(`Reply ${row.reply_id}: ${row.type || 'reply'}, ${row.status}${notes ? ` (${notes})` : ''}`);
   return row;
 }
 
@@ -1708,7 +1708,7 @@ async function deliver(row, settings, { body: given, note: givenNote = '', decid
     ...(body !== undefined ? { body: text } : {}),
     ...(note ? { notes: [row.notes, note].filter(Boolean).join(' | ') } : {}),
   });
-  console.log(`Reply ${row.reply_id} sent. Gmail id ${id}.`);
+  console.log(`Reply ${row.reply_id} sent. Gmail id ${id}.`); // never the address: logs may be public
 
   const check = await g.getMessage(id);
   if (check.fromAddress !== REPLY_FROM) {
