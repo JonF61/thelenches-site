@@ -24,6 +24,12 @@
       "from": "2026-11-05",
       "link": "https://thelenches.org.uk/",
       "text": "The menu at the top of every page is now a row of buttons, and on phones a Menu button opens it."
+    },
+    {
+      "key": "events-pictures-2026-10",
+      "from": "2026-10-29",
+      "link": "https://thelenches.org.uk/events/",
+      "text": "The Events page now shows a picture beside each event. Have a look at what's on."
     }
   ]
 }
