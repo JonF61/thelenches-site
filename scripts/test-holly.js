@@ -198,7 +198,8 @@ async function main() {
   tables.Contacts = [
     { email: 'Sue@Example.org', name: 'Mrs Sue Brown', organisation: 'Lenches Club', role: 'secretary, Lenches Club', village: 'Church Lench',
       profile: 'Sends the club quiz night and summer fete each year, usually as a PDF flyer.', status: 'organiser',
-      contributions: '2026-09-01 Harvest supper (event, rejected); 2025-11-02 Quiz night (event, approved)', notes: 'SECRET NOTE', next_nudge: 'never' },
+      contributions: '2026-09-01 Harvest supper (event, rejected); 2025-11-02 Quiz night (event, approved)', notes: 'SECRET NOTE', next_nudge: 'never',
+      other_emails: 'Sue.Work@example.com' },
     { email: 'gone@example.org', name: 'Gone', profile: 'IGNORED PROFILE', status: 'ignore' },
     { email: 'blank@example.org', name: 'Blank', profile: 'BLANK PROFILE', status: '' },
   ];
@@ -209,6 +210,7 @@ async function main() {
     && replies.contactFirstName({ name: 'J. Smith' }) === '', 'first name from Contacts');
   await replies.primeLearning();
   ok(replies.contactFor('sue@example.org') && !replies.contactFor('gone@example.org') && !replies.contactFor('blank@example.org'), 'known contacts loaded');
+  ok(replies.contactFor('sue.work@example.com') === replies.contactFor('sue@example.org'), 'other_emails find the same contact');
   ok(!replies.withVoice('BASE').includes('known_contact'), 'no contact rules without a contact');
 
   const sue = (id, extra = {}) => inbound(id, `t-${id}`, { from: 'sue@example.org', fromAddress: 'sue@example.org', text: 'Can we have the quiz night on the site again?', ...extra });

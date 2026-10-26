@@ -126,4 +126,31 @@ const huge = { ...ann, messages: Array.from({ length: 40 }, (_, i) => msg({ from
 const t2 = buildText(huge, null, '');
 assert.ok(t2.length < 30000 && t2.includes('Subject: S39') && !t2.includes('Subject: S0\n'), 'newest kept under budget');
 
+// other_emails: one person, two addresses, one row (26 Oct: duplicates merged).
+const rowsTab = [
+  { email: 'ann@example.com', other_emails: 'Ann.Work@Example.org; ann@example.com', status: 'organiser', last_contact: '2026-09-01', message_count: 4 },
+  { email: 'bob@x.com', other_emails: '', status: 'lead' },
+  { email: 'old@example.net', status: 'organiser' },
+  { email: 'carl@x.com', other_emails: 'old@example.net' },
+];
+assert.deepStrictEqual(c.addressesOf(rowsTab[0]), ['ann@example.com', 'ann.work@example.org'], 'addresses: email first, lower-cased, no repeats');
+const byAddr = c.rowsByAddress(rowsTab);
+assert.strictEqual(byAddr.get('ann.work@example.org'), rowsTab[0], 'other address finds the row');
+assert.strictEqual(byAddr.get('old@example.net'), rowsTab[2], "a row's own email beats another row's other_emails");
+const joined = c.joinSenders(c.groupBySender([
+  msg({ from: 'Ann <ann.work@example.org>', internalDate: day('2026-10-07') }),
+  msg({ from: 'Ann H <ann@example.com>', internalDate: day('2026-10-06') }),
+  msg({ from: 'New <new@x.com>', internalDate: day('2026-10-06') }),
+]), byAddr);
+assert.deepStrictEqual([...joined.keys()].sort(), ['ann@example.com', 'new@x.com'], 'both addresses join under the row');
+const annJ = joined.get('ann@example.com');
+assert.deepStrictEqual(annJ.messages.map((m) => m.internalDate), [day('2026-10-06'), day('2026-10-07')], 'oldest first');
+const annRow = c.mergeRow(rowsTab[0], annJ, { list: '', count: 0 }, null, '2026-10-26 09:00');
+assert.strictEqual(annRow.email, 'ann@example.com', "the row's own email is kept");
+assert.strictEqual(annRow.message_count, 6, 'mail from both addresses counted');
+assert.strictEqual(annRow.last_contact, '2026-10-07');
+assert.ok(!('other_emails' in annRow), 'code never writes other_emails');
+const both = c.contributionsFor(c.addressesOf(rowsTab[0]), [...pending, { from: 'Ann <ann.work@example.org>', received: '2026-10-07 08:00', title: 'Boules', category: 'event', status: 'pending' }], addressOf);
+assert.strictEqual(both.count, 3, 'Pending items from either address');
+
 console.log('test-contacts: all passed');

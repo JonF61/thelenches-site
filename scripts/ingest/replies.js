@@ -479,13 +479,18 @@ async function primeLearning() {
     next.corrections = correctionsFrom(await g.readTable(feedback.TAB));
   } catch { /* no feedback tab yet */ }
   try {
-    for (const row of await g.readTable(CONTACTS_TAB)) {
-      const c = contactFacts(row);
-      if (c && norm(row.email)) next.contacts.set(norm(row.email), c);
+    // A row's other_emails (the same person's other addresses) find it too; its own email wins.
+    const rows = (await g.readTable(CONTACTS_TAB)).map((row) => [row, contactFacts(row)]).filter(([row, c]) => c && norm(row.email));
+    for (const [row, c] of rows) next.contacts.set(norm(row.email), c);
+    for (const [row, c] of rows) {
+      for (const a of String(row.other_emails || '').match(/[^\s<>,;"']+@[^\s<>,;"']+/g) || []) {
+        if (!next.contacts.has(norm(a))) next.contacts.set(norm(a), c);
+      }
     }
+    next.known = rows.length;
   } catch { /* no Contacts tab: nothing personalised */ }
   learning = next;
-  console.log(`Holly learning: ${next.lessons.length} lesson(s), ${next.corrections.length} recent correction(s), ${next.contacts.size} known contact(s).`);
+  console.log(`Holly learning: ${next.lessons.length} lesson(s), ${next.corrections.length} recent correction(s), ${next.known || 0} known contact(s).`);
   return next;
 }
 

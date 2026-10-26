@@ -23,6 +23,10 @@
 //   profile_source      auto = code may rewrite name/organisation/village/role/profile;
 //                       anything else (e.g. manual) = left alone
 //   updated_at          YYYY-MM-DD HH:MM UK of the last code update
+//   next_nudge          outreach (column P): a date = snoozed, never, or blank
+//   other_emails        other addresses the same person writes from (column Q, typed by Jon,
+//                       comma separated): their mail and Pending items count on this row, and
+//                       a separate row is never made for them. Code never writes it.
 'use strict';
 
 const TAB = 'Contacts';
@@ -98,6 +102,38 @@ function deletedMap(rows) {
   return out;
 }
 
+// Every address a row stands for: email, then other_emails (lower-cased, no repeats).
+function addressesOf(row) {
+  return [...new Set([norm(row && row.email), ...addressesIn(row && row.other_emails)].filter((a) => a.includes('@')))];
+}
+
+// Contacts rows -> Map address -> row, for email and other_emails. The first row naming an
+// address wins (a row's own email beats another row's other_emails).
+function rowsByAddress(rows) {
+  const out = new Map();
+  for (const pass of [(r) => [norm(r.email)], (r) => addressesOf(r).slice(1)]) {
+    for (const r of rows || []) for (const a of pass(r)) if (a && !out.has(a)) out.set(a, r);
+  }
+  return out;
+}
+
+// Senders (groupBySender) whose address belongs to the same existing row, joined into one
+// sender under the row's own email: Map email -> sender (messages oldest first). Senders
+// with no row are kept as they are.
+function joinSenders(senders, byAddress) {
+  const out = new Map();
+  for (const s of senders.values()) {
+    const row = byAddress.get(s.email);
+    const key = row ? norm(row.email) : s.email;
+    const prev = out.get(key);
+    if (!prev) { out.set(key, { ...s, email: key, addresses: [s.email] }); continue; }
+    prev.messages = [...prev.messages, ...s.messages].sort((a, b) => a.internalDate - b.internalDate);
+    prev.addresses.push(s.email);
+    prev.name = prev.name || s.name;
+  }
+  return out;
+}
+
 const validStatus = (s) => (STATUSES.includes(norm(s)) ? norm(s) : '');
 
 // Display name from "Name <a@b>", '' if none.
@@ -107,10 +143,12 @@ function displayName(from) {
   return name.includes('@') ? '' : name;
 }
 
-// Pending rows from this address -> { list: 'YYYY-MM-DD title (category, status); ...', count }.
+// Pending rows from this address (or any of these addresses) -> { list: 'YYYY-MM-DD title
+// (category, status); ...', count }.
 function contributionsFor(email, pendingRows, addressOf) {
+  const wanted = new Set([].concat(email).map(norm));
   const mine = pendingRows
-    .filter((r) => addressOf(r.from) === email && String(r.title || '').trim())
+    .filter((r) => wanted.has(norm(addressOf(r.from))) && String(r.title || '').trim())
     .sort((a, b) => String(b.received).localeCompare(String(a.received)));
   const list = mine.slice(0, MAX_CONTRIBUTIONS).map((r) => {
     const tags = [r.category, r.status].map((s) => String(s || '').trim()).filter(Boolean).join(', ');
@@ -185,6 +223,6 @@ function clearIgnored(existing) {
 
 module.exports = {
   TAB, HEADERS, WEBSITE, PROFILE_FIELDS, STATUSES, OLD_AUTO, CUTOFF, DELETED_TAB, DELETED_HEADERS,
-  norm, ymd, excludedAddress, skipReason, tooOld, deletedMap, validStatus, displayName, contributionsFor, groupBySender,
+  norm, ymd, addressesIn, addressesOf, rowsByAddress, joinSenders, excludedAddress, skipReason, tooOld, deletedMap, validStatus, displayName, contributionsFor, groupBySender,
   mergeRow, locked, clearIgnored, statusFor, shouldAdd,
 };

@@ -88,7 +88,7 @@ import { photoPages, pagesFor, eventEnd } from './photopages.js';
 import { feedbackRows, planFeedback, planNote } from './feedback.js';
 import { FEEDBACK_TAB } from '../feedback.js';
 import {
-  CONTACTS_TAB, DELETED_TAB, DELETED_HEADERS, contactRows, planContact, planDelete,
+  CONTACTS_TAB, DELETED_TAB, DELETED_HEADERS, contactRows, planContact, planDelete, addressesOf,
 } from './contacts.js';
 import { outreachLists, planNudge, idFor, sentRows } from './outreach.mjs';
 import {
@@ -432,9 +432,10 @@ async function doContactDelete(env, body) {
   const plan = planDelete({ expected: body.expected }, matches.length === 1 ? matches[0] : null);
   if (plan.error) return json({ ok: false, ...plan }, plan.status);
   // Logged first: if the row delete then fails, the log alone changes nothing visible.
+  // Every address the row stands for (other_emails too), so none of them brings it back.
   const headers = await deletedHeaders(env);
-  const entry = { email, deleted_at: new Date().toISOString() };
-  await appendValues(env, DELETED_TAB, [headers.map((h) => entry[h] ?? '')]);
+  const at = new Date().toISOString();
+  await appendValues(env, DELETED_TAB, addressesOf(matches[0]).map((e) => headers.map((h) => ({ email: e, deleted_at: at })[h] ?? '')));
   // Re-found just before deleting, so the row number is current.
   matches = await find();
   if (matches.length !== 1) return json({ ok: false, error: 'The contact moved in the Sheet: reload the page' }, 409);
