@@ -38,7 +38,7 @@ function stateData() {
     email: 'admin@example.org', sheetId: 'sheet', gids: { Contacts: 11 }, holiday: { value: 'FALSE', on: false }, newsletter: null,
     health: [], watchdog: { open: false }, googleAccount: 'sa@example.iam.gserviceaccount.com',
     pending: { headers: [], rows: [] }, owed: [], photos: { headers: [], rows: [] },
-    replies: { headers: [], rows: [{ reply_id: 'm9-answer', to: 'clerk@example.org', type: 'answer', status: 'awaiting', subject: 'Re: Hall hire',
+    replies: { headers: [], rows: [{ reply_id: 'm9-answer', message_id: 'msg123abc', to: 'clerk@example.org', type: 'answer', status: 'awaiting', subject: 'Re: Hall hire',
       body: 'Hi there,\n\nThanks for asking.\n\nThe hall can be booked through the website.\n\nBest wishes,\nHolly\nLenches website assistant', created_at: '2026-10-26 10:17' }] },
     photoFolders: [], photosRoot: 'r', today: '2026-10-26', toDelete: [], feedback: { headers: [], rows: [] },
     sent: [
@@ -60,6 +60,11 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/admin/api/state') return send(stateData());
   if (url.pathname === '/admin/api/contacts') return send(contacts());
   if (url.pathname === '/admin/api/outreach') { loads += 1; return send(outreach()); }
+  if (url.pathname === '/admin/api/mail-text') {
+    assert.equal(url.searchParams.get('m'), 'msg123abc');
+    return send({ from: 'Clerk <clerk@example.org>', subject: 'Hall hire', date: 'Mon, 26 Oct 2026 09:00:00 +0000',
+      text: 'Dear website team,\n\nHow do I book the hall for a parish meeting?\nIt would be for about forty people on a weekday evening.\n\nRegards,\nThe Clerk' });
+  }
   let body = '';
   for await (const ch of req) body += ch;
   const b = body ? JSON.parse(body) : {};
@@ -133,13 +138,24 @@ try {
     await main.getByText("This week's 5 drafts are used").waitFor();
     assert.equal(await main.getByRole('button', { name: 'Draft nudge' }).count(), 0);
     assert.equal(await main.getByRole('button', { name: 'Snooze 3 months' }).count(), 3);
-    // Replies screen: a clicked draft card shows its whole text in the list too (desktop).
+    // Replies screen: their email on the left, Holly's reply on the right (desktop); on a phone,
+    // their email folded above the reply in one card.
     await page.locator('nav.side button', { hasText: 'Replies' }).click();
     const draftCard = page.locator('.list .card', { hasText: 'Re: Hall hire' });
+    await draftCard.getByText('How do I book the hall').waitFor({ state: 'attached' });
     if (name === 'desktop') {
       await draftCard.click();
-      await page.locator('.list .card.sel').waitFor();
-      assert.ok(await page.locator('.list .card.sel .text').first().evaluate((el) => el.scrollHeight <= el.clientHeight + 1), 'selected card shows it all');
+      const sel = page.locator('.list .card.sel');
+      await sel.getByText('Regards,').waitFor();
+      assert.ok(await sel.locator('.their .text').evaluate((el) => el.scrollHeight <= el.clientHeight + 1), 'selected card shows their whole email');
+      assert.doesNotMatch(await sel.innerText(), /book the hall through the website/, 'draft not in the left card');
+      const detail = page.locator('.detail');
+      assert.match(await detail.innerText(), /HOLLY'S REPLY[\s\S]*The hall can be booked through the website/i);
+      assert.doesNotMatch(await detail.innerText(), /How do I book the hall/);
+      if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `replies-two-columns-${name}.png`), fullPage: true });
+    } else {
+      await draftCard.getByText('Their email').click();
+      assert.match(await draftCard.innerText(), /How do I book the hall[\s\S]*HOLLY'S REPLY[\s\S]*booked through the website/i);
     }
 
     // Replies screen: Sent history of every type, searchable.

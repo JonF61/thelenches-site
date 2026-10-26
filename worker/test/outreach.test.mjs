@@ -146,3 +146,14 @@ test('sentRows: sent only, newest first, by type, limited', async () => {
   const o = await outreachLists([c({ email: 'a@example.org', name: 'Ann' })], rows, TODAY);
   assert.deepEqual(o.sent.map((r) => [r.reply_id, r.name]), [['b', 'Ann']]);
 });
+
+test('messageText: plain text preferred, HTML stripped otherwise, headers read', async () => {
+  const { messageText, htmlToText } = await import('../src/admin/google.js');
+  const b = (t) => Buffer.from(t).toString('base64url');
+  const msg = { payload: { headers: [{ name: 'From', value: 'A <a@example.org>' }, { name: 'Subject', value: 'Hi' }], mimeType: 'multipart/alternative',
+    parts: [{ mimeType: 'text/html', body: { data: b('<p>HTML</p>') } }, { mimeType: 'text/plain', body: { data: b('Plain\r\ntext') } }] } };
+  assert.deepEqual(messageText(msg), { from: 'A <a@example.org>', subject: 'Hi', date: '', text: 'Plain\ntext' });
+  const html = { payload: { mimeType: 'text/html', body: { data: b('<style>x{}</style><p>One &amp; two</p><script>bad()</script><div>Three<br>four</div>') } } };
+  assert.equal(messageText(html).text, 'One & two\nThree\nfour');
+  assert.equal(htmlToText('<b>x</b> &lt;y&gt;'), 'x <y>');
+});

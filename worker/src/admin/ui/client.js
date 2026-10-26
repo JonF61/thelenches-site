@@ -18,7 +18,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '23';
+export const UI_VERSION = '24';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -744,10 +744,44 @@ export const CLIENT_JS = String.raw`
       h('div', { class: 'meta' }, 'To ' + str(r.to) + (r.created_at ? ' · drafted ' + when(r.created_at) : '')),
       h('div', { class: 'badges' }, b)];
   }
-  function replySummary(r) { return [replyHead(r), h('div', { class: 'text' }, str(r.body))]; }
+  // Their email (the one this draft answers), loaded from Gmail once and kept in S.mail.
+  // Outreach drafts answer nothing: they say so instead.
+  function theirMail(r) {
+    var m = str(r.message_id);
+    var box = h('div', { class: 'their' });
+    if (!/^[A-Za-z0-9]{6,40}$/.test(m)) {
+      add(box, [h('div', { class: 'meta' }, str(r.type) === 'outreach' ? 'Outreach: Holly\'s own first email to ' + str(r.to) + ', not a reply.' : 'No email to show.'),
+        str(r.notes) ? h('div', { class: 'meta' }, str(r.notes)) : null]);
+      return box;
+    }
+    var fill = function (t) {
+      box.replaceChildren();
+      if (!t || t.error) { add(box, h('div', { class: 'meta' }, 'Their email could not be loaded.')); return; }
+      add(box, [h('div', { class: 'meta' }, ['From ' + (str(t.from) || str(r.to)), str(t.date)].filter(Boolean).join(' · ')),
+        h('div', { class: 'text' }, str(t.text) || '(no text)')]);
+    };
+    S.mail = S.mail || {};
+    if (S.mail[m]) fill(S.mail[m]);
+    else {
+      add(box, h('span', { class: 'meta' }, 'Loading their email…'));
+      api('/admin/api/mail-text?m=' + encodeURIComponent(m)).then(function (res) {
+        S.mail[m] = res.ok ? res.json : { error: true };
+        fill(S.mail[m]);
+      });
+    }
+    return box;
+  }
+  // Desktop list: their email (left); the draft to review is in the right-hand panel.
+  function replySummary(r) {
+    return [h('h2', null, str(r.subject) || '(no subject)'), h('div', { class: 'badges' }, h('span', { class: 'badge' }, str(r.type) || 'reply')),
+      h('h3', { class: 'their-h' }, str(r.type) === 'outreach' ? 'Why' : 'Their email'), theirMail(r)];
+  }
 
   function replyCard(r) {
-    var c = h('div', { class: 'card' }, replyHead(r), h('div', { class: 'text' }, str(r.body)));
+    var c = h('div', { class: 'card' }, replyHead(r));
+    // Phone: no side panel, so their email sits above the draft, folded.
+    if (!wide()) add(c, h('details', { class: 'their-fold' }, h('summary', null, str(r.type) === 'outreach' ? 'Why this email' : 'Their email'), theirMail(r)));
+    add(c, [h('h3', { class: 'their-h' }, 'Holly\'s reply'), h('div', { class: 'text' }, str(r.body))]);
     if (str(r.notes)) add(c, h('div', { class: 'meta' }, 'Notes: ' + str(r.notes)));
     add(c, h('div', { class: 'actions' },
       h('button', { class: 'btn primary', onclick: function () {
