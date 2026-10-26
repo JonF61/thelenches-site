@@ -1,5 +1,11 @@
 {
   "date": "2026-10-30",
   "title": "Family Halloween night — Rous Lench Village Hall",
-  "body": "A pirate-themed family Halloween night from 6.30pm."
+  "body": "A pirate-themed family Halloween night from 6.30pm.",
+  "image": {
+    "url": "/images/items/family-halloween-night-rous-lench.webp",
+    "alt": "A carved jack-o'-lantern glowing in the dark, with smoke curling around it",
+    "credit": "Image by SzaboJanos from Pixabay",
+    "creditUrl": "https://pixabay.com/photos/halloween-jack-o-lantern-pumpkin-4585684/"
+  }
 }
