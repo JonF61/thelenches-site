@@ -12,6 +12,8 @@
 // Delete: removes the row from the Sheet and logs { email, deleted_at } in Deleted contacts, so
 // the run never re-adds them from mail sent before then (only new mail as a contributor can).
 // Their newsletter subscription (Subscribers tab) is not touched.
+// next_nudge (column P, outreach): a date = snoozed until then, "never" = never nudged, blank
+// = due when an outreach list says so (outreach.mjs). Set by Snooze / Never nudge / Clear.
 // Ignore rows never leave the server (nothing of them is shown; scripts/contacts clears them).
 
 export const CONTACTS_TAB = 'Contacts';
@@ -22,7 +24,7 @@ export const DELETED_TAB = 'Deleted contacts';
 export const DELETED_HEADERS = ['email', 'deleted_at'];
 // Cells the panel shows (all of the tab's own columns but updated_at).
 const FIELDS = ['email', ...PROFILE_FIELDS, 'contributions', 'contribution_count', 'first_contact', 'last_contact',
-  'message_count', 'status', 'notes', 'profile_source'];
+  'message_count', 'status', 'notes', 'profile_source', 'next_nudge'];
 
 const str = (v) => String(v ?? '').trim();
 const refuse = (status, error) => ({ error, status });
@@ -32,6 +34,7 @@ const multiLine = (v) => String(v ?? '').replace(/\r\n?/g, '\n').replace(/[\u000
 const LIMITS = { name: 120, organisation: 120, village: 60, role: 120, profile: 2000, notes: 5000 };
 const MULTI = new Set(['profile', 'notes']);
 const MAX_STATUS = 40;
+const isDay = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v);
 
 export const isIgnore = (row) => str(row.status).toLowerCase() === 'ignore';
 
@@ -56,6 +59,11 @@ export function planContact({ field, value }, row) {
     const low = v.toLowerCase();
     if (v.length > MAX_STATUS) return refuse(400, `Status: up to ${MAX_STATUS} characters`);
     return { field: 'status', value: STATUSES.includes(low) || low === 'ignore' ? low : v, also: null };
+  }
+  if (f === 'next_nudge') {
+    const v = oneLine(value).toLowerCase();
+    if (v !== '' && v !== 'never' && !isDay(v)) return refuse(400, 'Next nudge: a date (YYYY-MM-DD), never, or blank');
+    return { field: f, value: v, also: null };
   }
   if (!(f in LIMITS)) return refuse(400, `${f} can't be edited here`);
   const v = MULTI.has(f) ? multiLine(value) : oneLine(value);

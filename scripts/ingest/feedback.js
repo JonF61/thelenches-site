@@ -24,7 +24,7 @@ const g = require('./google');
 const TAB = 'Reply feedback';
 const HEADERS = ['reply_id', 'created_at', 'type', 'class', 'class_confidence', 'mode', 'they_wrote',
   'draft', 'outcome', 'final_text', 'reason', 'decided_at'];
-const TYPES = ['clarify', 'answer', 'whattodo', 'held', 'followup', 'sorry'];
+const TYPES = ['clarify', 'answer', 'whattodo', 'held', 'followup', 'sorry', 'outreach'];
 const EXCERPT = 600;
 
 const flat = (s) => String(s || '').replace(/\s+/g, ' ').trim();

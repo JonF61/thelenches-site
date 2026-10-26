@@ -23,6 +23,9 @@
 //   fb_done, fb_send, fb_edit (BODY), fb_skip
 //                     Reader feedback (Feedback tab), admin panel only: see
 //                     scripts/readerfeedback. fb_done and fb_reject draft Holly's reply.
+//   nudge             Draft nudge (admin panel Outreach, 26 Oct): ID is "c" + a hash of a
+//                     contact's address. Holly drafts an outreach email (scripts/outreach) as
+//                     an awaiting Replies row and a card is emailed to Jon. Nothing is sent.
 // Rejecting an item whose acknowledgement said it was on its way drafts a "sorry, we
 // couldn't use it after all" reply for Jon's Approve/Edit/Reject (replies.planSorry).
 // Replayed or duplicate clicks therefore do nothing.
@@ -33,6 +36,7 @@ const replies = require('../ingest/replies');
 const trust = require('../ingest/trusted');
 const { sendReplyCard } = require('../ingest/urgent');
 const readerFeedback = require('../readerfeedback');
+const outreach = require('../outreach');
 
 const TZ = 'Europe/London';
 const WORDING = { approve_own: 'own', approve_rewrite: 'rewrite' };
@@ -123,6 +127,20 @@ async function main() {
     return undefined;
   }
   if (action === 'close') return replies.closeOwed(id);
+  if (action === 'nudge') {
+    const fresh = await outreach.draftNudge(id);
+    if (!fresh || fresh.status !== 'awaiting') return undefined;
+    const { settings } = await g.readSettings();
+    // The draft is saved either way; a failed card only fails the run (GitHub emails Jon)
+    // and the next ingestion run's action email shows the draft.
+    try {
+      await sendReplyCard(fresh.reply_id, settings, { title: 'Outreach draft', subject: `Outreach draft ready: ${fresh.subject} (Lenches)` });
+    } catch (err) {
+      console.error(`Outreach card not sent: ${(err && err.message) || err}`);
+      process.exitCode = 1;
+    }
+    return undefined;
+  }
   if (action === 'edit') {
     const body = String(process.env.BODY || '').replace(/\r\n?/g, '\n').trim();
     if (body.length < 10) throw new Error('Edit has no text (is BODY passed in approval.yml?)');

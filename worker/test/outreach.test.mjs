@@ -1,0 +1,103 @@
+// worker/test/outreach.test.mjs
+// Offline tests for outreach (admin/outreach.mjs): who is due a nudge and why, who is held
+// back, the weekly cap, the contact id hash, next_nudge edits, and the nudge decision.
+// Run: node --test worker/test/
+
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+
+import {
+  idFor, contributionList, dueFor, heldBack, weekCount, outreachLists, planNudge, seasonalFor, WEEK_CAP,
+} from '../src/admin/outreach.mjs';
+import { planContact } from '../src/admin/contacts.js';
+import { dispatchFor, validPayload, ACTIONS } from '../src/core.js';
+
+const TODAY = '2026-10-26';
+const c = (extra) => ({
+  email: 'a@example.org', name: 'Ann', status: 'contributor', contributions: '', contribution_count: '0',
+  first_contact: '2025-01-01', last_contact: '2026-01-10', next_nudge: '', ...extra,
+});
+const nudge = (to, created, status = 'sent') => ({ type: 'outreach', to, created_at: `${created} 09:00`, status });
+
+test('idFor: "c" + 16 hex of SHA-256 of the lower-cased address', async () => {
+  const want = `c${createHash('sha256').update('a@example.org').digest('hex').slice(0, 16)}`;
+  assert.equal(await idFor(' A@Example.org '), want);
+  assert.ok(validPayload({ a: 'nudge', i: want }));
+});
+
+test('contributionList: dated entries, tags dropped, newest first', () => {
+  assert.deepEqual(contributionList('2025-11-08 Quiz night (event, approved); 2026-02-01 Bingo (fun) night (event); junk'),
+    [{ date: '2026-02-01', title: 'Bingo (fun) night' }, { date: '2025-11-08', title: 'Quiz night' }]);
+});
+
+test('seasonal: anniversary 4 weeks ahead to a week past, nothing sent this season', () => {
+  const row = c({ status: 'organiser', contributions: '2025-11-08 Quiz night (event)', contribution_count: '1', last_contact: '2025-11-08' });
+  assert.equal(dueFor(row, TODAY).kind, 'seasonal');
+  assert.equal(seasonalFor(row, TODAY).anniversary, '2026-11-08');
+  assert.equal(seasonalFor(row, '2026-10-10'), null, 'too early');
+  assert.equal(seasonalFor(row, '2026-11-16'), null, 'too late');
+  assert.equal(seasonalFor({ ...row, contributions: '2026-10-01 Quiz night; 2025-11-08 Quiz night' }, TODAY), null, 'already sent this season');
+  assert.equal(dueFor({ ...row, status: 'lead' }, TODAY), null, 'leads are never seasonal');
+});
+
+test('quiet: 90 to 365 days, only contributor / organiser / collaborator', () => {
+  assert.equal(dueFor(c({ last_contact: '2026-07-01' }), TODAY).kind, 'quiet');
+  assert.equal(dueFor(c({ last_contact: '2026-09-01' }), TODAY), null, 'too recent');
+  assert.equal(dueFor(c({ last_contact: '2025-09-01' }), TODAY), null, 'over a year');
+  for (const status of ['official', 'business', 'media', 'other', 'not a contributor', 'ignore', '']) {
+    assert.equal(dueFor(c({ status, last_contact: '2026-07-01' }), TODAY), null, status);
+  }
+});
+
+test('lead: no contributions, first email 14+ days ago, within a year', () => {
+  const lead = c({ status: 'lead', first_contact: '2026-09-02', last_contact: '2026-09-02' });
+  assert.equal(dueFor(lead, TODAY).kind, 'lead');
+  assert.equal(dueFor({ ...lead, first_contact: '2026-10-20', last_contact: '2026-10-20' }, TODAY), null);
+  assert.equal(dueFor({ ...lead, contribution_count: '2' }, TODAY), null);
+});
+
+test('heldBack: never, snoozed, waiting draft, nudged in 120 days; skipped drafts do not count', () => {
+  const row = c({ last_contact: '2026-07-01' });
+  assert.equal(heldBack({ ...row, next_nudge: 'never' }, [], TODAY), 'never nudge');
+  assert.equal(heldBack({ ...row, next_nudge: '2027-01-26' }, [], TODAY), 'snoozed until 2027-01-26');
+  assert.equal(heldBack({ ...row, next_nudge: '2026-10-01' }, [], TODAY), '');
+  assert.equal(heldBack(row, [nudge('A@example.org', '2026-10-20', 'awaiting')], TODAY), 'a draft is waiting for you');
+  assert.equal(heldBack(row, [nudge('a@example.org', '2026-08-01')], TODAY), 'nudged 2026-08-01');
+  assert.equal(heldBack(row, [nudge('a@example.org', '2026-05-01')], TODAY), '');
+  assert.equal(heldBack(row, [nudge('a@example.org', '2026-10-20', 'skipped')], TODAY), '');
+});
+
+test('outreachLists and planNudge', async () => {
+  const rows = [
+    c({ email: 'q@example.org', last_contact: '2026-07-01' }),
+    c({ email: 's@example.org', last_contact: '2026-07-01', next_nudge: 'never' }),
+    c({ email: 'n@example.org', last_contact: '2026-10-01' }),
+  ];
+  const o = await outreachLists(rows, [], TODAY);
+  assert.deepEqual(o.quiet.map((e) => e.email), ['q@example.org']);
+  assert.deepEqual(o.held.map((e) => [e.email, e.held]), [['s@example.org', 'never nudge']]);
+  assert.equal(o.cap, WEEK_CAP);
+  assert.ok(planNudge(rows[0], [], TODAY).ok);
+  assert.equal(planNudge(rows[1], [], TODAY).status, 409);
+  assert.equal(planNudge(rows[2], [], TODAY).status, 409);
+  assert.equal(planNudge(null, [], TODAY).status, 404);
+  const five = [1, 2, 3, 4, 5].map((i) => nudge(`p${i}@example.org`, '2026-10-2' + i, 'skipped'));
+  assert.equal(weekCount(five, TODAY), 5);
+  assert.equal(planNudge(rows[0], five, TODAY).status, 429);
+  assert.equal(weekCount([nudge('p@example.org', '2026-10-19')], TODAY), 0, 'older than 7 days');
+});
+
+test('next_nudge edits: a date, never or blank', () => {
+  const row = c({});
+  assert.deepEqual(planContact({ field: 'next_nudge', value: '2027-01-26' }, row), { field: 'next_nudge', value: '2027-01-26', also: null });
+  assert.equal(planContact({ field: 'next_nudge', value: 'Never' }, row).value, 'never');
+  assert.equal(planContact({ field: 'next_nudge', value: '' }, row).value, '');
+  assert.equal(planContact({ field: 'next_nudge', value: 'soon' }, row).status, 400);
+});
+
+test('nudge goes to approval.yml with the hashed id only', async () => {
+  const i = await idFor('a@example.org');
+  assert.deepEqual(dispatchFor({ a: 'nudge', i }), ['approval', { id: i, action: 'nudge' }]);
+  assert.equal(ACTIONS.nudge[0], 'Draft nudge');
+});

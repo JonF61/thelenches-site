@@ -44,6 +44,7 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
 const truthy = (v) => String(v).trim().toUpperCase() === 'TRUE';
 const isFollowup = (r) => r.type === 'followup';
 const isHeld = (r) => r.type === 'held';
+const isOutreach = (r) => r.type === 'outreach';
 const alertTo = () => process.env.ALERT_TO || process.env.GMAIL_USER;
 const classLine = (r) => [r.class && `Class: ${r.class}${r.class_confidence !== '' && r.class_confidence !== undefined ? ` (${r.class_confidence})` : ''}`,
   r.policy_codes].filter(Boolean).join(' · ');
@@ -109,6 +110,10 @@ function replyLine(r, liveButtons) {
   if (isFollowup(r)) {
     return 'They wrote again on a thread we already answered (see the note). This draft is never sent '
       + `unless you approve or edit it, including in holiday mode. ${how}${noButtons}`;
+  }
+  if (isOutreach(r)) {
+    return 'Outreach: a new email from Holly to this contact, which you asked for in the panel (see the note '
+      + `for why). Never sent unless you approve or edit it, including in holiday mode. ${how}${noButtons}`;
   }
   if (isHeld(r) && r.hold_reason === 'possible auto-responder') {
     return 'This may be an automatic reply (see the note), so nothing has been sent, not even a holding reply. '
@@ -481,7 +486,9 @@ async function sendUrgentAlerts(settings, holiday) {
 
 // One fresh card for one reply (the redraft Jon asked for), sent from scripts/approve.
 // Stamps alerted_at once sent; if this fails the next ingestion run's action email shows it.
-async function sendReplyCard(replyId, settings) {
+// title / subject: the card's heading and subject line (default: a redraft). Outreach
+// drafts (scripts/outreach) pass their own.
+async function sendReplyCard(replyId, settings, { title = 'Redrafted reply', subject = '' } = {}) {
   const rows = await g.readTable('Replies');
   const r = rows.find((x) => x.reply_id === replyId);
   if (!r) throw new Error(`Reply ${replyId} not found in Replies`);
@@ -496,17 +503,17 @@ async function sendReplyCard(replyId, settings) {
     rowUrl: null,
     replyUrl: await sheetUrl('Replies'),
     gmailFor: (x) => (x.message_id ? `https://mail.google.com/mail/u/0/#all/${x.message_id}` : ''),
-    title: 'Redrafted reply',
+    title,
   };
   const id = await g.sendMail({
     to: alertTo(),
-    subject: `Redraft ready: reply to ${r.to} (Lenches)`,
+    subject: subject || `Redraft ready: reply to ${r.to} (Lenches)`,
     text: buildText(ctx),
     html: buildHtml(ctx),
     fromName: g.fromNameFor(settings),
   });
   await g.updateRow('Replies', r._row, { alerted_at: londonDateTime(Date.now()) });
-  console.log(`Redraft card for ${replyId} sent. Gmail id ${id}.`);
+  console.log(`${title} card for ${replyId} sent. Gmail id ${id}.`);
   return id;
 }
 
