@@ -248,6 +248,45 @@ export async function gmailImageParts(env, messageId) {
   return out;
 }
 
+// The text of one message, for the Replies screen ("their email"): { from, subject, date, text }.
+// text/plain if there is one, else the HTML with its tags taken out; always shown as plain
+// text by the panel (never as HTML). Capped at MAX_MAIL_TEXT characters.
+const MAX_MAIL_TEXT = 8000;
+const b64urlText = (s) => new TextDecoder().decode(b64urlBytes(s));
+export function htmlToText(html) {
+  return String(html || '')
+    .replace(/<(script|style|head)[^>]*>[\s\S]*?<\/\1>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n').replace(/<\/(p|div|tr|li|h[1-6]|blockquote)>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&amp;/g, '&')
+    .replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+export function messageText(msg) {
+  const headers = Object.fromEntries(((msg.payload && msg.payload.headers) || []).map((x) => [String(x.name).toLowerCase(), String(x.value)]));
+  let plain = '';
+  let html = '';
+  const walk = (part) => {
+    if (!part) return;
+    const type = String(part.mimeType || '').toLowerCase();
+    const data = part.body && part.body.data;
+    if (data && !part.filename && type === 'text/plain' && !plain) plain = b64urlText(data);
+    if (data && !part.filename && type === 'text/html' && !html) html = b64urlText(data);
+    (part.parts || []).forEach(walk);
+  };
+  walk(msg.payload);
+  const text = (plain ? plain.replace(/\r\n?/g, '\n').trim() : htmlToText(html)) || String(msg.snippet || '');
+  return {
+    from: headers.from || '', subject: headers.subject || '', date: headers.date || '',
+    text: text.length > MAX_MAIL_TEXT ? `${text.slice(0, MAX_MAIL_TEXT)}…` : text,
+  };
+}
+export async function gmailText(env, messageId) {
+  const sub = String(env.GMAIL_USER || '').trim();
+  if (!sub) throw new Error('GMAIL_USER is not set');
+  const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(messageId)}?format=full`;
+  return messageText(await (await google(env, SCOPES.gmail, url, {}, sub)).json());
+}
+
 // A Drive image: Drive's own thumbnail (about `size` px on the long side) when it has
 // one, else the file itself. { type, bytes }.
 export async function driveImage(env, fileId, size = 0) {

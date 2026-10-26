@@ -17,6 +17,8 @@
 //                                   for the Photos menu and the drop/Move to… targets
 //                                   feedback: Feedback rows still needing Jon (feedback.js)
 //   GET  /admin/api/mail-images?m=  every image in one email (for a Pending item)
+//   GET  /admin/api/mail-text?m=    one email's from, subject, date and text (Replies: their
+//                                   email beside Holly's draft; shown as plain text only)
 //   POST /admin/api/edit            { tab, key, field, expected, value }: one plain field
 //                                   edit, refused (409, current value) if the cell changed
 //   POST /admin/api/action          { kind: pending|reply|photo, id, action, reason?, body?,
@@ -65,7 +67,7 @@ import { ACTIONS, decide, github } from '../core.js';
 import { verifyAccess } from './access.js';
 import { makeCsrf, checkCsrf, sameOrigin } from './csrf.js';
 import {
-  getValues, sheetGids, gmailImage, gmailImageParts, driveImage, serviceAccountEmail, appendValues, addTab, deleteRow,
+  getValues, sheetGids, gmailImage, gmailImageParts, gmailText, driveImage, serviceAccountEmail, appendValues, addTab, deleteRow,
 } from './google.js';
 import { readTable, readSettingsPairs, editCell, checkedWrite } from './sheet.js';
 import {
@@ -476,6 +478,12 @@ async function mailImages(env, url) {
   return json({ images: await gmailImageParts(env, m) });
 }
 
+async function mailText(env, url) {
+  const m = String(url.searchParams.get('m') || '');
+  if (!/^[A-Za-z0-9]{6,40}$/.test(m)) return json({ error: 'Bad message id' }, 400);
+  return json(await gmailText(env, m));
+}
+
 async function image(env, path, url) {
   let m = path.match(/^\/admin\/img\/mail\/([A-Za-z0-9]{6,40})\/([0-9.]{1,20})$/);
   let got;
@@ -520,6 +528,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/app.js') return asset(CLIENT_JS, 'text/javascript');
       if (path === '/admin/app.css') return asset(CLIENT_CSS, 'text/css');
       if (path === '/admin/api/mail-images') return await mailImages(env, url);
+      if (path === '/admin/api/mail-text') return await mailText(env, url);
       if (path === '/admin/api/session') return json({ email: auth.email, csrf: await makeCsrf(env, auth.email) });
       if (path === '/admin/api/state') return json(await state(env, auth.email));
       if (path === '/admin/api/contacts') return json(contactRows(await readTable(env, CONTACTS_TAB)));
