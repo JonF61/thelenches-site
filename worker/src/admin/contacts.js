@@ -14,6 +14,8 @@
 // Their newsletter subscription (Subscribers tab) is not touched.
 // next_nudge (column P, outreach): a date = snoozed until then, "never" = never nudged, blank
 // = due when an outreach list says so (outreach.mjs). Set by Snooze / Never nudge / Clear.
+// other_emails (column Q, typed by Jon in the Sheet): the same person's other addresses, shown
+// on the contact page; Delete logs each of them too.
 // Ignore rows never leave the server (nothing of them is shown; scripts/contacts clears them).
 
 export const CONTACTS_TAB = 'Contacts';
@@ -24,7 +26,7 @@ export const DELETED_TAB = 'Deleted contacts';
 export const DELETED_HEADERS = ['email', 'deleted_at'];
 // Cells the panel shows (all of the tab's own columns but updated_at).
 const FIELDS = ['email', ...PROFILE_FIELDS, 'contributions', 'contribution_count', 'first_contact', 'last_contact',
-  'message_count', 'status', 'notes', 'profile_source', 'next_nudge'];
+  'message_count', 'status', 'notes', 'profile_source', 'next_nudge', 'other_emails'];
 
 const str = (v) => String(v ?? '').trim();
 const refuse = (status, error) => ({ error, status });
@@ -35,6 +37,12 @@ const LIMITS = { name: 120, organisation: 120, village: 60, role: 120, profile: 
 const MULTI = new Set(['profile', 'notes']);
 const MAX_STATUS = 40;
 const isDay = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+
+// Every address a row stands for (email, then other_emails), lower-cased.
+export function addressesOf(row) {
+  const all = [row.email, ...(String(row.other_emails ?? '').match(/[^\s<>,;"']+@[^\s<>,;"']+/g) || [])];
+  return [...new Set(all.map((a) => str(a).toLowerCase()).filter((a) => a.includes('@')))];
+}
 
 export const isIgnore = (row) => str(row.status).toLowerCase() === 'ignore';
 

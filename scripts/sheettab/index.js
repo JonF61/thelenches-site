@@ -13,7 +13,7 @@ const REFUSED_TABS = ['subscribers', 'do not send', 'sends', 'replies', 'feedbac
 // Contacts: names and roles only, never profile, contributions or notes (agreed 25 Oct).
 const PARTIAL_TABS = {
   contacts: ['email', 'name', 'organisation', 'village', 'role', 'contribution_count',
-    'first_contact', 'last_contact', 'message_count', 'status', 'profile_source', 'updated_at'],
+    'first_contact', 'last_contact', 'message_count', 'status', 'profile_source', 'updated_at', 'next_nudge', 'other_emails'],
 };
 const MAX_ROWS_CAP = 500;
 const MAX_CELL = 500;

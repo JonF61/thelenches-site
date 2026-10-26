@@ -18,7 +18,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '28';
+export const UI_VERSION = '29';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -2252,7 +2252,7 @@ export const CLIENT_JS = String.raw`
         if (F.status && lower(r.status) !== F.status) return false;
         if (F.village && str(r.village) !== F.village) return false;
         if (F.org && str(r.organisation) !== F.org) return false;
-        var hay = lower([r.name, r.email, r.organisation, r.village, r.role, r.profile, r.notes, r.contributions, r.status].join(' '));
+        var hay = lower([r.name, r.email, r.other_emails, r.organisation, r.village, r.role, r.profile, r.notes, r.contributions, r.status].join(' '));
         return words.every(function (w) { return hay.indexOf(w) >= 0; });
       });
       head.textContent = hits.length === rows.length ? plural(rows.length, 'person', 'people') : hits.length + ' of ' + plural(rows.length, 'person', 'people');
@@ -2362,6 +2362,7 @@ export const CLIENT_JS = String.raw`
       h('div', { class: 'card' },
         h('h2', null, str(r.name) || str(r.email)),
         h('div', { class: 'meta' }, str(r.email)),
+        str(r.other_emails) ? h('div', { class: 'meta' }, 'Also writes from: ' + str(r.other_emails)) : null,
         h('p', { class: 'meta' }, ['First contact ' + (cDay(r.first_contact) || 'unknown'), 'last ' + (cDay(r.last_contact) || 'unknown'),
           plural(r.message_count, 'email', 'emails'), plural(r.contribution_count, 'item', 'items')].join(' · ')),
         h('p', { class: 'meta' }, 'Profile: ', h('b', null, manual ? 'edited by you (' + (str(r.profile_source) || 'blank') + ')' : 'written by Claude (auto)'),

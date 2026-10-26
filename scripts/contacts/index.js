@@ -10,7 +10,8 @@
 //                "none" is written as "not a contributor" for Jon to review and delete
 // Mail from before contacts.js CUTOFF, or from a deleted contact's address before its deletion
 // (Deleted contacts tab, written by the admin panel), is never read. A new sender is added
-// only if Claude places them (status other than "none").
+// only if Claude places them (status other than "none"). A row's other_emails (typed by Jon)
+// are the same person: mail and Pending items from them count on that row.
 // Logs may be public: they print counts only, never names, addresses or profiles.
 'use strict';
 
@@ -78,14 +79,16 @@ async function main() {
     if (why) skipped[why] = (skipped[why] || 0) + 1;
     else counted.push(msg);
   }
-  const senders = c.groupBySender(counted);
-  console.log(`${full ? 'Full' : `Last ${sinceDays} days`}: ${ids.length} messages, ${counted.length} counted from ${senders.size} senders.`);
+  const bySender = c.groupBySender(counted);
+  console.log(`${full ? 'Full' : `Last ${sinceDays} days`}: ${ids.length} messages, ${counted.length} counted from ${bySender.size} senders.`);
   console.log(`Skipped: ${JSON.stringify(skipped)}`);
 
   if (!dry) await g.ensureTab(c.TAB, c.HEADERS);
   const existingRows = dry ? await g.readTable(c.TAB).catch(() => []) : await g.readTable(c.TAB);
   const pending = await g.readTable('Pending');
-  const byEmail = new Map(existingRows.map((r) => [c.norm(r.email), r]));
+  const byAddress = c.rowsByAddress(existingRows);
+  // One sender per row: mail from a row's other_emails joins the row's own.
+  const senders = c.joinSenders(bySender, byAddress);
   const stamp = nowUk();
 
   const adds = [];
@@ -96,9 +99,9 @@ async function main() {
   let notContributors = 0;
 
   for (const sender of senders.values()) {
-    const existing = byEmail.get(sender.email) || null;
+    const existing = byAddress.get(sender.email) || null;
     if (c.locked(existing)) { ignored++; continue; }
-    const contrib = c.contributionsFor(sender.email, pending, g.addressOf);
+    const contrib = c.contributionsFor(existing ? c.addressesOf(existing) : sender.email, pending, g.addressOf);
     const fresh = existing
       ? sender.messages.filter((m) => !existing.last_contact || c.ymd(m.internalDate) > existing.last_contact)
       : sender.messages;
@@ -134,7 +137,7 @@ async function main() {
   for (const ex of existingRows) {
     const email = c.norm(ex.email);
     if (!email || senders.has(email) || c.locked(ex)) continue;
-    const contrib = c.contributionsFor(email, pending, g.addressOf);
+    const contrib = c.contributionsFor(c.addressesOf(ex), pending, g.addressOf);
     if (String(contrib.count) !== String(ex.contribution_count || 0) || contrib.list !== String(ex.contributions || '')) {
       updates.push({ rowNumber: ex._row, row: { contributions: contrib.list, contribution_count: contrib.count, updated_at: stamp } });
     }
