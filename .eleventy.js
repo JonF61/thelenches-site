@@ -119,17 +119,45 @@ module.exports = async function (eleventyConfig) {
 
   // Home page: next collection for the first area in bins.json, or null when the calendar
   // has run out. { area, date, bins: ["green", "brown"] }
-  eleventyConfig.addFilter("nextBin", (bins) => {
-    const area = bins && bins.areas && bins.areas[0];
-    if (!area) return null;
-    const now = today();
-    for (const c of (bins.collections || []).slice().sort((a, b) => a.date.localeCompare(b.date))) {
-      const d = new Date(c.date + "T12:00:00Z");
-      d.setUTCDate(d.getUTCDate() + (Number(area.offset) || 0));
-      const date = d.toISOString().slice(0, 10);
-      if (date >= now) return { area: area.name, date, bins: c.bins || [] };
+  // Next bin collection for each collection day (areas grouped by offset, in bins.json order):
+  // [{ label, date, bins }]. label is the village, or "<first> & others" for a group of
+  // three or more. Build-time fallback only: the home page script recalculates it in the
+  // browser with the bins page's rule (a collection counts until 10am on the day).
+  eleventyConfig.addFilter("nextBins", (bins) => {
+    const groups = [];
+    for (const a of (bins && bins.areas) || []) {
+      const off = Number(a.offset) || 0;
+      let g = groups.find((x) => x.offset === off);
+      if (!g) groups.push((g = { offset: off, villages: [] }));
+      g.villages.push(a.name);
     }
-    return null;
+    const now = today();
+    const sorted = ((bins && bins.collections) || []).slice().sort((a, b) => a.date.localeCompare(b.date));
+    const out = [];
+    for (const g of groups) {
+      for (const c of sorted) {
+        const d = new Date(c.date + "T12:00:00Z");
+        d.setUTCDate(d.getUTCDate() + g.offset);
+        const date = d.toISOString().slice(0, 10);
+        if (date >= now) {
+          const label = g.villages.length > 2 ? `${g.villages[0]} & others` : g.villages.join(" & ");
+          out.push({ label, date, bins: c.bins || [] });
+          break;
+        }
+      }
+    }
+    return out;
+  });
+
+  eleventyConfig.addFilter("isArray", (v) => Array.isArray(v));
+
+  // bins.json trimmed for the home page script: areas, and collections from a week before the build
+  eleventyConfig.addFilter("binsSoon", (bins) => {
+    const from = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);
+    return {
+      areas: (bins && bins.areas) || [],
+      collections: ((bins && bins.collections) || []).filter((c) => c.date >= from).slice(0, 12),
+    };
   });
 
   // "green and brown"
