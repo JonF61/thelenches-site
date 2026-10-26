@@ -152,8 +152,23 @@ test('messageText: plain text preferred, HTML stripped otherwise, headers read',
   const b = (t) => Buffer.from(t).toString('base64url');
   const msg = { payload: { headers: [{ name: 'From', value: 'A <a@example.org>' }, { name: 'Subject', value: 'Hi' }], mimeType: 'multipart/alternative',
     parts: [{ mimeType: 'text/html', body: { data: b('<p>HTML</p>') } }, { mimeType: 'text/plain', body: { data: b('Plain\r\ntext') } }] } };
-  assert.deepEqual(messageText(msg), { from: 'A <a@example.org>', subject: 'Hi', date: '', text: 'Plain\ntext' });
+  assert.deepEqual(messageText(msg), { from: 'A <a@example.org>', subject: 'Hi', date: '', text: 'Plain\ntext', more: '' });
   const html = { payload: { mimeType: 'text/html', body: { data: b('<style>x{}</style><p>One &amp; two</p><script>bad()</script><div>Three<br>four</div>') } } };
   assert.equal(messageText(html).text, 'One & two\nThree\nfour');
   assert.equal(htmlToText('<b>x</b> &lt;y&gt;'), 'x <y>');
+});
+
+test('splitSignature: their words, then the signature and earlier emails folded', async () => {
+  const { splitSignature, messageText } = await import('../src/admin/google.js');
+  const clerk = 'Hello\n\nThe host says it is sorted, can you check?\n\nKind regards, Jo\n\n--\n\n_Mrs Jo Example_\n_Clerk_\n\nOn 25-10-2026 4:37 pm, The Team wrote:\n\n> Dear Clerk,\n> ...';
+  const c = splitSignature(clerk);
+  assert.equal(c.text, 'Hello\n\nThe host says it is sorted, can you check?\n\nKind regards, Jo');
+  assert.match(c.more, /^--\n\n_Mrs Jo Example_[\s\S]*> Dear Clerk/);
+  assert.equal(splitSignature('Thanks!\n\nOn Mon, 26 Oct 2026 at 09:00, Someone <a@b>\nwrote:\n> hi').text, 'Thanks!');
+  assert.equal(splitSignature('Yes please.\n\nFrom: Team <t@x>\nSent: Monday\nTo: me\n\nOld').text, 'Yes please.');
+  assert.equal(splitSignature('Hi\n\nSent from my iPhone').more, 'Sent from my iPhone');
+  assert.deepEqual(splitSignature('No signature here.\nFrom: the hall'), { text: 'No signature here.\nFrom: the hall', more: '' });
+  assert.deepEqual(splitSignature('> quoted only'), { text: '> quoted only', more: '' }, 'never cuts before any text of theirs');
+  const b = (t) => Buffer.from(t).toString('base64url');
+  assert.equal(messageText({ payload: { mimeType: 'text/plain', body: { data: b(clerk) } } }).more.startsWith('--'), true);
 });

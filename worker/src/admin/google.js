@@ -248,7 +248,8 @@ export async function gmailImageParts(env, messageId) {
   return out;
 }
 
-// The text of one message, for the Replies screen ("their email"): { from, subject, date, text }.
+// The text of one message, for the Replies screen ("their email"): { from, subject, date, text,
+// more } (more: their signature block and earlier emails, folded by the panel).
 // text/plain if there is one, else the HTML with its tags taken out; always shown as plain
 // text by the panel (never as HTML). Capped at MAX_MAIL_TEXT characters.
 const MAX_MAIL_TEXT = 8000;
@@ -261,6 +262,26 @@ export function htmlToText(html) {
     .replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&amp;/g, '&')
     .replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
 }
+// Where their own words end: the first signature delimiter ("--"), quoted line (">"), "On …
+// wrote:", forwarded/original-message header, Outlook rule or "Sent from my …" after some text.
+// { text, more }: more = the rest (signature block, earlier emails), '' if none.
+const CUT = [/^--\s*$/, /^>/, /^On\b.*\bwrote:\s*$/i, /^-{2,}\s*(Original|Forwarded) Message/i, /^_{8,}\s*$/, /^Sent from my /i];
+export function splitSignature(text) {
+  const lines = String(text || '').split('\n');
+  let seen = false;
+  for (let i = 0; i < lines.length; i += 1) {
+    const l = lines[i];
+    const header = /^From:\s/.test(l) && lines.slice(i + 1, i + 4).some((x) => /^(Sent|Date|To|Subject):\s/.test(x));
+    const wrote = /\bwrote:\s*$/.test(l) && /^On\b/.test(lines[i - 1] || '') && !lines[i - 1].includes('wrote:');
+    if (seen && (header || CUT.some((re) => re.test(l)) || wrote)) {
+      const at = wrote ? i - 1 : i;
+      return { text: lines.slice(0, at).join('\n').trim(), more: lines.slice(at).join('\n').trim() };
+    }
+    if (l.trim()) seen = true;
+  }
+  return { text: String(text || '').trim(), more: '' };
+}
+
 export function messageText(msg) {
   const headers = Object.fromEntries(((msg.payload && msg.payload.headers) || []).map((x) => [String(x.name).toLowerCase(), String(x.value)]));
   let plain = '';
@@ -274,11 +295,10 @@ export function messageText(msg) {
     (part.parts || []).forEach(walk);
   };
   walk(msg.payload);
-  const text = (plain ? plain.replace(/\r\n?/g, '\n').trim() : htmlToText(html)) || String(msg.snippet || '');
-  return {
-    from: headers.from || '', subject: headers.subject || '', date: headers.date || '',
-    text: text.length > MAX_MAIL_TEXT ? `${text.slice(0, MAX_MAIL_TEXT)}…` : text,
-  };
+  const all = (plain ? plain.replace(/\r\n?/g, '\n').trim() : htmlToText(html)) || String(msg.snippet || '');
+  const cap = (t) => (t.length > MAX_MAIL_TEXT ? `${t.slice(0, MAX_MAIL_TEXT)}…` : t);
+  const { text, more } = splitSignature(all);
+  return { from: headers.from || '', subject: headers.subject || '', date: headers.date || '', text: cap(text), more: cap(more) };
 }
 export async function gmailText(env, messageId) {
   const sub = String(env.GMAIL_USER || '').trim();
