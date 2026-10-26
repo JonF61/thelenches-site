@@ -2,7 +2,8 @@
 // Offline test of the 26 Oct Holly fixes: names from sign-offs, no drafts on threads the
 // team started by hand ("own" rows: reply in Gmail, then Done), the learning added to every
 // draft (approved lessons + recent corrections, never what the sender wrote), and the weekly
-// lessons (scripts/lessons: proposed rows, the email's links, Approve / Reject).
+// lessons (scripts/lessons: proposed rows, the email's links, Approve / Reject), and
+// personalising from the Contacts tab (known_contact, name fallback, the ack's personal line).
 // Google, Gmail and Claude are mocked; nothing leaves the machine.
 // Run: node scripts/test-holly.js
 'use strict';
@@ -189,6 +190,59 @@ async function main() {
   ok(capped.includes('Lesson number 24') && !capped.includes('Lesson number 4 ') && (capped.match(/Lesson number/g) || []).length === replies.MAX_LESSONS_USED, 'newest 20 only');
   ok(capped.indexOf('never over the rules above or these fixed rules') < capped.indexOf('Lessons:')
     && capped.indexOf('Never name anyone on the team') < capped.indexOf('Lesson number'), 'fixed rules come first');
+
+  // 5. Personalising from Contacts: known_contact in drafts (never notes), the name
+  // fallback, and the personal line on an acknowledgement.
+  reset();
+  tables.Contacts = [
+    { email: 'Sue@Example.org', name: 'Mrs Sue Brown', organisation: 'Lenches Club', role: 'secretary, Lenches Club', village: 'Church Lench',
+      profile: 'Sends the club quiz night and summer fete each year, usually as a PDF flyer.', status: 'organiser',
+      contributions: '2026-09-01 Harvest supper (event, rejected); 2025-11-02 Quiz night (event, approved)', notes: 'SECRET NOTE', next_nudge: 'never' },
+    { email: 'gone@example.org', name: 'Gone', profile: 'IGNORED PROFILE', status: 'ignore' },
+    { email: 'blank@example.org', name: 'Blank', profile: 'BLANK PROFILE', status: '' },
+  ];
+  ok(replies.contactFacts(tables.Contacts[1]) === null && replies.contactFacts(tables.Contacts[2]) === null, 'ignore and blank status: not used');
+  const facts = replies.contactFacts(tables.Contacts[0]);
+  ok(facts.recent.join() === '2025-11-02 Quiz night' && !JSON.stringify(facts).includes('SECRET') && !('notes' in facts), 'rejected items and notes left out');
+  ok(replies.contactFirstName({ name: 'Revd Jane Smith' }) === 'Jane' && replies.contactFirstName({ name: 'Lenches Club' }) === ''
+    && replies.contactFirstName({ name: 'J. Smith' }) === '', 'first name from Contacts');
+  await replies.primeLearning();
+  ok(replies.contactFor('sue@example.org') && !replies.contactFor('gone@example.org') && !replies.contactFor('blank@example.org'), 'known contacts loaded');
+  ok(!replies.withVoice('BASE').includes('known_contact'), 'no contact rules without a contact');
+
+  const sue = (id, extra = {}) => inbound(id, `t-${id}`, { from: 'sue@example.org', fromAddress: 'sue@example.org', text: 'Can we have the quiz night on the site again?', ...extra });
+  answer = (req) => (/ONE short, warm sentence/.test(req.system)
+    ? JSON.stringify({ line: 'Lovely to hear from the Lenches Club again' })
+    : JSON.stringify({ draft: 'Lovely to hear from the Lenches Club again. Just reply with the details.', answered_from_site: false }));
+  const ans = await replies.planReply({ msg: sue('p1'), sourceName: 'website', result: { emailClass: 'question', needsReply: true }, rows: [], ctx: ctxFor() });
+  const req = prompts[prompts.length - 1];
+  const sent1 = JSON.parse(req.messages[0].content);
+  ok(sent1.known_contact.organisation === 'Lenches Club' && /quiz night/.test(sent1.known_contact.profile) && !('status' in sent1.known_contact), 'answer gets known_contact');
+  ok(!req.messages[0].content.includes('SECRET') && !req.system.includes('SECRET') && /known_contact, when the input has it/.test(req.system), 'never notes; contact rules in the prompt');
+  ok(ans.body.startsWith('Hi Sue,') && /Personalised from their Contacts row/.test(ans.notes), 'greeting from Contacts; note for Jon');
+
+  prompts.length = 0;
+  const stranger = await replies.planReply({ msg: inbound('p2', 't-p2', { from: 'x@example.org', fromAddress: 'x@example.org', text: 'Is the hall free?' }),
+    sourceName: 'website', result: { emailClass: 'question', needsReply: true }, rows: [], ctx: ctxFor() });
+  ok(!('known_contact' in JSON.parse(prompts[0].messages[0].content)) && !/known_contact, when/.test(prompts[0].system)
+    && stranger.body.startsWith('Hi there,') && !/Personalised/.test(stranger.notes), 'unknown sender: unchanged');
+
+  const quiz = [{ title: 'Quiz night', event_date: '2026-11-20', policy_flags: '', missing: '' }];
+  const ack = await replies.planReply({ msg: sue('p3'), sourceName: 'website', result: { emailClass: 'submission' }, rows: quiz, ctx: ctxFor() });
+  const paras = ack.body.split('\n\n');
+  ok(ack.type === 'ack' && ack.status === 'queued' && paras[0] === 'Hi Sue,' && /^Thanks for sending "Quiz night"/.test(paras[1])
+    && paras[2] === 'Lovely to hear from the Lenches Club again.', 'personal line after the thanks');
+  ok(/Personal line from their Contacts row/.test(ack.notes), 'ack note');
+  for (const bad of ['We noticed you send this every year.', 'See you on 20 November at the quiz.', 'Hope Sue enjoys the evening as always.',
+    'Will you be sending the fete too?', 'Tiny.']) {
+    answer = JSON.stringify({ line: bad });
+    const r = await replies.planReply({ msg: sue(`b${bad.length}`), sourceName: 'website', result: { emailClass: 'submission' }, rows: quiz, ctx: { ...ctxFor(), replies: [] } });
+    ok(r.body.split('\n\n').length === 3 && !/Personal line/.test(r.notes), `unsafe line left out: ${bad}`);
+  }
+  prompts.length = 0;
+  await replies.planReply({ msg: inbound('p4', 't-p4', { from: 'x@example.org', fromAddress: 'x@example.org' }), sourceName: 'website',
+    result: { emailClass: 'submission' }, rows: quiz, ctx: ctxFor() });
+  ok(prompts.length === 0, 'unknown sender: no Claude call for an acknowledgement');
 
   console.log(`All Holly tests passed (${checks} checks).`);
 }
