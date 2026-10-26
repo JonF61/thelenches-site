@@ -6,8 +6,8 @@
 //   1. Own photo: approved Lenches Photos images matching venue, village or subject (own.js),
 //      at most 2, so an organiser's image still has room.
 //   2. Organiser's site: og:image, else twitter:image, else a clear logo (organiser.js).
-//   3. Library: Pexels, by event type and kind of place only (library.js), only if the
-//      PEXELS_API_KEY secret is set.
+//   3. Library: Pexels, else Pixabay, by event type and kind of place only (library.js),
+//      only if the PEXELS_API_KEY or PIXABAY_API_KEY secret is set.
 // External images are checked by Sonnet (scripts/eventimages/check.js): children = dropped,
 // identifiable people = flagged (Choose then needs "People OK"), logos allowed only as the
 // organiser's fallback, screenshots and unrelated images dropped.
@@ -22,7 +22,7 @@ const g = require('../ingest/google');
 const { isRssRow } = require('../../lib/sources');
 const { ownMatches, eventPlace } = require('./own');
 const { organiserImage } = require('./organiser');
-const { libraryQuery, searchLibrary } = require('./library');
+const { libraryQuery, searchLibrary, librarySource } = require('./library');
 const { fetchImage, thumbnail, hostOf } = require('./web');
 const { checkImage } = require('../eventimages/check');
 const { villageFor, creditFor, filenameFor, keyOf, targetOf } = require('../eventimages/index');
@@ -111,23 +111,24 @@ async function suggestFor(row, ctx) {
     } else if (r.tried && r.tried.length) notes.push(`organiser: ${r.tried.join('; ')}`);
   }
 
-  // 3. Library (Pexels).
-  if (out.length < MAX_PER_EVENT && ctx.pexelsKey) {
+  // 3. Library (Pexels or Pixabay).
+  const lib = ctx.library;
+  if (out.length < MAX_PER_EVENT && lib) {
     const query = libraryQuery(ev);
-    const found = query ? await searchLibrary(query, { key: ctx.pexelsKey }) : [];
+    const found = query ? await searchLibrary(query, { provider: lib.provider, key: lib.key }) : [];
     for (const cand of found) {
       if (out.length >= MAX_PER_EVENT) break;
       let img;
       try { img = await fetchImage(cand.url, { robots: false }); } catch (err) { notes.push(`library: ${err.message}`); continue; }
       const c = await ctx.check(img.buffer, {
-        title: ev.title, date: ev.date, pageTitle: 'Pexels photo', siteName: 'Pexels', host: 'pexels.com', imageUrl: cand.url, text: cand.alt,
+        title: ev.title, date: ev.date, pageTitle: `${lib.name} photo`, siteName: lib.name, host: `${lib.provider}.com`, imageUrl: cand.url, text: cand.text,
       });
       const j = judge(c, 'library');
       if (j.drop) { notes.push(`library image dropped: ${j.drop}`); continue; }
       out.push({
-        ...base, source: 'library', url: cand.url, page: cand.page, credit: cand.credit.replace(/^Photo by /, '').replace(/ on Pexels$/, ' / Pexels'),
+        ...base, source: 'library', url: cand.url, page: cand.page, credit: cand.short,
         caption: cand.credit, credit_url: cand.creditUrl, licence: cand.licence, people: j.people,
-        check: checkLine(c, `Pexels "${query}" ${img.width}x${img.height}`), thumb: await thumbnail(img.buffer),
+        check: checkLine(c, `${lib.name} "${query}" ${img.width}x${img.height}`), thumb: await thumbnail(img.buffer),
         filename: filenameFor(ev, img.ext), alt: cand.alt,
       });
     }
@@ -157,10 +158,10 @@ async function main(opts = {}) {
   } catch (err) { console.warn(`Photos tab unreadable, own photos ranked without people: ${err.message}`); }
   let photos = [];
   try { photos = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', '_data', 'photos.json'), 'utf8')); } catch { photos = []; }
-  const pexelsKey = str(process.env.PEXELS_API_KEY);
-  console.log(`${todo.length} Pending event(s) with no image; looking at up to ${MAX_ITEMS}.${pexelsKey ? '' : ' No PEXELS_API_KEY: library skipped.'}${DRY_RUN ? ' DRY RUN.' : ''}`);
+  const library = opts.library !== undefined ? opts.library : librarySource();
+  console.log(`${todo.length} Pending event(s) with no image; looking at up to ${MAX_ITEMS}.${library ? ` Library: ${library.name}.` : ' No PEXELS_API_KEY or PIXABAY_API_KEY: library skipped.'}${DRY_RUN ? ' DRY RUN.' : ''}`);
 
-  const ctx = { today, photos, people, pexelsKey, check: opts.check || checkImage };
+  const ctx = { today, photos, people, library, check: opts.check || checkImage };
   const rows = [];
   let failures = 0;
   for (const row of todo.slice(0, MAX_ITEMS)) {

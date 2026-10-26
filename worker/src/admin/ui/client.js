@@ -18,7 +18,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '29';
+export const UI_VERSION = '30';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -561,7 +561,11 @@ export const CLIENT_JS = String.raw`
       var blocked = flag && !truthy(r.people_ok);
       var label = SUGGEST_LABELS[s.source] || s.source;
       var links = [];
-      if (s.source === 'library') links.push(h('a', { href: 'https://www.pexels.com', target: '_blank', rel: 'noopener noreferrer' }, 'Photos provided by Pexels'));
+      if (s.source === 'library') {
+        links.push(/pixabay\.com/i.test(str(s.page))
+          ? h('a', { href: 'https://pixabay.com', target: '_blank', rel: 'noopener noreferrer' }, 'Images from Pixabay')
+          : h('a', { href: 'https://www.pexels.com', target: '_blank', rel: 'noopener noreferrer' }, 'Photos provided by Pexels'));
+      }
       if (/^https:\/\//i.test(str(s.page))) links.push(h('a', { href: str(s.page), target: '_blank', rel: 'noopener noreferrer' }, s.source === 'library' ? 'Photo page' : 'Source page'));
       return h('figure', { class: 'sg' + (chosen ? ' chosen' : '') },
         h('span', { class: 'sg-src' }, label),

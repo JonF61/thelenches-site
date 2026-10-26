@@ -16,7 +16,7 @@ const path = require('path');
 const sharp = require('sharp');
 
 const web = require('./suggest/web');
-const { libraryQuery, searchLibrary, VOCAB } = require('./suggest/library');
+const { libraryQuery, searchLibrary, librarySource, VOCAB } = require('./suggest/library');
 const { ownMatches } = require('./suggest/own');
 const { organiserUrls, extractLinks, senderHome } = require('./suggest/organiser');
 const suggest = require('./suggest/index');
@@ -194,10 +194,33 @@ test('Library search: Pexels key in the header, credit and licence as Pexels ask
   };
   const got = await searchLibrary('quiz night', { key: 'k123' });
   assert.deepStrictEqual(got[0], {
-    url: 'https://images.pexels.com/1.jpeg', page: 'https://www.pexels.com/photo/quiz-1/', credit: 'Photo by Jane Doe on Pexels',
-    creditUrl: 'https://www.pexels.com/photo/quiz-1/', licence: 'https://www.pexels.com/license/', alt: 'Quiz cards',
+    url: 'https://images.pexels.com/1.jpeg', page: 'https://www.pexels.com/photo/quiz-1/', credit: 'Photo by Jane Doe on Pexels', short: 'Jane Doe / Pexels',
+    creditUrl: 'https://www.pexels.com/photo/quiz-1/', licence: 'https://www.pexels.com/license/', alt: 'Quiz cards', text: 'Quiz cards',
   });
   assert.deepStrictEqual(await searchLibrary('quiz night', { key: '' }), [], 'no key, no search');
+});
+
+test('Library choice: Pexels if its key is set, else Pixabay, else none', () => {
+  assert.deepStrictEqual(librarySource({ PEXELS_API_KEY: 'p', PIXABAY_API_KEY: 'x' }), { provider: 'pexels', name: 'Pexels', key: 'p' });
+  assert.deepStrictEqual(librarySource({ PEXELS_API_KEY: ' ', PIXABAY_API_KEY: 'x' }), { provider: 'pixabay', name: 'Pixabay', key: 'x' });
+  assert.strictEqual(librarySource({}), null);
+});
+
+test('Library search: Pixabay key in the query, photos only, credit and licence as Pixabay asks', async () => {
+  routes = {
+    'https://pixabay.com/api/?key=x9&q=quiz+night&image_type=photo&orientation=horizontal&safesearch=true&lang=en&per_page=4': resp(JSON.stringify({ hits: [
+      { pageURL: 'https://pixabay.com/photos/quiz-1/', user: 'Jo <b>Lee', tags: 'quiz, cards', largeImageURL: 'https://pixabay.com/get/1.jpg' },
+      { pageURL: 'https://pixabay.com/photos/2/', user: 'X', tags: '', largeImageURL: 'http://insecure.example/2.jpg' },
+    ] }), 'application/json'),
+  };
+  const got = await searchLibrary('quiz night', { provider: 'pixabay', key: 'x9' });
+  assert.strictEqual(got.length, 1, 'https images only');
+  assert.deepStrictEqual(got[0], {
+    url: 'https://pixabay.com/get/1.jpg', page: 'https://pixabay.com/photos/quiz-1/', credit: 'Image by Jo bLee from Pixabay', short: 'Jo bLee / Pixabay',
+    creditUrl: 'https://pixabay.com/photos/quiz-1/', licence: 'https://pixabay.com/service/license-summary/', alt: '', text: 'quiz, cards',
+  });
+  assert.ok(fetched[fetched.length - 1].init.signal, 'Pixabay fetch has a timeout');
+  assert.deepStrictEqual(await searchLibrary('quiz night', { provider: 'pixabay', key: '' }), [], 'no key, no search');
 });
 
 const okCheck = (over = {}) => async () => ({ kind: 'photo', people: 'none', performer: false, stock: 'unlikely', relevant: true, organiser: 'Rous Lench Village Hall', reason: 'Fine.', ...over });
@@ -222,7 +245,7 @@ const quizRow = (over = {}) => ({
   summary: 'Teams of six at the village hall.', village: 'Rous Lench', link_url: 'https://hall.example.org/quiz', links: '',
   from: 'Hall <sec@hall.example.org>', ...over,
 });
-const ctxFor = (check, over = {}) => ({ today: '2026-10-24', photos, people: new Map(), pexelsKey: 'k', check, ...over });
+const ctxFor = (check, over = {}) => ({ today: '2026-10-24', photos, people: new Map(), library: { provider: 'pexels', name: 'Pexels', key: 'k' }, check, ...over });
 
 test('Match order: own photos (at most 2), then organiser, capped at 3; library only to fill', async () => {
   orgRoutes();
@@ -254,7 +277,7 @@ test('Match order: own photos (at most 2), then organiser, capped at 3; library 
 
   // No key: no library.
   orgRoutes();
-  const nokey = await suggest.suggestFor(quizRow({ village: 'Alcester', title: 'Quiz night — Alcester Village Hall' }), ctxFor(okCheck(), { pexelsKey: '' }));
+  const nokey = await suggest.suggestFor(quizRow({ village: 'Alcester', title: 'Quiz night — Alcester Village Hall' }), ctxFor(okCheck(), { library: null }));
   assert.deepStrictEqual(nokey.map((r) => r.source), ['organiser']);
 });
 

@@ -102,7 +102,7 @@ export function planPhoto({ action, expected }, row) {
 // Queue card. The choice is a stale-checked write of Pending image_choice; approval is the
 // usual decide() path, and publish uses the chosen image. Only for a pending item that has
 // no image of its own. An image flagged for people needs people_ok "yes" first; one showing
-// children never gets here (the run drops them). Choosing an organiser's or Pexels image also
+// children never gets here (the run drops them). Choosing an organiser's or library image also
 // queues it for Lenches Photos (an "Image fetch" row, saved to Drive by image-fetch.gs, as
 // organisers' images are now), once per suggestion.
 export const SUGGEST_TAB = 'Image suggestions';
@@ -119,7 +119,7 @@ function hostOf(href) {
 
 // The Image fetch row for a chosen external image (columns by header; extra keys ignored).
 export function imageFetchRow(row, s) {
-  const via = s.source === 'library' ? 'suggestion (Pexels)' : `suggestion (organiser's site, ${hostOf(s.page)})`;
+  const via = s.source === 'library' ? `suggestion (${/pixabay\.com$/.test(hostOf(s.page)) ? 'Pixabay' : 'Pexels'})` : `suggestion (organiser's site, ${hostOf(s.page)})`;
   return {
     url: one(s.url, 1000),
     village: one(s.village, 60) || 'General',
