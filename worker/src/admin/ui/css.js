@@ -170,6 +170,7 @@ table.h td,table.h th{text-align:left;padding:6px 4px;border-bottom:1px solid va
   .list{flex:0 0 42%;max-width:520px;overflow:auto;border-right:1px solid var(--line)}
   .list .card{cursor:pointer;padding:10px 12px}
   .list .card .text{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .list details.card .text{display:block;-webkit-line-clamp:none;overflow:visible} /* Sent history: the whole email */
   .list .card h2.fname{font-size:.8rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .detail{display:block;flex:1;overflow:auto;padding:16px}
   .detail .card{padding:18px}
