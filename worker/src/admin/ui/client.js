@@ -18,7 +18,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '27';
+export const UI_VERSION = '28';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -2404,7 +2404,9 @@ export const CLIENT_JS = String.raw`
     var c = h('div', { class: 'card' },
       h('div', { class: 'badges' }, h('span', { class: 'badge ' + (st === 'approved' ? 'ok' : st === 'proposed' ? 'info' : '') },
         st === 'approved' ? 'In use' : st === 'proposed' ? 'Suggested' : (str(r.status) || 'Not set'))),
-      h('div', { class: 'meta' }, [str(r.id), r.created_at ? 'added ' + when(r.created_at) : '', str(r.notes)].filter(Boolean).join(' · ')));
+      h('div', { class: 'meta' }, [str(r.id), r.created_at ? 'added ' + when(r.created_at) : '', /^Check:/.test(str(r.notes)) ? '' : str(r.notes)].filter(Boolean).join(' · ')),
+      // A clash found by the Monday check (scripts/lessons): edit or delete to settle it.
+      /^Check:/.test(str(r.notes)) ? h('div', { class: 'note warn' }, str(r.notes)) : null);
     if (editing) {
       var box = h('textarea', { class: 'f', rows: 3, maxlength: 300, 'aria-label': 'Lesson text' }, str(r.lesson));
       add(c, [box, h('div', { class: 'actions' },

@@ -413,6 +413,20 @@ function voiceGuide() {
 const LESSONS_TAB = 'Holly lessons';
 const LESSON_HEADERS = ['id', 'created_at', 'lesson', 'evidence', 'status', 'decided_at', 'notes'];
 const RECENT_CORRECTIONS = 8;
+const MAX_LESSONS_USED = 20; // newest approved first; more is a sign the rules need tidying
+// Holly's fixed rules (26 Oct, "no Asimov conflicts"): above every lesson and the voice guide.
+// Each drafting prompt has its own rules too; these are the ones no lesson may bend, and
+// scripts/lessons checks every lesson against them. Code enforces the first and fifth anyway
+// (exposesTeam, sanitiseAnswer) and nothing is sent without Jon's tap outside holiday mode.
+const FIXED_RULES = [
+  'Never name anyone on the team or give any address but website@.',
+  'Never say something has been or will be published, changed, removed or added unless it has, and never promise a date.',
+  'Never research, look up or find out things for people.',
+  'Facts only from what the prompt gives (the website, their email, the team\'s instruction); never invent.',
+  'Links only as given, each on a line of its own; no email addresses.',
+  'Statements from councils and other official bodies are used in their own words.',
+  'No greeting or sign-off in the draft: both are added separately, and the sign-off is always Holly\'s.',
+];
 const CORRECTION_CHARS = 500;
 let learning = { lessons: [], corrections: [] };
 
@@ -437,8 +451,10 @@ function correctionsFrom(rows, n = RECENT_CORRECTIONS) {
 async function primeLearning() {
   const next = { lessons: [], corrections: [] };
   try {
-    next.lessons = (await g.readTable(LESSONS_TAB)).filter((r) => String(r.status).trim().toLowerCase() === 'approved')
-      .map((r) => clipTo(r.lesson, 400)).filter(Boolean);
+    const approved = (await g.readTable(LESSONS_TAB)).filter((r) => String(r.status).trim().toLowerCase() === 'approved' && String(r.lesson || '').trim())
+      .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+    if (approved.length > MAX_LESSONS_USED) console.warn(`Holly learning: ${approved.length} lessons in use; only the newest ${MAX_LESSONS_USED} are used. Tidy the Holly lessons tab.`);
+    next.lessons = approved.slice(0, MAX_LESSONS_USED).map((r) => clipTo(r.lesson, 400));
   } catch { /* no lessons tab yet */ }
   try {
     next.corrections = correctionsFrom(await g.readTable(feedback.TAB));
@@ -451,7 +467,7 @@ async function primeLearning() {
 function learningBlock() {
   const parts = [];
   if (learning.lessons.length) {
-    parts.push(`The team's lessons for Holly (follow them; they win over the voice guide where they differ):\n${learning.lessons.map((l) => `- ${l}`).join('\n')}`);
+    parts.push(`The team's lessons for Holly. Follow them; they win over the voice guide where they differ, but never over the rules above or these fixed rules, which always come first:\n${FIXED_RULES.map((r) => `- ${r}`).join('\n')}\nLessons:\n${learning.lessons.map((l) => `- ${l}`).join('\n')}`);
   }
   if (learning.corrections.length) {
     parts.push(`How the team corrected recent drafts (newest first). Learn the pattern; never copy names, dates or details from them:\n<recent_corrections>\n${JSON.stringify(learning.corrections)}\n</recent_corrections>`);
@@ -1892,6 +1908,9 @@ module.exports = {
   innerBody,
   LESSONS_TAB,
   LESSON_HEADERS,
+  FIXED_RULES,
+  MAX_LESSONS_USED,
+  voiceGuide,
   textToHtml,
   sanitiseAnswer,
   textOf,

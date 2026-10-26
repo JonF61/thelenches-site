@@ -143,27 +143,52 @@ async function main() {
     { reply_id: 'a1', type: 'answer', outcome: 'edited', draft: 'Hi there,\n\nWe can\'t check.', final_text: 'Hi Jenny,\n\nWe\'ll check.', reason: 'clerk', decided_at: '2026-10-26 10:00' },
     { reply_id: 'old', type: 'answer', outcome: 'edited', draft: 'old', final_text: 'older', reason: '', decided_at: '2026-09-01 10:00' },
   ];
-  tables['Holly lessons'] = [{ id: 'L20261026-1', lesson: 'Existing', status: 'rejected' }];
+  tables['Holly lessons'] = [{ id: 'L20261026-1', lesson: 'Existing', status: 'rejected' },
+    { id: 'L20261020-1', created_at: '2026-10-20 07:13', lesson: 'Point people to the parish council for meeting dates.', status: 'approved', notes: '' },
+    { id: 'L20261020-2', created_at: '2026-10-20 07:13', lesson: 'Keep replies short.', status: 'approved', notes: 'Check: an old clash now settled' }];
   answer = JSON.stringify({ lessons: [
-    { lesson: 'Never tell the sender we cannot check something; say the team will look at it.', evidence: ['a1', 'made-up'] },
+    { lesson: 'Never tell the sender we cannot check something; say the team will look at it.', evidence: ['a1', 'made-up'], conflicts: 'Overlaps the voice guide rule on checking.' },
     { lesson: 'Email owner@thelenches.org.uk for help.', evidence: ['a1'] },
     { lesson: 'Ask Owner before replying.', evidence: [] },
-  ] });
-  const rows = await lessons.run({ now });
+  ], review: [{ id: 'L20261020-1', conflict: 'Clashes with a lesson to keep queries with the team.' }, { id: 'L-unknown', conflict: 'x' }] });
+  const { rows, flagged } = await lessons.run({ now });
   const input = JSON.parse(prompts[0].messages[0].content);
   ok(input.corrections.length === 1 && input.corrections[0].reply_id === 'a1' && input.existing[0].status === 'rejected', 'last 7 days only; existing passed');
+  ok(input.fixed_rules.length >= 5 && /Never name anyone on the team/.test(input.fixed_rules[0]) && /Voice guide/.test(input.voice_guide)
+    && input.approved.map((a) => a.id).join() === 'L20261020-1,L20261020-2', 'checked against fixed rules, voice guide and lessons in use');
   ok(rows.length === 1 && rows[0].id === 'L20261026-2' && rows[0].status === 'proposed' && rows[0].evidence === 'a1', 'one clean lesson, next free id, real evidence only');
-  ok(sent.length === 1 && /Holly lessons to approve: 1/.test(sent[0].subject) && sent[0].text.includes('Approve: https://w.example/a?t=') && sent[0].html.includes('Reject'), 'email with links');
+  ok(rows[0].notes === 'Check: Overlaps the voice guide rule on checking.', 'a proposal\'s conflict noted');
+  ok(flagged.length === 1 && tables['Holly lessons'][1].notes === 'Check: Clashes with a lesson to keep queries with the team.', 'a lesson in use flagged (unknown ids ignored)');
+  ok(tables['Holly lessons'][2].notes === '', 'a settled clash is cleared');
+  ok(sent.length === 1 && /Holly lessons to approve: 1, 1 to check/.test(sent[0].subject) && sent[0].text.includes('Approve: https://w.example/a?t=') && sent[0].html.includes('Reject')
+    && sent[0].text.includes('Lessons in use that need a look') && sent[0].html.includes('Clashes with a lesson'), 'email with links and the clashes');
   const token = sent[0].text.match(/Approve: https:\/\/w\.example\/a\?t=([^.\s]+)\./)[1];
   const payload = JSON.parse(Buffer.from(token, 'base64url').toString());
   ok(payload.i === 'L20261026-2' && payload.a === 'lesson_ok', 'link carries id and lesson_ok');
   await lessons.decide('L20261026-2', 'lesson_ok');
-  ok(tables['Holly lessons'][1].status === 'approved' && tables['Holly lessons'][1].decided_at, 'approved');
+  const newRow = tables['Holly lessons'].find((r) => r.id === 'L20261026-2');
+  ok(newRow.status === 'approved' && newRow.decided_at, 'approved');
   await lessons.decide('L20261026-2', 'lesson_no');
-  ok(tables['Holly lessons'][1].status === 'approved', 'single use');
+  ok(newRow.status === 'approved', 'single use');
+  // A week with no corrections still reviews the lessons in use; no clash = no email.
   tables['Reply feedback'] = [];
   prompts.length = 0;
-  ok((await lessons.run({ now })).length === 0 && prompts.length === 0, 'no corrections: no Claude call');
+  sent.length = 0;
+  answer = JSON.stringify({ lessons: [{ lesson: 'Should be ignored with no corrections.', evidence: [] }], review: [] });
+  const quiet = await lessons.run({ now });
+  ok(prompts.length === 1 && quiet.rows.length === 0 && quiet.flagged.length === 0 && sent.length === 0, 'review only; nothing proposed or sent');
+  ok(tables['Holly lessons'][1].notes === '', 'clash cleared once gone');
+  tables['Holly lessons'] = [];
+  prompts.length = 0;
+  ok((await lessons.run({ now })).rows.length === 0 && prompts.length === 0, 'no corrections and no lessons: no Claude call');
+
+  // The prompt puts the fixed rules above the lessons, and caps lessons in use.
+  tables['Holly lessons'] = Array.from({ length: 25 }, (_, i) => ({ id: `L${i}`, created_at: `2026-10-${String(i + 1).padStart(2, '0')} 07:13`, lesson: `Lesson number ${i} for testing.`, status: 'approved' }));
+  await replies.primeLearning();
+  const capped = replies.withVoice('BASE');
+  ok(capped.includes('Lesson number 24') && !capped.includes('Lesson number 4 ') && (capped.match(/Lesson number/g) || []).length === replies.MAX_LESSONS_USED, 'newest 20 only');
+  ok(capped.indexOf('never over the rules above or these fixed rules') < capped.indexOf('Lessons:')
+    && capped.indexOf('Never name anyone on the team') < capped.indexOf('Lesson number'), 'fixed rules come first');
 
   console.log(`All Holly tests passed (${checks} checks).`);
 }
