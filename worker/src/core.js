@@ -44,6 +44,8 @@ export function validPayload(p) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(p.i)) return false;
   }
   if ((p.a === 'edit' || p.a === 'fb_edit') && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
+  // Redraft links may carry the draft to show (links.js redraftLink); it is never dispatched.
+  if (p.a === 'redraft' && p.b !== undefined && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
   if (p.a === 'fb_postpone' && !/^\d{4}-\d{2}-\d{2}$/.test(String(p.d || ''))) return false;
   if (p.a === 'trust') {
     const k = String(p.k || '');

@@ -101,3 +101,34 @@ test('nudge goes to approval.yml with the hashed id only', async () => {
   assert.deepEqual(dispatchFor({ a: 'nudge', i }), ['approval', { id: i, action: 'nudge' }]);
   assert.equal(ACTIONS.nudge[0], 'Draft nudge');
 });
+
+test('Redraft link shows the draft it carries; only the instruction is dispatched', async () => {
+  const { createHmac } = await import('node:crypto');
+  const { default: worker } = await import('../src/index.js');
+  const env = { APPROVAL_SIGNING_KEY: 'k', DISPATCH_TOKEN: 't', REPO: 'o/r' };
+  const sign = (p) => {
+    const body = Buffer.from(JSON.stringify(p)).toString('base64url');
+    return `${body}.${createHmac('sha256', 'k').update(body).digest('base64url')}`;
+  };
+  const e = Math.floor(Date.now() / 1000) + 3600;
+  const t = sign({ i: 'out-c1-202610260918', a: 'redraft', t: 'Reply to g@example.org', b: 'Hi George,\n\n<b>EP</b> news?', e });
+  const html = await (await worker.fetch(new Request(`https://w.example/a?t=${t}`), env)).text();
+  assert.match(html, /The draft now:[\s\S]*Hi George,\n\n&lt;b&gt;EP&lt;\/b&gt; news\?/);
+  const plain = await (await worker.fetch(new Request(`https://w.example/a?t=${sign({ i: 'r1', a: 'redraft', t: 'x', e })}`), env)).text();
+  assert.doesNotMatch(plain, /The draft now/);
+  assert.match(plain, /What should Holly change/);
+
+  const sent = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => { sent.push(JSON.parse(init.body)); return new Response(null, { status: 204 }); };
+  try {
+    const form = new FormData();
+    form.set('t', t);
+    form.set('reason', 'Drop the October bit');
+    const r = await worker.fetch(new Request('https://w.example/a', { method: 'POST', body: form }), env);
+    assert.equal(r.status, 200);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+  assert.deepEqual(sent, [{ event_type: 'approval', client_payload: { id: 'out-c1-202610260918', action: 'redraft', reason: 'Drop the October bit' } }]);
+});

@@ -24,7 +24,7 @@
 'use strict';
 
 const g = require('./google');
-const { signedLink, editFormLink, linksEnabled, LINK_DAYS } = require('./links');
+const { signedLink, editFormLink, redraftLink, linksEnabled, LINK_DAYS } = require('./links');
 const replies = require('./replies');
 const { offersChoice, isOfficial } = require('../../lib/wording');
 const wv = require('./wordingview');
@@ -195,7 +195,7 @@ function replyHtml(r, ctx) {
       <div style="white-space:pre-wrap;background:${C.cream};border-radius:6px;padding:10px 12px;font-size:14px;margin-bottom:8px;">${esc(r.body)}</div>
       ${noteFirst ? '' : noteHtml}
       <div style="font-weight:bold;font-size:14px;margin-bottom:6px;">${esc(replyLine(r, ctx.liveButtons))}</div>
-      ${showButtons ? `<div>${button(signedLink(link, 'send'), 'Approve', C.green)}${button(editFormLink(r) || editLink(r, alertTo()), 'Edit', C.orange)}${button(signedLink(link, 'redraft'), 'Redraft', C.slate)}${button(signedLink(link, 'skip'), 'Reject', C.red)}</div>` : ''}
+      ${showButtons ? `<div>${button(signedLink(link, 'send'), 'Approve', C.green)}${button(editFormLink(r) || editLink(r, alertTo()), 'Edit', C.orange)}${button(redraftLink(r), 'Redraft', C.slate)}${button(signedLink(link, 'skip'), 'Reject', C.red)}</div>` : ''}
       <div style="margin-top:6px;">${showButtons && editFormLink(r) ? textLink(editLink(r, alertTo()), 'Edit by email') : ''}${textLink(ctx.replyUrl(r), 'Open in Sheet')}${ctx.gmailFor(r) ? textLink(ctx.gmailFor(r), !replies.FALLBACK_TYPES.includes(r.type || 'ack') ? 'Their email' : 'Original email') : ''}</div>`,
   border);
 }
@@ -221,7 +221,7 @@ function owedHtml(o, ctx) {
   const buttons = live ? [
     waiting ? button(signedLink(link(o.draft), 'send'), 'Approve', C.green) : '',
     waiting ? button(editFormLink(o.draft) || editLink(o.draft, alertTo()), 'Edit', C.orange) : '',
-    o.draft ? button(signedLink(link(o.draft), 'redraft'), 'Redraft', C.slate) : '',
+    o.draft ? button(redraftLink(o.draft), 'Redraft', C.slate) : '',
     button(signedLink(link(o.holding), 'close'), 'Close, no reply needed', C.grey),
   ].join('') : '';
   return card(`
@@ -250,7 +250,7 @@ function owedText(o, ctx, out) {
       out.push(`Approve: ${signedLink(link(o.draft), 'send')}`);
       out.push(`Edit: ${editFormLink(o.draft) || editLink(o.draft, alertTo())}`);
     }
-    if (o.draft) out.push(`Redraft: ${signedLink(link(o.draft), 'redraft')}`);
+    if (o.draft) out.push(`Redraft: ${redraftLink(o.draft)}`);
     out.push(`Close, no reply needed: ${signedLink(link(o.holding), 'close')}`);
   }
   out.push(`Sheet: ${ctx.replyUrl(d)}`);
@@ -351,7 +351,7 @@ function buildText(ctx) {
         out.push(`Approve: ${signedLink(link, 'send')}`);
         if (editFormLink(r)) out.push(`Edit: ${editFormLink(r)}`);
         out.push(`Edit by email: ${editLink(r, alertTo())}`);
-        out.push(`Redraft: ${signedLink(link, 'redraft')}`);
+        out.push(`Redraft: ${redraftLink(r)}`);
         out.push(`Reject: ${signedLink(link, 'skip')}`);
       }
       out.push(`Sheet: ${ctx.replyUrl(r)}`);
