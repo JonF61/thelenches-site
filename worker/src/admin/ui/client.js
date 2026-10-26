@@ -18,7 +18,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '26';
+export const UI_VERSION = '27';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -28,13 +28,14 @@ export const CLIENT_JS = String.raw`
     picked: {}, ff: '', openF: {}, drag: null, busy: false, order: {}, shown: '' };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
-  var VIEWS = [['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['health', 'Health']];
+  var VIEWS = [['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['health', 'Health']];
   // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
   var INTROS = {
     queue: 'Events and notices sent in by email or picked up from feeds, waiting for you to approve or reject. Approved items go on the website and into Thursday\'s newsletter.',
     replies: 'Holly\'s draft emails waiting for you to Approve, Edit, Redraft or Reject. Below them: emails still owed a reply, and everything already sent.',
     owed: 'Emails that got an automatic holding reply over 2 days ago but no real answer yet. Redraft one, reply yourself, or close it.',
     feedback: 'Comments and corrections from readers via the website\'s feedback form, to approve, reject or postpone, with Holly\'s replies to them.',
+    lessons: 'Rules Holly follows in every draft. Approve or reject the weekly suggestions, edit or delete any lesson, or add your own (yours count as approved).',
     contacts: 'Everyone who sends in, or could send in, news and events, with their profile, contributions and status. Outreach shows who is due a friendly nudge.',
     photos: 'Photos in the Lenches Photos folders in Google Drive. Approve or reject new ones, rename them, or move them between folders.',
     health: 'The daily diagnostic, the watchdog and the Google account the panel uses. Look here if something seems wrong.'
@@ -310,7 +311,7 @@ export const CLIENT_JS = String.raw`
       owed: Array.isArray(d.owed) ? d.owed.filter(function (o) { return !S.done['reply:' + o.holding.reply_id]; }).length : '!',
       photos: d.photos && !d.photos.error ? d.photos.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length : '!',
       feedback: d.feedback && !d.feedback.error ? fbRows(d, 'waiting').length + fbRows(d, 'reply').length : '!',
-      contacts: null, health: null
+      contacts: null, lessons: null, health: null
     };
   }
 
@@ -336,6 +337,7 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'health') return [h('div', { class: 'list wide' }, top, healthView(d))];
     if (S.view === 'feedback') return [h('div', { class: 'list wide' }, top, feedbackView(d))];
     if (S.view === 'contacts') return [h('div', { class: 'list wide' }, top, contactsView())];
+    if (S.view === 'lessons') return [h('div', { class: 'list wide' }, top, lessonsView())];
     return split(withIntro(queueList(d)), 'pending');
   }
 
@@ -2374,6 +2376,82 @@ export const CLIENT_JS = String.raw`
         list.length ? h('ul', { class: 'clist-items' }, list.map(function (c) { return h('li', null, c); })) : h('p', { class: 'meta' }, 'Nothing in Pending from this address.'),
         more > 0 ? h('p', { class: 'meta' }, 'and ' + more + ' older.') : null)
     ];
+  }
+
+  /* ------------------------------------------------------------- lessons -- */
+
+  // Holly lessons tab (admin/lessons.js): approved ones go into every Holly draft.
+  async function loadLessons() {
+    S.lLoading = true;
+    var r = await api('/admin/api/lessons');
+    S.lLoading = false;
+    S.lessons = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'lessons') render();
+  }
+
+  async function lessonPost(body, okText) {
+    var res = await api('/admin/api/lesson', body);
+    toast(res.ok ? (res.json.message || okText) : (res.status === 409 && res.json.current !== undefined
+      ? 'Changed in the Sheet since you loaded the page. Not saved; reloaded.' : (res.json.error || ('HTTP ' + res.status))), !res.ok);
+    S.lessons = null;
+    render();
+    return res.ok;
+  }
+
+  function lessonCard(r) {
+    var st = lower(r.status);
+    var editing = S.lEdit === r.id;
+    var c = h('div', { class: 'card' },
+      h('div', { class: 'badges' }, h('span', { class: 'badge ' + (st === 'approved' ? 'ok' : st === 'proposed' ? 'info' : '') },
+        st === 'approved' ? 'In use' : st === 'proposed' ? 'Suggested' : (str(r.status) || 'Not set'))),
+      h('div', { class: 'meta' }, [str(r.id), r.created_at ? 'added ' + when(r.created_at) : '', str(r.notes)].filter(Boolean).join(' · ')));
+    if (editing) {
+      var box = h('textarea', { class: 'f', rows: 3, maxlength: 300, 'aria-label': 'Lesson text' }, str(r.lesson));
+      add(c, [box, h('div', { class: 'actions' },
+        h('button', { class: 'btn primary', onclick: function () {
+          if (box.value.trim() === str(r.lesson)) { S.lEdit = ''; render(); return; }
+          S.lEdit = '';
+          lessonPost({ op: 'edit', id: r.id, expected: r.lesson, value: box.value }, 'Saved');
+        } }, 'Save'),
+        h('button', { class: 'btn link', onclick: function () { S.lEdit = ''; render(); } }, 'Cancel'))]);
+      return c;
+    }
+    add(c, [h('div', { class: 'text' }, str(r.lesson)), h('div', { class: 'actions' },
+      st === 'proposed' ? h('button', { class: 'btn primary', onclick: function () { lessonPost({ op: 'decide', id: r.id, action: 'approve' }, 'Approved'); } }, 'Approve') : null,
+      st === 'proposed' ? h('button', { class: 'btn danger', onclick: function () { lessonPost({ op: 'decide', id: r.id, action: 'reject' }, 'Rejected'); } }, 'Reject') : null,
+      h('button', { class: 'btn', onclick: function () { S.lEdit = r.id; render(); } }, 'Edit'),
+      h('button', { class: 'btn link', onclick: function () {
+        if (window.confirm('Delete this lesson?\n\n"' + str(r.lesson) + '"\n\nHolly stops using it from the next run. This removes the row from the Sheet.')) {
+          lessonPost({ op: 'delete', id: r.id, expected: r.lesson }, 'Deleted');
+        }
+      } }, 'Delete'),
+      sheetLink('Holly lessons', r._row))]);
+    return c;
+  }
+
+  function lessonsView() {
+    var t = S.lessons;
+    if (!t) {
+      if (!S.lLoading) loadLessons();
+      return [h('p', { class: 'loading' }, 'Loading lessons…')];
+    }
+    if (t.error) return [errorNote(t, 'Holly lessons'), h('button', { class: 'btn', onclick: function () { S.lessons = null; render(); } }, 'Try again')];
+    var by = function (st) { return t.rows.filter(function (r) { return lower(r.status) === st; }); };
+    var other = t.rows.filter(function (r) { return ['approved', 'proposed'].indexOf(lower(r.status)) < 0; });
+    var text = h('textarea', { class: 'f', id: 'lesson-new', rows: 2, maxlength: 300, placeholder: 'e.g. Write to council clerks formally and thank them for their help.' });
+    var addForm = h('form', { class: 'card', onsubmit: function (e) {
+      e.preventDefault();
+      if (text.value.trim().length < 10) { toast('Type the lesson first (at least 10 characters)', true); return; }
+      lessonPost({ op: 'add', value: text.value }, 'Added');
+    } }, h('label', { class: 'f', for: 'lesson-new' }, 'Add a lesson'), text,
+    h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'submit' }, 'Add')));
+    var section = function (title, rows, empty) {
+      return [h('h2', { class: 'section' }, title + ' (' + rows.length + ')'), rows.length ? rows.map(lessonCard) : h('p', { class: 'empty' }, empty)];
+    };
+    return [addForm,
+      section('Suggested', by('proposed'), 'No suggestions waiting. New ones come each Monday.'),
+      section('In use', by('approved'), 'No lessons in use yet.'),
+      other.length ? section('Not in use', other, '') : null];
   }
 
   /* --------------------------------------------------------------- health -- */

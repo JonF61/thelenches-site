@@ -45,6 +45,12 @@
 //                                   through decide() (action nudge, id = idFor(email)); Holly's
 //                                   draft then waits in Replies for the usual Approve / Edit
 //   (Snooze, Never nudge and Clear are /admin/api/contact writes of next_nudge.)
+//   GET  /admin/api/lessons         the Holly lessons tab, newest first (lessons.js)
+//   POST /admin/api/lesson          { op: add, value } (a new approved lesson; the tab is made
+//                                   if missing) | { op: edit, id, expected, value } (stale-
+//                                   checked) | { op: delete, id, expected } (row removed if its
+//                                   text is still as loaded) | { op: decide, id, action:
+//                                   approve|reject } (a proposed lesson, through decide())
 //   GET  /admin/api/photo-file?id=  a Photos file's live Drive name and folder, and the
 //                                   Lenches Photos folders it can move to
 //   GET  /admin/api/photo-group?id= every copy in a possible-duplicate group
@@ -61,7 +67,8 @@
 //   GET  /admin/img/drive/ID[?size=N]  a Photos image (Drive thumbnail, else the file)
 // Nothing here can send the newsletter or change repository code: the only GitHub call
 // is decide(), for the item and reply actions listed in actions.js, the Feedback
-// actions in feedback.js and outreach's nudge (a draft only; it never sends).
+// actions in feedback.js, outreach's nudge (a draft only; it never sends) and approving or
+// rejecting a proposed Holly lesson.
 
 import { ACTIONS, decide, github } from '../core.js';
 import { verifyAccess } from './access.js';
@@ -84,6 +91,9 @@ import {
   CONTACTS_TAB, DELETED_TAB, DELETED_HEADERS, contactRows, planContact, planDelete,
 } from './contacts.js';
 import { outreachLists, planNudge, idFor, sentRows } from './outreach.mjs';
+import {
+  LESSONS_TAB, LESSON_HEADERS, lessonRows, cleanLesson, newLessonRow, planLessonDecision,
+} from './lessons.js';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 
@@ -452,6 +462,69 @@ async function doNudge(env, body) {
   return json({ ok: true, message: 'Draft requested. Holly emails you the draft to approve in a minute or two.' });
 }
 
+// The Holly lessons tab, or an empty list if it doesn't exist yet.
+async function readLessons(env) {
+  try {
+    return await readTable(env, LESSONS_TAB);
+  } catch (e) {
+    if (e.status === 400 && /Unable to parse range/i.test(e.message)) return { headers: [], rows: [] };
+    throw e;
+  }
+}
+
+const ukNow = () => {
+  const d = new Date();
+  const t = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d);
+  return `${ukToday()} ${t}`;
+};
+
+async function doLesson(env, body) {
+  const op = String(body.op || '');
+  const id = String(body.id ?? '');
+  if (op === 'add') {
+    const c = cleanLesson(body.value);
+    if (c.error) return json({ ok: false, ...c }, c.status);
+    let t = await readLessons(env);
+    if (!t.headers.includes('lesson')) {
+      if (t.headers.some(Boolean)) return json({ ok: false, error: 'The Holly lessons tab has no lesson column' }, 409);
+      if (!t.headers.length) await addTab(env, LESSONS_TAB).catch(() => {});
+      await appendValues(env, LESSONS_TAB, [LESSON_HEADERS]);
+      t = { headers: LESSON_HEADERS, rows: [] };
+    }
+    const { row, values } = newLessonRow(t.headers, t.rows, c.value, ukToday(), ukNow());
+    await appendValues(env, LESSONS_TAB, [values]);
+    return json({ ok: true, row, message: 'Lesson added. Holly uses it from the next run.' });
+  }
+  const t = await readLessons(env);
+  const matches = t.rows.filter((r) => id && String(r.id ?? '') === id);
+  const row = matches.length === 1 ? matches[0] : null;
+  if (op === 'edit') {
+    const c = cleanLesson(body.value);
+    if (c.error) return json({ ok: false, ...c }, c.status);
+    const r = await checkedWrite(env, { tab: LESSONS_TAB, keyCol: 'id', key: id, field: 'lesson', expected: body.expected, value: c.value });
+    return r.ok ? json({ ok: true, value: r.value, message: 'Lesson saved.' }) : json(r, r.status);
+  }
+  if (op === 'delete') {
+    if (!row) return json({ ok: false, error: 'No such lesson: reload the page' }, 404);
+    if (String(row.lesson ?? '') !== String(body.expected ?? '')) {
+      return json({ ok: false, error: 'Changed in the Sheet since you loaded the page', current: String(row.lesson ?? '') }, 409);
+    }
+    const gids = await sheetGids(env);
+    if (gids[LESSONS_TAB] === undefined) return json({ ok: false, error: 'No Holly lessons tab' }, 404);
+    await deleteRow(env, gids[LESSONS_TAB], row._row);
+    return json({ ok: true, message: 'Lesson deleted.' });
+  }
+  if (op === 'decide') {
+    const plan = planLessonDecision({ action: body.action, id }, row);
+    if (plan.error) return json({ ok: false, ...plan }, plan.status);
+    if (!(await decide(env, plan.p))) {
+      return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
+    }
+    return json({ ok: true, message: `${ACTIONS[plan.p.a][1]}. It takes a minute or two to show.` });
+  }
+  return json({ ok: false, error: `Unknown op "${op}"` }, 400);
+}
+
 const fromResult = (r) => (r.ok ? json(r) : json(r, r.status));
 
 // Photos file management: one operation per request.
@@ -533,6 +606,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/state') return json(await state(env, auth.email));
       if (path === '/admin/api/contacts') return json(contactRows(await readTable(env, CONTACTS_TAB)));
       if (path === '/admin/api/outreach') return json(await outreach(env));
+      if (path === '/admin/api/lessons') return json(lessonRows(await readLessons(env)));
       if (path === '/admin/api/photo-file') return fromResult(await fileInfo(env, String(url.searchParams.get('id') || '')));
       if (path === '/admin/api/photo-group') return fromResult(await dupMembers(env, String(url.searchParams.get('id') || '')));
       if (path === '/admin/api/photo-tidy') return fromResult(await tidyList(env));
@@ -556,6 +630,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/contact') return await doContact(env, body);
       if (path === '/admin/api/contact-delete') return await doContactDelete(env, body);
       if (path === '/admin/api/nudge') return await doNudge(env, body);
+      if (path === '/admin/api/lesson') return await doLesson(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(env, body);
       return json({ ok: false, error: 'Not found' }, 404);
     }
