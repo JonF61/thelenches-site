@@ -2,8 +2,9 @@ name: Daily diagnostic
 
 on:
   schedule:
-    # 04:40 UTC = 05:40 UK in summer, 04:40 in winter. No gate needed for a daily check.
-    - cron: "40 4 * * *"
+    # 02:07 UTC = 2.07am UK in winter, 3.07am in summer (Jon asked for 2am, 26 Oct; 7 past
+    # the hour because GitHub delays or drops many runs queued on the hour). No gate needed.
+    - cron: "7 2 * * *"
   workflow_dispatch:
 
 permissions:
