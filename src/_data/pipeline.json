@@ -6,7 +6,13 @@
       "body": "Cash bingo at The Lenches Club on Friday 30 October, 7.30pm to 11pm, tickets from 7.15pm, eyes down at 8pm. £5 per bingo book, £5 cash flyer, bonus ball £1 per square. Over 18s only.",
       "date": "2026-10-30",
       "village": "Lenches",
-      "expires": "2026-10-30"
+      "expires": "2026-10-30",
+      "image": {
+        "url": "/images/items/cash-bingo-lenches-club-2026-10-30.webp",
+        "alt": "\"Cash Bingo, Fri 30 Oct, eyes down 8pm, The Lenches Club, over 18s only\" over three bingo balls",
+        "credit": "Image by ChiniGaray from Pixabay",
+        "creditUrl": "https://pixabay.com/photos/lottery-bingo-sweepstakes-winner-3846567/"
+      }
     },
     {
       "id": "rss-4b3e37ba34618472-1",
