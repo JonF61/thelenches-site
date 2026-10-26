@@ -1,0 +1,52 @@
+name: Library candidates
+
+# Run by hand: picture-library results for a hand-written item, cropped to 3:2, pushed to the
+# library-candidates branch (replaced each run) for Kryten to choose from. Writes nothing to
+# the Sheet or the site.
+on:
+  workflow_dispatch:
+    inputs:
+      query:
+        description: 'Search words (no names), e.g. halloween pumpkins'
+        required: true
+      count:
+        description: 'How many (3 to 10)'
+        default: '6'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: library-candidates
+  cancel-in-progress: false
+
+jobs:
+  candidates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Fetch candidates
+        run: node scripts/suggest/candidates.js
+        env:
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PIXABAY_API_KEY: ${{ secrets.PIXABAY_API_KEY }}
+          QUERY: ${{ inputs.query }}
+          COUNT: ${{ inputs.count }}
+          OUT_DIR: ${{ runner.temp }}/candidates
+      - name: Push to the library-candidates branch
+        run: |
+          cd "$RUNNER_TEMP/candidates"
+          git init -q -b library-candidates
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Library candidates"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" library-candidates
