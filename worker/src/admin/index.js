@@ -36,6 +36,12 @@
 //                                   also sets profile_source "manual"), notes or status
 //   POST /admin/api/contact-delete  { email, expected }: removes the contact's row (status still as
 //                                   loaded) and logs it in Deleted contacts (made if missing)
+//   GET  /admin/api/outreach        who is due a nudge (outreach.mjs outreachLists: seasonal, gone
+//                                   quiet, leads, and those held back), from Contacts + Replies
+//   POST /admin/api/nudge           { email }: Draft nudge, if planNudge allows it today, goes
+//                                   through decide() (action nudge, id = idFor(email)); Holly's
+//                                   draft then waits in Replies for the usual Approve / Edit
+//   (Snooze, Never nudge and Clear are /admin/api/contact writes of next_nudge.)
 //   GET  /admin/api/photo-file?id=  a Photos file's live Drive name and folder, and the
 //                                   Lenches Photos folders it can move to
 //   GET  /admin/api/photo-group?id= every copy in a possible-duplicate group
@@ -51,8 +57,8 @@
 //   GET  /admin/img/mail/MSG/PART   a Pending image (email attachment)
 //   GET  /admin/img/drive/ID[?size=N]  a Photos image (Drive thumbnail, else the file)
 // Nothing here can send the newsletter or change repository code: the only GitHub call
-// is decide(), for the item and reply actions listed in actions.js and the Feedback
-// actions in feedback.js.
+// is decide(), for the item and reply actions listed in actions.js, the Feedback
+// actions in feedback.js and outreach's nudge (a draft only; it never sends).
 
 import { ACTIONS, decide, github } from '../core.js';
 import { verifyAccess } from './access.js';
@@ -74,6 +80,7 @@ import { FEEDBACK_TAB } from '../feedback.js';
 import {
   CONTACTS_TAB, DELETED_TAB, DELETED_HEADERS, contactRows, planContact, planDelete,
 } from './contacts.js';
+import { outreachLists, planNudge, idFor } from './outreach.mjs';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 
@@ -422,6 +429,24 @@ async function doContactDelete(env, body) {
   return json({ ok: true, message: 'Deleted from Contacts. Their newsletter subscription is unchanged.' });
 }
 
+async function outreach(env) {
+  const [contacts, replies] = await Promise.all([readTable(env, CONTACTS_TAB), readTable(env, 'Replies')]);
+  const live = contactRows(contacts).rows;
+  return { today: ukToday(), hasNextNudge: contacts.headers.includes('next_nudge'), ...(await outreachLists(live, replies.rows, ukToday())) };
+}
+
+async function doNudge(env, body) {
+  const email = String(body.email ?? '');
+  const [contacts, replies] = await Promise.all([readTable(env, CONTACTS_TAB), readTable(env, 'Replies')]);
+  const matches = contacts.rows.filter((r) => email && String(r.email ?? '') === email);
+  const plan = planNudge(matches.length === 1 ? matches[0] : null, replies.rows, ukToday());
+  if (plan.error) return json({ ok: false, ...plan }, plan.status);
+  if (!(await decide(env, { a: 'nudge', i: await idFor(email) }))) {
+    return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
+  }
+  return json({ ok: true, message: 'Draft requested. Holly emails you the draft to approve in a minute or two.' });
+}
+
 const fromResult = (r) => (r.ok ? json(r) : json(r, r.status));
 
 // Photos file management: one operation per request.
@@ -495,6 +520,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/session') return json({ email: auth.email, csrf: await makeCsrf(env, auth.email) });
       if (path === '/admin/api/state') return json(await state(env, auth.email));
       if (path === '/admin/api/contacts') return json(contactRows(await readTable(env, CONTACTS_TAB)));
+      if (path === '/admin/api/outreach') return json(await outreach(env));
       if (path === '/admin/api/photo-file') return fromResult(await fileInfo(env, String(url.searchParams.get('id') || '')));
       if (path === '/admin/api/photo-group') return fromResult(await dupMembers(env, String(url.searchParams.get('id') || '')));
       if (path === '/admin/api/photo-tidy') return fromResult(await tidyList(env));
@@ -517,6 +543,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/feedback-note') return await doNote(env, body);
       if (path === '/admin/api/contact') return await doContact(env, body);
       if (path === '/admin/api/contact-delete') return await doContactDelete(env, body);
+      if (path === '/admin/api/nudge') return await doNudge(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(env, body);
       return json({ ok: false, error: 'Not found' }, 404);
     }

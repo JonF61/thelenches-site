@@ -12,10 +12,13 @@
 // keeps its scroll, selection and open folders (render reuses unchanged cards).
 // Contacts: a list (search; status, village and organisation filters; newest contact first)
 // and a page per contact; each field saves on its own, stale-checked.
+// Outreach (26 Oct): who is due a nudge (seasonal, gone quiet, leads; /admin/api/outreach),
+// with Draft nudge (Holly drafts; the card comes by email), Snooze 3 months, Never nudge,
+// and Clear for those held back (next_nudge writes through /admin/api/contact).
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '18';
+export const UI_VERSION = '19';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -138,6 +141,7 @@ export const CLIENT_JS = String.raw`
       S.done = {};
       S.files = {};
       S.contacts = null;
+      S.outreach = null;
       render();
       if (!quiet) toast('Up to date');
     } catch (e) {
@@ -2045,7 +2049,92 @@ export const CLIENT_JS = String.raw`
     var open = S.contact ? cFind(S.contact) : null;
     if (open) return contactPage(open);
     S.contact = '';
-    return contactList(t.rows);
+    var tabs = h('div', { class: 'actions' },
+      h('button', { class: 'btn' + (S.cTab === 'outreach' ? ' link' : ''), 'aria-pressed': S.cTab !== 'outreach' ? 'true' : 'false',
+        onclick: function () { S.cTab = 'list'; render(); } }, 'All contacts'),
+      h('button', { class: 'btn' + (S.cTab === 'outreach' ? '' : ' link'), 'aria-pressed': S.cTab === 'outreach' ? 'true' : 'false',
+        onclick: function () { S.cTab = 'outreach'; S.outreach = null; render(); } }, 'Outreach'));
+    return [tabs].concat(S.cTab === 'outreach' ? outreachView() : contactList(t.rows));
+  }
+
+  /* ------------------------------------------------------------ outreach -- */
+
+  async function loadOutreach() {
+    S.oLoading = true;
+    var r = await api('/admin/api/outreach');
+    S.oLoading = false;
+    S.outreach = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'contacts') render();
+  }
+
+  function addMonths(day, n) {
+    var d = new Date(day + 'T12:00:00Z');
+    d.setUTCMonth(d.getUTCMonth() + n);
+    return d.toISOString().slice(0, 10);
+  }
+
+  // One next_nudge write (stale-checked against what the list loaded), then a fresh list.
+  async function oNext(e, value, what) {
+    var res = await api('/admin/api/contact', { email: e.email, field: 'next_nudge', expected: e.next_nudge, value: value });
+    if (res.ok) {
+      var row = cFind(e.email);
+      if (row) row.next_nudge = res.json.value;
+      toast(what);
+    } else {
+      toast(cSaveError(res, 'Next nudge'), true);
+    }
+    S.outreach = null;
+    render();
+  }
+
+  async function oDraft(e, btn) {
+    btn.disabled = true;
+    var res = await api('/admin/api/nudge', { email: e.email });
+    toast(res.ok ? res.json.message : (res.json.error || ('HTTP ' + res.status)), !res.ok);
+    S.outreach = null;
+    render();
+  }
+
+  function outreachRow(e, o) {
+    var title = e.name || e.email;
+    var draft = h('button', { class: 'btn', onclick: function () { oDraft(e, draft); } }, 'Draft nudge');
+    var acts = e.held
+      ? [e.next_nudge ? h('button', { class: 'btn link', onclick: function () { oNext(e, '', 'Cleared: ' + title + ' can be nudged again'); } }, 'Clear') : null]
+      : [o.week < o.cap ? draft : null,
+        o.hasNextNudge ? h('button', { class: 'btn link', onclick: function () { oNext(e, addMonths(o.today, 3), 'Snoozed for 3 months'); } }, 'Snooze 3 months') : null,
+        o.hasNextNudge ? h('button', { class: 'btn link', onclick: function () {
+          if (window.confirm('Never nudge ' + title + '?\n\nThey drop off the outreach lists for good (Clear undoes it). Nothing else changes.')) oNext(e, 'never', 'Never nudge: ' + title);
+        } }, 'Never nudge') : null];
+    return h('div', { class: 'card crow' },
+      h('div', null,
+        h('div', { class: 'crow-top' }, h('button', { class: 'btn link', onclick: function () { S.contact = e.email; render(); window.scrollTo(0, 0); } }, h('b', null, title)),
+          e.organisation ? h('span', null, ' · ' + e.organisation) : null, h('span', { class: 'crow-badges' }, cBadge(e.status))),
+        h('div', { class: 'meta' }, [e.why, e.held ? 'held back: ' + e.held : '', e.last_contact && e.kind !== 'quiet' ? 'last email ' + e.last_contact : '']
+          .filter(Boolean).join(' · ').replace(/\d{4}-\d{2}-\d{2}/g, cDay)),
+        h('div', { class: 'actions' }, acts)));
+  }
+
+  function outreachView() {
+    var o = S.outreach;
+    if (!o) {
+      if (!S.oLoading) loadOutreach();
+      return [h('p', { class: 'loading' }, 'Loading outreach…')];
+    }
+    if (o.error) return [errorNote(o, 'Outreach'), h('button', { class: 'btn', onclick: function () { S.outreach = null; render(); } }, 'Try again')];
+    var section = function (title, hint, list) {
+      return h('div', null, h('h2', { class: 'section' }, title + ' (' + list.length + ')'), h('p', { class: 'meta' }, hint),
+        list.length ? list.map(function (e) { return outreachRow(e, o); }) : h('p', { class: 'empty' }, 'Nobody at the moment.'));
+    };
+    return [
+      h('p', { class: 'meta' }, 'Holly drafts the email; it comes to you by email to Approve, Edit, Redraft or Reject, and never goes by itself. '
+        + o.week + ' of ' + o.cap + ' drafts used this week.'),
+      o.week >= o.cap ? h('div', { class: 'note' }, 'This week\'s ' + o.cap + ' drafts are used: Draft nudge comes back as the week moves on.') : null,
+      o.hasNextNudge ? null : h('div', { class: 'note bad' }, 'Snooze and Never nudge need a next_nudge column at the end of the Contacts tab (column P).'),
+      section('Seasonal due', 'Sent something around this time last year, nothing yet this year.', o.seasonal),
+      section('Gone quiet', 'Contributors, organisers and collaborators with no email for 3 to 12 months.', o.quiet),
+      section('Leads to chase', 'Offered or seemed likely to send something, but haven\'t yet.', o.lead),
+      section('Held back', 'Snoozed, set to never, a draft waiting, or nudged in the last 4 months.', o.held)
+    ];
   }
 
   function contactList(rows) {

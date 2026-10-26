@@ -28,6 +28,9 @@ export const ACTIONS = {
   fb_send: ['Send reply', 'Reply sent', 'approve'],
   fb_edit: ['Send edited reply', 'Edited reply sent', 'approve'],
   fb_skip: ['Skip reply', 'Reply skipped', 'reject'],
+  // Outreach (admin panel only): Holly drafts a nudge to one contact (admin/outreach.mjs). The
+  // id is a hash of their address; the draft then waits for Jon's send / edit / skip.
+  nudge: ['Draft nudge', 'Draft requested', 'approve'],
 };
 
 export const FEEDBACK_ACTIONS = ['fb_approve', 'fb_reject', 'fb_postpone', 'fb_done', 'fb_send', 'fb_edit', 'fb_skip'];
@@ -109,7 +112,7 @@ export function dispatchFor(p, reason = '', body = '') {
 }
 
 // One decision (approve, reject, trust, send, skip, edit, redraft, close, nlsend, nlbuild,
-// and the reader feedback fb_* actions) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
+// the reader feedback fb_* actions, and nudge) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
 export async function decide(env, p, reason = '', body = '') {
   const [eventType, payload] = dispatchFor(p, reason, body);
   return dispatch(env, eventType, payload, 2);

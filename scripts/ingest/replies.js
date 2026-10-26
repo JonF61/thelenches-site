@@ -66,6 +66,12 @@
 // the action email (owedReplies, urgent.js) with Redraft and "Close, no reply needed"
 // (closeOwed: policy code "closed" on the holding row). It stops once a real reply is sent
 // on the thread or Jon closes it.
+// Outreach (type "outreach", 26 Oct): a first email from us to a contact, drafted by
+// scripts/outreach when Jon taps Draft nudge in the panel. No message_id or thread_id (it
+// starts a new thread, without the Auto-Submitted header); "awaiting" until Jon's Approve,
+// Edit or Redraft, and never sent by sendDueReplies (not a FALLBACK_TYPE), even in holiday
+// mode. Its last paragraph before the sign-off is the opt-out line (templates.md
+// outreach_optout), kept through a redraft.
 // Every body is checked before it goes: links on their own line with no punctuation
 // touching them (fixLinks), and the sender's signature and quoted history are trimmed
 // (stripQuoted) before their words are quoted to Jon or given to Claude.
@@ -1352,13 +1358,16 @@ async function deliver(row, settings, { body: given, note: givenNote = '', decid
   const exposed = exposesTeam(text);
   if (exposed) return fail(`Body contains "${exposed}": never sent (anonymity)`);
 
-  let orig;
-  try {
-    orig = await g.getMessage(row.message_id); // threading headers from the original
-  } catch (err) {
-    return fail(`Original message unreadable: ${(err && err.message) || err}`);
+  // Outreach starts a new thread: no original, and not an automatic reply.
+  let orig = {};
+  if (row.message_id) {
+    try {
+      orig = await g.getMessage(row.message_id); // threading headers from the original
+    } catch (err) {
+      return fail(`Original message unreadable: ${(err && err.message) || err}`);
+    }
   }
-  const headers = { 'Auto-Submitted': 'auto-replied', 'X-Auto-Response-Suppress': 'All' };
+  const headers = row.message_id ? { 'Auto-Submitted': 'auto-replied', 'X-Auto-Response-Suppress': 'All' } : {};
   if (orig.rfcMessageId) {
     headers['In-Reply-To'] = orig.rfcMessageId;
     headers.References = [orig.references, orig.rfcMessageId].filter(Boolean).join(' ');
@@ -1377,7 +1386,7 @@ async function deliver(row, settings, { body: given, note: givenNote = '', decid
       html: textToHtml(text),
       from: REPLY_FROM,
       fromName: g.fromNameFor(settings),
-      threadId: row.thread_id,
+      threadId: row.thread_id || undefined,
       headers,
     });
   } catch (err) {
@@ -1529,6 +1538,8 @@ Rules:
 - hold_reason not "none": careful and neutral, admit nothing, promise nothing.
 - 1 to 4 short paragraphs, under 150 words. No greeting, no sign-off (both added
   separately), and never use or invent a personal name unless the instruction gives it.
+- reply_type "outreach": not a reply but our own first email, inviting them to send in
+  their news or events; their_message is empty. No opt-out line (added separately).
 
 Output only JSON, nothing else:
 {"draft": "the reply body"}`;
@@ -1577,13 +1588,15 @@ async function redraftReply(replyId, instruction) {
 
   let said = '';
   try {
-    said = stripQuoted((await g.getMessage(row.message_id)).text);
+    if (row.message_id) said = stripQuoted((await g.getMessage(row.message_id)).text);
   } catch (err) {
     console.warn(`Redraft for ${replyId}: original email unreadable, using the note: ${(err && err.message) || err}`);
     const m = String(row.notes || '').match(/They wrote: "([^"]*)"/);
     said = m ? m[1] : '';
   }
-  const previous = innerBody(row.body);
+  const optout = row.type === 'outreach' ? fill('outreach_optout') : '';
+  let previous = innerBody(row.body);
+  if (optout && previous.endsWith(optout)) previous = previous.slice(0, -optout.length).trim();
   const facts = siteFacts();
   const urls = new Set([...facts.urls, ...(previous.match(/https?:\/\/[^\s<>"]+/g) || [])]);
   const emails = want.match(/[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[a-z]{2,}/gi) || [];
@@ -1630,7 +1643,7 @@ async function redraftReply(replyId, instruction) {
     hold_reason: row.hold_reason,
     policy_codes: unique([...splitCodes(row.policy_codes), 'redraft']).join(','),
     subject: row.subject,
-    body: [hello, text, fill('signature')].join('\n\n'),
+    body: [hello, text, optout, fill('signature')].filter(Boolean).join('\n\n'),
     status: mode === 'shadow' ? 'shadow' : 'awaiting',
     created_at: now,
     notes: [`Redraft of ${replyId}, as you asked: "${want}"`, theyWroteNote(said), ...warnings].filter(Boolean).join(' | '),
@@ -1750,6 +1763,9 @@ module.exports = {
   fill,
   greeting,
   textToHtml,
+  sanitiseAnswer,
+  textOf,
+  RISKY,
   withVoice,
   claude,
   MODEL,

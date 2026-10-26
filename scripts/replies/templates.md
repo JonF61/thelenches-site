@@ -78,6 +78,9 @@ Thanks, you're already on the list for the newsletter, so it should be with you 
 ## list_unsubscribed
 No problem, we've taken you off the newsletter list, so you won't get any more. If you change your mind, just let us know.
 
+## outreach_optout
+If you'd rather we didn't get in touch like this, just say and we won't.
+
 ## signature
 Best wishes,
 Holly
