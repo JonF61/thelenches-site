@@ -60,6 +60,21 @@
     "taken": ""
   },
   {
+    "slug": "events-2026-11-14-christmas-market-spetchley-park-gardens",
+    "src": "/images/photos/events-2026-11-14-christmas-market-spetchley-park-gardens.webp",
+    "jpg": "/images/photos/events-2026-11-14-christmas-market-spetchley-park-gardens.jpg",
+    "width": 1200,
+    "height": 630,
+    "alt": "Large stone country house across a lake, with daffodils in bloom in the foreground and green lawns",
+    "credit": "Spetchley Park Gardens via Evesham Journal",
+    "village": "",
+    "subject": "Events",
+    "targets": [
+      "event:christmas market — spetchley park gardens"
+    ],
+    "taken": ""
+  },
+  {
     "slug": "bishampton-events-the-vale-bonfire-and-firework-night",
     "src": "/images/photos/bishampton-events-the-vale-bonfire-and-firework-night.webp",
     "jpg": "/images/photos/bishampton-events-the-vale-bonfire-and-firework-night.jpg",
@@ -118,6 +133,58 @@
     "taken": ""
   },
   {
+    "slug": "church-lench-events-amphitheatre-audience",
+    "src": "/images/photos/church-lench-events-amphitheatre-audience.webp",
+    "jpg": "/images/photos/church-lench-events-amphitheatre-audience.jpg",
+    "width": 240,
+    "height": 240,
+    "alt": "Crowd seated on a sunny green at a Church Lench outdoor event, some standing and raising arms",
+    "credit": "",
+    "village": "Church Lench",
+    "subject": "Events",
+    "targets": [],
+    "taken": ""
+  },
+  {
+    "slug": "church-lench-events-amphitheatre-evening-view",
+    "src": "/images/photos/church-lench-events-amphitheatre-evening-view.webp",
+    "jpg": "/images/photos/church-lench-events-amphitheatre-evening-view.jpg",
+    "width": 1400,
+    "height": 1050,
+    "alt": "People seated outdoors at dusk watching a large screen showing an outdoor cinema event poster in The Lenches",
+    "credit": "",
+    "village": "Church Lench",
+    "subject": "Events",
+    "targets": [],
+    "taken": ""
+  },
+  {
+    "slug": "church-lench-events-amphitheatre-events",
+    "src": "/images/photos/church-lench-events-amphitheatre-events.webp",
+    "jpg": "/images/photos/church-lench-events-amphitheatre-events.jpg",
+    "width": 480,
+    "height": 480,
+    "alt": "Collage of nine photos from Church Lench community events: outdoor theatre, crowds, costumes and a food hamper",
+    "credit": "",
+    "village": "Church Lench",
+    "subject": "Events",
+    "targets": [],
+    "taken": ""
+  },
+  {
+    "slug": "church-lench-events-amphitheatre-view",
+    "src": "/images/photos/church-lench-events-amphitheatre-view.webp",
+    "jpg": "/images/photos/church-lench-events-amphitheatre-view.jpg",
+    "width": 240,
+    "height": 240,
+    "alt": "Outdoor theatre performance on a hilltop lawn in Church Lench, audience seated on chairs and picnic rugs overlooking fields",
+    "credit": "",
+    "village": "Church Lench",
+    "subject": "Events",
+    "targets": [],
+    "taken": ""
+  },
+  {
     "slug": "church-lench-events-gloquiz",
     "src": "/images/photos/church-lench-events-gloquiz.webp",
     "jpg": "/images/photos/church-lench-events-gloquiz.jpg",
@@ -130,6 +197,71 @@
     "targets": [
       "event:gloquiz"
     ],
+    "taken": ""
+  },
+  {
+    "slug": "church-lench-events-tennis-club-members",
+    "src": "/images/photos/church-lench-events-tennis-club-members.webp",
+    "jpg": "/images/photos/church-lench-events-tennis-club-members.jpg",
+    "width": 1400,
+    "height": 1050,
+    "alt": "Group of tennis players holding rackets, lined up along the net on an outdoor court in Church Lench",
+    "credit": "",
+    "village": "Church Lench",
+    "subject": "Events",
+    "targets": [],
+    "taken": ""
+  },
+  {
+    "slug": "church-lench-logos-lenches-amphitheatre-logo",
+    "src": "/images/photos/church-lench-logos-lenches-amphitheatre-logo.webp",
+    "jpg": "/images/photos/church-lench-logos-lenches-amphitheatre-logo.jpg",
+    "width": 1400,
+    "height": 832,
+    "alt": "Logo with green curved swirl lines and text reading 'The Lenches Amphitheatre'",
+    "credit": "",
+    "village": "Church Lench",
+    "subject": "Logos",
+    "targets": [],
+    "taken": ""
+  },
+  {
+    "slug": "church-lench-logos-lenches-amphitheatre-logo-2",
+    "src": "/images/photos/church-lench-logos-lenches-amphitheatre-logo-2.webp",
+    "jpg": "/images/photos/church-lench-logos-lenches-amphitheatre-logo-2.jpg",
+    "width": 1024,
+    "height": 608,
+    "alt": "Logo with green curved swoosh lines and text 'The Lenches Amphitheatre - Culture Nature Hospitality'",
+    "credit": "",
+    "village": "Church Lench",
+    "subject": "Logos",
+    "targets": [],
+    "taken": ""
+  },
+  {
+    "slug": "church-lench-logos-lenches-amphitheatre-logo-3",
+    "src": "/images/photos/church-lench-logos-lenches-amphitheatre-logo-3.webp",
+    "jpg": "/images/photos/church-lench-logos-lenches-amphitheatre-logo-3.jpg",
+    "width": 1344,
+    "height": 798,
+    "alt": "Logo for The Lenches Amphitheatre with green curved swirl design and tagline 'Culture. Nature. Hospitality.'",
+    "credit": "",
+    "village": "Church Lench",
+    "subject": "Logos",
+    "targets": [],
+    "taken": ""
+  },
+  {
+    "slug": "church-lench-news-lenches-club-logo",
+    "src": "/images/photos/church-lench-news-lenches-club-logo.webp",
+    "jpg": "/images/photos/church-lench-news-lenches-club-logo.jpg",
+    "width": 1024,
+    "height": 1024,
+    "alt": "Green logo of a fruit tree inside a circle, with the text 'Lenches Club' below",
+    "credit": "",
+    "village": "Church Lench",
+    "subject": "News",
+    "targets": [],
     "taken": ""
   },
   {
@@ -208,6 +340,84 @@
     "taken": ""
   },
   {
+    "slug": "harvington-coach-and-horses-harvington",
+    "src": "/images/photos/harvington-coach-and-horses-harvington.webp",
+    "jpg": "/images/photos/harvington-coach-and-horses-harvington.jpg",
+    "width": 1400,
+    "height": 1048,
+    "alt": "Cream-painted pub building named The Coach and Horses, Harvington, with sign advertising food and ales",
+    "credit": "",
+    "village": "Harvington",
+    "subject": "",
+    "targets": [],
+    "taken": ""
+  },
+  {
+    "slug": "harvington-harvington-church-and-churchyard",
+    "src": "/images/photos/harvington-harvington-church-and-churchyard.webp",
+    "jpg": "/images/photos/harvington-harvington-church-and-churchyard.jpg",
+    "width": 1400,
+    "height": 1042,
+    "alt": "Stone church with arched doorway and windows in Harvington, seen through trees with a wooden bench on the lawn",
+    "credit": "",
+    "village": "Harvington",
+    "subject": "",
+    "targets": [],
+    "taken": ""
+  },
+  {
+    "slug": "harvington-harvington-church-and-churchyard-3",
+    "src": "/images/photos/harvington-harvington-church-and-churchyard-3.webp",
+    "jpg": "/images/photos/harvington-harvington-church-and-churchyard-3.jpg",
+    "width": 1400,
+    "height": 1054,
+    "alt": "Stone church in Harvington with spire and clock tower, seen across a churchyard with gravestones and trees",
+    "credit": "",
+    "village": "Harvington",
+    "subject": "",
+    "targets": [],
+    "taken": ""
+  },
+  {
+    "slug": "harvington-harvington-churchyard-yarn-bombing",
+    "src": "/images/photos/harvington-harvington-churchyard-yarn-bombing.webp",
+    "jpg": "/images/photos/harvington-harvington-churchyard-yarn-bombing.jpg",
+    "width": 1400,
+    "height": 1030,
+    "alt": "Churchyard in Harvington with gravestones, trees, and a tree trunk decorated in colourful knitted yarn",
+    "credit": "",
+    "village": "Harvington",
+    "subject": "",
+    "targets": [],
+    "taken": ""
+  },
+  {
+    "slug": "harvington-harvington-cofe-first-school",
+    "src": "/images/photos/harvington-harvington-cofe-first-school.webp",
+    "jpg": "/images/photos/harvington-harvington-cofe-first-school.jpg",
+    "width": 1400,
+    "height": 978,
+    "alt": "Red brick former school building with Harvington Nursery sign behind railings, road in foreground",
+    "credit": "",
+    "village": "Harvington",
+    "subject": "",
+    "targets": [],
+    "taken": ""
+  },
+  {
+    "slug": "harvington-harvington-village-hall-and-yarn-tree",
+    "src": "/images/photos/harvington-harvington-village-hall-and-yarn-tree.webp",
+    "jpg": "/images/photos/harvington-harvington-village-hall-and-yarn-tree.jpg",
+    "width": 1400,
+    "height": 994,
+    "alt": "Harvington village hall with parked cars, a tree decorated with colourful knitted panels, and houses along the road",
+    "credit": "",
+    "village": "Harvington",
+    "subject": "",
+    "targets": [],
+    "taken": ""
+  },
+  {
     "slug": "harvington-screen-shot-2021-06-11-at-15-13-14",
     "src": "/images/photos/harvington-screen-shot-2021-06-11-at-15-13-14.webp",
     "jpg": "/images/photos/harvington-screen-shot-2021-06-11-at-15-13-14.jpg",
@@ -220,6 +430,45 @@
     "targets": [
       "churches"
     ],
+    "taken": ""
+  },
+  {
+    "slug": "harvington-st-james-sign",
+    "src": "/images/photos/harvington-st-james-sign.webp",
+    "jpg": "/images/photos/harvington-st-james-sign.jpg",
+    "width": 1400,
+    "height": 1021,
+    "alt": "Green noticeboard for St James the Great Parish Church of Harvington, with rector and benefice details, surrounded by trees",
+    "credit": "",
+    "village": "Harvington",
+    "subject": "",
+    "targets": [],
+    "taken": ""
+  },
+  {
+    "slug": "harvington-yarn-bombed-lamp-post-churchyard",
+    "src": "/images/photos/harvington-yarn-bombed-lamp-post-churchyard.webp",
+    "jpg": "/images/photos/harvington-yarn-bombed-lamp-post-churchyard.jpg",
+    "width": 1043,
+    "height": 1400,
+    "alt": "Colourful knitted yarn bombing on a post in a churchyard in Harvington, with the church and trees behind",
+    "credit": "",
+    "village": "Harvington",
+    "subject": "",
+    "targets": [],
+    "taken": ""
+  },
+  {
+    "slug": "harvington-yarn-bombed-tree-churchyard",
+    "src": "/images/photos/harvington-yarn-bombed-tree-churchyard.webp",
+    "jpg": "/images/photos/harvington-yarn-bombed-tree-churchyard.jpg",
+    "width": 1400,
+    "height": 1040,
+    "alt": "Colourful knitted yarn bombing decorating a tree branch in a churchyard, with the church and gravestones behind, Harvington",
+    "credit": "",
+    "village": "Harvington",
+    "subject": "",
+    "targets": [],
     "taken": ""
   },
   {
