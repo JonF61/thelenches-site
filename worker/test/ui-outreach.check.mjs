@@ -126,6 +126,10 @@ try {
     await page.locator('nav.side button', { hasText: 'Replies' }).click();
     await page.getByRole('button', { name: 'Show sent' }).click();
     await page.getByText('Re: Quiz night').waitFor();
+    await page.getByText('Re: Quiz night').click();
+    const body = page.locator('.sent details[open] .text');
+    assert.match(await body.innerText(), /Thanks for sending "Quiz night"\./);
+    assert.ok(await body.evaluate((el) => el.scrollHeight <= el.clientHeight + 1), 'whole email shown, not clipped to 2 lines');
     assert.match(await page.locator('.main').innerText(), /SENT \(2\)|Sent \(2\)/);
     await page.fill('input[aria-label="Search sent"]', 'quiz');
     assert.equal(await page.locator('.sent details').count(), 1);
