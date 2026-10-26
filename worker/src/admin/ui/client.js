@@ -18,7 +18,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '21';
+export const UI_VERSION = '22';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -28,7 +28,18 @@ export const CLIENT_JS = String.raw`
     picked: {}, ff: '', openF: {}, drag: null, busy: false, order: {}, shown: '' };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
-  var VIEWS = [['queue', 'Queue'], ['replies', 'Replies'], ['owed', 'Owed'], ['photos', 'Photos'], ['feedback', 'Feedback'], ['contacts', 'Contacts'], ['health', 'Health']];
+  var VIEWS = [['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['health', 'Health']];
+  // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
+  var INTROS = {
+    queue: 'Events and notices sent in by email or picked up from feeds, waiting for you to approve or reject. Approved items go on the website and into Thursday\'s newsletter.',
+    replies: 'Holly\'s draft emails waiting for you to Approve, Edit, Redraft or Reject. Below them: emails still owed a reply, and everything already sent.',
+    owed: 'Emails that got an automatic holding reply over 2 days ago but no real answer yet. Redraft one, reply yourself, or close it.',
+    feedback: 'Comments and corrections from readers via the website\'s feedback form, to approve, reject or postpone, with Holly\'s replies to them.',
+    contacts: 'Everyone who sends in, or could send in, news and events, with their profile, contributions and status. Outreach shows who is due a friendly nudge.',
+    photos: 'Photos in the Lenches Photos folders in Google Drive. Approve or reject new ones, rename them, or move them between folders.',
+    health: 'The daily diagnostic, the watchdog and the Google account the panel uses. Look here if something seems wrong.'
+  };
+  function intro(view) { return h('p', { class: 'meta intro' }, INTROS[view]); }
   var FLAG_LABELS = {
     own_wording: 'Asked for own wording', too_early: 'Too early', after_deadline: 'After deadline',
     flyer_limit: 'Flyer limit', newsletter_limit: 'Newsletter limit', people_in_image: 'People in image',
@@ -317,13 +328,15 @@ export const CLIENT_JS = String.raw`
   }
 
   function body(d) {
-    if (S.view === 'replies') return split(repliesList(d), 'reply');
-    if (S.view === 'owed') return [h('div', { class: 'list wide' }, owedList(d))];
-    if (S.view === 'photos') return split(photosList(d), 'photo');
-    if (S.view === 'health') return [h('div', { class: 'list wide' }, healthView(d))];
-    if (S.view === 'feedback') return [h('div', { class: 'list wide' }, feedbackView(d))];
-    if (S.view === 'contacts') return [h('div', { class: 'list wide' }, contactsView())];
-    return split(queueList(d), 'pending');
+    var top = intro(S.view);
+    var withIntro = function (list) { list.els = [top].concat(list.els); return list; };
+    if (S.view === 'replies') return split(withIntro(repliesList(d)), 'reply');
+    if (S.view === 'owed') return [h('div', { class: 'list wide' }, top, owedList(d))];
+    if (S.view === 'photos') return split(withIntro(photosList(d)), 'photo');
+    if (S.view === 'health') return [h('div', { class: 'list wide' }, top, healthView(d))];
+    if (S.view === 'feedback') return [h('div', { class: 'list wide' }, top, feedbackView(d))];
+    if (S.view === 'contacts') return [h('div', { class: 'list wide' }, top, contactsView())];
+    return split(withIntro(queueList(d)), 'pending');
   }
 
   // Desktop: list and detail side by side. Phone: the list's cards are complete on their own.

@@ -1,5 +1,5 @@
 // worker/test/ui-outreach.check.mjs
-// Browser check of the panel's Contacts > Outreach view (ui/client.js) against a mock API,
+// Browser check of the panel's menu (order, labels, each page's reminder line) and Contacts > Outreach view (ui/client.js) against a mock API,
 // on desktop and phone sizes: the sections, Draft nudge (posts the email; list reloads),
 // Snooze 3 months and Never nudge (next_nudge writes with the value loaded as expected),
 // Clear on a held-back contact, and the weekly cap hiding Draft nudge.
@@ -77,7 +77,16 @@ try {
     const dialogs = [];
     page.on('dialog', (d) => { dialogs.push(d.message()); d.accept(); });
     await page.goto(`${base}/admin`);
+    // Menu order and labels, and each page's reminder line (agreed 26 Oct).
+    const menu = (await page.locator('nav.side button').allInnerTexts()).map((t) => t.replace(/\s*\d+$/, '').trim());
+    assert.deepEqual(menu, ['Submissions', 'Replies', 'Owed', 'Feedback', 'Contacts', 'Photos', 'Health']);
+    assert.match(await page.locator('.intro').innerText(), /^Events and notices sent in by email/);
+    for (const [label, start] of [['Owed', /^Emails that got an automatic holding reply/], ['Health', /^The daily diagnostic/], ['Photos', /^Photos in the Lenches Photos folders/]]) {
+      await page.locator('nav.side button', { hasText: label }).click();
+      assert.match(await page.locator('.intro').innerText(), start, label);
+    }
     await page.locator('nav.side button', { hasText: 'Contacts' }).click();
+    assert.match(await page.locator('.intro').innerText(), /^Everyone who sends in/);
     await page.getByRole('button', { name: 'Outreach' }).click();
     const main = page.locator('.main');
     await main.getByText('Seasonal due (1)').waitFor();
