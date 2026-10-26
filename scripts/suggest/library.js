@@ -1,15 +1,19 @@
 // scripts/suggest/library.js
-// Free picture library: Pexels (pexels.com/api). Searched by event type and kind of place
-// only, built from the fixed word lists below, so no name from the email (a person, a
-// band, a speaker) can ever reach a search. An event of no recognised type gets no search.
-// Pexels asks for a link to Pexels wherever its results are shown (the panel strip does
-// this) and a photographer credit where possible: "Photo by <name> on Pexels", linked to
-// the photo's Pexels page. Images are downloaded and served from our own site, as the
-// Pexels licence allows (pexels.com/license). Key: the PEXELS_API_KEY GitHub secret.
+// Free picture library: Pexels (pexels.com/api) if the PEXELS_API_KEY secret is set, else
+// Pixabay (pixabay.com/api/docs) if PIXABAY_API_KEY is (26 Oct: Pexels access still paused).
+// Searched by event type and kind of place only, built from the fixed word lists below, so
+// no name from the email (a person, a band, a speaker) can ever reach a search. An event of
+// no recognised type gets no search.
+// Both ask for a link to them wherever results are shown (the panel strip does this, by the
+// photo page's host) and a photographer credit where possible: "Photo by <name> on Pexels" /
+// "Image by <name> from Pixabay", linked to the photo's page. Images are downloaded and
+// served from our own site, as both licences allow (Pixabay forbids hotlinking anyway).
 'use strict';
 
 const API = 'https://api.pexels.com/v1/search';
 const LICENCE = 'https://www.pexels.com/license/';
+const PIXABAY_API = 'https://pixabay.com/api/';
+const PIXABAY_LICENCE = 'https://pixabay.com/service/license-summary/';
 
 // [pattern in the event's title or text, search words]. First match wins.
 const TYPES = [
@@ -65,21 +69,63 @@ function libraryQuery(ev) {
   return q.split(' ').filter((w) => VOCAB.has(w)).join(' ');
 }
 
-// Pexels search: up to n landscape photos, as candidates. [] if no key or query.
-async function searchLibrary(query, { key = process.env.PEXELS_API_KEY, n = 4 } = {}) {
+// Which library this run uses: { provider: 'pexels' | 'pixabay', name, key }, or null (none).
+function librarySource(env = process.env) {
+  const pexels = String(env.PEXELS_API_KEY || '').trim();
+  if (pexels) return { provider: 'pexels', name: 'Pexels', key: pexels };
+  const pixabay = String(env.PIXABAY_API_KEY || '').trim();
+  if (pixabay) return { provider: 'pixabay', name: 'Pixabay', key: pixabay };
+  return null;
+}
+
+const cleanName = (v, fallback) => String(v || fallback).replace(/[<>@]/g, '').slice(0, 80);
+
+// Library search: up to n landscape photos, as candidates
+// { url, page, credit, short, creditUrl, licence, alt, text }. [] if no key or query.
+async function searchLibrary(query, { provider = 'pexels', key = provider === 'pixabay' ? process.env.PIXABAY_API_KEY : process.env.PEXELS_API_KEY, n = 4 } = {}) {
   if (!key || !query) return [];
+  if (provider === 'pixabay') return searchPixabay(query, key, n);
   const url = `${API}?${new URLSearchParams({ query, per_page: String(n), orientation: 'landscape', locale: 'en-GB' })}`;
   const res = await fetch(url, { headers: { Authorization: key }, signal: AbortSignal.timeout(10000) });
   if (!res.ok) throw new Error(`Pexels HTTP ${res.status}`);
   const data = await res.json();
-  return (data.photos || []).filter((p) => p && p.src && (p.src.large || p.src.original)).map((p) => ({
-    url: p.src.large || p.src.original,
-    page: String(p.url || ''),
-    credit: `Photo by ${String(p.photographer || 'a Pexels photographer').replace(/[<>@]/g, '').slice(0, 80)} on Pexels`,
-    creditUrl: String(p.url || ''),
-    licence: LICENCE,
-    alt: String(p.alt || '').slice(0, 125),
-  }));
+  return (data.photos || []).filter((p) => p && p.src && (p.src.large || p.src.original)).map((p) => {
+    const by = cleanName(p.photographer, 'a Pexels photographer');
+    return {
+      url: p.src.large || p.src.original,
+      page: String(p.url || ''),
+      credit: `Photo by ${by} on Pexels`,
+      short: `${by} / Pexels`,
+      creditUrl: String(p.url || ''),
+      licence: LICENCE,
+      alt: String(p.alt || '').slice(0, 125),
+      text: String(p.alt || '').slice(0, 125),
+    };
+  });
 }
 
-module.exports = { libraryQuery, searchLibrary, VOCAB, LICENCE };
+// Pixabay: photos only, landscape, safe search on. Its tags (no alt text) go to the image
+// check as context only; alt is left for Jon.
+async function searchPixabay(query, key, n) {
+  const params = new URLSearchParams({
+    key, q: query, image_type: 'photo', orientation: 'horizontal', safesearch: 'true', lang: 'en', per_page: String(Math.max(3, n)),
+  });
+  const res = await fetch(`${PIXABAY_API}?${params}`, { signal: AbortSignal.timeout(10000) });
+  if (!res.ok) throw new Error(`Pixabay HTTP ${res.status}`);
+  const data = await res.json();
+  return (data.hits || []).filter((p) => p && /^https:\/\//.test(String(p.largeImageURL || ''))).slice(0, n).map((p) => {
+    const by = cleanName(p.user, 'a Pixabay contributor');
+    return {
+      url: String(p.largeImageURL),
+      page: String(p.pageURL || ''),
+      credit: `Image by ${by} from Pixabay`,
+      short: `${by} / Pixabay`,
+      creditUrl: String(p.pageURL || ''),
+      licence: PIXABAY_LICENCE,
+      alt: '',
+      text: String(p.tags || '').slice(0, 125),
+    };
+  });
+}
+
+module.exports = { libraryQuery, searchLibrary, librarySource, VOCAB, LICENCE, PIXABAY_LICENCE };
