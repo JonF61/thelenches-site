@@ -119,11 +119,14 @@ export function dueFor(row, today) {
   return null;
 }
 
-// The panel's Outreach view: { seasonal, quiet, lead, held, week, cap }. Each entry is
+// The panel's Outreach view: { seasonal, quiet, lead, held, sent, week, cap } (sent: the latest
+// 50 nudges that went, with the contact's name). Each entry is
 // { email, id, name, organisation, village, role, status, last_contact, why, held }; held
 // (snoozed, a draft waiting, nudged recently) are listed separately so they can be undone.
 export async function outreachLists(contacts, replies, today) {
-  const out = { seasonal: [], quiet: [], lead: [], held: [], week: weekCount(replies, today), cap: WEEK_CAP };
+  const names = new Map((contacts || []).map((r) => [low(r.email), str(r.name) || str(r.organisation)]));
+  const sent = sentRows(replies, { type: NUDGE_TYPE, limit: 50 }).map((r) => ({ ...r, name: names.get(low(r.to)) || '' }));
+  const out = { seasonal: [], quiet: [], lead: [], held: [], sent, week: weekCount(replies, today), cap: WEEK_CAP };
   for (const r of contacts || []) {
     if (!str(r.email)) continue;
     const due = dueFor(r, today);
@@ -149,4 +152,15 @@ export function planNudge(row, replies, today) {
   if (!dueFor(row, today)) return { error: 'Not drafted: this contact is not on an outreach list today', status: 409 };
   if (weekCount(replies, today) >= WEEK_CAP) return { error: `Not drafted: ${WEEK_CAP} outreach drafts already this week`, status: 429 };
   return { ok: true };
+}
+
+// Sent mail from the Replies tab, newest first: { reply_id, to, type, subject, body, sent_at }.
+// type: only that Replies type (e.g. NUDGE_TYPE), else every type. Used by the panel's Replies
+// screen (Sent history) and the Outreach view (Sent nudges).
+export function sentRows(replies, { type = '', limit = 100 } = {}) {
+  return (replies || [])
+    .filter((r) => low(r.status) === 'sent' && (!type || r.type === type))
+    .sort((a, b) => str(b.sent_at).localeCompare(str(a.sent_at)))
+    .slice(0, limit)
+    .map((r) => ({ reply_id: str(r.reply_id), to: str(r.to), type: str(r.type), subject: str(r.subject), body: str(r.body), sent_at: str(r.sent_at) }));
 }

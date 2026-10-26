@@ -29,6 +29,7 @@ const outreach = () => ({
     why: 'Last year: 2025-11-08 Quiz night', last_contact: '2025-11-08' })],
   quiet: [e('tom@example.org', { name: 'Tom Green', village: 'Rous Lench', why: 'No email since 2026-05-14', last_contact: '2026-05-14' })],
   lead: [e('wi@example.org', { name: 'Ab Lench WI', status: 'lead', kind: 'lead', why: 'First wrote 2026-09-02; nothing sent yet', last_contact: '2026-09-02' })],
+  sent: [{ reply_id: 'out-1', to: 'george@example.org', name: 'George', type: 'outreach', subject: 'Your EP release?', body: 'Hi George,\n\nAny news on the EP?', sent_at: '2026-10-26 09:40' }],
   held: [e('sam@example.org', { name: 'Sam Brown', why: 'No email since 2026-06-01', held: 'snoozed until 2027-01-26', next_nudge: '2027-01-26' })],
 });
 const contacts = () => ({ headers: [], rows: [] });
@@ -38,6 +39,10 @@ function stateData() {
     health: [], watchdog: { open: false }, googleAccount: 'sa@example.iam.gserviceaccount.com',
     pending: { headers: [], rows: [] }, replies: { headers: [], rows: [] }, owed: [], photos: { headers: [], rows: [] },
     photoFolders: [], photosRoot: 'r', today: '2026-10-26', toDelete: [], feedback: { headers: [], rows: [] },
+    sent: [
+      { reply_id: 'out-1', to: 'george@example.org', type: 'outreach', subject: 'Your EP release?', body: 'Hi George,\n\nAny news on the EP?', sent_at: '2026-10-26 09:40' },
+      { reply_id: 'm1-ack', to: 'ann@example.org', type: 'ack', subject: 'Re: Quiz night', body: 'Hi Ann,\n\nThanks for sending "Quiz night".', sent_at: '2026-10-25 18:02' },
+    ],
   };
 }
 
@@ -82,6 +87,12 @@ try {
     assert.equal(await main.getByRole('button', { name: 'Draft nudge' }).count(), 3, 'not on held-back rows');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `outreach-${name}.png`), fullPage: true });
 
+    // Sent nudges: folded, then opened; a row opens to the text as it went.
+    await main.getByRole('button', { name: 'Show sent' }).click();
+    await main.getByText('Your EP release?').click();
+    await main.getByText('Any news on the EP?').waitFor();
+    assert.match(await main.innerText(), /To George \(george@example\.org\) · sent/);
+
     const before = loads;
     await page.locator('.crow', { hasText: 'Jane Smith' }).getByRole('button', { name: 'Draft nudge' }).click();
     await page.locator('.toast', { hasText: 'Draft requested' }).waitFor();
@@ -111,6 +122,14 @@ try {
     await main.getByText("This week's 5 drafts are used").waitFor();
     assert.equal(await main.getByRole('button', { name: 'Draft nudge' }).count(), 0);
     assert.equal(await main.getByRole('button', { name: 'Snooze 3 months' }).count(), 3);
+    // Replies screen: Sent history of every type, searchable.
+    await page.locator('nav.side button', { hasText: 'Replies' }).click();
+    await page.getByRole('button', { name: 'Show sent' }).click();
+    await page.getByText('Re: Quiz night').waitFor();
+    assert.match(await page.locator('.main').innerText(), /SENT \(2\)|Sent \(2\)/);
+    await page.fill('input[aria-label="Search sent"]', 'quiz');
+    assert.equal(await page.locator('.sent details').count(), 1);
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `replies-sent-${name}.png`), fullPage: true });
     await page.close();
   }
   console.log('ui-outreach: all checks passed (desktop and phone)');

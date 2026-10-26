@@ -4,7 +4,8 @@
 // so the workers.dev URL can't skip it. The Sheet stays the source of truth.
 //   GET  /admin, /admin/app.js, /admin/app.css   the panel (ui/client.js, ui/css.js)
 //   GET  /admin/api/session         { email, csrf }
-//   GET  /admin/api/state           Pending, Replies (awaiting and still owed), Photos (all
+//   GET  /admin/api/state           Pending, Replies (awaiting and still owed; sent: the latest
+//                                   100 sent, for the Sent history), Photos (all
 //                                   in Drive) and the Lenches Photos folders, holiday mode,
 //                                   latest newsletter, Health, watchdog, Google account;
 //                                   each Photos row's _pages: the public pages it is on
@@ -80,7 +81,7 @@ import { FEEDBACK_TAB } from '../feedback.js';
 import {
   CONTACTS_TAB, DELETED_TAB, DELETED_HEADERS, contactRows, planContact, planDelete,
 } from './contacts.js';
-import { outreachLists, planNudge, idFor } from './outreach.mjs';
+import { outreachLists, planNudge, idFor, sentRows } from './outreach.mjs';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 
@@ -230,6 +231,8 @@ async function state(env, email) {
     googleAccount: serviceAccountEmail(env),
     pending: pend,
     replies: replies.error ? replies : { headers: replies.headers, rows: replies.rows.filter((r) => r.status === 'awaiting') },
+    // The latest 100 sent replies and outreach emails (Replies screen, Sent history).
+    sent: replies.error ? [] : sentRows(replies.rows),
     owed,
     // Every photo still in Drive (for the folder views); _waiting = needs a decision.
     photos: photos.error ? photos : {
