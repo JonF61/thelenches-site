@@ -79,7 +79,7 @@ async function decideItem(id, action) {
     }
   }
   await g.updateRow('Pending', row._row, fields);
-  console.log(`Item ${id} ("${row.title}") marked ${status}${fields.wording ? ` (${fields.wording} wording)` : ''}.`);
+  console.log(`Item ${id} marked ${status}${fields.wording ? ` (${fields.wording} wording)` : ''}.`);
   if (status === 'rejected') {
     // The rejection is recorded either way; a failed draft only fails the run (GitHub emails Jon).
     try {
@@ -98,7 +98,9 @@ async function trustSource(id) {
   const src = trust.sourceKeyFor(row, sources);
   if (!src) throw new Error(`Item ${id} has no trustable source (not Gmail or a Settings feed)`);
   const added = await trust.addTrusted(src, id, londonDateTime(Date.now()));
-  console.log(added ? `Trusted ${src.type} ${src.key} (${src.label}).` : `${src.key} was already trusted.`);
+  // A sender's address and name stay out of the log (may be public); a feed is public.
+  const who = src.type === 'feed' ? `feed ${src.key} (${src.label})` : `the sender of item ${id}`;
+  console.log(added ? `Trusted ${who}.` : `${who[0].toUpperCase()}${who.slice(1)} was already trusted.`);
   await decideItem(id, 'approve');
 }
 

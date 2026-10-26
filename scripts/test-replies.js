@@ -613,7 +613,44 @@ async function testOwed() {
   ok(replies.owedReplies(rowsNow()).length === 0, 'real reply sent: no longer owed');
 }
 
+// The Actions log may be public: what a sender wrote, Claude's summary of it, Jon's
+// redraft instruction and addresses stay in the Sheet, never in console output.
+async function testLogsPrivate() {
+  const said = (c) => replies.stripQuoted(c.msg.text).replace(/\s+/g, ' ');
+  ok(replies.logNotes('question (0.9): when the PC meets | They wrote: "a | b secret" | Redraft of x-answer, as you asked: "be | kind" | Couldn\'t use: Jo Smith CV.docx, b.pub | Bad recipient "a@b.c"')
+    === 'question (0.9) | Redraft of x-answer, as you asked | Couldn\'t use: 2 attachment(s) | Bad recipient "…"', 'logNotes keeps only the non-personal parts');
+  const out = [];
+  const saved = { log: console.log, warn: console.warn, error: console.error };
+  const capture = (...a) => out.push(a.map(String).join(' '));
+  Object.assign(console, { log: capture, warn: capture, error: capture });
+  try {
+    reset();
+    settings = LIVE;
+    const ctx = { settings, holiday: false, replies: [], existing: [] };
+    let n = 0;
+    for (const c of fixtures) { n += 1; await plan(c, `p${n}`, false, ctx); }
+    const sig = caseNamed('question with a signature and quoted history');
+    const [a] = await plan(sig, 'p0', false, ctx);
+    redraftFor = { draft: 'Shorter: it is Monday 9 November (https://thelenches.org.uk/living-here/council/).' };
+    await replies.redraftReply(a.reply_id, 'Mention the zebra crossing');
+    await replies.sendDueReplies(settings, false);
+  } finally {
+    Object.assign(console, saved);
+  }
+  const logged = out.join('\n');
+  ok(tables.Replies.some((r) => r.notes.includes(`They wrote: "${said(caseNamed('question with a signature and quoted history'))}"`)), 'Sheet notes keep the They wrote quote');
+  ok(tables.Replies.some((r) => r.notes.includes('as you asked: "Mention the zebra crossing"')), 'Sheet notes keep the redraft instruction');
+  ok(logged.includes('Reply ') && !logged.includes('They wrote') && !logged.includes('zebra crossing'), 'no They wrote quote or redraft instruction logged');
+  for (const c of fixtures) {
+    const s = said(c);
+    if (s.length >= 12) ok(!logged.includes(s.slice(0, 40)), `sender's text never logged (${c.name})`);
+    if (c.result.request) ok(!logged.includes(c.result.request), `Claude's request summary never logged (${c.name})`);
+  }
+  ok(!/@example\.com/.test(logged), 'no sender address logged');
+}
+
 (async () => {
+  await testLogsPrivate();
   await testClassify();
   await testSignaturesAndLinks();
   await testDates();

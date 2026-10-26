@@ -762,10 +762,34 @@ function logNoteFor(row) {
 
 /* ---------------------------------------------------------------- plan --- */
 
+// Notes as safe for the Actions log (may be public): the Sheet keeps the full notes, but
+// the log drops what the sender wrote ("They wrote" excerpts), Claude's summaries of it
+// (the request after the class, a follow-up's reason), attachment names and anything
+// quoted (Jon's redraft instruction, addresses, titles).
+const CLASS_NOTE_RE = /^([a-z_]+ \([\d.]*\)): .*$/;
+function logNotes(notes) {
+  // Quotes first, whole: what they wrote may itself contain " | ".
+  const flat = String(notes || '')
+    .replace(/They wrote: ".*?"(?= \| |$)/g, '')
+    .replace(/(Redraft of [^,|]+, as you asked): ".*?"(?= \| |$)/g, '$1');
+  return flat.split(' | ').map((part) => {
+    const s = part.trim();
+    if (/^They wrote:/.test(s)) return '';
+    if (CLASS_NOTE_RE.test(s)) return s.replace(CLASS_NOTE_RE, '$1');
+    if (/^Follow-up: /.test(s)) {
+      const rest = s.slice('Follow-up: '.length);
+      return /^[a-z_]+ \([\d.]*\)$/.test(rest) ? s : 'Follow-up';
+    }
+    if (/^Couldn't use: /.test(s)) return `Couldn't use: ${s.slice(14).split(', ').length} attachment(s)`;
+    return s.replace(/"[^"]*"?/g, '"…"').replace(/:\s*"…"$/, '');
+  }).filter(Boolean).join(' | ');
+}
+
 async function appendReply(ctx, row) {
   await g.appendRows('Replies', [row]);
   ctx.replies.push(row);
-  console.log(`Reply ${row.reply_id}: ${row.status}${row.notes ? ` (${row.notes})` : ''}`);
+  const notes = logNotes(row.notes);
+  console.log(`Reply ${row.reply_id}: ${row.status}${notes ? ` (${notes})` : ''}`);
   return row;
 }
 
@@ -1635,7 +1659,7 @@ async function deliver(row, settings, { body: given, note: givenNote = '', decid
     text !== linked ? 'Dates put in house style' : ''].filter(Boolean).join('; ');
   const fail = async (why) => {
     await g.updateRow('Replies', row._row, { status: 'failed', notes: [row.notes, why].filter(Boolean).join(' | ') });
-    console.error(`Reply ${row.reply_id} failed: ${why}`);
+    console.error(`Reply ${row.reply_id} failed: ${logNotes(why)}`);
     return false;
   };
   if (!text) return fail('Empty body');
@@ -1684,7 +1708,7 @@ async function deliver(row, settings, { body: given, note: givenNote = '', decid
     ...(body !== undefined ? { body: text } : {}),
     ...(note ? { notes: [row.notes, note].filter(Boolean).join(' | ') } : {}),
   });
-  console.log(`Reply ${row.reply_id} sent to ${row.to}. Gmail id ${id}.`);
+  console.log(`Reply ${row.reply_id} sent. Gmail id ${id}.`);
 
   const check = await g.getMessage(id);
   if (check.fromAddress !== REPLY_FROM) {
@@ -2028,6 +2052,7 @@ module.exports = {
   itemPolicy,
   planReply,
   logNoteFor,
+  logNotes,
   findAnsweredReply,
   answerContext,
   applyAnswer,
