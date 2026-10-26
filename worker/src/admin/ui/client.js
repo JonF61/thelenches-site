@@ -18,7 +18,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '24';
+export const UI_VERSION = '25';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -758,7 +758,10 @@ export const CLIENT_JS = String.raw`
       box.replaceChildren();
       if (!t || t.error) { add(box, h('div', { class: 'meta' }, 'Their email could not be loaded.')); return; }
       add(box, [h('div', { class: 'meta' }, ['From ' + (str(t.from) || str(r.to)), str(t.date)].filter(Boolean).join(' · ')),
-        h('div', { class: 'text' }, str(t.text) || '(no text)')]);
+        h('div', { class: 'text' }, str(t.text) || '(no text)'),
+        // Their signature block and the earlier emails quoted below it, folded.
+        str(t.more) ? h('details', { class: 'their-more' }, h('summary', null, 'Show the rest (signature and earlier emails)'),
+          h('div', { class: 'text' }, str(t.more))) : null]);
     };
     S.mail = S.mail || {};
     if (S.mail[m]) fill(S.mail[m]);

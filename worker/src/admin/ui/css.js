@@ -56,7 +56,7 @@ nav.side button[aria-current="page"] .n{background:rgba(255,255,255,.25);color:i
 .meta{color:var(--muted);font-size:.88rem}
 .intro{margin:2px 2px 12px;line-height:1.4}
 .their-h{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:10px 0 4px}
-.their-fold summary{cursor:pointer;color:var(--muted);margin:8px 0}
+.their-fold summary,.their-more summary{cursor:pointer;color:var(--muted);margin:8px 0}
 .badges{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .badge{font-size:.78rem;padding:2px 8px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)}
 .badge.bad{background:var(--bad-bg);color:var(--bad);border-color:transparent}
@@ -173,7 +173,7 @@ table.h td,table.h th{text-align:left;padding:6px 4px;border-bottom:1px solid va
   .list{flex:0 0 42%;max-width:520px;overflow:auto;border-right:1px solid var(--line)}
   .list .card{cursor:pointer;padding:10px 12px}
   .list .card .text{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  .list details.card .text,.list .card.sel .text{display:block;-webkit-line-clamp:none;overflow:visible} /* Sent history, and the card you clicked: the whole text */
+  .list details.card .text,.list .card.sel .text,.list .their-more .text{display:block;-webkit-line-clamp:none;overflow:visible} /* Sent history, and the card you clicked: the whole text */
   .list .card h2.fname{font-size:.8rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .detail{display:block;flex:1;overflow:auto;padding:16px}
   .detail .card{padding:18px}

@@ -63,7 +63,8 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/admin/api/mail-text') {
     assert.equal(url.searchParams.get('m'), 'msg123abc');
     return send({ from: 'Clerk <clerk@example.org>', subject: 'Hall hire', date: 'Mon, 26 Oct 2026 09:00:00 +0000',
-      text: 'Dear website team,\n\nHow do I book the hall for a parish meeting?\nIt would be for about forty people on a weekday evening.\n\nRegards,\nThe Clerk' });
+      text: 'Dear website team,\n\nHow do I book the hall for a parish meeting?\nIt would be for about forty people on a weekday evening.\n\nRegards,\nThe Clerk',
+      more: '--\nClerk to Example Parish Council\n\nOn 25-10-2026, The Team wrote:\n> Dear Clerk' });
   }
   let body = '';
   for await (const ch of req) body += ch;
@@ -147,8 +148,12 @@ try {
       await draftCard.click();
       const sel = page.locator('.list .card.sel');
       await sel.getByText('Regards,').waitFor();
-      assert.ok(await sel.locator('.their .text').evaluate((el) => el.scrollHeight <= el.clientHeight + 1), 'selected card shows their whole email');
+      assert.ok(await sel.locator('.their > .text').evaluate((el) => el.scrollHeight <= el.clientHeight + 1), 'selected card shows their whole email');
       assert.doesNotMatch(await sel.innerText(), /book the hall through the website/, 'draft not in the left card');
+      assert.doesNotMatch(await sel.innerText(), /Clerk to Example Parish Council/, 'signature folded');
+      await sel.getByText('Show the rest (signature and earlier emails)').click();
+      await sel.getByText('> Dear Clerk').waitFor();
+      assert.match(await sel.innerText(), /Clerk to Example Parish Council/);
       const detail = page.locator('.detail');
       assert.match(await detail.innerText(), /HOLLY'S REPLY[\s\S]*The hall can be booked through the website/i);
       assert.doesNotMatch(await detail.innerText(), /How do I book the hall/);
