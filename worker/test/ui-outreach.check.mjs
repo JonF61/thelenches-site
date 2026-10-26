@@ -37,7 +37,9 @@ function stateData() {
   return {
     email: 'admin@example.org', sheetId: 'sheet', gids: { Contacts: 11 }, holiday: { value: 'FALSE', on: false }, newsletter: null,
     health: [], watchdog: { open: false }, googleAccount: 'sa@example.iam.gserviceaccount.com',
-    pending: { headers: [], rows: [] }, replies: { headers: [], rows: [] }, owed: [], photos: { headers: [], rows: [] },
+    pending: { headers: [], rows: [] }, owed: [], photos: { headers: [], rows: [] },
+    replies: { headers: [], rows: [{ reply_id: 'm9-answer', to: 'clerk@example.org', type: 'answer', status: 'awaiting', subject: 'Re: Hall hire',
+      body: 'Hi there,\n\nThanks for asking.\n\nThe hall can be booked through the website.\n\nBest wishes,\nHolly\nLenches website assistant', created_at: '2026-10-26 10:17' }] },
     photoFolders: [], photosRoot: 'r', today: '2026-10-26', toDelete: [], feedback: { headers: [], rows: [] },
     sent: [
       { reply_id: 'out-1', to: 'george@example.org', type: 'outreach', subject: 'Your EP release?', body: 'Hi George,\n\nAny news on the EP?', sent_at: '2026-10-26 09:40' },
@@ -131,6 +133,15 @@ try {
     await main.getByText("This week's 5 drafts are used").waitFor();
     assert.equal(await main.getByRole('button', { name: 'Draft nudge' }).count(), 0);
     assert.equal(await main.getByRole('button', { name: 'Snooze 3 months' }).count(), 3);
+    // Replies screen: a clicked draft card shows its whole text in the list too (desktop).
+    await page.locator('nav.side button', { hasText: 'Replies' }).click();
+    const draftCard = page.locator('.list .card', { hasText: 'Re: Hall hire' });
+    if (name === 'desktop') {
+      await draftCard.click();
+      await page.locator('.list .card.sel').waitFor();
+      assert.ok(await page.locator('.list .card.sel .text').first().evaluate((el) => el.scrollHeight <= el.clientHeight + 1), 'selected card shows it all');
+    }
+
     // Replies screen: Sent history of every type, searchable.
     await page.locator('nav.side button', { hasText: 'Replies' }).click();
     await page.getByRole('button', { name: 'Show sent' }).click();
