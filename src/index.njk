@@ -24,7 +24,8 @@ livingCards:
     their own pages, 24 Oct 2026; the old URLs redirect to #community and #living-here).
     Live lines are worked out at build time (every commit, and the pipeline commits several
     times a day): next event, notices added in the last 7 days
-    (hidden if none), roads on now / coming up, next bin collection for the first bins.json area. -#}
+    (hidden if none), roads on now / coming up, next bin collection for each collection day (Monday villages and Rous Lench), recalculated in the browser
+    (script at the foot) so it moves on at 10am on collection day, as the bins page does. -#}
 {%- set nextEvent = (whatson.events | merge(pipeline.events) | upcoming) | first -%}
 {%- set allN = pipeline | allNotices(whatson) -%}
 {%- set newCount = allN | notRoadItems | newThisWeek -%}
@@ -32,12 +33,13 @@ livingCards:
 {%- set roadParts = [] -%}
 {%- if roads.now | length %}{% set roadParts = (roadParts.push((roads.now | length) + " on now"), roadParts) %}{% endif -%}
 {%- if roads.soon | length %}{% set roadParts = (roadParts.push((roads.soon | length) + " coming up"), roadParts) %}{% endif -%}
-{%- set bin = bins | nextBin -%}
+{%- set binLines = [] -%}
+{%- for b in bins | nextBins %}{% set binLines = (binLines.push(b.label + ": " + (b.date | shortDate) + ", " + (b.bins | andList)), binLines) %}{% endfor -%}
 {%- set live = {
   "/events/": ("Next: " + nextEvent.title + " · " + (nextEvent.date | shortDate)) if nextEvent else "",
   "/notices/": (newCount + " new this week") if newCount else "",
   "/living-here/roads/": roadParts | join(" · ") if roadParts | length else "No works listed",
-  "/bins/": (bin.area + ": " + (bin.date | shortDate) + ", " + (bin.bins | andList)) if bin else ""
+  "/bins/": binLines
 } -%}
 <main class="container">
 
@@ -71,3 +73,40 @@ livingCards:
   <img class="banner-img home-aerial" src="{{ '/images/lenches-aerial.jpg' | url }}" alt="The Lenches, Worcestershire, seen from the air" loading="lazy">
 
 </main>
+
+<script>
+// Next bin collection per collection day, worked out on the reader's device so it moves on at
+// 10am on collection day (the bins page's rule); the build-time lines stay if this fails.
+(function () {
+  var el = document.getElementById('home-bins');
+  var data = {{ bins | binsSoon | dump | safe }};
+  if (!el || !data.areas.length) return;
+  var now = new Date();
+  function toDate(s) { var p = s.split('-'); return new Date(+p[0], p[1] - 1, +p[2]); }
+  function names(l) { return l.length < 2 ? l[0] : l.slice(0, -1).join(', ') + ' and ' + l[l.length - 1]; }
+  var groups = [];
+  data.areas.forEach(function (a) {
+    var off = a.offset || 0, g = null;
+    for (var i = 0; i < groups.length; i++) { if (groups[i].offset === off) g = groups[i]; }
+    if (!g) { g = { offset: off, villages: [] }; groups.push(g); }
+    g.villages.push(a.name);
+  });
+  var lines = [];
+  groups.forEach(function (g) {
+    for (var i = 0; i < data.collections.length; i++) {
+      var c = data.collections[i];
+      var d = toDate(c.date); d.setDate(d.getDate() + g.offset);
+      var cutoff = new Date(d); cutoff.setHours(10, 0, 0, 0);
+      if (cutoff > now) {
+        var label = g.villages.length > 2 ? g.villages[0] + ' & others' : g.villages.join(' & ');
+        var day = d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' }).replace(',', '');
+        lines.push(label + ': ' + day + ', ' + names(c.bins));
+        break;
+      }
+    }
+  });
+  if (!lines.length) return;
+  el.textContent = '';
+  lines.forEach(function (l, i) { if (i) el.appendChild(document.createElement('br')); el.appendChild(document.createTextNode(l)); });
+})();
+</script>

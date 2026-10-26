@@ -1,5 +1,5 @@
 {#- Grid of hub cards, shared by hub.njk and the home page. Needs cards (title, url, icon, text)
-    and, optionally, live: { url: "line" } for a computed line under a card's text (home page),
+    and, optionally, live: { url: "line" or ["line", ...] } for computed lines under a card's text (home page),
     and cardHeading ("h2" by default; "h3" for cards under a section heading).
     signupCard: true adds the newsletter sign-up card as the last card (home page top row). -#}
 {%- set hTag = cardHeading or "h2" -%}
@@ -39,7 +39,7 @@
     <{{ hTag }}><svg viewBox="0 0 24 24" aria-hidden="true">{{ icons[c.icon] | safe }}</svg>{{ c.title }}</{{ hTag }}>
     <p>{{ c.text }}</p>
     {%- if live and live[c.url] %}
-    <p class="hub-live">{{ live[c.url] }}</p>
+    <p class="hub-live"{% if c.url == "/bins/" %} id="home-bins"{% endif %}>{% if live[c.url] | isArray %}{% for l in live[c.url] %}{{ l }}{% if not loop.last %}<br>{% endif %}{% endfor %}{% else %}{{ live[c.url] }}{% endif %}</p>
     {%- endif %}
   </a>
   {%- endfor %}
