@@ -4,6 +4,7 @@
 // draft (approved lessons + recent corrections, never what the sender wrote), and the weekly
 // lessons (scripts/lessons: proposed rows, the email's links, Approve / Reject), and
 // personalising from the Contacts tab (known_contact, name fallback, the ack's personal line).
+// Logs never carry what the sender wrote or their address (section 6).
 // Google, Gmail and Claude are mocked; nothing leaves the machine.
 // Run: node scripts/test-holly.js
 'use strict';
@@ -243,6 +244,24 @@ async function main() {
   await replies.planReply({ msg: inbound('p4', 't-p4', { from: 'x@example.org', fromAddress: 'x@example.org' }), sourceName: 'website',
     result: { emailClass: 'submission' }, rows: quiz, ctx: ctxFor() });
   ok(prompts.length === 0, 'unknown sender: no Claude call for an acknowledgement');
+
+  // 6. Logs never carry what the sender wrote or their address (Actions logs may be public).
+  reset();
+  const logged = [];
+  const realLog = console.log;
+  console.log = (...a) => { logged.push(a.join(' ')); };
+  try {
+    answer = JSON.stringify({ draft: 'Thanks for getting in touch, the team will look at it.', answered_from_site: false });
+    messages.L1 = inbound('L1', 't-L1', { from: 'priv@example.org', fromAddress: 'priv@example.org', text: 'PRIVATE WORDS about my neighbour' });
+    const r = await replies.planReply({ msg: messages.L1,
+      sourceName: 'website', result: { emailClass: 'question', needsReply: true }, rows: [], ctx: ctxFor() });
+    ok(/PRIVATE WORDS/.test(r.notes), 'notes in the Sheet keep their words');
+    await replies.decideReply(r.reply_id, 'send');
+  } finally {
+    console.log = realLog;
+  }
+  ok(sent.length === 1 && logged.some((l) => /sent\. Gmail id/.test(l)), 'reply sent and logged');
+  ok(!logged.some((l) => /PRIVATE WORDS|priv@example\.org/.test(l)), 'no sender text or address in the log');
 
   console.log(`All Holly tests passed (${checks} checks).`);
 }
