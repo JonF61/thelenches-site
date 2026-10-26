@@ -172,3 +172,10 @@ test('splitSignature: their words, then the signature and earlier emails folded'
   const b = (t) => Buffer.from(t).toString('base64url');
   assert.equal(messageText({ payload: { mimeType: 'text/plain', body: { data: b(clerk) } } }).more.startsWith('--'), true);
 });
+
+test('lesson links go to approval.yml', () => {
+  for (const a of ['lesson_ok', 'lesson_no']) {
+    assert.ok(validPayload({ a, i: 'L20261026-2' }));
+    assert.deepEqual(dispatchFor({ a, i: 'L20261026-2' }), ['approval', { id: 'L20261026-2', action: a }]);
+  }
+});

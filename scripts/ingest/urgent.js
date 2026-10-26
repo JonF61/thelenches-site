@@ -45,6 +45,7 @@ const truthy = (v) => String(v).trim().toUpperCase() === 'TRUE';
 const isFollowup = (r) => r.type === 'followup';
 const isHeld = (r) => r.type === 'held';
 const isOutreach = (r) => r.type === 'outreach';
+const isOwn = (r) => r.type === 'own';
 const alertTo = () => process.env.ALERT_TO || process.env.GMAIL_USER;
 const classLine = (r) => [r.class && `Class: ${r.class}${r.class_confidence !== '' && r.class_confidence !== undefined ? ` (${r.class_confidence})` : ''}`,
   r.policy_codes].filter(Boolean).join(' · ');
@@ -110,6 +111,10 @@ function replyLine(r, liveButtons) {
   if (isFollowup(r)) {
     return 'They wrote again on a thread we already answered (see the note). This draft is never sent '
       + `unless you approve or edit it, including in holiday mode. ${how}${noButtons}`;
+  }
+  if (isOwn(r)) {
+    return 'Your own thread: you wrote to them by hand, so Holly has not drafted anything (she can\'t sign as you). '
+      + `Reply to them in Gmail (Their email, below), then tap Done.${noButtons}`;
   }
   if (isOutreach(r)) {
     return 'Outreach: a new email from Holly to this contact, which you asked for in the panel (see the note '
@@ -192,10 +197,11 @@ function replyHtml(r, ctx) {
       <div style="font-size:16px;font-weight:bold;color:${C.green};margin-bottom:4px;">To ${esc(r.to)}</div>
       <div style="color:${C.grey};font-size:14px;margin-bottom:8px;">${esc(r.subject)}${classLine(r) ? ` · ${esc(classLine(r))}` : ''}</div>
       ${noteFirst ? noteHtml : ''}
-      <div style="white-space:pre-wrap;background:${C.cream};border-radius:6px;padding:10px 12px;font-size:14px;margin-bottom:8px;">${esc(r.body)}</div>
+      ${isOwn(r) ? '' : `<div style="white-space:pre-wrap;background:${C.cream};border-radius:6px;padding:10px 12px;font-size:14px;margin-bottom:8px;">${esc(r.body)}</div>`}
       ${noteFirst ? '' : noteHtml}
       <div style="font-weight:bold;font-size:14px;margin-bottom:6px;">${esc(replyLine(r, ctx.liveButtons))}</div>
-      ${showButtons ? `<div>${button(signedLink(link, 'send'), 'Approve', C.green)}${button(editFormLink(r) || editLink(r, alertTo()), 'Edit', C.orange)}${button(redraftLink(r), 'Redraft', C.slate)}${button(signedLink(link, 'skip'), 'Reject', C.red)}</div>` : ''}
+      ${showButtons && isOwn(r) ? `<div>${ctx.gmailFor(r) ? button(ctx.gmailFor(r), 'Reply in Gmail', C.green) : ''}${button(signedLink(link, 'skip'), 'Done', C.slate)}</div>` : ''}
+      ${showButtons && !isOwn(r) ? `<div>${button(signedLink(link, 'send'), 'Approve', C.green)}${button(editFormLink(r) || editLink(r, alertTo()), 'Edit', C.orange)}${button(redraftLink(r), 'Redraft', C.slate)}${button(signedLink(link, 'skip'), 'Reject', C.red)}</div>` : ''}
       <div style="margin-top:6px;">${showButtons && editFormLink(r) ? textLink(editLink(r, alertTo()), 'Edit by email') : ''}${textLink(ctx.replyUrl(r), 'Open in Sheet')}${ctx.gmailFor(r) ? textLink(ctx.gmailFor(r), !replies.FALLBACK_TYPES.includes(r.type || 'ack') ? 'Their email' : 'Original email') : ''}</div>`,
   border);
 }
@@ -343,10 +349,12 @@ function buildText(ctx) {
       const noteFirst = !replies.FALLBACK_TYPES.includes(r.type || 'ack');
       out.push(`To ${r.to}: ${r.subject}${classLine(r) ? ` [${classLine(r)}]` : ''}`);
       if (noteFirst && r.notes) out.push(r.notes);
-      out.push('---', r.body, '---');
+      if (!isOwn(r)) out.push('---', r.body, '---');
       if (!noteFirst && r.notes) out.push(r.notes);
       out.push(replyLine(r, ctx.liveButtons));
-      if (ctx.liveButtons && r.status === 'awaiting') {
+      if (ctx.liveButtons && r.status === 'awaiting' && isOwn(r)) {
+        out.push(`Done: ${signedLink({ id: r.reply_id, title: `Reply to ${r.to}` }, 'skip')}`);
+      } else if (ctx.liveButtons && r.status === 'awaiting') {
         const link = { id: r.reply_id, title: `Reply to ${r.to}` };
         out.push(`Approve: ${signedLink(link, 'send')}`);
         if (editFormLink(r)) out.push(`Edit: ${editFormLink(r)}`);

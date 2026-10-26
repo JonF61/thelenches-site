@@ -18,7 +18,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '25';
+export const UI_VERSION = '26';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -784,6 +784,15 @@ export const CLIENT_JS = String.raw`
     var c = h('div', { class: 'card' }, replyHead(r));
     // Phone: no side panel, so their email sits above the draft, folded.
     if (!wide()) add(c, h('details', { class: 'their-fold' }, h('summary', null, str(r.type) === 'outreach' ? 'Why this email' : 'Their email'), theirMail(r)));
+    // Your own thread: Holly drafted nothing; reply in Gmail, then Done (a skip).
+    if (str(r.type) === 'own') {
+      add(c, [h('div', { class: 'note' }, 'Your own thread: you wrote to them yourself, so Holly hasn\'t drafted anything. Reply in Gmail, then tap Done.'),
+        h('div', { class: 'actions' },
+          /^[A-Za-z0-9]{6,40}$/.test(str(r.message_id)) ? h('a', { class: 'btn primary', href: 'https://mail.google.com/mail/u/0/#all/' + str(r.message_id), target: '_blank', rel: 'noopener' }, 'Reply in Gmail') : null,
+          h('button', { class: 'btn', onclick: function () { act('reply', r.reply_id, 'reject', null, 'Done'); } }, 'Done'),
+          sheetLink('Replies', r._row))]);
+      return c;
+    }
     add(c, [h('h3', { class: 'their-h' }, 'Holly\'s reply'), h('div', { class: 'text' }, str(r.body))]);
     if (str(r.notes)) add(c, h('div', { class: 'meta' }, 'Notes: ' + str(r.notes)));
     add(c, h('div', { class: 'actions' },

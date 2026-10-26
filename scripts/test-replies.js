@@ -89,6 +89,7 @@ Object.assign(g, {
     : { rfcMessageId: `<${id}@mail>`, references: '', text: inbox[id] || '' }),
   getSheetGid: async () => 0,
   spreadsheetId: () => 'sheet',
+  threadMessageIds: async () => [], // no hand-written threads here (see test-holly.js)
 });
 
 const replies = require('./ingest/replies');

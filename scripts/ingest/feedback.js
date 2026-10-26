@@ -1,7 +1,8 @@
 // scripts/ingest/feedback.js
 // Learning log (agreed 23 Oct): the "Reply feedback" tab records each reply Holly drafted
-// beside what actually happened to it, so Jon can now and then distil the lessons into
-// voice.md and templates.md. Nothing reads it automatically.
+// beside what actually happened to it. Read automatically since 26 Oct: Holly's drafts carry
+// the latest corrections (replies.js primeLearning), and scripts/lessons proposes weekly
+// lessons from them for Jon to approve.
 //
 // One row per drafted reply (clarify, answer, whattodo, held, followup, sorry), written
 // when the draft is made; outcome, final_text, reason and decided_at are filled in later:
