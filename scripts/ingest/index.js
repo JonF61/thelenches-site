@@ -266,6 +266,7 @@ async function processMessage(id, ctx) {
 
 async function main() {
   const { sources, settings } = await g.readSettings();
+  await replies.primeLearning(); // Holly's lessons and recent corrections for this run's drafts
   // Run workflow's start date box: "2026-10-08" overrides Gmail and feeds;
   // "rss:2026-10-08" overrides feeds only (Gmail keeps Settings start_date).
   const rawOverride = String(process.env.START_DATE_OVERRIDE || '').trim();

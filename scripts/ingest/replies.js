@@ -72,6 +72,15 @@
 // Edit or Redraft, and never sent by sendDueReplies (not a FALLBACK_TYPE), even in holiday
 // mode. Its last paragraph before the sign-off is the opt-out line (templates.md
 // outreach_optout), kept through a redraft.
+// Your own threads (type "own", 26 Oct): a message on a thread where website@ (or the team's
+// own address) wrote by hand, i.e. not a Holly reply, the newsletter or an automatic email.
+// Holly never drafts there (she can't sign as you): an "own" row, awaiting with no body,
+// tells Jon to reply himself in Gmail; Reject ("Done") closes it. Approve can't send it.
+// Names (26 Oct): "Hi <name>," comes from the display name, else from their sign-off
+// ("Kind regards, Jenny"; nameFor).
+// Learning (26 Oct): every Claude draft (withVoice) also carries the team's approved lessons
+// (Holly lessons tab, scripts/lessons) and the latest corrections from Reply feedback
+// (edited, redrafted, rejected with a reason), loaded once per run by primeLearning().
 // Every body is checked before it goes: links on their own line with no punctuation
 // touching them (fixLinks), and the sender's signature and quoted history are trimmed
 // (stripQuoted) before their words are quoted to Jon or given to Claude.
@@ -294,6 +303,29 @@ function firstName(fromHeader) {
   return word.charAt(0).toUpperCase() + (word === word.toUpperCase() || word === word.toLowerCase() ? word.slice(1).toLowerCase() : word.slice(1));
 }
 
+// First name from their sign-off when the display name gives none: "Kind regards, Jenny",
+// or a sign-off line with the name on the next line. '' if unclear.
+function signOffName(text) {
+  const lines = String(text || '').split(/\r?\n/).map((l) => l.trim());
+  const stop = lines.findIndex((l, i) => i > 0 && (/^>/.test(l) || /wrote:\s*$/i.test(l) || SIG_DELIM.test(l)
+    || /^-{2,}\s*original message/i.test(l)));
+  const mine = (stop > 0 ? lines.slice(0, stop) : lines);
+  const pick = (w) => {
+    const word = String(w || '').replace(/[^A-Za-z'’-]/g, '');
+    return /^[A-Z][a-z'’-]{1,19}$/.test(word) && !NOT_A_NAME.has(word.toLowerCase()) ? word : '';
+  };
+  for (let i = mine.length - 1; i >= 0 && mine.length - i <= 12; i -= 1) {
+    const m = mine[i].match(new RegExp(`^${SIGN_OFF_WORDS}[,.!]?\\s*(.*)$`, 'i'));
+    if (!m) continue;
+    const same = pick(m[1].split(/\s+/)[0]);
+    if (same) return same;
+    const next = mine.slice(i + 1).find((l) => l);
+    return next ? pick(next.split(/\s+/)[0]) : '';
+  }
+  return '';
+}
+const nameFor = (msg) => firstName(msg.from) || signOffName(msg.text);
+
 function greeting(name) {
   return name && templates().greeting_name !== undefined ? fill('greeting_name', { name }) : fill('greeting');
 }
@@ -376,11 +408,62 @@ function voiceGuide() {
 
 // A system prompt plus the voice guide (voice.md). The prompt's rules win; a missing or
 // unreadable voice.md just means the plain prompt is used.
+// Learning: the team's approved lessons and its latest corrections, loaded by primeLearning()
+// at the start of each run (none until then, or if the tabs can't be read).
+const LESSONS_TAB = 'Holly lessons';
+const LESSON_HEADERS = ['id', 'created_at', 'lesson', 'evidence', 'status', 'decided_at', 'notes'];
+const RECENT_CORRECTIONS = 8;
+const CORRECTION_CHARS = 500;
+let learning = { lessons: [], corrections: [] };
+
+const clipTo = (t, n) => { const f = String(t || '').replace(/\s+/g, ' ').trim(); return f.length > n ? `${f.slice(0, n)}…` : f; };
+
+// Reply feedback rows -> the latest corrections: edited (draft vs what was sent), redrafted
+// (what Jon asked), rejected with a reason. Greeting and sign-off dropped.
+function correctionsFrom(rows, n = RECENT_CORRECTIONS) {
+  return (rows || [])
+    .filter((r) => ['edited', 'redrafted'].includes(r.outcome) || (r.outcome === 'rejected' && String(r.reason || '').trim()))
+    .sort((a, b) => String(b.decided_at || b.created_at).localeCompare(String(a.decided_at || a.created_at)))
+    .slice(0, n)
+    .map((r) => ({
+      type: r.type,
+      outcome: r.outcome,
+      draft: clipTo(innerBody(r.draft), CORRECTION_CHARS),
+      sent_instead: r.outcome === 'edited' ? clipTo(innerBody(r.final_text), CORRECTION_CHARS) : '',
+      team_said: clipTo(r.reason, 300),
+    }));
+}
+
+async function primeLearning() {
+  const next = { lessons: [], corrections: [] };
+  try {
+    next.lessons = (await g.readTable(LESSONS_TAB)).filter((r) => String(r.status).trim().toLowerCase() === 'approved')
+      .map((r) => clipTo(r.lesson, 400)).filter(Boolean);
+  } catch { /* no lessons tab yet */ }
+  try {
+    next.corrections = correctionsFrom(await g.readTable(feedback.TAB));
+  } catch { /* no feedback tab yet */ }
+  learning = next;
+  console.log(`Holly learning: ${next.lessons.length} lesson(s), ${next.corrections.length} recent correction(s).`);
+  return next;
+}
+
+function learningBlock() {
+  const parts = [];
+  if (learning.lessons.length) {
+    parts.push(`The team's lessons for Holly (follow them; they win over the voice guide where they differ):\n${learning.lessons.map((l) => `- ${l}`).join('\n')}`);
+  }
+  if (learning.corrections.length) {
+    parts.push(`How the team corrected recent drafts (newest first). Learn the pattern; never copy names, dates or details from them:\n<recent_corrections>\n${JSON.stringify(learning.corrections)}\n</recent_corrections>`);
+  }
+  return parts.length ? `\n\n${parts.join('\n\n')}` : '';
+}
+
 function withVoice(system) {
   const voice = voiceGuide();
   return voice
-    ? `${system}\n\nWrite in the voice described in this guide. The rules above take precedence: the sign-off is added separately, so do not sign off or mention Holly or any name. Write every date exactly in the guide's style, weekday then day then month, with no comma, no \"th\" and no year (\"Monday 9 November\", never \"Monday, 9 November 2026\"), even where site_facts or their message write it differently.\n\n<voice_guide>\n${voice}\n</voice_guide>`
-    : system;
+    ? `${system}${learningBlock()}\n\nWrite in the voice described in this guide. The rules above take precedence: the sign-off is added separately, so do not sign off or mention Holly or any name. Write every date exactly in the guide's style, weekday then day then month, with no comma, no \"th\" and no year (\"Monday 9 November\", never \"Monday, 9 November 2026\"), even where site_facts or their message write it differently.\n\n<voice_guide>\n${voice}\n</voice_guide>`
+    : `${system}${learningBlock()}`;
 }
 
 let clientCache;
@@ -566,6 +649,7 @@ async function planReply({ msg, sourceName, result, rows, ctx, unusable = [] }) 
   const auto = automatedReason(msg, to);
   if (auto) return skip(auto);
   if (emailClass === 'spam') return skip('Spam: never replied to');
+  if (await ownThread(msg, ctx)) return planOwn({ ctx, base, said });
   if (ctx.replies.some((r) => r.thread_id === msg.threadId && ACTIVE.includes(r.status))) {
     return skip('Already replied on this thread');
   }
@@ -578,11 +662,46 @@ async function planReply({ msg, sourceName, result, rows, ctx, unusable = [] }) 
   // anything else is never dropped but held for Jon's Approve/Reject (heldBySenderLimit).
   const limit = senderLimit(ctx, to);
 
-  const job = { msg, result, rows, ctx, unusable, mode, base, said, limit, name: firstName(msg.from) };
+  const job = { msg, result, rows, ctx, unusable, mode, base, said, limit, name: nameFor(msg) };
   if (responder) return planProbable(job, responder.probable, isSubmission);
   if (hold) return planHeld(job, { hold });
   if (isSubmission) return planSubmission(job, skip);
   return planEnquiry(job);
+}
+
+// True if someone on the team wrote by hand earlier in this thread: a message from website@
+// or GMAIL_USER that isn't a Holly reply (Replies sent_gmail_id), the newsletter
+// (List-Unsubscribe) or automatic mail (Auto-Submitted).
+async function ownThread(msg, ctx) {
+  if (!msg.threadId) return false;
+  let ids;
+  try {
+    ids = await g.threadMessageIds(msg.threadId);
+  } catch (err) {
+    console.warn(`Thread check for ${msg.id} failed: ${(err && err.message) || err}`);
+    return false;
+  }
+  const team = [REPLY_FROM, String(process.env.GMAIL_USER || '').trim().toLowerCase()].filter(Boolean);
+  const ours = new Set(ctx.replies.map((r) => String(r.sent_gmail_id || '')).filter(Boolean));
+  for (const id of ids) {
+    if (id === msg.id) break; // only earlier messages
+    if (ours.has(id)) continue;
+    const m = await g.getMessage(id);
+    const a = m.auto || {};
+    if (team.includes(String(m.fromAddress || '').toLowerCase()) && !a.listUnsubscribe
+      && !(a.autoSubmitted && a.autoSubmitted !== 'no')) return true;
+  }
+  return false;
+}
+
+// A message on your own thread: no draft, just a row asking you to reply yourself.
+async function planOwn({ ctx, base, said }) {
+  const row = await appendReply(ctx, {
+    ...base, reply_id: `${base.message_id}-own`, type: 'own', status: 'awaiting', body: '',
+    notes: ['Your own thread: you wrote to them yourself, so Holly hasn\'t drafted anything. Reply in Gmail, then tap Done.',
+      theyWroteNote(said)].filter(Boolean).join(' | '),
+  });
+  return row;
 }
 
 function senderLimit(ctx, to) {
@@ -1255,7 +1374,7 @@ async function planFollowup({ msg, reply, ctx, added = [], result = {} }) {
   // email. Refused or unsure: the follow-up draft for Jon below, with the reason.
   let listNote = '';
   if (!hold) {
-    const job = { msg, base, mode, limit: senderLimit(ctx, to), name: firstName(msg.from) };
+    const job = { msg, base, mode, limit: senderLimit(ctx, to), name: nameFor(msg) };
     const list = await tryListRequest(job, async ({ extra = [], ...fields }) => appendReply(ctx, {
       ...base,
       subject: replySubject(msg.subject),
@@ -1285,7 +1404,7 @@ async function planFollowup({ msg, reply, ctx, added = [], result = {} }) {
     type: 'followup',
     policy_codes: 'followup',
     subject: replySubject(msg.subject),
-    body: wrap(t.draft || FOLLOWUP_FALLBACK, firstName(msg.from)),
+    body: wrap(t.draft || FOLLOWUP_FALLBACK, nameFor(msg)),
     status: mode === 'shadow' ? 'shadow' : 'awaiting',
     notes: [
       `Follow-up: ${t.reason}`,
@@ -1481,6 +1600,10 @@ async function decideReply(replyId, action, reason = '') {
     await g.updateRow('Replies', row._row, { status: 'skipped', decided_at: decidedAt });
     await feedback.resolve(replyId, { outcome: 'rejected', reason, decidedAt });
     console.log(`Reply ${replyId} rejected.`);
+    return;
+  }
+  if (row.type === 'own') {
+    console.log(`Reply ${replyId} is your own thread: nothing to send (reply in Gmail, then Done).`);
     return;
   }
   if (repliesMode(settings) !== 'live') throw new Error(`replies_mode is "${repliesMode(settings)}", not live; nothing sent`);
@@ -1762,6 +1885,13 @@ module.exports = {
   // For reader feedback replies (scripts/readerfeedback): same voice, sign-off and checks.
   fill,
   greeting,
+  nameFor,
+  signOffName,
+  primeLearning,
+  correctionsFrom,
+  innerBody,
+  LESSONS_TAB,
+  LESSON_HEADERS,
   textToHtml,
   sanitiseAnswer,
   textOf,

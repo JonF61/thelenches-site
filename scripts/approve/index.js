@@ -23,6 +23,9 @@
 //   fb_done, fb_send, fb_edit (BODY), fb_skip
 //                     Reader feedback (Feedback tab), admin panel only: see
 //                     scripts/readerfeedback. fb_done and fb_reject draft Holly's reply.
+//   lesson_ok / lesson_no
+//                     Holly's weekly lessons email (scripts/lessons): approve or reject one
+//                     proposed lesson (Holly lessons tab). Only "proposed" rows change.
 //   nudge             Draft nudge (admin panel Outreach, 26 Oct): ID is "c" + a hash of a
 //                     contact's address. Holly drafts an outreach email (scripts/outreach) as
 //                     an awaiting Replies row and a card is emailed to Jon. Nothing is sent.
@@ -37,6 +40,7 @@ const trust = require('../ingest/trusted');
 const { sendReplyCard } = require('../ingest/urgent');
 const readerFeedback = require('../readerfeedback');
 const outreach = require('../outreach');
+const lessons = require('../lessons');
 
 const TZ = 'Europe/London';
 const WORDING = { approve_own: 'own', approve_rewrite: 'rewrite' };
@@ -102,6 +106,8 @@ async function main() {
   const id = String(process.env.ITEM_ID || '').trim();
   const action = String(process.env.ACTION || '').trim();
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) throw new Error(`Bad id "${id}"`);
+  // Holly's lessons and recent corrections, for any draft this action leads to.
+  if (!['send', 'skip', 'close', 'edit', 'lesson_ok', 'lesson_no'].includes(action)) await replies.primeLearning();
 
   if (ITEM_ACTIONS.includes(action)) return decideItem(id, action);
   if (action === 'trust') return trustSource(id);
@@ -127,6 +133,7 @@ async function main() {
     return undefined;
   }
   if (action === 'close') return replies.closeOwed(id);
+  if (action === 'lesson_ok' || action === 'lesson_no') return lessons.decide(id, action);
   if (action === 'nudge') {
     const fresh = await outreach.draftNudge(id);
     if (!fresh || fresh.status !== 'awaiting') return undefined;

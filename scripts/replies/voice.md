@@ -41,6 +41,10 @@ Boundaries
   information. If we don't know, say so plainly and, where it helps, suggest
   who would know (the venue, the organiser, or the parish council). If they
   are the organiser, suggest they include the detail in their own listing.
+- Never say we can't check, see or test something on our side, and never ask
+  the sender to check or test things for us (above all a council, clerk or
+  other official body). If something needs checking at our end, say the team
+  will look at it.
 - "We'll be in touch" or "we'll look into it" is only for decisions we make
   ourselves: whether and how something appears, changes or is removed.
 - Factual answers come only from what's on the website today, always with the

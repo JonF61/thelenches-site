@@ -39,7 +39,9 @@ function stateData() {
     health: [], watchdog: { open: false }, googleAccount: 'sa@example.iam.gserviceaccount.com',
     pending: { headers: [], rows: [] }, owed: [], photos: { headers: [], rows: [] },
     replies: { headers: [], rows: [{ reply_id: 'm9-answer', message_id: 'msg123abc', to: 'clerk@example.org', type: 'answer', status: 'awaiting', subject: 'Re: Hall hire',
-      body: 'Hi there,\n\nThanks for asking.\n\nThe hall can be booked through the website.\n\nBest wishes,\nHolly\nLenches website assistant', created_at: '2026-10-26 10:17' }] },
+      body: 'Hi there,\n\nThanks for asking.\n\nThe hall can be booked through the website.\n\nBest wishes,\nHolly\nLenches website assistant', created_at: '2026-10-26 10:17' },
+      { reply_id: 'm8-own', message_id: 'msg123abc', to: 'clerk@example.org', type: 'own', status: 'awaiting', subject: 'Re: Your feed', body: '',
+        notes: 'Your own thread: reply in Gmail, then tap Done.', created_at: '2026-10-26 10:20' }] },
     photoFolders: [], photosRoot: 'r', today: '2026-10-26', toDelete: [], feedback: { headers: [], rows: [] },
     sent: [
       { reply_id: 'out-1', to: 'george@example.org', type: 'outreach', subject: 'Your EP release?', body: 'Hi George,\n\nAny news on the EP?', sent_at: '2026-10-26 09:40' },
@@ -162,6 +164,17 @@ try {
       await draftCard.getByText('Their email').click();
       assert.match(await draftCard.innerText(), /How do I book the hall[\s\S]*HOLLY'S REPLY[\s\S]*booked through the website/i);
     }
+
+    // Your own thread: no draft, Reply in Gmail and Done only.
+    const ownCard = name === 'desktop' ? page.locator('.list .card', { hasText: 'Re: Your feed' }) : page.locator('.card', { hasText: 'Re: Your feed' });
+    if (name === 'desktop') await ownCard.click();
+    const ownBox = name === 'desktop' ? page.locator('.detail .card') : ownCard;
+    await ownBox.getByRole('link', { name: 'Reply in Gmail' }).waitFor();
+    assert.equal(await ownBox.getByRole('button', { name: 'Approve' }).count(), 0);
+    assert.equal(await ownBox.getByRole('link', { name: 'Reply in Gmail' }).getAttribute('href'), 'https://mail.google.com/mail/u/0/#all/msg123abc');
+    await ownBox.getByRole('button', { name: 'Done' }).click();
+    await page.locator('.toast').waitFor();
+    assert.deepEqual(posts.pop(), { path: '/admin/api/action', kind: 'reply', id: 'm8-own', action: 'reject' });
 
     // Replies screen: Sent history of every type, searchable.
     await page.locator('nav.side button', { hasText: 'Replies' }).click();

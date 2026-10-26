@@ -1,0 +1,40 @@
+name: Holly lessons
+
+# Every Monday: Claude reads the past week's corrections in the Reply feedback tab (drafts
+# Jon edited, redrafted or rejected with a reason) and proposes a few general lessons for
+# Holly. They go in the Holly lessons tab as "proposed" and Jon gets one email with Approve /
+# Reject for each (scripts/lessons). Nothing changes until he approves. Logs print counts
+# and ids only.
+on:
+  schedule:
+    - cron: "13 7 * * MON"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lessons
+  cancel-in-progress: false
+
+jobs:
+  lessons:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Propose lessons
+        run: node scripts/lessons/index.js
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: jon@thelenches.org.uk
+          CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
+          APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
+          WORKER_URL: https://approvals.lenches.workers.dev

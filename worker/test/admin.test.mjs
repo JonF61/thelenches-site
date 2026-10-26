@@ -637,7 +637,9 @@ test('Scopes: no Worker source names a Google scope outside the allow-list', asy
   const found = new Set();
   for (const f of files) {
     const src = fs.readFileSync(f, 'utf8').replace(/^\s*\/\/.*$/gm, ''); // code only, not comments
-    for (const m of src.matchAll(/https:\/\/(?:www\.googleapis\.com\/auth\/[\w.]+|mail\.google\.com\/)/g)) found.add(m[0]);
+    // The full-Gmail scope is the bare "https://mail.google.com/" (ending at the slash); web
+    // links into Gmail (…/mail/u/0/#all/<id>, the Replies "Reply in Gmail" button) are not scopes.
+    for (const m of src.matchAll(/https:\/\/(?:www\.googleapis\.com\/auth\/[\w.]+|mail\.google\.com\/(?![\w#]))/g)) found.add(m[0]);
     assert.doesNotMatch(src, /gmail\.(send|modify|compose|insert)/, f);
   }
   assert.deepEqual([...found].filter((s) => !(s in ALLOWED)), []);
