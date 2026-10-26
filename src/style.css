@@ -54,6 +54,9 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 /* Home */
 .intro-head{font-size:clamp(1.2rem,2.2vw,1.45rem);line-height:1.35;color:var(--green-dark);margin:0 0 .4rem;max-width:40ch}
 .intro .muted{margin:0 0 1.25rem}
+.home-skyline{margin:.25rem 0 .75rem}
+.home-skyline svg{display:block;width:100%;height:auto}
+.home-aerial{margin:0 0 1.5rem}
 .banner-img{width:100%;aspect-ratio:3/1;object-fit:cover;border-radius:var(--radius)}
 .home-cards{margin:1.5rem 0 2rem}
 .home-cards .hub-grid{margin-top:0}
