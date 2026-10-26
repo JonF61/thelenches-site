@@ -4,17 +4,28 @@ title: Events
 description: What's on across the Lenches villages — upcoming events from the newsletter and local groups.
 ---
 {#- Items come from src/items/ (hand-edited, via lib/whatson.js) and pipeline.json (written by scripts/publish). -#}
-{#- Thumbnail/tile floats right inside .item-body so the text wraps under it on phones (no blank space) -#}
+{#- A drawn tile (no image) floats right inside .item-body as a small thumbnail so the text wraps under it -#}
 {#- "Lenches" badge marks items in the five Lenches (inLenches filter, lib/lenches.js); order stays by date -#}
 {#- Image: the item's own, else a standing photo (Photos tab target event:<key>, eventImage filter), else a tile -#}
-{#- The item's own image (usually a flyer) shows whole, below the text, max 420px wide (15 Oct); standing photos and tiles stay as thumbnails -#}
+{#- Any image (own, organiser's or standing photo) shows beside the text on desktop, 360px wide and floated right so the text wraps
+    down its left side (26 Oct: images below the text left a lot of white space); on phones it sits below the text, up to 420px wide.
+    It opens full size when clicked (data-viewer); a credit shows under it -#}
 <style>
   .item-card .item-body{display:flow-root}
-  .item-body > .thumb-link,.item-body > .tile{float:right;margin:0 0 .4rem .9rem}
+  .item-body > .tile{float:right;margin:0 0 .4rem .9rem}
   .lenches-badge{display:inline-block;vertical-align:middle;margin-left:.35rem;padding:0 .45rem;border-radius:4px;background:#fbe6d6;color:#8a3e0c;font-size:.7rem;font-weight:600;line-height:1.6;white-space:nowrap}
-  .flyer-link{display:block;max-width:420px;margin:.6rem 0 0}
-  .item-flyer{display:block;width:100%;height:auto;border:1px solid #e6e1d6;border-radius:4px}
+  .ev-img{margin:0}
+  .ev-img a{display:block}
+  .ev-img img{display:block;width:100%;height:auto;border:1px solid #e6e1d6;border-radius:4px}
   .img-credit{margin:.3rem 0 0}
+  @media (min-width:760px){
+    .item-body > .ev-img{float:right;width:360px;margin:0 0 .5rem 1.2rem}
+    .ev-img .img-credit{text-align:right}
+  }
+  @media (max-width:759px){
+    .item-card .item-body:has(> .ev-img){display:flex;flex-direction:column}
+    .item-body > .ev-img{order:9;max-width:420px;margin:.6rem 0 0}
+  }
 </style>
 <main class="container">
   <div class="page-head">
@@ -29,15 +40,13 @@ description: What's on across the Lenches villages — upcoming events from the 
     {% for e in g.items %}
     {% set d = e.date | dateParts %}
     {% set img = e | eventImage(photos) %}
-    {% set own = e.image and e.image.url %}
     {#- id is linked from the home page's "more" links: keep the two in step -#}
     <div class="item-card" id="{{ ('ev-' + e.date + '-' + e.title) | slugify }}">
       <div class="date"><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>
       <div class="item-body">
-        {% if not own %}{% if img %}<a class="thumb-link" href="{{ img.url | url }}" data-viewer aria-label="View full image"><img class="item-thumb" src="{{ img.url | url }}" alt="{{ img.alt | escape }}" loading="lazy"></a>{% else %}{{ e | tileSvg | safe }}{% endif %}{% endif %}
+        {% if img %}<figure class="ev-img"><a href="{{ img.url | url }}" data-viewer aria-label="View full image"><img src="{{ img.url | url }}" alt="{{ img.alt | escape }}" loading="lazy"></a>{% if img.credit %}<figcaption class="img-credit small mut">{% if img.creditUrl %}<a href="{{ img.creditUrl | escape }}" target="_blank" rel="noopener">{{ img.credit | escape }}</a>{% else %}{{ img.credit | escape }}{% endif %}</figcaption>{% endif %}</figure>{% else %}{{ e | tileSvg | safe }}{% endif %}
         <h3>{{ e.title | escape }}{% if e | inLenches %} <span class="lenches-badge">Lenches</span>{% endif %}</h3>
         {% for p in e.body | paras %}<p>{{ p | escape }}{% if loop.last and e.link %} <a href="{{ e.link.url | escape }}" target="_blank" rel="noopener">{{ e.link.text | escape }} &rarr;</a>{% endif %}</p>{% endfor %}
-        {% if own %}<a class="flyer-link" href="{{ e.image.url | url }}" data-viewer aria-label="View full image"><img class="item-flyer" src="{{ e.image.url | url }}" alt="{{ e.image.alt | escape }}" loading="lazy"></a>{% if e.image.credit %}<p class="img-credit small mut">{% if e.image.creditUrl %}<a href="{{ e.image.creditUrl | escape }}" target="_blank" rel="noopener">{{ e.image.credit | escape }}</a>{% else %}{{ e.image.credit | escape }}{% endif %}</p>{% endif %}{% endif %}
       </div>
     </div>
     {% endfor %}
