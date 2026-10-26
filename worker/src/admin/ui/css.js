@@ -54,6 +54,7 @@ nav.side button[aria-current="page"] .n{background:rgba(255,255,255,.25);color:i
 .card.sel{outline:2px solid var(--accent)}
 .card.done{opacity:.55}
 .meta{color:var(--muted);font-size:.88rem}
+.intro{margin:2px 2px 12px;line-height:1.4}
 .badges{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .badge{font-size:.78rem;padding:2px 8px;border-radius:10px;background:var(--panel2);border:1px solid var(--line)}
 .badge.bad{background:var(--bad-bg);color:var(--bad);border-color:transparent}
