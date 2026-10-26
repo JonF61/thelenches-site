@@ -5,7 +5,6 @@ description: Events, notices, roadworks and information for the Lenches villages
 cards:
   - { title: "Events", url: "/events/", icon: calendar, text: "What's on across the villages, week by week." }
   - { title: "Notices", url: "/notices/", icon: notice, text: "Parish council notices and news from around the villages." }
-  - { title: "Roads", url: "/living-here/roads/", icon: road, text: "Road closures and roadworks in and around the Lenches." }
   - { title: "Bins", url: "/bins/", icon: bins, text: "Collection days and what goes in which bin." }
 communityIntro: Clubs, halls and churches across the Lenches.
 communityCards:
@@ -18,9 +17,10 @@ livingCards:
   - { title: "Getting around", url: "/living-here/getting-around/", icon: bus, text: "Buses, on-demand and community transport, stations." }
   - { title: "Council & planning", url: "/living-here/council/", icon: council, text: "Parish councils, councillors and planning searches." }
   - { title: "Schools", url: "/living-here/schools/", icon: school, text: "Local schools, applying and term dates." }
+  - { title: "Roads", url: "/living-here/roads/", icon: road, text: "Road closures and roadworks in and around the Lenches." }
   - { title: "Walks & footpaths", url: "/living-here/walks/", icon: walk, text: "Circular walks, maps and the Countryside Code." }
 ---
-{#- Four cards (hub-cards.njk), then the Community and Living here sections (folded in from
+{#- Three cards plus the newsletter sign-up card (hub-cards.njk, signupCard), then the Community and Living here sections (folded in from
     their own pages, 24 Oct 2026; the old URLs redirect to #community and #living-here).
     Live lines are worked out at build time (every commit, and the pipeline commits several
     times a day): next event, notices added in the last 7 days
@@ -44,14 +44,12 @@ livingCards:
   {% include "home-skyline.njk" %}
 
   <section class="intro">
-    <p class="intro-head">News, events and information for our five villages, and a newsletter every Thursday.</p>
+    <p class="intro-head">News, events and information for our five villages, and a newsletter every Thursday. Free, and sent every Thursday morning. To join, email <a href="mailto:{{ site.email }}?subject=Add%20me%20to%20the%20mailing%20list">{{ site.email }}</a> and ask to be added.</p>
     <p class="muted">Everything here is collected from local groups, organisations and residents, and kept as accurate and up to date as we can manage.</p>
   </section>
 
-  {% include "signup.njk" %}
-
   <section class="home-cards">
-    {% include "hub-cards.njk" %}
+    {% set signupCard = true %}{% include "hub-cards.njk" %}{% set signupCard = false %}
   </section>
 
   <section id="community" class="home-section">

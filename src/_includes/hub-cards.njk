@@ -1,6 +1,7 @@
 {#- Grid of hub cards, shared by hub.njk and the home page. Needs cards (title, url, icon, text)
     and, optionally, live: { url: "line" } for a computed line under a card's text (home page),
-    and cardHeading ("h2" by default; "h3" for cards under a section heading). -#}
+    and cardHeading ("h2" by default; "h3" for cards under a section heading).
+    signupCard: true adds the newsletter sign-up card as the last card (home page top row). -#}
 {%- set hTag = cardHeading or "h2" -%}
 {%- set icons = {
   users: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.8.3 5 2.6 5 5.8"/>',
@@ -15,6 +16,7 @@
   bins: '<path d="M4 7h16M10 3h4"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v6M14 11v6"/>',
   calendar: '<rect x="4" y="5" width="16" height="16" rx="2"/><path d="M16 3v4M8 3v4M4 11h16"/><path d="M8 15h2v2H8z"/>',
   notice: '<path d="M18 8a3 3 0 0 1 0 6"/><path d="M10 8v11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-5"/><path d="M12 8l4.5-3.8a.9.9 0 0 1 1.5.7v12.2a.9.9 0 0 1-1.5.7L12 14H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
   road: '<path d="M4 19L8 5M16 5l4 14"/><path d="M12 6v2M12 11v2M12 16v2"/>',
   home: '<path d="M5 12H3l9-9 9 9h-2"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/><path d="M9 21v-6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v6"/>'
 } -%}
@@ -25,6 +27,10 @@
 .hub-card svg{width:24px;height:24px;flex:none;color:#b5471b;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .hub-card p{margin:0;color:#666;font-size:.92rem}
 .hub-card .hub-live{margin:.45rem 0 0;color:#9A5312;font-weight:600;font-size:.88rem}
+.hub-signup{background:var(--green-dark);color:#dfe9d8;display:flex;flex-direction:column;box-shadow:0 0 0 3px var(--accent),0 6px 16px rgba(46,61,38,.25)}
+.hub-signup h2{color:#fff}.hub-signup svg{color:#F2B98A}.hub-signup p{color:#dfe9d8}
+.hub-signup .btn{align-self:flex-start;margin-top:.7rem;padding:.45rem 1.1rem}
+.hub-signup .hub-small{margin-top:.5rem;font-size:.8rem;color:#b9cdb0}.hub-signup .hub-small a{color:#fff}
 .hub-card:hover h2,.hub-card:focus h2,.hub-card:hover h3,.hub-card:focus h3{text-decoration:underline}
 </style>
 <div class="hub-grid">
@@ -37,4 +43,12 @@
     {%- endif %}
   </a>
   {%- endfor %}
+  {%- if signupCard %}
+  <div class="card hub-card hub-signup" id="signup">
+    <{{ hTag }}><svg viewBox="0 0 24 24" aria-hidden="true">{{ icons.mail | safe }}</svg>Thursday newsletter</{{ hTag }}>
+    <p>Free, every Thursday morning.</p>
+    <a class="btn" href="mailto:{{ site.email }}?subject=Add%20me%20to%20the%20mailing%20list">Email to join</a>
+    <p class="hub-small">Unsubscribe any time &middot; <a href="{{ '/privacy/' | url }}">Privacy</a></p>
+  </div>
+  {%- endif %}
 </div>
