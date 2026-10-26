@@ -58,4 +58,13 @@ function editFormLink(row) {
   return url.length <= MAX_EDIT_URL ? url : '';
 }
 
-module.exports = { signedLink, trustLink, editFormLink, signToken, linksEnabled, workerUrl, LINK_DAYS };
+// Redraft page for a reply draft (Worker /a, action "redraft"). Like editFormLink, the draft
+// travels in the signed token so the page can show it above the instruction box (26 Oct);
+// if that would make the link too long, the link goes without it (the page then just asks).
+function redraftLink(row) {
+  const base = { i: row.reply_id, a: 'redraft', t: `Reply to ${row.to}`.slice(0, 80), e: Math.floor(Date.now() / 1000) + LINK_DAYS * 86400 };
+  const url = signToken({ ...base, b: String(row.body || '') });
+  return url.length <= MAX_EDIT_URL ? url : signToken(base);
+}
+
+module.exports = { signedLink, trustLink, editFormLink, redraftLink, signToken, linksEnabled, workerUrl, LINK_DAYS };
