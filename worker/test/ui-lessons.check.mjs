@@ -20,7 +20,7 @@ const SHOTS = process.env.SHOTS || '';
 
 const lessons = () => ({ headers: [], rows: [
   { _row: 4, id: 'L20261102-1', created_at: '2026-11-02 07:13', lesson: 'Keep replies to clerks formal.', evidence: 'a1', status: 'proposed', decided_at: '', notes: '' },
-  { _row: 2, id: 'L20261026-1', created_at: '2026-10-26 13:43', lesson: 'Avoid naming a past month when recalling what someone said.', evidence: '', status: 'approved', decided_at: '2026-10-26 13:50', notes: '' },
+  { _row: 2, id: 'L20261026-1', created_at: '2026-10-26 13:43', lesson: 'Avoid naming a past month when recalling what someone said.', evidence: '', status: 'approved', decided_at: '2026-10-26 13:50', notes: 'Check: overlaps another lesson in use.' },
   { _row: 3, id: 'L20261026-2', created_at: '2026-10-26 13:43', lesson: 'An old rule switched off.', evidence: '', status: 'rejected', decided_at: '', notes: '' },
 ] });
 const stateData = () => ({
@@ -63,6 +63,7 @@ try {
     const text = await main.innerText();
     assert.match(text, /^Rules Holly follows in every draft/m);
     assert.match(text, /SUGGESTED \(1\)[\s\S]*IN USE \(1\)[\s\S]*NOT IN USE \(1\)/i);
+    await main.locator('.card', { hasText: 'Avoid naming a past month' }).locator('.note.warn', { hasText: 'Check: overlaps another lesson in use.' }).waitFor();
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `lessons-${name}.png`), fullPage: true });
 
     // Add.
