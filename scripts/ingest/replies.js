@@ -765,7 +765,8 @@ function logNoteFor(row) {
 async function appendReply(ctx, row) {
   await g.appendRows('Replies', [row]);
   ctx.replies.push(row);
-  console.log(`Reply ${row.reply_id}: ${row.status}${row.notes ? ` (${row.notes})` : ''}`);
+  // Ids, type and status only: notes quote the sender ("They wrote") and the logs may be public.
+  console.log(`Reply ${row.reply_id}: ${row.type || 'reply'}, ${row.status}${row.hold_reason ? ` (held: ${row.hold_reason})` : ''}`);
   return row;
 }
 
@@ -1684,7 +1685,7 @@ async function deliver(row, settings, { body: given, note: givenNote = '', decid
     ...(body !== undefined ? { body: text } : {}),
     ...(note ? { notes: [row.notes, note].filter(Boolean).join(' | ') } : {}),
   });
-  console.log(`Reply ${row.reply_id} sent to ${row.to}. Gmail id ${id}.`);
+  console.log(`Reply ${row.reply_id} sent. Gmail id ${id}.`); // never the address: logs may be public
 
   const check = await g.getMessage(id);
   if (check.fromAddress !== REPLY_FROM) {
