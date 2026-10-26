@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 
 import {
-  idFor, contributionList, dueFor, heldBack, weekCount, outreachLists, planNudge, seasonalFor, WEEK_CAP,
+  idFor, contributionList, dueFor, sentRows, heldBack, weekCount, outreachLists, planNudge, seasonalFor, WEEK_CAP,
 } from '../src/admin/outreach.mjs';
 import { planContact } from '../src/admin/contacts.js';
 import { dispatchFor, validPayload, ACTIONS } from '../src/core.js';
@@ -131,4 +131,18 @@ test('Redraft link shows the draft it carries; only the instruction is dispatche
     globalThis.fetch = realFetch;
   }
   assert.deepEqual(sent, [{ event_type: 'approval', client_payload: { id: 'out-c1-202610260918', action: 'redraft', reason: 'Drop the October bit' } }]);
+});
+
+test('sentRows: sent only, newest first, by type, limited', async () => {
+  const rows = [
+    { reply_id: 'a', status: 'sent', type: 'ack', to: 'x@example.org', sent_at: '2026-10-25 10:00', notes: 'n' },
+    { reply_id: 'b', status: 'sent', type: 'outreach', to: 'A@example.org', sent_at: '2026-10-26 09:00' },
+    { reply_id: 'c', status: 'awaiting', type: 'outreach', to: 'y@example.org' },
+  ];
+  assert.deepEqual(sentRows(rows).map((r) => r.reply_id), ['b', 'a']);
+  assert.equal('notes' in sentRows(rows)[1], false);
+  assert.deepEqual(sentRows(rows, { type: 'outreach' }).map((r) => r.reply_id), ['b']);
+  assert.equal(sentRows(rows, { limit: 1 }).length, 1);
+  const o = await outreachLists([c({ email: 'a@example.org', name: 'Ann' })], rows, TODAY);
+  assert.deepEqual(o.sent.map((r) => [r.reply_id, r.name]), [['b', 'Ann']]);
 });

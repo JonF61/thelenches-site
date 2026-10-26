@@ -18,7 +18,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '19';
+export const UI_VERSION = '20';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -691,7 +691,36 @@ export const CLIENT_JS = String.raw`
     });
     var owed = owedList(d, true);
     if (owed.length) els.push(h('h2', { class: 'section' }, 'Still owed a reply'), owed);
+    els.push(sentSection(d.sent || [], 'sentR', 'Sent'));
     return { els: els, selected: sel ? function () { return replyCard(sel); } : null };
+  }
+
+  // Sent history (Replies screen: every reply and outreach email; Outreach view: nudges only),
+  // newest first, folded until opened. Each row opens to the text as it went.
+  function sentSection(rows, key, title) {
+    var open = !!S[key];
+    var els = [h('h2', { class: 'section' }, title + ' (' + rows.length + ')'),
+      h('button', { class: 'btn link', onclick: function () { S[key] = !S[key]; render(); } }, open ? 'Hide sent' : 'Show sent')];
+    if (!open) return h('div', { class: 'sent' }, els);
+    if (!rows.length) return h('div', { class: 'sent' }, els, h('p', { class: 'empty' }, 'Nothing sent yet.'));
+    var q = h('input', { class: 'f', type: 'search', placeholder: 'Search sent', value: S[key + 'Q'] || '', 'aria-label': 'Search sent',
+      oninput: function () { S[key + 'Q'] = q.value; draw(); } });
+    var box = h('div');
+    var draw = function () {
+      var words = lower(q.value).split(/\s+/).filter(Boolean);
+      var hits = rows.filter(function (r) {
+        var hay = lower([r.name, r.to, r.subject, r.body, r.type].join(' '));
+        return words.every(function (w) { return hay.indexOf(w) >= 0; });
+      });
+      box.replaceChildren.apply(box, hits.length ? hits.map(function (r) {
+        return h('details', { class: 'card' },
+          h('summary', null, h('b', null, str(r.subject) || '(no subject)'),
+            h('div', { class: 'meta' }, ['To ' + (str(r.name) ? str(r.name) + ' (' + str(r.to) + ')' : str(r.to)), 'sent ' + when(r.sent_at), str(r.type)].filter(Boolean).join(' · '))),
+          h('div', { class: 'text' }, str(r.body)));
+      }) : [h('p', { class: 'empty' }, 'Nothing matches.')]);
+    };
+    draw();
+    return h('div', { class: 'sent' }, els, q, box);
   }
 
   function replyHead(r) {
@@ -2133,7 +2162,8 @@ export const CLIENT_JS = String.raw`
       section('Seasonal due', 'Sent something around this time last year, nothing yet this year.', o.seasonal),
       section('Gone quiet', 'Contributors, organisers and collaborators with no email for 3 to 12 months.', o.quiet),
       section('Leads to chase', 'Offered or seemed likely to send something, but haven\'t yet.', o.lead),
-      section('Held back', 'Snoozed, set to never, a draft waiting, or nudged in the last 4 months.', o.held)
+      section('Held back', 'Snoozed, set to never, a draft waiting, or nudged in the last 4 months.', o.held),
+      sentSection(o.sent || [], 'sentO', 'Sent nudges')
     ];
   }
 
