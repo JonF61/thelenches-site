@@ -11,7 +11,7 @@
     "preschool": { "name": "The Lenches Pre-school", "school": "The Lenches Pre-school" },
     "tennis": { "name": "Lenches Tennis Club", "email": "lenchestc@gmail.com", "url": "https://clubspark.lta.org.uk/TheLenchesTennisClub" },
     "cricket": { "name": "Lenches Cricket Club", "email": "cricket.lenches@googlemail.com", "url": "https://lenchescc.play-cricket.com/" },
-    "glads": { "name": "GLADS (amateur dramatics)", "person": "John Tookney", "email": "John@tookney.swiftserve.net", "facebook": "https://www.facebook.com/gladslenches", "see": "/groups/#glads" },
+    "glads": { "name": "GLADS (amateur dramatics)", "facebook": "https://www.facebook.com/gladslenches", "see": "/groups/#glads" },
     "walking": { "name": "The Lenches Walking Group", "person": "Pete Marston", "email": "petemarston@msn.com", "phone": "01386 872717", "see": "/groups/#walking" },
     "orchard": { "name": "Yates Community Orchard", "person": "Jonathan Hazlewood", "email": "jbpmh1013@gmail.com", "see": "/groups/#orchard" },
     "amphitheatre": { "name": "Lenches Amphitheatre", "url": "https://lenchestheatre.co.uk/" },
