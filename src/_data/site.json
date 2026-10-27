@@ -43,6 +43,7 @@
     { "title": "Bins", "url": "/bins/" },
     { "title": "Community", "url": "/#community", "match": ["groups", "halls", "churches"] },
     { "title": "Living here", "url": "/#living-here", "match": ["living-here"] },
-    { "title": "Contact", "url": "/contact/" }
+    { "title": "Contact", "url": "/contact/" },
+    { "title": "Search", "url": "/search/" }
   ]
 }

@@ -60,7 +60,9 @@
   </header>
 
   <div id="main" tabindex="-1">
-    {{ content | safe }}
+    {#- Pagefind (build.yml, after Eleventy) indexes only this wrapper, so menus, footer and forms stay out
+        of search results; a page with "search: false" in its front matter is left out altogether. -#}
+    <div{% if search !== false %} data-pagefind-body{% endif %}>{{ content | safe }}</div>
     {#- Home page places its own sign-up box (near the top) and feedback form (below the
         map); every other page gets both at the bottom, the form above the box. -#}
     {% if page.url != "/" %}<div class="container signup-foot">{% include "feedback.njk" %}{% include "signup.njk" %}</div>{% endif %}

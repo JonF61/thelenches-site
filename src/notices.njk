@@ -66,7 +66,7 @@ description: Notices and news from across the Lenches villages, from parish coun
     {% for n in officials %}{% set ps = n.body | paras %}{% set lead = 2 if (ps.length > 2 and ps[0].length < 40) else 1 %}
     <article class="np-notice np-official" id="{{ ('notice-' + n.title) | slugify }}">
       <span class="np-label">{% if 'parish council' in (n.title + ' ' + n.body) | lower %}From the parish council{% else %}Official notice{% endif %}</span>
-      <h3>{{ n.title | escape }}</h3>
+      <h3 id="{{ ('notice-' + n.title) | slugify }}-t">{{ n.title | escape }}</h3>
       {% for p in ps %}{% if loop.index <= lead %}<p>{{ p | escape }}</p>{% endif %}{% endfor %}
       {% if ps.length > lead %}<details>
         <summary>Read the full statement</summary>
