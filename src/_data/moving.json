@@ -9,7 +9,7 @@
     { "name": "Sheriffs Lench", "text": "A hamlet south-west of Church Lench, named after the Sheriffs of Worcestershire who held it for three centuries after the Norman Conquest.", "image": "", "imageAlt": "" }
   ],
   "checklist": [
-    { "label": "Get the Thursday newsletter", "url": "#signup" },
+    { "label": "Get the Thursday newsletter", "url": "/newsletter/" },
     { "label": "Join the community Facebook group", "url": "https://www.facebook.com/groups/thelenchescommunity/" },
     { "label": "Check your bin day", "url": "/bins/" },
     { "label": "Register with a GP", "url": "/living-here/health/" },

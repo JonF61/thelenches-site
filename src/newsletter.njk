@@ -1,0 +1,24 @@
+---
+layout: base.njk
+title: The Thursday newsletter
+description: Sign up for the free Thursday newsletter from the Lenches villages.
+permalink: /newsletter/
+---
+{#- The one copy of the sign-up form (signup-form.njk). The home card, the home intro and the
+    band at the foot of every other page link here instead (27 Oct). -#}
+<main class="container">
+  <section>
+    <h1>The Thursday newsletter</h1>
+    <p class="lead">News, events and notices from the Lenches villages and their neighbours, sent free every Thursday morning.</p>
+    {%- if site.signupUrl and site.turnstileSiteKey %}
+    <p>Enter your email and we'll send you a link to confirm.</p>
+    <div class="card su-page">
+      {% include "signup-form.njk" %}
+    </div>
+    <p>If the form doesn't work for you, email <a href="mailto:{{ site.email }}?subject=Add%20me%20to%20the%20mailing%20list">{{ site.email }}</a> and ask to be added.</p>
+    {%- else %}
+    <p>To join, email <a href="mailto:{{ site.email }}?subject=Add%20me%20to%20the%20mailing%20list">{{ site.email }}</a> and ask to be added.</p>
+    {%- endif %}
+    <p class="small">Unsubscribe any time &middot; <a href="{{ '/privacy/' | url }}">Privacy policy</a></p>
+  </section>
+</main>
