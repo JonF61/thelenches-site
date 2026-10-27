@@ -45,6 +45,14 @@
 //                                   through decide() (action nudge, id = idFor(email)); Holly's
 //                                   draft then waits in Replies for the usual Approve / Edit
 //   (Snooze, Never nudge and Clear are /admin/api/contact writes of next_nudge.)
+//   GET  /admin/api/orgs            organisation outreach (orgoutreach.mjs orgLists): each
+//                                   organisation in contacts.json `outreach` and its state, from
+//                                   Replies, Contacts and the Org outreach tab
+//   POST /admin/api/orgcheck        { id }: Draft check / Draft chaser, if planOrgCheck allows it
+//                                   today, through decide() (action orgcheck, id = the slug)
+//   POST /admin/api/orgnext         { id, expected, value }: Done / Snooze / Never / Clear, one
+//                                   stale-checked next_check write (the tab and row are made if
+//                                   missing)
 //   GET  /admin/api/lessons         the Holly lessons tab, newest first (lessons.js)
 //   POST /admin/api/lesson          { op: add, value } (a new approved lesson; the tab is made
 //                                   if missing) | { op: edit, id, expected, value } (stale-
@@ -91,6 +99,15 @@ import {
   CONTACTS_TAB, DELETED_TAB, DELETED_HEADERS, contactRows, planContact, planDelete, addressesOf,
 } from './contacts.js';
 import { outreachLists, planNudge, idFor, sentRows } from './outreach.mjs';
+import {
+  ORG_TAB, ORG_HEADERS, orgEntries, orgLists, planOrgCheck, planNext,
+} from './orgoutreach.mjs';
+// The site's own data, bundled at deploy (deploy-worker.yml also deploys when these change).
+import contactsData from '../../../src/_data/contacts.json' with { type: 'json' };
+import councilData from '../../../src/_data/council.json' with { type: 'json' };
+import schoolsData from '../../../src/_data/schools.json' with { type: 'json' };
+import healthData from '../../../src/_data/health.json' with { type: 'json' };
+import transportData from '../../../src/_data/transport.json' with { type: 'json' };
 import {
   LESSONS_TAB, LESSON_HEADERS, lessonRows, cleanLesson, newLessonRow, planLessonDecision,
 } from './lessons.js';
@@ -463,6 +480,59 @@ async function doNudge(env, body) {
   return json({ ok: true, message: 'Draft requested. Holly emails you the draft to approve in a minute or two.' });
 }
 
+// Organisation outreach.
+const ORGS = orgEntries({ contacts: contactsData, council: councilData, schools: schoolsData, health: healthData, transport: transportData });
+
+// The Org outreach tab, or { headers: [], rows: [], missing: true } if it doesn't exist yet.
+async function readOrgTab(env) {
+  try {
+    return await readTable(env, ORG_TAB);
+  } catch (e) {
+    if (e.status === 400 && /Unable to parse range/i.test(e.message)) return { headers: [], rows: [], missing: true };
+    throw e;
+  }
+}
+
+async function orgContext(env) {
+  const [replies, contacts, tab] = await Promise.all([readTable(env, 'Replies'), readTable(env, CONTACTS_TAB), readOrgTab(env)]);
+  return { replies: replies.rows, contacts: contacts.rows, orgRows: tab.rows, hasTab: tab.headers.includes('next_check'), today: ukToday() };
+}
+
+async function doOrgCheck(env, body) {
+  const id = String(body.id ?? '');
+  const ctx = await orgContext(env);
+  const org = ORGS.find((o) => o.id === id) || null;
+  const plan = planOrgCheck(org, { ...ctx, orgRow: ctx.orgRows.find((r) => String(r.id ?? '') === id) || null });
+  if (plan.error) return json({ ok: false, ...plan }, plan.status);
+  if (!(await decide(env, { a: 'orgcheck', i: id }))) {
+    return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
+  }
+  return json({ ok: true, message: `${plan.kind === 'chase' ? 'Chaser' : 'Check'} requested. Holly emails you the draft to approve in a minute or two.` });
+}
+
+async function doOrgNext(env, body) {
+  const id = String(body.id ?? '');
+  if (!ORGS.some((o) => o.id === id)) return json({ ok: false, error: 'No such organisation: reload the page' }, 404);
+  const plan = planNext(body.value);
+  if (plan.error) return json({ ok: false, ...plan }, 400);
+  let { headers, rows, missing } = await readOrgTab(env);
+  if (!headers.some(Boolean)) {
+    if (missing) await addTab(env, ORG_TAB);
+    await appendValues(env, ORG_TAB, [ORG_HEADERS]);
+    headers = ORG_HEADERS;
+    rows = [];
+  } else if (!headers.includes('id') || !headers.includes('next_check')) {
+    return json({ ok: false, error: 'The Org outreach tab has no id / next_check headers' }, 400);
+  }
+  if (!rows.some((r) => String(r.id ?? '') === id)) {
+    if (String(body.expected ?? '') !== '') return json({ ok: false, error: 'Changed in the Sheet since you loaded the page', current: '' }, 409);
+    await appendValues(env, ORG_TAB, [headers.map((h) => ({ id, next_check: plan.value })[h] ?? '')]);
+    return json({ ok: true, value: plan.value });
+  }
+  const r = await checkedWrite(env, { tab: ORG_TAB, keyCol: 'id', key: id, field: 'next_check', expected: body.expected, value: plan.value });
+  return r.ok ? json({ ok: true, value: r.value }) : json(r, r.status);
+}
+
 // The Holly lessons tab, or an empty list if it doesn't exist yet.
 async function readLessons(env) {
   try {
@@ -607,6 +677,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/state') return json(await state(env, auth.email));
       if (path === '/admin/api/contacts') return json(contactRows(await readTable(env, CONTACTS_TAB)));
       if (path === '/admin/api/outreach') return json(await outreach(env));
+      if (path === '/admin/api/orgs') return json(orgLists(ORGS, await orgContext(env)));
       if (path === '/admin/api/lessons') return json(lessonRows(await readLessons(env)));
       if (path === '/admin/api/photo-file') return fromResult(await fileInfo(env, String(url.searchParams.get('id') || '')));
       if (path === '/admin/api/photo-group') return fromResult(await dupMembers(env, String(url.searchParams.get('id') || '')));
@@ -631,6 +702,8 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/contact') return await doContact(env, body);
       if (path === '/admin/api/contact-delete') return await doContactDelete(env, body);
       if (path === '/admin/api/nudge') return await doNudge(env, body);
+      if (path === '/admin/api/orgcheck') return await doOrgCheck(env, body);
+      if (path === '/admin/api/orgnext') return await doOrgNext(env, body);
       if (path === '/admin/api/lesson') return await doLesson(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(env, body);
       return json({ ok: false, error: 'Not found' }, 404);

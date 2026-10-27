@@ -57,10 +57,12 @@ export function nudgesFor(email, replies) {
     .sort((a, b) => str(b.created_at).localeCompare(str(a.created_at)));
 }
 
-// Outreach drafts made in the 7 days to today (any status).
+// Outreach drafts made in the 7 days to today (any status). Organisation checks
+// (orgoutreach.mjs, policy codes org_check_/org_chase_) have their own daily cap.
+const isOrgCheck = (r) => /(^|[\s,;|])org_(check|chase)_/.test(str(r.policy_codes));
 export function weekCount(replies, today) {
   const from = addDays(today, -6);
-  return (replies || []).filter((r) => r.type === NUDGE_TYPE && str(r.created_at).slice(0, 10) >= from).length;
+  return (replies || []).filter((r) => r.type === NUDGE_TYPE && !isOrgCheck(r) && str(r.created_at).slice(0, 10) >= from).length;
 }
 
 // Why this contact is held back from outreach today, or ''.

@@ -15,10 +15,13 @@
 // Outreach (26 Oct): who is due a nudge (seasonal, gone quiet, leads; /admin/api/outreach),
 // with Draft nudge (Holly drafts; the card comes by email), Snooze 3 months, Never nudge,
 // and Clear for those held back (next_nudge writes through /admin/api/contact).
+// Organisations (27 Oct): every organisation the site lists and where its yearly check is
+// (/admin/api/orgs), with Draft check / Draft chaser (/admin/api/orgcheck), and Done, Snooze
+// 3 months, Never and Clear (next_check writes through /admin/api/orgnext).
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '32';
+export const UI_VERSION = '33';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -36,7 +39,7 @@ export const CLIENT_JS = String.raw`
     owed: 'Emails that got an automatic holding reply over 2 days ago but no real answer yet. Redraft one, reply yourself, or close it.',
     feedback: 'Comments and corrections from readers via the website\'s feedback form, to approve, reject or postpone, with Holly\'s replies to them.',
     lessons: 'Rules Holly follows in every draft. Approve or reject the weekly suggestions, edit or delete any lesson, or add your own (yours count as approved).',
-    contacts: 'Everyone who sends in, or could send in, news and events, with their profile, contributions and status. Outreach shows who is due a friendly nudge.',
+    contacts: 'Everyone who sends in, or could send in, news and events, with their profile, contributions and status. Outreach shows who is due a friendly nudge; Organisations, the yearly check of each organisation\'s entry on the site.',
     photos: 'Photos in the Lenches Photos folders in Google Drive. Approve or reject new ones, rename them, or move them between folders.',
     health: 'The daily diagnostic, the watchdog and the Google account the panel uses. Look here if something seems wrong.'
   };
@@ -154,6 +157,7 @@ export const CLIENT_JS = String.raw`
       S.files = {};
       S.contacts = null;
       S.outreach = null;
+      S.orgs = null;
       render();
       if (!quiet) toast('Up to date');
     } catch (e) {
@@ -2147,12 +2151,93 @@ export const CLIENT_JS = String.raw`
     var open = S.contact ? cFind(S.contact) : null;
     if (open) return contactPage(open);
     S.contact = '';
+    var cur = S.cTab === 'outreach' || S.cTab === 'orgs' ? S.cTab : 'list';
+    var tab = function (key, label, reset) {
+      return h('button', { class: 'btn' + (cur === key ? '' : ' link'), 'aria-pressed': cur === key ? 'true' : 'false',
+        onclick: function () { S.cTab = key; if (reset) reset(); render(); } }, label);
+    };
     var tabs = h('div', { class: 'actions' },
-      h('button', { class: 'btn' + (S.cTab === 'outreach' ? ' link' : ''), 'aria-pressed': S.cTab !== 'outreach' ? 'true' : 'false',
-        onclick: function () { S.cTab = 'list'; render(); } }, 'All contacts'),
-      h('button', { class: 'btn' + (S.cTab === 'outreach' ? '' : ' link'), 'aria-pressed': S.cTab === 'outreach' ? 'true' : 'false',
-        onclick: function () { S.cTab = 'outreach'; S.outreach = null; render(); } }, 'Outreach'));
-    return [tabs].concat(S.cTab === 'outreach' ? outreachView() : contactList(t.rows));
+      tab('list', 'All contacts'),
+      tab('outreach', 'Outreach', function () { S.outreach = null; }),
+      tab('orgs', 'Organisations', function () { S.orgs = null; }));
+    return [tabs].concat(cur === 'outreach' ? outreachView() : cur === 'orgs' ? orgsView() : contactList(t.rows));
+  }
+
+  /* ------------------------------------------------------- organisations -- */
+
+  async function loadOrgs() {
+    S.gLoading = true;
+    var r = await api('/admin/api/orgs');
+    S.gLoading = false;
+    S.orgs = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'contacts') render();
+  }
+
+  // One next_check write (stale-checked against what the list loaded), then a fresh list.
+  async function gNext(e, value, what) {
+    var res = await api('/admin/api/orgnext', { id: e.id, expected: e.next_check, value: value });
+    toast(res.ok ? what : (res.json.error || ('HTTP ' + res.status)), !res.ok);
+    S.orgs = null;
+    render();
+  }
+
+  async function gDraft(e, btn) {
+    btn.disabled = true;
+    var res = await api('/admin/api/orgcheck', { id: e.id });
+    toast(res.ok ? res.json.message : (res.json.error || ('HTTP ' + res.status)), !res.ok);
+    S.orgs = null;
+    render();
+  }
+
+  function orgRow(e, o) {
+    var acts = [];
+    if ((e.state === 'due' || e.state === 'chase') && o.count < o.cap) {
+      var draft = h('button', { class: 'btn', onclick: function () { gDraft(e, draft); } }, e.state === 'chase' ? 'Draft chaser' : 'Draft check');
+      acts.push(draft);
+    }
+    if (e.state === 'held') {
+      if (e.next_check) acts.push(h('button', { class: 'btn link', onclick: function () { gNext(e, '', 'Cleared: ' + e.name); } }, 'Clear'));
+    } else if (e.state !== 'noemail' && e.state !== 'draft') {
+      acts.push(h('button', { class: 'btn link', onclick: function () { gNext(e, addMonths(o.today, 12), 'Done: ' + e.name + ' is next due in a year'); } }, 'Done'));
+      if (e.state === 'due') acts.push(h('button', { class: 'btn link', onclick: function () { gNext(e, addMonths(o.today, 3), 'Snoozed for 3 months'); } }, 'Snooze 3 months'));
+      acts.push(h('button', { class: 'btn link', onclick: function () {
+        if (window.confirm('Never check ' + e.name + '?\n\nThey drop off the organisation lists for good (Clear undoes it). Nothing else changes.')) gNext(e, 'never', 'Never: ' + e.name);
+      } }, 'Never'));
+    }
+    return h('div', { class: 'card crow' },
+      h('div', null,
+        h('div', { class: 'crow-top' }, h('b', null, e.name), h('span', null, ' · '),
+          h('a', { href: e.pageUrl, target: '_blank', rel: 'noopener' }, e.pageName)),
+        h('div', { class: 'meta' }, [e.email, e.why].filter(Boolean).join(' · ').replace(/\d{4}-\d{2}-\d{2}/g, cDay)),
+        h('div', { class: 'meta' }, e.shown.join(' · ')),
+        acts.length ? h('div', { class: 'actions' }, acts) : null));
+  }
+
+  function orgsView() {
+    var o = S.orgs;
+    if (!o) {
+      if (!S.gLoading) loadOrgs();
+      return [h('p', { class: 'loading' }, 'Loading organisations…')];
+    }
+    if (o.error) return [errorNote(o, 'Organisations'), h('button', { class: 'btn', onclick: function () { S.orgs = null; render(); } }, 'Try again')];
+    var L = o.lists;
+    var section = function (title, hint, list) {
+      return h('div', null, h('h2', { class: 'section' }, title + ' (' + list.length + ')'), h('p', { class: 'meta' }, hint),
+        list.length ? list.map(function (e) { return orgRow(e, o); }) : h('p', { class: 'empty' }, 'None at the moment.'));
+    };
+    return [
+      h('p', { class: 'meta' }, 'Once a year Holly asks each organisation to check its entry on the site. The draft comes to you by email to Approve, Edit, Redraft or Reject, and never goes by itself. '
+        + o.count + ' of ' + o.cap + ' drafts used today. When someone replies, read it in Gmail, update the site if needed, then tap Done.'),
+      o.count >= o.cap ? h('div', { class: 'note' }, 'Today\'s ' + o.cap + ' drafts are used: Draft check comes back tomorrow.') : null,
+      section('Due a check', 'Not checked yet, or last checked a year ago.', L.due),
+      section('Chaser due', 'Checked 3 weeks ago or more with no reply.', L.chase),
+      section('Replied', 'They emailed after the check: read it in Gmail, then tap Done.', L.replied),
+      section('Draft waiting', 'A check or chaser is waiting for your Approve.', L.draft),
+      section('Waiting for a reply', 'Checked or chased in the last 3 weeks.', L.waiting.concat(L.chased)),
+      section('No reply', 'Chased 3 weeks ago or more with no reply: taken as all fine until next year.', L.noreply),
+      section('Done, snoozed or never', 'Held back until the date shown, or for good.', L.held),
+      section('No email', 'No address to write to: check these by phone or on their website.', L.noemail)
+    ];
   }
 
   /* ------------------------------------------------------------ outreach -- */

@@ -72,6 +72,8 @@
 // Edit or Redraft, and never sent by sendDueReplies (not a FALLBACK_TYPE), even in holiday
 // mode. Its last paragraph before the sign-off is the opt-out line (templates.md
 // outreach_optout), kept through a redraft.
+// Organisation checks (27 Oct) are outreach rows too (scripts/outreach/orgs.js, policy codes
+// org_check_<id> / org_chase_<id>); a chaser goes on the check's thread (chaseThread).
 // Your own threads (type "own", 26 Oct): a message on a thread where website@ (or the team's
 // own address) wrote by hand, i.e. not a Holly reply, the newsletter or an automatic email.
 // Holly never drafts there (she can't sign as you): an "own" row, awaiting with no body,
@@ -1702,6 +1704,22 @@ function exposesTeam(text) {
   return local.length >= 3 && new RegExp(`\\b${local.replace(/[^a-z0-9]/g, '.')}\\b`).test(t) ? local : '';
 }
 
+// An organisation chaser (scripts/outreach/orgs.js, policy code org_chase_<id>) goes on the
+// Gmail thread of the check it follows: that check's sent message, or null (not a chaser, or
+// no sent check found).
+async function chaseThread(row) {
+  const m = String(row.policy_codes || '').match(/\borg_chase_([a-z0-9-]+)/);
+  if (!m) return null;
+  const to = String(row.to || '').trim().toLowerCase();
+  const check = (await g.readTable('Replies'))
+    .filter((r) => r.status === 'sent' && r.sent_gmail_id && String(r.to || '').trim().toLowerCase() === to
+      && String(r.policy_codes || '').split(/[\s,;|]+/).includes(`org_check_${m[1]}`))
+    .sort((a, b) => String(b.sent_at).localeCompare(String(a.sent_at)))[0];
+  if (!check) return null;
+  const msg = await g.getMessage(check.sent_gmail_id);
+  return msg.threadId ? msg : null;
+}
+
 // Sends one Replies row. Returns true if sent. A failed send is marked "failed" and never
 // retried; a From rewrite (would expose jon@) throws so the whole run stops.
 async function deliver(row, settings, { body: given, note: givenNote = '', decidedAt = '' } = {}) {
@@ -1737,6 +1755,20 @@ async function deliver(row, settings, { body: given, note: givenNote = '', decid
     headers['In-Reply-To'] = orig.rfcMessageId;
     headers.References = [orig.references, orig.rfcMessageId].filter(Boolean).join(' ');
   }
+  let threadId = row.thread_id || undefined;
+  if (!row.message_id) {
+    const check = await chaseThread(row).catch((err) => {
+      console.warn(`Reply ${row.reply_id}: check thread not found (${(err && err.message) || err}); sent as a new thread`);
+      return null;
+    });
+    if (check) {
+      threadId = check.threadId;
+      if (check.rfcMessageId) {
+        headers['In-Reply-To'] = check.rfcMessageId;
+        headers.References = [check.references, check.rfcMessageId].filter(Boolean).join(' ');
+      }
+    }
+  }
 
   const started = londonDateTime(Date.now());
   await g.updateRow('Replies', row._row, {
@@ -1751,7 +1783,7 @@ async function deliver(row, settings, { body: given, note: givenNote = '', decid
       html: textToHtml(text),
       from: REPLY_FROM,
       fromName: g.fromNameFor(settings),
-      threadId: row.thread_id || undefined,
+      threadId,
       headers,
     });
   } catch (err) {

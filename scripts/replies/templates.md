@@ -98,6 +98,18 @@ No problem, we've taken you off the newsletter list, so you won't get any more. 
 ## outreach_optout
 If you'd rather we didn't get in touch like this, just say and we won't.
 
+## org_check
+I help look after thelenches.org.uk, the community website and weekly newsletter for the Lenches villages. {organisation} is listed on our {page} page, and we'd like to make sure the details are right:
+{page_url}
+
+This is what it shows at the moment:
+{entry}
+
+Could you let me know if anything needs changing? And if there's anything you'd like added, such as regular events, opening times or news, just reply to this email. You're always welcome to send us items for the newsletter too.
+
+## org_chase
+Just following up on my note about {organisation}'s entry on our {page} page. If everything's still correct, there's no need to reply, and we'll assume it's all fine. If anything has changed, a quick reply is all we need.
+
 ## signature
 Best wishes,
 Holly
