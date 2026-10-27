@@ -36,16 +36,16 @@ description: What's on across the Lenches villages — upcoming events from the 
   {% set groups = whatson.events | merge(pipeline.events) | upcoming | byMonth %}
   {% for g in groups %}
   <section class="month">
-    <h2 class="list-label">{{ g.label }}</h2>
+    <h2 class="list-label" id="{{ g.label | slugify }}">{{ g.label }}</h2>
     {% for e in g.items %}
     {% set d = e.date | dateParts %}
     {% set img = e | eventImage(photos) %}
     {#- id is linked from the home page's "more" links: keep the two in step. The heading's "-t" id gives Pagefind search results a link to each event. -#}
     <div class="item-card" id="{{ ('ev-' + e.date + '-' + e.title) | slugify }}">
-      <div class="date"><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>
+      <div class="date" data-pagefind-ignore><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>
       <div class="item-body">
         {% if img %}<figure class="ev-img"><a href="{{ img.url | url }}" data-viewer aria-label="View full image"><img src="{{ img.url | url }}" alt="{{ img.alt | escape }}" loading="lazy"></a>{% if img.credit %}<figcaption data-pagefind-ignore class="img-credit small mut">{% if img.creditUrl %}<a href="{{ img.creditUrl | escape }}" target="_blank" rel="noopener">{{ img.credit | escape }}</a>{% else %}{{ img.credit | escape }}{% endif %}</figcaption>{% endif %}</figure>{% else %}{{ e | tileSvg | safe }}{% endif %}
-        <h3 id="{{ ('ev-' + e.date + '-' + e.title) | slugify }}-t">{{ e.title | escape }}{% if e | inLenches %} <span class="lenches-badge">Lenches</span>{% endif %}</h3>
+        <h3 id="{{ ('ev-' + e.date + '-' + e.title) | slugify }}-t">{{ e.title | escape }}{% if e | inLenches %} <span class="lenches-badge" data-pagefind-ignore>Lenches</span>{% endif %}</h3>
         {% for p in e.body | paras %}<p>{{ p | escape }}{% if loop.last and e.link %} <a href="{{ e.link.url | escape }}" target="_blank" rel="noopener">{{ e.link.text | escape }} &rarr;</a>{% endif %}</p>{% endfor %}
       </div>
     </div>

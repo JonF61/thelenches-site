@@ -61,7 +61,9 @@ description: Notices and news from across the Lenches villages, from parish coun
 
   {% if officials.length %}
   <section class="np-section">
-    <h2 class="sr-only">Official notices</h2>
+    {#- Search (Pagefind) files text under the last heading with an id before it, so every section
+        heading and every notice has one; otherwise a result links to the wrong notice. -#}
+    <h2 class="sr-only" id="official-notices">Official notices</h2>
     {#- A short opening line ("Dear Parishioners") stays with the paragraph after it. -#}
     {% for n in officials %}{% set ps = n.body | paras %}{% set lead = 2 if (ps.length > 2 and ps[0].length < 40) else 1 %}
     <article class="np-notice np-official" id="{{ ('notice-' + n.title) | slugify }}">
@@ -80,11 +82,13 @@ description: Notices and news from across the Lenches villages, from parish coun
 
   {% if around.length %}
   <section class="np-section">
-    <h2>Around the villages</h2>
+    <h2 id="around-the-villages">Around the villages</h2>
     {% for n in around %}{% set ps = n.body | paras %}{% set isNew = ([n] | newThisWeek) > 0 %}
     <div class="np-notice np-row" id="{{ ('notice-' + n.title) | slugify }}">
-      {% if n.village or isNew %}<p class="np-meta">{% if n.village %}<span class="np-label">{{ n.village | escape }}</span>{% endif %}{% if isNew %}<span class="np-new">New</span>{% endif %}</p>{% endif %}
-      <p><strong>{{ n.title | escape }}:</strong> {{ ps[0] | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ ((n.image.alt or n.title) + (' — ' + n.image.credit if n.image.credit else '')) | escape }}">(image)</a>{% endif %}</p>
+      {#- The hidden heading names the notice for screen readers and search; the bold title is the visible copy. -#}
+      <h3 class="sr-only" id="{{ ('notice-' + n.title) | slugify }}-t">{{ n.title | escape }}</h3>
+      {% if n.village or isNew %}<p class="np-meta" data-pagefind-ignore>{% if n.village %}<span class="np-label">{{ n.village | escape }}</span>{% endif %}{% if isNew %}<span class="np-new">New</span>{% endif %}</p>{% endif %}
+      <p><strong aria-hidden="true" data-pagefind-ignore>{{ n.title | escape }}:</strong> {{ ps[0] | escape }}{% if n.link %} <a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ ((n.image.alt or n.title) + (' — ' + n.image.credit if n.image.credit else '')) | escape }}">(image)</a>{% endif %}</p>
       {% if ps.length > 1 %}<details>
         <summary>More</summary>
         {% for p in ps %}{% if not loop.first %}<p>{{ p | escape }}</p>{% endif %}{% endfor %}
@@ -100,7 +104,7 @@ description: Notices and news from across the Lenches villages, from parish coun
 
   {% if worth.length %}
   <section class="np-section np-worth">
-    <h2>Worth knowing</h2>
+    <h2 id="worth-knowing">Worth knowing</h2>
     <p class="np-caption">From the Evesham Journal</p>
     <ul>
       {% for n in worth %}
