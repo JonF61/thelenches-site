@@ -55,6 +55,23 @@ module.exports = async function (eleventyConfig) {
     return out.length ? out : [""];
   });
 
+  // A notice card's opening and the rest (Notices page, 28 Oct): the opening is the first
+  // paragraph cut after the sentence that passes `min` characters, so a long first paragraph
+  // folds behind "More" too. Returns [lead, rest paragraphs...]; plain strings, escaped by the template.
+  eleventyConfig.addFilter("leadSplit", (text, min = 140) => {
+    const ps = String(text || "").split(/\r?\n\s*\r?\n/).map((p) => p.trim()).filter(Boolean);
+    if (!ps.length) return [""];
+    const first = ps[0];
+    const re = /[.!?](?=\s+[A-Z(‘“"'])/g;
+    let m;
+    while ((m = re.exec(first))) {
+      if (m.index + 1 >= min && first.length - m.index > 40) {
+        return [first.slice(0, m.index + 1), first.slice(m.index + 1).trim(), ...ps.slice(1)];
+      }
+    }
+    return ps;
+  });
+
   // Road closures and roadworks (the Roads page; left off Notices): "roads": true on
   // a src/items/ notice, or any item linking to one.network (all pipeline roadworks alerts do).
   // Shared with scripts/publish: lib/roads.js.
