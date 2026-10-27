@@ -113,7 +113,7 @@ const GUIDELINES_URL = 'https://thelenches.org.uk/contact/#submit';
 const TEMPLATES_FILE = path.join(__dirname, '..', 'replies', 'templates.md');
 const VOICE_FILE = path.join(__dirname, '..', 'replies', 'voice.md');
 
-const EARLY_DAYS = 14;        // items appear no more than 2 weeks before the event
+const EARLY_DAYS = 14;        // newsletter shows events no more than 2 weeks ahead (the site at once)
 const FLYER_LIMIT = 2;        // a flyer image is shown no more than twice
 const NEWSLETTER_LIMIT = 3;   // newsletter shows an item up to 3 times
 const AWAIT_HOURS = 24;       // no decision within this: send without the question
@@ -354,6 +354,13 @@ function greeting(name) {
   return name && templates().greeting_name !== undefined ? fill('greeting_name', { name }) : fill('greeting');
 }
 
+// The first Thursday newsletter whose two-week window (newsletter/select.js) reaches the event.
+function firstIssueFor(ymd) {
+  let d = addDays(ymd, -(EARLY_DAYS - 1));
+  while (new Date(`${d}T12:00:00Z`).getUTCDay() !== 4) d = addDays(d, 1);
+  return d;
+}
+
 // Labels for a multi-item reply: a " — Venue" ending every title shares is dropped, and
 // events show their date so repeats ("Wreath Making Workshop" x3) can be told apart.
 function itemLabels(items) {
@@ -369,16 +376,17 @@ function itemLabels(items) {
 // items: [{ title, event_date, policy: [codes] }]
 // unusable: attachment names we couldn't use ('' entries = name unknown, e.g. the 24h rebuild)
 // personal: Holly's one personal line for a known contact (draftAckLine), after the thanks.
-// Several items (27 Oct): one list with dates; when every one is too early the thanks says
-// so (ack_many_held) instead of "on its way"; shared notes are said once (MANY_TEMPLATES).
+// Several items (27 Oct): one list with dates; when every one is too early for the
+// newsletter the thanks says so (ack_many_held: on the website now, in the newsletter from
+// two weeks before); shared notes are said once (MANY_TEMPLATES).
 function buildBody({ items, outOfScope, clarification, unusable = [], name = '', personal = '' }) {
   const t = templates();
   const parts = [greeting(name)];
   const many = items.length > 1;
   const list = many ? itemLabels(items) : items.map((i) => ({ ...i, label: i.title }));
-  const showFrom = (i) => (i.event_date ? longDate(addDays(i.event_date, -EARLY_DAYS)) : '');
+  const showFrom = (i) => (i.event_date ? longDate(firstIssueFor(i.event_date)) : '');
   const early = (i) => i.policy.includes('too_early') && i.event_date;
-  const earlyLines = (xs) => xs.map((i) => `- ${i.label}, from ${showFrom(i)}`).join('\n');
+  const earlyLines = (xs) => xs.map((i) => `- ${i.label}, in the newsletter from ${showFrom(i)}`).join('\n');
   const allHeld = items.length > 0 && list.every(early)
     && t[many ? 'ack_many_held' : 'ack_one_held'] !== undefined;
   // Mixed: the thanks lists only what's on its way; the rest go in the too-early note.
