@@ -59,12 +59,13 @@ globalThis.fetch = async (url, init = {}) => {
     assert.equal(body.branch, 'main');
     files[p] = Buffer.from(body.content, 'base64').toString('utf8');
     puts.push({ path: p, message: body.message, text: files[p] });
-    return new Response(JSON.stringify({ content: {} }), { status: 200 });
+    return new Response(JSON.stringify({ content: {}, commit: { sha: 'a'.repeat(40), committer: { date: new Date().toISOString() } } }), { status: 200 });
   }
   return new Response(JSON.stringify({ content: Buffer.from(files[p]).toString('base64'), sha: 'sha1' }), { status: 200 });
 };
 const env = { REPO: 'o/r', DISPATCH_TOKEN: 't', SITE_URL: SITE };
 
+let statusChecks = 0;
 const worker = await listen(async (req, res) => {
   const u = new URL(req.url, 'http://x');
   const origin = `http://127.0.0.1:${worker.address().port}`;
@@ -77,6 +78,12 @@ const worker = await listen(async (req, res) => {
       res.writeHead(200, { 'content-type': 'text/javascript' }); res.end(PAGEEDIT_JS);
     } else if (u.pathname === '/admin/pageedit.css') {
       res.writeHead(200, { 'content-type': 'text/css' }); res.end(PAGEEDIT_CSS);
+    } else if (u.pathname === '/admin/api/build-status') {
+      // Building on the first check, live on the next.
+      assert.equal(u.searchParams.get('sha'), 'a'.repeat(40));
+      statusChecks += 1;
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, state: statusChecks > 1 ? 'live' : 'building' }));
     } else if (u.pathname === '/admin/api/page-save' && req.method === 'POST') {
       assert.equal(req.headers['x-csrf-token'], 'tok');
       assert.equal(req.headers.origin, origin);
@@ -129,7 +136,10 @@ for (const size of [{ width: 1200, height: 900, name: 'desktop' }, { width: 390,
     await page.waitForSelector('.le-dlg[open]');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pageedit-confirm.png') });
     await page.click('.le-dlg button:has-text("Save and publish")');
-    await page.waitForSelector('.le-view');
+    await page.locator('.le-bar', { hasText: 'Building the site…' }).waitFor();
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pageedit-building.png') });
+    await page.locator('.le-bar', { hasText: 'Live ✓' }).waitFor({ timeout: 25000 });
+    assert.equal(await page.locator('.le-view').getAttribute('href'), `${SITE}privacy/`);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pageedit-saved.png') });
     assert.equal(puts.length, 1);
     assert.equal(puts[0].path, 'src/privacy.njk');

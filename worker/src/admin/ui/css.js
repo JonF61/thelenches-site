@@ -163,6 +163,11 @@ textarea.f{min-height:120px;resize:vertical;line-height:1.4}
 .undo .btn.primary{background:var(--bg);color:var(--ink);border-color:var(--bg)}
 .undo.bad{border:3px solid var(--bad)}
 table.h{width:100%;border-collapse:collapse;font-size:.9rem}
+table.runs .run-i{width:1.4em;font-size:1.05rem;text-align:center}
+table.runs .run-t{white-space:nowrap}
+table.runs tr.run-bad td{background:var(--bad-bg);color:var(--bad)}
+table.runs tr.run-bad a{color:var(--bad)}
+table.runs tr.run-on .run-i{color:var(--info)}
 table.h td,table.h th{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line);vertical-align:top}
 @media (min-width:900px){
   .app{display:grid;grid-template-columns:210px 1fr;grid-template-rows:auto 1fr;height:100vh}

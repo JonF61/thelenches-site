@@ -7,7 +7,7 @@
 // changes or removes a link. Save shows each change (before / after), then sends the
 // changed blocks, re-serialised as text plus simple inline tags, to /admin/api/page-save.
 
-export const PAGEEDIT_VERSION = '2';
+export const PAGEEDIT_VERSION = '3';
 
 function editor() {
   const data = JSON.parse(document.getElementById('lenches-edit-data').textContent);
@@ -220,13 +220,61 @@ function editor() {
     linkBtn.disabled = true;
     msg.textContent = '';
     count.textContent = '';
-    const done = h('span', 'le-msg', `${res.message || 'Saved.'} `);
-    const view = h('a', 'le-view', 'View page');
-    view.href = data.live;
-    done.append(view);
+    const done = h('span', 'le-msg', '');
+    done.setAttribute('role', 'status');
     msg.replaceWith(done);
     cancelBtn.textContent = 'Close';
+    watchBuild(done, res);
   });
+
+  // After a save: "Saved ✓ · Building the site… (0:42)", then "Live ✓ – View page", from the
+  // commit's build.yml run (/admin/api/build-status), checked every 10 seconds for 15 minutes.
+  function watchBuild(el, res) {
+    const t0 = Date.now();
+    let state = 'building';
+    let link = '';
+    const clock = () => {
+      const s = Math.floor((Date.now() - t0) / 1000);
+      return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    };
+    const show = () => {
+      el.textContent = '';
+      if (state === 'live') {
+        const view = h('a', 'le-view', 'View page');
+        view.href = data.live;
+        el.append('Live ✓ – ', view);
+      } else if (state === 'failed') {
+        el.append('⚠ Build failed – Kryten can see why. ');
+        if (link) {
+          const a = h('a', 'le-view', 'Open on GitHub');
+          a.href = link;
+          a.target = '_blank';
+          a.rel = 'noopener';
+          el.append(a);
+        }
+      } else {
+        el.append(`Saved ✓ · Building the site… (${clock()})`);
+      }
+    };
+    const timer = setInterval(() => { if (state === 'building') show(); }, 1000);
+    const check = async () => {
+      if (!res.sha || Date.now() - t0 > 15 * 60000) {
+        if (state === 'building') { state = 'failed'; show(); }
+        clearInterval(timer);
+        return;
+      }
+      try {
+        const r = await fetch(`${data.statusApi}?sha=${encodeURIComponent(res.sha)}&at=${encodeURIComponent(res.at || '')}`);
+        const j = await r.json();
+        if (j.ok && j.state) { state = j.state; link = j.url || link; }
+      } catch (e) { /* try again next time */ }
+      show();
+      if (state === 'building') setTimeout(check, 10000);
+      else clearInterval(timer);
+    };
+    show();
+    setTimeout(check, 5000);
+  }
   refresh();
 }
 
