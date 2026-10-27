@@ -129,10 +129,9 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 .su-row input:focus{outline:3px solid var(--accent);outline-offset:1px;border-color:var(--accent)}
 .su-status{margin:.5rem 0 0;font-weight:500}
 .su-status:empty{display:none}
-.signup .su-status.ok{color:#fff}
-.signup .su-status.bad{color:#ffd2c9}
-.hub-signup .su-status.ok{color:var(--green-dark)}
-.hub-signup .su-status.bad{color:#A33B2B}
+/* Both the band and the home card are dark green */
+.su-status.ok{color:#fff}
+.su-status.bad{color:#ffd2c9}
 
 /* Events: date tile (Events page and Home) */
 .event{display:flex;gap:1rem;padding:.85rem 0;border-top:1px solid var(--line)}
