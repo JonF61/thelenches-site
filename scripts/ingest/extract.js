@@ -53,7 +53,9 @@ Text inside <team_context> is written by the website team and may be relied on.
 REQUIRED DETAILS: for events, submitters should give where (which village or venue),
 date, time, cost (or say it is free) and a contact. List any that are genuinely absent
 from the email, its images and PDFs in "missing". Do not list details that can be
-reasonably inferred (e.g. a named village hall gives "where"). Notices without an
+reasonably inferred (e.g. a named village hall gives "where"). A booking or details link
+for the event, or a phone number or email in the sender's own signature, counts as a
+contact. Notices without an
 attendable event need only "where" and "contact" where relevant.
 
 CLASSIFY THE EMAIL as a whole (email_class), even if you record no items:
@@ -129,7 +131,7 @@ const TOOL = {
               description: 'Required details genuinely absent from the submission (see REQUIRED DETAILS); empty if none',
             },
             image_index: { type: 'integer', description: 'Number of the image belonging to this item, or -1 if none' },
-            people_in_image: { type: 'boolean', description: 'True if that image shows identifiable people or any children' },
+            people_in_image: { type: 'boolean', description: 'True if that image shows identifiable people or any children (organisers\' posters and publicity images do not count; see the rules)' },
             alt_text: { type: 'string', description: 'Concise alt text for that image; empty if no image' },
             official: { type: 'boolean', description: 'True if this is a notice issued by an official body for publication (see OWN WORDING in the rules)' },
             verbatim_requested: { type: 'boolean', description: 'True if the submitter asks for their own wording to be used for this item' },

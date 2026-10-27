@@ -649,7 +649,31 @@ async function testLogsPrivate() {
   ok(!/@example\.com/.test(logged), 'no sender address logged');
 }
 
+// Several items from one email (27 Oct, Vale Golf): one list with dates, shared venue
+// dropped, no "on its way" for held items, each shared note said once.
+function testManyItems() {
+  const V = ' — The Vale Golf & Country Club';
+  const items = [['Festive Paint and Pud', '2026-11-26'], ['Wreath Workshop', '2026-11-29'], ['Wreath Workshop', '2026-12-03']]
+    .map(([t, d], n) => ({ title: t + V, event_date: d, policy: ['too_early', 'political_commercial', ...(n ? ['people_in_image'] : [])] }));
+  const body = replies.buildBody({ items, name: 'Charlie' });
+  ok(!body.includes('on their way') && !body.includes('on its way'), 'all held: no "on its way"');
+  ok(body.includes('- Wreath Workshop (Sunday 29 November), from Sunday 15 November'), 'held list shows date and start date');
+  ok(!body.includes('Golf & Country Club'), 'shared venue ending dropped');
+  ok((body.match(/Quick one about the photo/g) || []).length === 1, 'photo note said once');
+  ok((body.match(/in touch shortly/g) || []).length === 1, 'held note said once');
+  ok((body.match(/little way off/g) || []).length === 0, 'no separate too-early notes when all are held');
+  const mixed = replies.buildBody({ items: [
+    { title: 'Quiz', event_date: '2026-11-04', policy: [] },
+    { title: 'Fair', event_date: '2026-12-05', policy: ['too_early'] }] });
+  ok(/on their way[^]*- Quiz \(Wednesday 4 November\)\n\n/.test(mixed) && !/on their way[^]*- Fair[^]*little way off/.test(mixed.split('\n\n')[1]),
+    'mixed: thanks lists only what is on its way');
+  ok(mixed.includes('"Fair (Saturday 5 December)" is a little way off yet'), 'mixed: the held one gets its note');
+  const one = replies.buildBody({ items: [{ title: 'Fair', event_date: '2026-12-05', policy: ['too_early'] }] });
+  ok(one.includes('hang on to it and start showing it from Saturday 21 November') && !one.includes('on its way'), 'single held item: one line, no "on its way"');
+}
+
 (async () => {
+  testManyItems();
   await testLogsPrivate();
   await testClassify();
   await testSignaturesAndLinks();

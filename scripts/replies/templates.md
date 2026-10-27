@@ -16,8 +16,15 @@ Hi {name},
 ## ack_one
 Thanks for sending "{title}", it's on its way to the website and Thursday's newsletter.
 
+## ack_one_held
+Thanks for sending "{title}". We list events up to two weeks ahead, so we'll hang on to it and start showing it from {show_from}.
+
 ## ack_many
 Thanks for these, they're on their way to the website and Thursday's newsletter:
+{titles}
+
+## ack_many_held
+Thanks for these. We list events up to two weeks ahead, so we'll hang on to them and they'll start showing nearer the time:
 {titles}
 
 ## ack_none
@@ -32,6 +39,10 @@ Sorry, we couldn't open {files}. Photos (JPEG, PNG or straight off an iPhone) an
 ## too_early
 "{title}" is a little way off yet, so we'll hang on to it and start showing it from {show_from} (we list events up to two weeks ahead).
 
+## too_early_many
+These ones are a little way off yet, so we'll hang on to them and start showing each one two weeks before (we list events up to two weeks ahead):
+{titles}
+
 ## after_deadline
 This arrived just after our Wednesday 6pm cut-off, so it'll go in the following week's newsletter.
 
@@ -44,6 +55,9 @@ We've shown the flyer for "{title}" twice now, which is as often as we show any 
 ## people_in_image
 Quick one about the photo for "{title}": could you check everyone in it is happy for it to go online, and that parents are OK with it for any children? If not, just say and we'll leave it out.
 
+## people_in_image_many
+Quick one about the photos for {titles}: could you check everyone in them is happy for them to go online, and that parents are OK with it for any children? If not, just say and we'll leave them out.
+
 ## out_of_scope
 We mainly cover the Lenches and the villages around them, plus bigger events in Evesham, Pershore and Inkberrow, so this one might be a bit outside our patch.
 
@@ -52,6 +66,9 @@ Sorry, we don't run classified adverts (things for sale or wanted, lettings, job
 
 ## political_commercial
 We'll be in touch shortly about "{title}".
+
+## political_commercial_many
+We'll be in touch shortly about {titles}.
 
 ## clarify_deadline
 If we haven't heard by Wednesday 6pm, no worries, we'll go with what we've got.

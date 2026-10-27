@@ -144,6 +144,13 @@ const ITEM_CODES = ['own_wording', 'too_early', 'flyer_limit', 'newsletter_limit
   'classified', 'political_commercial'];
 // Codes whose template may be absent from templates.md (added later): skipped, not fatal.
 const OPTIONAL_CODES = ['own_wording'];
+// Notes said once over a list when several items share them (27 Oct: seven Vale Golf events
+// each got their own copy). Used only when the "_many" template exists.
+const MANY_TEMPLATES = {
+  too_early: 'too_early_many',
+  people_in_image: 'people_in_image_many',
+  political_commercial: 'political_commercial_many',
+};
 // Pending field that answers each missing-detail code.
 const FIELD_FOR = { where: 'village', date: 'event_date', time: 'event_time', cost: 'cost', contact: 'contact' };
 const FIELD_WORDS = {
@@ -347,13 +354,43 @@ function greeting(name) {
   return name && templates().greeting_name !== undefined ? fill('greeting_name', { name }) : fill('greeting');
 }
 
+// Labels for a multi-item reply: a " — Venue" ending every title shares is dropped, and
+// events show their date so repeats ("Wreath Making Workshop" x3) can be told apart.
+function itemLabels(items) {
+  const tail = (t) => (String(t).match(/\s[—–]\s([^—–]+)$/) || [])[1] || '';
+  const shared = items.length > 1 && tail(items[0].title)
+    && items.every((i) => tail(i.title) === tail(items[0].title));
+  return items.map((i) => {
+    const title = shared ? String(i.title).replace(/\s[—–]\s[^—–]+$/, '').trim() : i.title;
+    return { ...i, label: i.event_date ? `${title} (${longDate(i.event_date)})` : title };
+  });
+}
+
 // items: [{ title, event_date, policy: [codes] }]
 // unusable: attachment names we couldn't use ('' entries = name unknown, e.g. the 24h rebuild)
 // personal: Holly's one personal line for a known contact (draftAckLine), after the thanks.
+// Several items (27 Oct): one list with dates; when every one is too early the thanks says
+// so (ack_many_held) instead of "on its way"; shared notes are said once (MANY_TEMPLATES).
 function buildBody({ items, outOfScope, clarification, unusable = [], name = '', personal = '' }) {
+  const t = templates();
   const parts = [greeting(name)];
-  if (items.length === 1) parts.push(fill('ack_one', { title: items[0].title }));
-  else if (items.length > 1) parts.push(fill('ack_many', { titles: items.map((i) => `- ${i.title}`).join('\n') }));
+  const many = items.length > 1;
+  const list = many ? itemLabels(items) : items.map((i) => ({ ...i, label: i.title }));
+  const showFrom = (i) => (i.event_date ? longDate(addDays(i.event_date, -EARLY_DAYS)) : '');
+  const early = (i) => i.policy.includes('too_early') && i.event_date;
+  const earlyLines = (xs) => xs.map((i) => `- ${i.label}, from ${showFrom(i)}`).join('\n');
+  const allHeld = items.length > 0 && list.every(early)
+    && t[many ? 'ack_many_held' : 'ack_one_held'] !== undefined;
+  // Mixed: the thanks lists only what's on its way; the rest go in the too-early note.
+  const soon = list.filter((i) => !early(i));
+  const splitEarly = many && !allHeld && soon.length > 0;
+  if (items.length === 1 && allHeld) {
+    parts.push(fill('ack_one_held', { title: items[0].title, show_from: showFrom(items[0]) }));
+  } else if (items.length === 1) parts.push(fill('ack_one', { title: items[0].title }));
+  else if (allHeld) parts.push(fill('ack_many_held', { titles: earlyLines(list) }));
+  else if (many) {
+    parts.push(fill('ack_many', { titles: (splitEarly ? soon : list).map((i) => `- ${i.label}`).join('\n') }));
+  }
   else parts.push(fill('ack_none'));
   if (personal) parts.push(personal);
 
@@ -366,16 +403,20 @@ function buildBody({ items, outOfScope, clarification, unusable = [], name = '',
     }));
   }
   if (items.some((i) => i.policy.includes('after_deadline'))) notes.push(fill('after_deadline'));
-  for (const i of items) {
-    for (const code of ITEM_CODES) {
-      if (!i.policy.includes(code)) continue;
-      if (OPTIONAL_CODES.includes(code) && templates()[code] === undefined) continue;
-      if (code === 'own_wording') ownNotes += 1;
-      notes.push(fill(code, {
-        title: i.title,
-        show_from: i.event_date ? longDate(addDays(i.event_date, -EARLY_DAYS)) : '',
-      }));
+  for (const code of ITEM_CODES) {
+    const hits = list.filter((i) => i.policy.includes(code));
+    if (!hits.length) continue;
+    if (OPTIONAL_CODES.includes(code) && t[code] === undefined) continue;
+    if (code === 'too_early' && allHeld) continue;
+    if (code === 'own_wording') ownNotes += hits.length;
+    const group = MANY_TEMPLATES[code];
+    if (hits.length > 1 && group && t[group] !== undefined) {
+      const titles = code === 'too_early' ? earlyLines(hits.filter(early))
+        : hits.length === items.length ? 'these' : listJoin(hits.map((i) => `"${i.label}"`));
+      notes.push(fill(group, { titles }));
+      continue;
     }
+    for (const i of hits) notes.push(fill(code, { title: i.label, show_from: showFrom(i) }));
   }
   if (outOfScope) notes.push(fill('out_of_scope'));
   parts.push(...notes);
@@ -905,7 +946,9 @@ function senderLimit(ctx, to) {
 async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, said, limit, contact, name }, skip) {
   const anonymous = result.anonymous === true;
   const needs = rows
-    .map((r) => ({ title: r.title, missing: splitCodes(r.missing).filter((c) => FIELD_FOR[c]) }))
+    // A booking or details link is enough for enquiries: no "who do we contact?" (27 Oct).
+    .map((r) => ({ title: r.title,
+      missing: splitCodes(r.missing).filter((c) => FIELD_FOR[c] && !(c === 'contact' && String(r.link_url || '').trim())) }))
     .filter((n) => n.missing.length);
   const type = needs.length || anonymous ? 'clarify' : 'ack';
   if (limit.over && type === 'ack') return skip(`${limit.note}: acknowledgement dropped`);

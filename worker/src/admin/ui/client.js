@@ -18,7 +18,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '30';
+export const UI_VERSION = '31';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -505,8 +505,12 @@ export const CLIENT_JS = String.raw`
     var box = h('div', { class: 'imgs' });
     var m = str(r.message_id);
     if (!m || m.indexOf('rss:') === 0 || !/^[A-Za-z0-9]{6,40}$/.test(m)) return box;
-    var fill = function (list) {
+    // An item with its own image shows just that one, not every image in the email
+    // (27 Oct: seven events from one email each showed all nine, signature logos included).
+    var fill = function (all) {
       box.replaceChildren();
+      var mine = all.filter(function (p) { return p.partId === str(r.image_part_id); });
+      var list = mine.length ? mine : all;
       if (!list.length) return;
       list.forEach(function (p) {
         var src = '/admin/img/mail/' + m + '/' + p.partId;
