@@ -10,6 +10,7 @@
 // of type "outreach", status "awaiting" ("shadow" in shadow mode), policy_codes
 // org_check_<id> or org_chase_<id>: it only goes on Jon's Approve or Edit, never by itself or
 // in holiday mode, and the chaser goes on the check's thread (replies.js chaseThread).
+// Organisations that emailed us in the last 6 months are "in regular contact" and get no check.
 // Logs print the slug only, never an address.
 'use strict';
 
@@ -73,7 +74,12 @@ async function draftOrgCheck(id) {
   const org = R.orgEntries(siteData()).find((o) => o.id === id) || null;
   const [rows, contacts, orgTab] = await Promise.all([g.readTable('Replies'), g.readTable('Contacts'), orgRows(R)]);
   const today = londonDate(Date.now());
-  const plan = R.planOrgCheck(org, { replies: rows, contacts, orgRow: orgTab.find((r) => String(r.id || '').trim() === id) || null, today });
+  const ctx = { replies: rows, contacts, orgRow: orgTab.find((r) => String(r.id || '').trim() === id) || null, today };
+  // In regular contact (emailed us in the last 6 months): no check, as on the panel.
+  if (org && R.orgState(org, ctx).state === 'due' && (await g.searchMessageIds(R.recentQuery(org.email), 1)).length) {
+    ctx.recent = new Set([org.email]);
+  }
+  const plan = R.planOrgCheck(org, ctx);
   if (plan.error) {
     console.log(`Organisation ${id}: ${plan.error.replace(/^Not drafted: /, '')}; nothing drafted.`);
     return null;

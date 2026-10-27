@@ -307,6 +307,15 @@ export async function gmailText(env, messageId) {
   return messageText(await (await google(env, SCOPES.gmail, url, {}, sub)).json());
 }
 
+// True if a Gmail search (in GMAIL_USER's mailbox) finds any message.
+export async function gmailAny(env, q) {
+  const sub = String(env.GMAIL_USER || '').trim();
+  if (!sub) throw new Error('GMAIL_USER is not set');
+  const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=1&q=${encodeURIComponent(q)}`;
+  const j = await (await google(env, SCOPES.gmail, url, {}, sub)).json();
+  return Array.isArray(j.messages) && j.messages.length > 0;
+}
+
 // A Drive image: Drive's own thumbnail (about `size` px on the long side) when it has
 // one, else the file itself. { type, bytes }.
 export async function driveImage(env, fileId, size = 0) {

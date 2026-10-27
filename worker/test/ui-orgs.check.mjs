@@ -37,7 +37,7 @@ function reset() {
     { ...sent('orchard', TODAY), status: 'awaiting' }];
   orgRows = [{ id: 'grey-gable', next_check: '2027-01-27' }];
 }
-const view = (count = 1) => ({ ...orgLists(ORGS, { replies, contacts: [], orgRows, hasTab: true, today: TODAY }), count });
+const view = (count = 1) => ({ ...orgLists(ORGS, { replies, contacts: [], orgRows, hasTab: true, today: TODAY, recent: new Set([email('rous-lench-hall')]) }), count });
 
 let count = 1;
 const posts = [];
@@ -82,7 +82,7 @@ try {
     await main.getByText(/^Due a check \(\d+\)$/).waitFor();
     const text = await main.innerText();
     for (const want of [/Chaser due \(1\)/i, /Replied \(1\)/i, /Draft waiting \(1\)/i, /Waiting for a reply \(1\)/i, /No reply \(1\)/i,
-      /Done, snoozed or never \(1\)/i, /No email \(10\)/i, /1 of 10 drafts used today/, /never goes by itself/,
+      /Done, snoozed or never \(1\)/i, /In regular contact \(1\)/i, /Emailed us in the last 6 months/, /No email \(10\)/i, /1 of 10 drafts used today/, /never goes by itself/,
       /Health & emergencies/, /High St, Inkberrow WR7 4BW · 01386 793007/]) assert.match(text, want);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `orgs-${name}.png`), fullPage: true });
 
@@ -112,6 +112,7 @@ try {
     await page.locator('.crow', { hasText: 'Grey Gable Surgery' }).getByRole('button', { name: 'Clear' }).click();
     await page.locator('.toast', { hasText: 'Cleared' }).waitFor();
     assert.deepEqual(posts.pop(), { path: '/admin/api/orgnext', id: 'grey-gable', expected: '2027-01-27', value: '' });
+    assert.equal(await page.locator('.crow', { hasText: 'Rous Lench Village Hall' }).getByRole('button').count(), 0, 'no buttons when in regular contact');
     assert.equal(await page.locator('.crow', { hasText: 'The Lenches Amphitheatre' }).getByRole('button').count(), 0, 'no buttons without an email');
 
     // Daily cap: Draft goes, Done stays.

@@ -47,7 +47,8 @@
 //   (Snooze, Never nudge and Clear are /admin/api/contact writes of next_nudge.)
 //   GET  /admin/api/orgs            organisation outreach (orgoutreach.mjs orgLists): each
 //                                   organisation in contacts.json `outreach` and its state, from
-//                                   Replies, Contacts and the Org outreach tab
+//                                   Replies, Contacts and the Org outreach tab, plus a Gmail
+//                                   search per due one (emailed us in 6 months = regular contact)
 //   POST /admin/api/orgcheck        { id }: Draft check / Draft chaser, if planOrgCheck allows it
 //                                   today, through decide() (action orgcheck, id = the slug)
 //   POST /admin/api/orgnext         { id, expected, value }: Done / Snooze / Never / Clear, one
@@ -82,7 +83,7 @@ import { ACTIONS, decide, github } from '../core.js';
 import { verifyAccess } from './access.js';
 import { makeCsrf, checkCsrf, sameOrigin } from './csrf.js';
 import {
-  getValues, sheetGids, gmailImage, gmailImageParts, gmailText, driveImage, serviceAccountEmail, appendValues, addTab, deleteRow,
+  getValues, sheetGids, gmailImage, gmailImageParts, gmailText, gmailAny, driveImage, serviceAccountEmail, appendValues, addTab, deleteRow,
 } from './google.js';
 import { readTable, readSettingsPairs, editCell, checkedWrite } from './sheet.js';
 import {
@@ -100,7 +101,7 @@ import {
 } from './contacts.js';
 import { outreachLists, planNudge, idFor, sentRows } from './outreach.mjs';
 import {
-  ORG_TAB, ORG_HEADERS, orgEntries, orgLists, planOrgCheck, planNext,
+  ORG_TAB, ORG_HEADERS, orgEntries, orgLists, planOrgCheck, planNext, dueEmails, recentQuery,
 } from './orgoutreach.mjs';
 // The site's own data, bundled at deploy (deploy-worker.yml also deploys when these change).
 import contactsData from '../../../src/_data/contacts.json' with { type: 'json' };
@@ -495,7 +496,12 @@ async function readOrgTab(env) {
 
 async function orgContext(env) {
   const [replies, contacts, tab] = await Promise.all([readTable(env, 'Replies'), readTable(env, CONTACTS_TAB), readOrgTab(env)]);
-  return { replies: replies.rows, contacts: contacts.rows, orgRows: tab.rows, hasTab: tab.headers.includes('next_check'), today: ukToday() };
+  const ctx = { replies: replies.rows, contacts: contacts.rows, orgRows: tab.rows, hasTab: tab.headers.includes('next_check'), today: ukToday() };
+  // In regular contact: those otherwise due who emailed us in the last 6 months (one Gmail
+  // search each, so only the due ones; a few dozen at most).
+  const due = dueEmails(ORGS, ctx);
+  const found = await Promise.all(due.map((e) => gmailAny(env, recentQuery(e))));
+  return { ...ctx, recent: new Set(due.filter((e, i) => found[i])) };
 }
 
 async function doOrgCheck(env, body) {
