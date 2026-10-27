@@ -33,6 +33,7 @@
       { "title": "What to do if…", "url": "/living-here/what-to-do/" }
     ] },
     { "title": "About", "links": [
+      { "title": "Newsletter", "url": "/newsletter/" },
       { "title": "Contact & About", "url": "/contact/" },
       { "title": "Privacy", "url": "/privacy/" }
     ] }

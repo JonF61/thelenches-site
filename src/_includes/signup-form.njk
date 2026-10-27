@@ -1,5 +1,5 @@
-{#- Newsletter sign-up form: the band on every page (signup.njk) and the home page's sign-up
-    card (hub-cards.njk); a page has one or the other, never both. Posts to the approvals
+{#- Newsletter sign-up form: only on the sign-up page (newsletter.njk, /newsletter/); the
+    home card, home intro and the band on other pages link there (27 Oct). Posts to the approvals
     Worker (POST /s, worker/src/signup.js), which checks Turnstile, saves a Sign-ups row and
     has signup.yml email a confirmation link (double opt-in). Turnstile loads only when
     someone clicks into the form; without JavaScript the Worker answers with a page
