@@ -21,7 +21,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '33';
+export const UI_VERSION = '34';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -2197,7 +2197,7 @@ export const CLIENT_JS = String.raw`
     }
     if (e.state === 'held') {
       if (e.next_check) acts.push(h('button', { class: 'btn link', onclick: function () { gNext(e, '', 'Cleared: ' + e.name); } }, 'Clear'));
-    } else if (e.state !== 'noemail' && e.state !== 'draft') {
+    } else if (e.state !== 'noemail' && e.state !== 'draft' && e.state !== 'regular') {
       acts.push(h('button', { class: 'btn link', onclick: function () { gNext(e, addMonths(o.today, 12), 'Done: ' + e.name + ' is next due in a year'); } }, 'Done'));
       if (e.state === 'due') acts.push(h('button', { class: 'btn link', onclick: function () { gNext(e, addMonths(o.today, 3), 'Snoozed for 3 months'); } }, 'Snooze 3 months'));
       acts.push(h('button', { class: 'btn link', onclick: function () {
@@ -2235,6 +2235,7 @@ export const CLIENT_JS = String.raw`
       section('Draft waiting', 'A check or chaser is waiting for your Approve.', L.draft),
       section('Waiting for a reply', 'Checked or chased in the last 3 weeks.', L.waiting.concat(L.chased)),
       section('No reply', 'Chased 3 weeks ago or more with no reply: taken as all fine until next year.', L.noreply),
+      section('In regular contact', 'They emailed us in the last 6 months, so no check is needed.', L.regular || []),
       section('Done, snoozed or never', 'Held back until the date shown, or for good.', L.held),
       section('No email', 'No address to write to: check these by phone or on their website.', L.noemail)
     ];

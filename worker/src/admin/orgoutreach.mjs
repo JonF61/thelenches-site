@@ -11,6 +11,8 @@
 //   held     Org outreach next_check "never", or a date still to come (Done or Snooze)
 //   draft    a check or chaser draft is waiting for Jon's Approve
 //   due      never checked, or the last check went CYCLE_DAYS or more ago
+//   regular  would be due, but they emailed us in the last REGULAR_DAYS (Gmail from: search,
+//            or their Contacts row's last_contact): no check needed (Jon, 27 Oct)
 //   waiting  check sent, no reply yet, under CHASE_DAYS
 //   chase    check sent CHASE_DAYS or more ago with no reply: a chaser is due
 //   chased   chaser sent, no reply yet, under CHASE_DAYS
@@ -29,6 +31,7 @@ export const ORG_TYPE = 'outreach';
 export const CHASE_DAYS = 21;
 export const CYCLE_DAYS = 365;
 export const DAY_CAP = 10;
+export const REGULAR_DAYS = 183;
 export const SUBJECT = 'Your entry on thelenches.org.uk';
 export const SITE = 'https://thelenches.org.uk';
 export const PAGE_NAMES = {
@@ -139,8 +142,19 @@ export function repliedSince(email, since, replies, contacts) {
   return '';
 }
 
-// One organisation's state today: { state, why, check?, chase? }.
-export function orgState(org, { replies = [], contacts = [], orgRow = null, today }) {
+// True if their Contacts row (any of its addresses) shows mail in the last REGULAR_DAYS.
+export function contactRecent(email, contacts, today) {
+  const e = low(email);
+  return (contacts || []).some((c) => [c.email, ...str(c.other_emails).split(',')].map(low).includes(e)
+    && isDay(c.last_contact) && daysBetween(str(c.last_contact), today) <= REGULAR_DAYS);
+}
+
+// The Gmail search that finds their recent mail (Worker and scripts run it for due ones only).
+export const recentQuery = (email) => `from:${low(email)} newer_than:${REGULAR_DAYS}d`;
+
+// One organisation's state today: { state, why, check?, chase? }. recent: lower-cased
+// addresses that emailed us in the last REGULAR_DAYS (Gmail), or null if not looked up.
+export function orgState(org, { replies = [], contacts = [], orgRow = null, today, recent = null }) {
   if (!org.email) return { state: 'noemail', why: 'No email: check by phone or their website' };
   const next = low(orgRow && orgRow.next_check);
   if (next === 'never') return { state: 'held', why: 'Set to never' };
@@ -149,6 +163,9 @@ export function orgState(org, { replies = [], contacts = [], orgRow = null, toda
   if (rows.some((r) => low(r.status) === 'awaiting')) return { state: 'draft', why: 'A draft is waiting for you' };
   const check = rows.find((r) => !isChase(r) && SENT.includes(low(r.status)));
   if (!check || daysBetween(sentDay(check), today) >= CYCLE_DAYS) {
+    if ((recent && recent.has(org.email)) || contactRecent(org.email, contacts, today)) {
+      return { state: 'regular', why: 'Emailed us in the last 6 months: no check needed' };
+    }
     return { state: 'due', why: check ? `Last checked ${sentDay(check)}` : 'Not checked yet' };
   }
   const since = str(check.sent_at || check.created_at);
@@ -174,15 +191,22 @@ export function dayCount(replies, today) {
 
 // The panel's Organisations view: { today, count, cap, hasTab, lists: { state: [entry] } }.
 // entry: { id, name, email, page, pageName, pageUrl, shown, state, why, next_check }.
-export function orgLists(orgs, { replies = [], contacts = [], orgRows = [], hasTab = false, today }) {
+export function orgLists(orgs, { replies = [], contacts = [], orgRows = [], hasTab = false, today, recent = null }) {
   const byId = new Map((orgRows || []).map((r) => [str(r.id), r]));
-  const lists = { due: [], chase: [], draft: [], waiting: [], chased: [], replied: [], noreply: [], held: [], noemail: [] };
+  const lists = { due: [], chase: [], draft: [], waiting: [], chased: [], replied: [], noreply: [], held: [], regular: [], noemail: [] };
   for (const o of orgs) {
     const orgRow = byId.get(o.id) || null;
-    const s = orgState(o, { replies, contacts, orgRow, today });
+    const s = orgState(o, { replies, contacts, orgRow, today, recent });
     lists[s.state].push({ ...o, state: s.state, why: s.why, next_check: str(orgRow && orgRow.next_check), hasRow: !!orgRow });
   }
   return { today, count: dayCount(replies, today), cap: DAY_CAP, hasTab, lists };
+}
+
+// Addresses to look up in Gmail: those that would otherwise be due today.
+export function dueEmails(orgs, { replies = [], contacts = [], orgRows = [], today }) {
+  const byId = new Map((orgRows || []).map((r) => [str(r.id), r]));
+  return [...new Set(orgs.filter((o) => orgState(o, { replies, contacts, orgRow: byId.get(o.id) || null, today }).state === 'due')
+    .map((o) => o.email))];
 }
 
 // Draft check / Draft chaser from the panel: { ok, kind: check|chase } or { error, status }.

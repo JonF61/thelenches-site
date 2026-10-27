@@ -29,6 +29,8 @@ const HEADERS = {
 };
 let tables;
 let sent;
+let recentMail = [];
+const searches = [];
 let settings;
 const pick = (tab, o) => Object.fromEntries(HEADERS[tab].map((h) => [h, o[h] === undefined || o[h] === null ? '' : String(o[h])]));
 Object.assign(g, {
@@ -49,6 +51,7 @@ Object.assign(g, {
     }
     throw new Error(`no message ${id}`);
   },
+  searchMessageIds: async (q) => { searches.push(q); return recentMail.some((a) => q.includes(a)) ? ['m1'] : []; },
   getSheetGid: async () => 0,
   spreadsheetId: () => 'sheet',
 });
@@ -63,6 +66,7 @@ const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).fo
 const shift = (days) => new Date(Date.parse(`${today}T12:00:00Z`) + days * 864e5).toISOString().slice(0, 10);
 
 function reset() {
+  recentMail = [];
   tables = { Replies: [], 'Reply feedback': [], Contacts: [] };
   sent = [];
   settings = { replies_mode: 'live', from_name: 'The Lenches Website and Newsletter Team' };
@@ -123,6 +127,16 @@ async function main() {
   const gp = await orgs.draftOrgCheck('grey-gable');
   ok(gp.to === 'grey.gable@nhs.net' && gp.body.includes('Grey Gable Surgery\nHigh St, Inkberrow WR7 4BW\n01386 793007\n')
     && !gp.body.includes('grey.gable@'), 'health.json entry; the address Holly writes to is not quoted');
+
+  // In regular contact: emailed us in the last 6 months (Gmail), or a recent Contacts row.
+  reset();
+  recentMail = ['lenchestc@gmail.com'];
+  ok(await orgs.draftOrgCheck('tennis') === null && tables.Replies.length === 0, 'regular contact (Gmail): no check');
+  ok(searches.includes('from:lenchestc@gmail.com newer_than:183d'), 'Gmail search for their recent mail');
+  tables.Contacts.push(pick('Contacts', { email: 'cricket.lenches@googlemail.com', status: 'organiser', last_contact: shift(-100) }));
+  ok(await orgs.draftOrgCheck('cricket') === null && tables.Replies.length === 0, 'regular contact (Contacts): no check');
+  tables.Contacts[0].last_contact = shift(-200);
+  ok(await orgs.draftOrgCheck('cricket'), 'last email over 6 months ago: due');
 
   // No email, never, the daily cap, replies off.
   reset();
