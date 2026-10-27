@@ -1,0 +1,39 @@
+name: Newsletter sign-up (web form)
+
+# Fired by the Cloudflare Worker's /s endpoint (repository_dispatch "signup"):
+#   action "send"     the form saved a Sign-ups row: email the confirmation link
+#   action "confirm"  the reader pressed the link's button: add them to Subscribers
+# The payload is a Sign-ups row id, never an address: this repo's Actions logs are public.
+on:
+  repository_dispatch:
+    types: [signup]
+
+permissions:
+  contents: read
+
+# One queue per sign-up: a shared group would let a newer run cancel a waiting one.
+concurrency:
+  group: signup-${{ github.event.client_payload.id }}
+  cancel-in-progress: false
+
+jobs:
+  signup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Send confirmation or subscribe
+        run: node scripts/signup/index.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: jon@thelenches.org.uk
+          APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
+          WORKER_URL: https://approvals.lenches.workers.dev
+          ACTION: ${{ github.event.client_payload.action }}
+          SIGNUP_ID: ${{ github.event.client_payload.id }}

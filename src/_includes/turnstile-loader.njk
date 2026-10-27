@@ -1,0 +1,21 @@
+{#- Loads Cloudflare Turnstile once per page for whichever form asks first (feedback.njk,
+    signup-form.njk). lenchesTurnstile(onReady, onError): onReady runs once window.turnstile
+    exists; onError if the script can't load. Safe to include more than once. -#}
+<script>
+window.lenchesTurnstile = window.lenchesTurnstile || (function () {
+  var ready = [], failed = [], started = false;
+  window.lenchesTurnstileReady = function () { var r = ready; ready = []; failed = []; r.forEach(function (f) { f(); }); };
+  return function (onReady, onError) {
+    if (window.turnstile) { onReady(); return; }
+    ready.push(onReady);
+    if (onError) failed.push(onError);
+    if (started) return;
+    started = true;
+    var s = document.createElement('script');
+    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=lenchesTurnstileReady';
+    s.async = true;
+    s.onerror = function () { started = false; ready = []; var f = failed; failed = []; f.forEach(function (x) { x(); }); };
+    document.head.appendChild(s);
+  };
+})();
+</script>

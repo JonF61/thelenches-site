@@ -6,8 +6,13 @@
 //   POST /u?t=TOKEN  one-click unsubscribe (RFC 8058: mail providers POST here) or the
 //                    confirm page's button; fires repository_dispatch "unsubscribe"
 //   POST /f          reader feedback form (feedback.js): Turnstile, rate limit, validation,
-//                    then a Feedback tab row. Public: Cloudflare Access must never cover
-//                    /f, /a or /u (readers and mail providers have no Access login).
+//                    then a Feedback tab row.
+//   POST /s          newsletter sign-up form (signup.js): as /f, then a Sign-ups row and
+//                    repository_dispatch "signup" (send), which emails a confirmation link
+//   GET  /s?t=TOKEN  sign-up confirm page (a button: link scanners only GET)
+//   POST /s?t=TOKEN  the button; fires repository_dispatch "signup" (confirm)
+//                    Public: Cloudflare Access must never cover /a, /u, /f or /s
+//                    (readers and mail providers have no Access login).
 //   /admin, /admin/*  admin panel (admin/index.js): Cloudflare Access only, decisions go
 //                    through the same decide() as POST /a (core.js)
 //   cron WATCHDOG_CRON  ingestion and daily diagnostic still running, site up, and on
@@ -40,6 +45,7 @@ import {
 } from './core.js';
 import { handleAdmin } from './admin/index.js';
 import { handleFeedback } from './feedback.js';
+import { handleSignup } from './signup.js';
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -176,7 +182,7 @@ async function handleApproval(request, env) {
   if (request.method === 'GET') {
     const token = url.searchParams.get('t');
     const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
-    if (!p || p.a === 'unsub') return invalidPage();
+    if (!p || p.a === 'unsub' || p.a === 'signup') return invalidPage();
     if (p.expired) return expiredPage();
     const [verb, , cls] = ACTIONS[p.a];
     return page(verb, `
@@ -209,7 +215,7 @@ ${confirmExtra(p)}
       return invalidPage();
     }
     const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
-    if (!p || p.a === 'unsub') return invalidPage();
+    if (!p || p.a === 'unsub' || p.a === 'signup') return invalidPage();
     if (p.expired) return expiredPage();
     reason = cleanReason(reason, p.a === 'redraft' ? 500 : 300);
     if (p.a === 'redraft' && reason.length < 3) return page('Nothing to change', '<h1>Say what to change</h1><p>The box was empty. Go back and type what Holly should change.</p>', 400);
@@ -261,6 +267,41 @@ async function handleUnsubscribe(request, env) {
 <p>You won't receive The Lenches Newsletter any more. It can take a few minutes to take effect.</p>`);
   }
 
+  return new Response('Method not allowed', { status: 405 });
+}
+
+/* --------------------------------------------------- sign-up confirmation -- */
+
+// The link in the confirmation email (scripts/signup). GET shows a button, so a mail
+// scanner opening the link confirms nothing; the button's POST fires the subscribe run.
+async function handleSignupConfirm(request, env) {
+  const url = new URL(request.url);
+  const site = esc(String(env.SITE_URL || 'https://thelenches.org.uk/'));
+  const expired = () => page('Link expired',
+    `<h1>Link expired</h1><p>This confirmation link has expired. You can sign up again using the form on <a href="${site}">the website</a>.</p>`, 410);
+  let token = url.searchParams.get('t');
+  if (request.method === 'POST' && !token) {
+    try { token = (await request.formData()).get('t'); } catch { token = ''; }
+  }
+  const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
+  if (!p || (!p.expired && p.a !== 'signup')) return invalidPage();
+  if (p.expired) return expired();
+
+  if (request.method === 'GET') {
+    return page('Confirm your sign-up', `
+<h1>Join The Lenches Newsletter?</h1>
+<p>It's free and comes out every Thursday morning.</p>
+<form method="post" action="/s?t=${esc(token)}">
+  <button class="approve" type="submit">Yes, add me to the list</button>
+</form>`);
+  }
+  if (request.method === 'POST') {
+    if (!(await dispatch(env, 'signup', { action: 'confirm', id: p.i }, 2))) return failedPage();
+    return page('You\'re on the list', `
+<h1>You're on the list</h1>
+<p>The next newsletter will arrive on Thursday morning. There's an unsubscribe link at the bottom of every issue.</p>
+<p><a href="${site}">Back to the website</a></p>`);
+  }
   return new Response('Method not allowed', { status: 405 });
 }
 
@@ -494,6 +535,9 @@ export default {
     if (url.pathname === '/a') return handleApproval(request, env);
     if (url.pathname === '/u') return handleUnsubscribe(request, env);
     if (url.pathname === '/f') return handleFeedback(request, env);
+    if (url.pathname === '/s') {
+      return url.searchParams.has('t') ? handleSignupConfirm(request, env) : handleSignup(request, env);
+    }
     if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) return handleAdmin(request, env);
     return new Response('Lenches approvals', { headers: { 'content-type': 'text/plain' } });
   },

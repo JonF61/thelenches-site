@@ -31,7 +31,7 @@ const DAILY_CAP = 100;             // rows a day in all; a flood waits for tomor
 const MEMORY_LIMIT = 5;
 const MEMORY_WINDOW_MS = 10 * 60 * 1000;
 const TURNSTILE_VERIFY = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
-const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]{1,64}@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
+export const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]{1,64}@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
 const TZ = 'Europe/London';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
@@ -105,11 +105,14 @@ export function resetMemoryLimit() { memoryHits.clear(); }
 
 // True when this IP may submit now. The FEEDBACK_LIMITER binding (wrangler.toml) counts
 // across Cloudflare; without it, a per-instance memory count still stops a quick burst.
-export async function allowed(env, ip, now = Date.now()) {
-  const key = ip || 'unknown';
-  if (env.FEEDBACK_LIMITER && typeof env.FEEDBACK_LIMITER.limit === 'function') {
+// The sign-up form (signup.js) passes its own binding name, SIGNUP_LIMITER.
+export async function allowed(env, ip, now = Date.now(), binding = 'FEEDBACK_LIMITER') {
+  const ipKey = ip || 'unknown';
+  const key = binding === 'FEEDBACK_LIMITER' ? ipKey : `${binding}|${ipKey}`;
+  const limiter = env[binding];
+  if (limiter && typeof limiter.limit === 'function') {
     try {
-      const { success } = await env.FEEDBACK_LIMITER.limit({ key });
+      const { success } = await limiter.limit({ key: ipKey });
       if (!success) return false;
     } catch (e) {
       console.error(`Rate limiter failed: ${e.message}`);
@@ -161,7 +164,7 @@ export async function saveFeedback(env, value, ms = Date.now()) {
 
 /* ----------------------------------------------------------- responses -- */
 
-function plainPage(env, title, text, back, status) {
+export function plainPage(env, title, text, back, status) {
   const backLink = back ? `<p><a href="${esc(back)}">Back to the page</a></p>` : '';
   const html = `<!doctype html>
 <html lang="en-GB"><head><meta charset="utf-8">
@@ -179,7 +182,7 @@ h1{color:#3F5233;font-size:1.3rem;margin-top:0}a{color:#3F5233}
   });
 }
 
-function reply(env, js, { ok, status = 200, title, message, back }) {
+export function reply(env, js, { ok, status = 200, title, message, back }) {
   if (js) {
     const origin = siteOrigin(env);
     return new Response(JSON.stringify({ ok, message }), {

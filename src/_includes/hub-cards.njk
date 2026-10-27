@@ -48,7 +48,11 @@
   <div class="card hub-card hub-signup" id="signup">
     <{{ hTag }}><svg viewBox="0 0 24 24" aria-hidden="true">{{ icons.mail | safe }}</svg>Thursday newsletter</{{ hTag }}>
     <p>Free, every Thursday morning.</p>
+    {%- if site.signupUrl and site.turnstileSiteKey %}
+    {% include "signup-form.njk" %}
+    {%- else %}
     <a class="btn" href="mailto:{{ site.email }}?subject=Add%20me%20to%20the%20mailing%20list">Email to join</a>
+    {%- endif %}
     <p class="hub-small">Unsubscribe any time &middot; <a href="{{ '/privacy/' | url }}">Privacy</a></p>
   </div>
   {%- endif %}

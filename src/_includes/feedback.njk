@@ -34,6 +34,7 @@
   </details>
 </section>
 {#- Once per page: the Home page and the layout never both include this partial. -#}
+{% include "turnstile-loader.njk" %}
 <script>
 (function () {
   var form = document.querySelector('.fb-form');
@@ -52,16 +53,9 @@
       'error-callback': function () { got(''); }
     });
   }
-  // Turnstile loads only when someone opens the form.
+  // Turnstile loads only when someone opens the form (turnstile-loader.njk, shared with the sign-up form).
   function load() {
-    if (document.getElementById('fb-turnstile')) return;
-    window.fbTurnstileReady = render;
-    var s = document.createElement('script');
-    s.id = 'fb-turnstile';
-    s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=fbTurnstileReady';
-    s.async = true;
-    s.onerror = function () { say('The robot check could not load. Please email {{ site.email }} instead.', true); };
-    document.head.appendChild(s);
+    window.lenchesTurnstile(render, function () { say('The robot check could not load. Please email {{ site.email }} instead.', true); });
   }
   details.addEventListener('toggle', function () { if (details.open) load(); });
   if (details.open) load();

@@ -8,7 +8,7 @@
 'use strict';
 
 const READONLY_SCOPE = 'https://www.googleapis.com/auth/spreadsheets.readonly';
-const REFUSED_TABS = ['subscribers', 'do not send', 'sends', 'replies', 'feedback', 'deleted contacts'];
+const REFUSED_TABS = ['subscribers', 'do not send', 'sends', 'replies', 'feedback', 'deleted contacts', 'sign-ups'];
 // Tabs printed with only these columns (by header); every other cell shows "(hidden)".
 // Contacts: names and roles only, never profile, contributions or notes (agreed 25 Oct).
 const PARTIAL_TABS = {

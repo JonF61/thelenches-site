@@ -20,6 +20,8 @@ export const ACTIONS = {
   nlsend: ['Send newsletter', 'Send started', 'approve'],
   nlbuild: ['Rebuild newsletter', 'Rebuild started', 'approve'],
   unsub: ['Unsubscribe', 'Unsubscribed', 'reject'],
+  // Newsletter sign-up confirmation link (/s only; /a refuses it). The id is a Sign-ups row id.
+  signup: ['Confirm sign-up', 'Confirmed', 'approve'],
   // Reader feedback (Feedback tab), admin panel only: no signed email links carry these.
   fb_approve: ['Approve', 'Approved', 'approve'],
   fb_reject: ['Reject', 'Rejected', 'reject'],
