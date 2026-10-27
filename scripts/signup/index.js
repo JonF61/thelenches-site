@@ -24,7 +24,6 @@ const FROM = 'website@thelenches.org.uk';
 const LINK_DAYS = 7;
 const KEEP_DAYS = 30;
 const TZ = 'Europe/London';
-const C = { green: '#3F5233', cream: '#F6F1E4', grey: '#666666' };
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI/edit';
 
 const str = (v) => String(v ?? '').trim();
@@ -50,25 +49,16 @@ function ageDays(when, ms) {
 
 /* --------------------------------------------------------------- emails -- */
 
-// Outlook-safe: 600px table, inline CSS. before: paragraphs above the button (if any),
-// after: paragraphs below it.
-function emailHtml(before, button, after = []) {
-  const p = (t) => `<p style="margin:0 0 14px 0;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;color:#2b2b2b;">${esc(t)}</p>`;
-  const btn = button ? `
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 20px 0;"><tr>
-<td bgcolor="${C.green}" style="background:${C.green};border-radius:6px;padding:12px 22px;">
-<a href="${esc(button.url)}" style="font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">${esc(button.text)}</a>
-</td></tr></table>` : '';
+// Deliberately plain, like a personal email: no header, colours or button, so Gmail is
+// less likely to file it under Promotions (27 Oct). link: { text, url } shown as a line
+// of text with the address written out beneath it, after the paragraphs in before.
+function emailHtml(before, link, after = []) {
+  const p = (t) => `<p style="margin:0 0 14px 0;">${t}</p>`;
+  const linkHtml = link ? p(`${esc(link.text)}:<br><a href="${esc(link.url)}" style="word-break:break-all;">${esc(link.url)}</a>`) : '';
   return `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"></head>
-<body style="margin:0;padding:0;background:${C.cream};">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.cream};"><tr><td align="center" style="padding:24px 12px;">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background:#ffffff;"><tr><td style="padding:28px 32px;">
-<p style="margin:0 0 18px 0;font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:bold;color:${C.green};">The Lenches Newsletter</p>
-${before.map(p).join('\n')}${btn}
-${after.map(p).join('\n')}
-<p style="margin:18px 0 0 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4;color:${C.grey};">thelenches.org.uk</p>
-</td></tr></table>
-</td></tr></table>
+<body style="margin:0;padding:12px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#222222;">
+${[...before.map((t) => p(esc(t))), linkHtml, ...after.map((t) => p(esc(t)))].filter(Boolean).join('\n')}
+${p('thelenches.org.uk')}
 </body></html>`;
 }
 
@@ -81,7 +71,7 @@ function confirmEmail(url) {
   return {
     subject: 'Please confirm: The Lenches Newsletter',
     html: emailHtml(paras.slice(0, 2), { text: 'Yes, add me to the list', url }, paras.slice(2)),
-    text: `${paras[0]}\n\n${paras[1]}\n\nYes, add me to the list:\n${url}\n\n${paras[2]}\n`,
+    text: `${paras[0]}\n\n${paras[1]}\n\nYes, add me to the list:\n${url}\n\n${paras[2]}\n\nthelenches.org.uk\n`,
   };
 }
 
@@ -94,7 +84,7 @@ function alreadyEmail() {
   return {
     subject: 'You\'re already on the list: The Lenches Newsletter',
     html: emailHtml(paras, null),
-    text: `${paras.join('\n\n')}\n`,
+    text: `${paras.join('\n\n')}\n\nthelenches.org.uk\n`,
   };
 }
 
