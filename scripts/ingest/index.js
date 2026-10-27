@@ -23,6 +23,7 @@ const trust = require('./trusted');
 const { offersChoice } = require('../../lib/wording');
 const { extractLinks } = require('../suggest/organiser');
 const readerFeedback = require('../readerfeedback');
+const { LOW_CLASS_CONFIDENCE } = require('./classify');
 
 const MAX_RETRIES = 3;            // after this, a failing message is left for the diagnostic
 const MAX_MESSAGES_PER_RUN = 25;  // caps run time and spend; the rest wait for the next run
@@ -171,8 +172,15 @@ async function processMessage(id, ctx) {
     };
   }
 
+  // Spam never reaches the approvals queue: no Pending rows, logged as skipped (Holly
+  // never replies to it either; replies.js). Spam Claude is unsure of still goes to
+  // approval, marked "Possible spam", never auto-published.
+  const spam = result.emailClass === 'spam';
+  const sureSpam = spam && result.classConfidence >= LOW_CLASS_CONFIDENCE;
+  const items = sureSpam ? [] : result.items;
+
   const link = g.gmailLink(msg);
-  const rows = result.items.map((item, n) => {
+  const rows = items.map((item, n) => {
     const img = item.image_index >= 0 ? images[item.image_index] : null;
     const repeat = findRepeat(item, img && img.hash, ctx.existing);
     const noteParts = [item.notes, ...notes];
@@ -180,9 +188,12 @@ async function processMessage(id, ctx) {
       noteParts.push(`Possible repeat of ${repeat.row.id} (${repeat.byImage ? 'same image' : 'same title/date'})`);
     }
     // Trusted sender: published without approval unless the item needs a human anyway.
-    const decided = trust.applyTrust(decideStatus(item, source.mode, ctx.holiday), item,
-      msg.fromAddress, ctx.trusted, { anonymous: result.anonymous, outOfScope: result.outOfScope });
+    const decided = spam
+      ? { status: 'pending' }
+      : trust.applyTrust(decideStatus(item, source.mode, ctx.holiday), item,
+        msg.fromAddress, ctx.trusted, { anonymous: result.anonymous, outOfScope: result.outOfScope });
     if (decided.byTrust) noteParts.push('trusted');
+    if (spam) noteParts.push(`Possible spam (confidence ${result.classConfidence})`);
     const row = {
       id: `${msg.id}-${n + 1}`,
       received,
@@ -252,12 +263,13 @@ async function processMessage(id, ctx) {
   }
 
   return {
-    status: 'ok',
+    status: sureSpam ? 'skipped' : 'ok',
     received,
     source: source.source,
     items: rows.length,
     error: [
-      rows.length ? '' : `No items: ${result.skipReason || 'none found'}`,
+      sureSpam ? `Spam: ${result.request || 'no request'} (${result.items.length} item(s) not added)`
+        : rows.length ? '' : `No items: ${result.skipReason || 'none found'}`,
       replyNote,
       unusable.length ? `Unusable attachment(s): ${unusable.join(', ')}` : '',
     ].filter(Boolean).join(' | '),
