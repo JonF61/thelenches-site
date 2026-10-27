@@ -6,6 +6,12 @@ on:
     paths:
       - "worker/**"
       - ".github/workflows/deploy-worker.yml"
+      # Bundled into the admin panel's Organisations view (worker/src/admin/index.js).
+      - "src/_data/contacts.json"
+      - "src/_data/council.json"
+      - "src/_data/schools.json"
+      - "src/_data/health.json"
+      - "src/_data/transport.json"
   workflow_dispatch:
 
 permissions:

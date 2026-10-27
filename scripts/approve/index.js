@@ -29,6 +29,10 @@
 //   nudge             Draft nudge (admin panel Outreach, 26 Oct): ID is "c" + a hash of a
 //                     contact's address. Holly drafts an outreach email (scripts/outreach) as
 //                     an awaiting Replies row and a card is emailed to Jon. Nothing is sent.
+//   orgcheck          Draft check / Draft chaser (admin panel Contacts > Organisations, 27 Oct):
+//                     ID is an organisation's slug in contacts.json `outreach`. Holly's fixed
+//                     check (or chaser) email is drafted (scripts/outreach/orgs.js) as an
+//                     awaiting Replies row and a card is emailed to Jon. Nothing is sent.
 // Rejecting an item whose acknowledgement said it was on its way drafts a "sorry, we
 // couldn't use it after all" reply for Jon's Approve/Edit/Reject (replies.planSorry).
 // Replayed or duplicate clicks therefore do nothing.
@@ -40,6 +44,7 @@ const trust = require('../ingest/trusted');
 const { sendReplyCard } = require('../ingest/urgent');
 const readerFeedback = require('../readerfeedback');
 const outreach = require('../outreach');
+const orgs = require('../outreach/orgs');
 const lessons = require('../lessons');
 
 const TZ = 'Europe/London';
@@ -109,7 +114,7 @@ async function main() {
   const action = String(process.env.ACTION || '').trim();
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) throw new Error(`Bad id "${id}"`);
   // Holly's lessons and recent corrections, for any draft this action leads to.
-  if (!['send', 'skip', 'close', 'edit', 'lesson_ok', 'lesson_no'].includes(action)) await replies.primeLearning();
+  if (!['send', 'skip', 'close', 'edit', 'lesson_ok', 'lesson_no', 'orgcheck'].includes(action)) await replies.primeLearning();
 
   if (ITEM_ACTIONS.includes(action)) return decideItem(id, action);
   if (action === 'trust') return trustSource(id);
@@ -136,14 +141,15 @@ async function main() {
   }
   if (action === 'close') return replies.closeOwed(id);
   if (action === 'lesson_ok' || action === 'lesson_no') return lessons.decide(id, action);
-  if (action === 'nudge') {
-    const fresh = await outreach.draftNudge(id);
+  if (action === 'nudge' || action === 'orgcheck') {
+    const fresh = action === 'nudge' ? await outreach.draftNudge(id) : await orgs.draftOrgCheck(id);
     if (!fresh || fresh.status !== 'awaiting') return undefined;
     const { settings } = await g.readSettings();
+    const title = action === 'nudge' ? 'Outreach draft' : 'Organisation check draft';
     // The draft is saved either way; a failed card only fails the run (GitHub emails Jon)
     // and the next ingestion run's action email shows the draft.
     try {
-      await sendReplyCard(fresh.reply_id, settings, { title: 'Outreach draft', subject: `Outreach draft ready: ${fresh.subject} (Lenches)` });
+      await sendReplyCard(fresh.reply_id, settings, { title, subject: `${title} ready: ${fresh.subject} (Lenches)` });
     } catch (err) {
       console.error(`Outreach card not sent: ${(err && err.message) || err}`);
       process.exitCode = 1;

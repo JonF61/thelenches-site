@@ -33,6 +33,9 @@ export const ACTIONS = {
   // Outreach (admin panel only): Holly drafts a nudge to one contact (admin/outreach.mjs). The
   // id is a hash of their address; the draft then waits for Jon's send / edit / skip.
   nudge: ['Draft nudge', 'Draft requested', 'approve'],
+  // Organisation outreach (admin panel only): Holly's check or chaser to one organisation
+  // (admin/orgoutreach.mjs). The id is its slug in contacts.json `outreach`.
+  orgcheck: ['Draft check', 'Draft requested', 'approve'],
   // Holly's weekly lessons (scripts/lessons): Approve / Reject links in the lessons email.
   lesson_ok: ['Approve lesson', 'Lesson approved', 'approve'],
   lesson_no: ['Reject lesson', 'Lesson rejected', 'reject'],
@@ -119,7 +122,7 @@ export function dispatchFor(p, reason = '', body = '') {
 }
 
 // One decision (approve, reject, trust, send, skip, edit, redraft, close, nlsend, nlbuild,
-// the reader feedback fb_* actions, nudge, and lesson_ok / lesson_no) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
+// the reader feedback fb_* actions, nudge, orgcheck, and lesson_ok / lesson_no) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
 export async function decide(env, p, reason = '', body = '') {
   const [eventType, payload] = dispatchFor(p, reason, body);
   return dispatch(env, eventType, payload, 2);
