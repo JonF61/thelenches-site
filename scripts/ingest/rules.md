@@ -68,7 +68,10 @@ Leave all three empty for anything that is not a road closure or roadworks.
   Community events at commercial venues (clubs, pubs, golf club) are fine and not flagged.
   Always extract flagged items; the editor decides.
 - people_in_image: TRUE if the image shows any identifiable person or any child.
-  Illustrations and clip-art figures on posters don't count. If unsure, TRUE.
+  Illustrations and clip-art figures on posters don't count, and nor do professionally
+  produced posters, event headers or publicity photos sent by the organiser (e.g. a
+  venue's event banner or a speaker's promotional photo): only photographs of real local
+  people, such as snaps taken at an event. If unsure, TRUE.
 - confidence: 0.9+ when what, where, when and contact are all clear; 0.6–0.8 when one detail
   is missing or inferred; below 0.6 when the item is unclear or you have guessed.
   List what is missing in notes.
