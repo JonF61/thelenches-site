@@ -1,0 +1,117 @@
+{
+  "_help": "What to do if… page (/living-here/what-to-do/). Each topic: id (page anchor), title, calls (tap-to-call buttons: {ref} = a label in health.json numbers, so the number lives in one place, or {label, number}), steps (HTML allowed), links ({text, url}). Update checked when the numbers and links are rechecked.",
+  "checked": "October 2026",
+  "intro": "Who to call and what to do when something goes wrong in the villages. If anyone is in danger, call 999.",
+  "topics": [
+    {
+      "id": "power-cut",
+      "title": "There's a power cut",
+      "calls": [{ "ref": "Power cut" }],
+      "steps": [
+        "Check your trip switch first. If only your home is off, it may be your own electrics.",
+        "Call <b>105</b> (free from any phone) to report a power cut or get updates, or check the power cut map.",
+        "Keep fridge and freezer doors shut, and unplug sensitive equipment until the power is back.",
+        "If you depend on medical equipment, ask your energy supplier about the Priority Services Register."
+      ],
+      "links": [{ "text": "Power cut map (National Grid)", "url": "https://powercuts.nationalgrid.co.uk/" }]
+    },
+    {
+      "id": "gas",
+      "title": "You smell gas",
+      "calls": [{ "ref": "Smell gas" }],
+      "steps": [
+        "Call <b>0800 111 999</b> straight away (free, 24 hours).",
+        "Don't use light switches, flames or phones near the smell. Open doors and windows.",
+        "Turn the gas off at the meter if it's safe to do so, then go outside to wait."
+      ]
+    },
+    {
+      "id": "water",
+      "title": "There's a water leak or no water",
+      "calls": [{ "ref": "Water leak (Severn Trent)" }],
+      "steps": [
+        "Leaks in the road or pavement, or no water: Severn Trent, <b>0800 783 4444</b>.",
+        "Leaks inside your home: turn off your stopcock and call a plumber."
+      ]
+    },
+    {
+      "id": "flooding",
+      "title": "It's flooding",
+      "calls": [{ "ref": "Emergency" }, { "label": "Floodline", "number": "0345 988 1188" }, { "label": "Flooded road or drain", "number": "01905 765765" }],
+      "steps": [
+        "If anyone is in danger, call <b>999</b>. Never walk or drive through floodwater.",
+        "Flood warnings: Floodline <b>0345 988 1188</b>, or sign up for free warnings on GOV.UK.",
+        "A flooded road or blocked drain: report it to Worcestershire County Council online or on <b>01905 765765</b>.",
+        "Sandbags and what to do in a flood: Wychavon's emergency flooding advice."
+      ],
+      "links": [
+        { "text": "Sign up for flood warnings", "url": "https://www.gov.uk/sign-up-for-flood-warnings" },
+        { "text": "Report a flooded road", "url": "https://www.worcestershire.gov.uk/reportit" },
+        { "text": "Wychavon flooding advice", "url": "https://wychavon.gov.uk/environmental-health/emergency-flooding-advice" }
+      ]
+    },
+    {
+      "id": "crime",
+      "title": "You see a crime or antisocial behaviour",
+      "calls": [{ "ref": "Emergency" }, { "ref": "Police, non-emergency" }, { "label": "Crimestoppers", "number": "0800 555 111" }],
+      "steps": [
+        "If it's happening now or someone is in danger, call <b>999</b>.",
+        "Otherwise call <b>101</b> or report it online to West Mercia Police.",
+        "To report it anonymously, call Crimestoppers on <b>0800 555 111</b>."
+      ],
+      "links": [
+        { "text": "Report to West Mercia Police", "url": "https://www.westmercia.police.uk/ro/report/" },
+        { "text": "Crimestoppers", "url": "https://crimestoppers-uk.org/" }
+      ]
+    },
+    {
+      "id": "pets",
+      "title": "You've lost or found a pet",
+      "calls": [{ "label": "Dog warden", "number": "01905 822799" }],
+      "steps": [
+        "Dogs: call the dog warden (Worcestershire Regulatory Services) on <b>01905 822799</b>, weekdays 9am to 5pm, or use their online form. Stray dogs they collect go to their kennels.",
+        "Cats and other pets: ring local vets, check with the microchip databases and put up notices.",
+        "Keep your pet's microchip details up to date."
+      ],
+      "links": [{ "text": "Dog warden service", "url": "https://worcsregservices.gov.uk/all-services/dog-service/dog-warden-service" }]
+    },
+    {
+      "id": "animals-on-road",
+      "title": "Animals are loose on the road",
+      "calls": [{ "ref": "Emergency" }, { "ref": "Police, non-emergency" }],
+      "steps": [
+        "If they're a danger to traffic, call <b>999</b>. Otherwise call <b>101</b>, and tell the farmer if you know whose they are.",
+        "Don't try to herd them yourself."
+      ]
+    },
+    {
+      "id": "fly-tipping",
+      "title": "You find fly-tipping",
+      "steps": [
+        "Don't touch it: it may be dangerous, and it may be evidence.",
+        "Report it to Wychavon District Council through GOV.UK's fly-tipping page.",
+        "If you see someone dumping rubbish, note the time, place and vehicle registration, but only if it's safe."
+      ],
+      "links": [{ "text": "Report fly-tipping", "url": "https://www.gov.uk/report-flytipping" }]
+    },
+    {
+      "id": "trees-potholes",
+      "title": "A tree is down, or there's a pothole",
+      "calls": [{ "label": "County highways", "number": "01905 765765" }],
+      "steps": [
+        "If a fallen tree is blocking a road dangerously, call <b>999</b>. If it's on a power line, keep well away and call <b>105</b>.",
+        "Otherwise report fallen trees, potholes, broken streetlights and blocked drains to the county council online or on <b>01905 765765</b>."
+      ],
+      "links": [{ "text": "Report it online", "url": "https://www.worcestershire.gov.uk/reportit" }]
+    },
+    {
+      "id": "footpaths",
+      "title": "A footpath is blocked",
+      "steps": [
+        "Report it to Worcestershire County Council's rights of way team using their online form. Give the footpath number if you can (it's on the waymarker or the map).",
+        "See also our <a href=\"/living-here/walks/\">Walks &amp; footpaths</a> page."
+      ],
+      "links": [{ "text": "Report a footpath problem", "url": "https://capublic.worcestershire.gov.uk/PROWPublic/PROWFault.aspx" }]
+    }
+  ]
+}
