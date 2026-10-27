@@ -82,7 +82,7 @@ try {
     await main.getByText(/^Due a check \(\d+\)$/).waitFor();
     const text = await main.innerText();
     for (const want of [/Chaser due \(1\)/i, /Replied \(1\)/i, /Draft waiting \(1\)/i, /Waiting for a reply \(1\)/i, /No reply \(1\)/i,
-      /Done, snoozed or never \(1\)/i, /In regular contact \(1\)/i, /Emailed us in the last 6 months/, /No email \(10\)/i, /1 of 10 drafts used today/, /never goes by itself/,
+      /Done, snoozed or never \(1\)/i, /In regular contact \(1\)/i, /Emailed us in the last 3 months/, /No email \(10\)/i, /1 of 10 drafts used today/, /never goes by itself/,
       /Health & emergencies/, /High St, Inkberrow WR7 4BW · 01386 793007/]) assert.match(text, want);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `orgs-${name}.png`), fullPage: true });
 

@@ -128,15 +128,15 @@ async function main() {
   ok(gp.to === 'grey.gable@nhs.net' && gp.body.includes('Grey Gable Surgery\nHigh St, Inkberrow WR7 4BW\n01386 793007\n')
     && !gp.body.includes('grey.gable@'), 'health.json entry; the address Holly writes to is not quoted');
 
-  // In regular contact: emailed us in the last 6 months (Gmail), or a recent Contacts row.
+  // In regular contact: emailed us in the last 3 months (Gmail), or a recent Contacts row.
   reset();
   recentMail = ['lenchestc@gmail.com'];
   ok(await orgs.draftOrgCheck('tennis') === null && tables.Replies.length === 0, 'regular contact (Gmail): no check');
-  ok(searches.includes('from:lenchestc@gmail.com newer_than:183d'), 'Gmail search for their recent mail');
-  tables.Contacts.push(pick('Contacts', { email: 'cricket.lenches@googlemail.com', status: 'organiser', last_contact: shift(-100) }));
+  ok(searches.includes('from:lenchestc@gmail.com newer_than:91d'), 'Gmail search for their recent mail');
+  tables.Contacts.push(pick('Contacts', { email: 'cricket.lenches@googlemail.com', status: 'organiser', last_contact: shift(-60) }));
   ok(await orgs.draftOrgCheck('cricket') === null && tables.Replies.length === 0, 'regular contact (Contacts): no check');
-  tables.Contacts[0].last_contact = shift(-200);
-  ok(await orgs.draftOrgCheck('cricket'), 'last email over 6 months ago: due');
+  tables.Contacts[0].last_contact = shift(-100);
+  ok(await orgs.draftOrgCheck('cricket'), 'last email over 3 months ago: due');
 
   // No email, never, the daily cap, replies off.
   reset();

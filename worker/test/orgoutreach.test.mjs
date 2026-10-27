@@ -58,15 +58,19 @@ test('states', () => {
   assert.equal(at([], { orgRow: { id: 'lenches-club', next_check: '2026-10-01' } }), 'due');
   assert.equal(at([{ ...sentCheck('lenches-club', lc.email, '2026-10-06'), status: 'skipped' }]), 'due', 'a rejected check does not count');
   assert.equal(orgState(org('glads'), { today: TODAY }).state, 'noemail');
-  // In regular contact: emailed us in the last 6 months.
+  // In regular contact: emailed us in the last 3 months (overrides Done / Snooze, not Never).
   assert.equal(at([], { recent: new Set([lc.email]) }), 'regular');
-  assert.equal(at([], { contacts: [{ email: 'x@example.org', other_emails: lc.email, last_contact: '2026-06-01' }] }), 'regular');
-  assert.equal(at([], { contacts: [{ email: lc.email, last_contact: '2026-03-01' }] }), 'due', 'over 6 months ago');
+  assert.equal(at([], { contacts: [{ email: 'x@example.org', other_emails: lc.email, last_contact: '2026-09-01' }] }), 'regular');
+  assert.equal(at([], { contacts: [{ email: lc.email, last_contact: '2026-07-01' }] }), 'due', 'over 3 months ago');
+  assert.equal(at([], { recent: new Set([lc.email]), orgRow: { id: 'lenches-club', next_check: '2027-10-27' } }), 'regular', 'regular beats Done');
+  assert.equal(at([], { contacts: [{ email: lc.email, last_contact: '2026-07-01' }], orgRow: { id: 'lenches-club', next_check: '2027-10-27' } }), 'held', 'lapsed: back to Done');
+  assert.equal(at([], { recent: new Set([lc.email]), orgRow: { id: 'lenches-club', next_check: 'never' } }), 'held', 'Never stays never');
+  assert.ok(dueEmails(ORGS, { replies: [], contacts: [], orgRows: [{ id: 'lenches-club', next_check: '2027-10-27' }], today: TODAY }).includes(lc.email), 'Done ones are looked up');
   assert.equal(at([sentCheck('lenches-club', lc.email, '2026-10-01')], { recent: new Set([lc.email]) }), 'chase', 'only replaces due');
   assert.equal(planOrgCheck(lc, { replies: [], contacts: [], today: TODAY, recent: new Set([lc.email]) }).status, 409);
   assert.deepEqual(dueEmails(ORGS, { replies: [], contacts: [], orgRows: [{ id: 'lenches-club', next_check: 'never' }], today: TODAY })
     .includes(lc.email), false, 'held ones are not looked up');
-  assert.equal(recentQuery('A@Example.org'), 'from:a@example.org newer_than:183d');
+  assert.equal(recentQuery('A@Example.org'), 'from:a@example.org newer_than:91d');
   // Another organisation's rows never count.
   assert.equal(at([sentCheck('tennis', lc.email, '2026-10-20')]), 'due');
 });

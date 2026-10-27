@@ -11,8 +11,9 @@
 //   held     Org outreach next_check "never", or a date still to come (Done or Snooze)
 //   draft    a check or chaser draft is waiting for Jon's Approve
 //   due      never checked, or the last check went CYCLE_DAYS or more ago
-//   regular  would be due, but they emailed us in the last REGULAR_DAYS (Gmail from: search,
-//            or their Contacts row's last_contact): no check needed (Jon, 27 Oct)
+//   regular  would be due, or held by a Done / Snooze date, but they emailed us in the last
+//            REGULAR_DAYS (Gmail from: search, or their Contacts row's last_contact): no check
+//            needed; it lapses 3 months after their last email (Jon, 27 Oct)
 //   waiting  check sent, no reply yet, under CHASE_DAYS
 //   chase    check sent CHASE_DAYS or more ago with no reply: a chaser is due
 //   chased   chaser sent, no reply yet, under CHASE_DAYS
@@ -31,7 +32,7 @@ export const ORG_TYPE = 'outreach';
 export const CHASE_DAYS = 21;
 export const CYCLE_DAYS = 365;
 export const DAY_CAP = 10;
-export const REGULAR_DAYS = 183;
+export const REGULAR_DAYS = 91;
 export const SUBJECT = 'Your entry on thelenches.org.uk';
 export const SITE = 'https://thelenches.org.uk';
 export const PAGE_NAMES = {
@@ -158,14 +159,14 @@ export function orgState(org, { replies = [], contacts = [], orgRow = null, toda
   if (!org.email) return { state: 'noemail', why: 'No email: check by phone or their website' };
   const next = low(orgRow && orgRow.next_check);
   if (next === 'never') return { state: 'held', why: 'Set to never' };
-  if (isDay(next) && next > today) return { state: 'held', why: `Done or snoozed until ${next}` };
+  const regular = (recent && recent.has(org.email)) || contactRecent(org.email, contacts, today);
+  const REGULAR = { state: 'regular', why: 'Emailed us in the last 3 months: no check needed' };
+  if (isDay(next) && next > today) return regular ? REGULAR : { state: 'held', why: `Done or snoozed until ${next}` };
   const rows = rowsFor(org.id, replies);
   if (rows.some((r) => low(r.status) === 'awaiting')) return { state: 'draft', why: 'A draft is waiting for you' };
   const check = rows.find((r) => !isChase(r) && SENT.includes(low(r.status)));
   if (!check || daysBetween(sentDay(check), today) >= CYCLE_DAYS) {
-    if ((recent && recent.has(org.email)) || contactRecent(org.email, contacts, today)) {
-      return { state: 'regular', why: 'Emailed us in the last 6 months: no check needed' };
-    }
+    if (regular) return REGULAR;
     return { state: 'due', why: check ? `Last checked ${sentDay(check)}` : 'Not checked yet' };
   }
   const since = str(check.sent_at || check.created_at);
@@ -202,11 +203,14 @@ export function orgLists(orgs, { replies = [], contacts = [], orgRows = [], hasT
   return { today, count: dayCount(replies, today), cap: DAY_CAP, hasTab, lists };
 }
 
-// Addresses to look up in Gmail: those that would otherwise be due today.
+// Addresses to look up in Gmail: those that would otherwise be due, or held by a date, today.
 export function dueEmails(orgs, { replies = [], contacts = [], orgRows = [], today }) {
   const byId = new Map((orgRows || []).map((r) => [str(r.id), r]));
-  return [...new Set(orgs.filter((o) => orgState(o, { replies, contacts, orgRow: byId.get(o.id) || null, today }).state === 'due')
-    .map((o) => o.email))];
+  return [...new Set(orgs.filter((o) => {
+    const orgRow = byId.get(o.id) || null;
+    const { state } = orgState(o, { replies, contacts, orgRow, today });
+    return state === 'due' || (state === 'held' && low(orgRow && orgRow.next_check) !== 'never');
+  }).map((o) => o.email))];
 }
 
 // Draft check / Draft chaser from the panel: { ok, kind: check|chase } or { error, status }.
