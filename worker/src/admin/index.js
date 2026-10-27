@@ -54,6 +54,8 @@
 //   POST /admin/api/orgnext         { id, expected, value }: Done / Snooze / Never / Clear, one
 //                                   stale-checked next_check write (the tab and row are made if
 //                                   missing)
+//   POST /admin/api/orgemails       { id, expected, value }: the organisation's other addresses
+//                                   (Org outreach other_emails, comma separated; same rules)
 //   GET  /admin/api/lessons         the Holly lessons tab, newest first (lessons.js)
 //   POST /admin/api/lesson          { op: add, value } (a new approved lesson; the tab is made
 //                                   if missing) | { op: edit, id, expected, value } (stale-
@@ -83,9 +85,9 @@ import { ACTIONS, decide, github } from '../core.js';
 import { verifyAccess } from './access.js';
 import { makeCsrf, checkCsrf, sameOrigin } from './csrf.js';
 import {
-  getValues, sheetGids, gmailImage, gmailImageParts, gmailText, gmailAny, driveImage, serviceAccountEmail, appendValues, addTab, deleteRow,
+  getValues, sheetGids, gmailImage, gmailImageParts, gmailText, gmailAny, driveImage, serviceAccountEmail, appendValues, addTab, deleteRow, writeCells,
 } from './google.js';
-import { readTable, readSettingsPairs, editCell, checkedWrite } from './sheet.js';
+import { readTable, readSettingsPairs, editCell, checkedWrite, colLetter } from './sheet.js';
 import {
   planPending, planReply, planPhoto, planSuggest, trustKeyFor, truthy, hasOwnImage, SUGGEST_TAB, SUGGEST_SOURCES,
 } from './actions.js';
@@ -101,7 +103,7 @@ import {
 } from './contacts.js';
 import { outreachLists, planNudge, idFor, sentRows } from './outreach.mjs';
 import {
-  ORG_TAB, ORG_HEADERS, orgEntries, orgLists, planOrgCheck, planNext, dueEmails, recentQuery,
+  ORG_TAB, ORG_HEADERS, orgEntries, orgLists, planOrgCheck, planNext, planOtherEmails, dueOrgs, recentQuery,
 } from './orgoutreach.mjs';
 // The site's own data, bundled at deploy (deploy-worker.yml also deploys when these change).
 import contactsData from '../../../src/_data/contacts.json' with { type: 'json' };
@@ -497,11 +499,11 @@ async function readOrgTab(env) {
 async function orgContext(env) {
   const [replies, contacts, tab] = await Promise.all([readTable(env, 'Replies'), readTable(env, CONTACTS_TAB), readOrgTab(env)]);
   const ctx = { replies: replies.rows, contacts: contacts.rows, orgRows: tab.rows, hasTab: tab.headers.includes('next_check'), today: ukToday() };
-  // In regular contact: those otherwise due (or held by a date) who emailed us in the last 3 months (one Gmail
-  // search each, so only the due ones; a few dozen at most).
-  const due = dueEmails(ORGS, ctx);
-  const found = await Promise.all(due.map((e) => gmailAny(env, recentQuery(e))));
-  return { ...ctx, recent: new Set(due.filter((e, i) => found[i])) };
+  // In regular contact: those otherwise due (or held by a date) who emailed us from any of their
+  // addresses in the last 3 months (one Gmail search each, only for those; a few dozen at most).
+  const due = dueOrgs(ORGS, ctx);
+  const found = await Promise.all(due.map((d) => gmailAny(env, recentQuery(d.addresses))));
+  return { ...ctx, recent: new Set(due.filter((d, i) => found[i]).map((d) => d.id)) };
 }
 
 async function doOrgCheck(env, body) {
@@ -516,27 +518,44 @@ async function doOrgCheck(env, body) {
   return json({ ok: true, message: `${plan.kind === 'chase' ? 'Chaser' : 'Check'} requested. Holly emails you the draft to approve in a minute or two.` });
 }
 
-async function doOrgNext(env, body) {
-  const id = String(body.id ?? '');
-  if (!ORGS.some((o) => o.id === id)) return json({ ok: false, error: 'No such organisation: reload the page' }, 404);
-  const plan = planNext(body.value);
-  if (plan.error) return json({ ok: false, ...plan }, 400);
+// One stale-checked Org outreach cell for organisation `id`. Makes the tab, its headers, a
+// missing header (at the end) or the organisation's row as needed.
+async function orgWrite(env, id, field, expected, value) {
   let { headers, rows, missing } = await readOrgTab(env);
   if (!headers.some(Boolean)) {
     if (missing) await addTab(env, ORG_TAB);
     await appendValues(env, ORG_TAB, [ORG_HEADERS]);
     headers = ORG_HEADERS;
     rows = [];
-  } else if (!headers.includes('id') || !headers.includes('next_check')) {
-    return json({ ok: false, error: 'The Org outreach tab has no id / next_check headers' }, 400);
+  } else if (!headers.includes('id')) {
+    return json({ ok: false, error: 'The Org outreach tab has no id header' }, 400);
+  } else if (!headers.includes(field)) {
+    await writeCells(env, [{ range: `'${ORG_TAB}'!${colLetter(headers.length)}1`, values: [[field]] }]);
+    headers = [...headers, field];
   }
   if (!rows.some((r) => String(r.id ?? '') === id)) {
-    if (String(body.expected ?? '') !== '') return json({ ok: false, error: 'Changed in the Sheet since you loaded the page', current: '' }, 409);
-    await appendValues(env, ORG_TAB, [headers.map((h) => ({ id, next_check: plan.value })[h] ?? '')]);
-    return json({ ok: true, value: plan.value });
+    if (String(expected ?? '') !== '') return json({ ok: false, error: 'Changed in the Sheet since you loaded the page', current: '' }, 409);
+    await appendValues(env, ORG_TAB, [headers.map((h) => ({ id, [field]: value })[h] ?? '')]);
+    return json({ ok: true, value });
   }
-  const r = await checkedWrite(env, { tab: ORG_TAB, keyCol: 'id', key: id, field: 'next_check', expected: body.expected, value: plan.value });
+  const r = await checkedWrite(env, { tab: ORG_TAB, keyCol: 'id', key: id, field, expected, value });
   return r.ok ? json({ ok: true, value: r.value }) : json(r, r.status);
+}
+
+async function doOrgNext(env, body) {
+  const id = String(body.id ?? '');
+  if (!ORGS.some((o) => o.id === id)) return json({ ok: false, error: 'No such organisation: reload the page' }, 404);
+  const plan = planNext(body.value);
+  if (plan.error) return json({ ok: false, ...plan }, 400);
+  return orgWrite(env, id, 'next_check', body.expected, plan.value);
+}
+
+async function doOrgEmails(env, body) {
+  const id = String(body.id ?? '');
+  if (!ORGS.some((o) => o.id === id)) return json({ ok: false, error: 'No such organisation: reload the page' }, 404);
+  const plan = planOtherEmails(body.value);
+  if (plan.error) return json({ ok: false, ...plan }, 400);
+  return orgWrite(env, id, 'other_emails', body.expected, plan.value);
 }
 
 // The Holly lessons tab, or an empty list if it doesn't exist yet.
@@ -710,6 +729,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/nudge') return await doNudge(env, body);
       if (path === '/admin/api/orgcheck') return await doOrgCheck(env, body);
       if (path === '/admin/api/orgnext') return await doOrgNext(env, body);
+      if (path === '/admin/api/orgemails') return await doOrgEmails(env, body);
       if (path === '/admin/api/lesson') return await doLesson(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(env, body);
       return json({ ok: false, error: 'Not found' }, 404);

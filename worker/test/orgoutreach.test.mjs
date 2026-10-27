@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 import {
-  orgEntries, orgState, orgLists, planOrgCheck, planNext, dayCount, dueEmails, recentQuery, PAGE_NAMES, DAY_CAP,
+  orgEntries, orgState, orgLists, planOrgCheck, planNext, dayCount, dueOrgs, recentQuery, addressesFor, planOtherEmails, PAGE_NAMES, DAY_CAP,
 } from '../src/admin/orgoutreach.mjs';
 import { dispatchFor, validPayload, ACTIONS } from '../src/core.js';
 
@@ -59,20 +59,44 @@ test('states', () => {
   assert.equal(at([{ ...sentCheck('lenches-club', lc.email, '2026-10-06'), status: 'skipped' }]), 'due', 'a rejected check does not count');
   assert.equal(orgState(org('glads'), { today: TODAY }).state, 'noemail');
   // In regular contact: emailed us in the last 3 months (overrides Done / Snooze, not Never).
-  assert.equal(at([], { recent: new Set([lc.email]) }), 'regular');
+  assert.equal(at([], { recent: new Set(['lenches-club']) }), 'regular');
   assert.equal(at([], { contacts: [{ email: 'x@example.org', other_emails: lc.email, last_contact: '2026-09-01' }] }), 'regular');
   assert.equal(at([], { contacts: [{ email: lc.email, last_contact: '2026-07-01' }] }), 'due', 'over 3 months ago');
-  assert.equal(at([], { recent: new Set([lc.email]), orgRow: { id: 'lenches-club', next_check: '2027-10-27' } }), 'regular', 'regular beats Done');
+  assert.equal(at([], { recent: new Set(['lenches-club']), orgRow: { id: 'lenches-club', next_check: '2027-10-27' } }), 'regular', 'regular beats Done');
   assert.equal(at([], { contacts: [{ email: lc.email, last_contact: '2026-07-01' }], orgRow: { id: 'lenches-club', next_check: '2027-10-27' } }), 'held', 'lapsed: back to Done');
-  assert.equal(at([], { recent: new Set([lc.email]), orgRow: { id: 'lenches-club', next_check: 'never' } }), 'held', 'Never stays never');
-  assert.ok(dueEmails(ORGS, { replies: [], contacts: [], orgRows: [{ id: 'lenches-club', next_check: '2027-10-27' }], today: TODAY }).includes(lc.email), 'Done ones are looked up');
-  assert.equal(at([sentCheck('lenches-club', lc.email, '2026-10-01')], { recent: new Set([lc.email]) }), 'chase', 'only replaces due');
-  assert.equal(planOrgCheck(lc, { replies: [], contacts: [], today: TODAY, recent: new Set([lc.email]) }).status, 409);
-  assert.deepEqual(dueEmails(ORGS, { replies: [], contacts: [], orgRows: [{ id: 'lenches-club', next_check: 'never' }], today: TODAY })
-    .includes(lc.email), false, 'held ones are not looked up');
+  assert.equal(at([], { recent: new Set(['lenches-club']), orgRow: { id: 'lenches-club', next_check: 'never' } }), 'held', 'Never stays never');
+  assert.ok(dueOrgs(ORGS, { replies: [], contacts: [], orgRows: [{ id: 'lenches-club', next_check: '2027-10-27' }], today: TODAY }).some((d) => d.id === 'lenches-club'), 'Done ones are looked up');
+  assert.equal(at([sentCheck('lenches-club', lc.email, '2026-10-01')], { recent: new Set(['lenches-club']) }), 'chase', 'only replaces due');
+  assert.equal(planOrgCheck(lc, { replies: [], contacts: [], today: TODAY, recent: new Set(['lenches-club']) }).status, 409);
+  assert.equal(dueOrgs(ORGS, { replies: [], contacts: [], orgRows: [{ id: 'lenches-club', next_check: 'never' }], today: TODAY })
+    .some((d) => d.id === 'lenches-club'), false, 'never ones are not looked up');
   assert.equal(recentQuery('A@Example.org'), 'from:a@example.org newer_than:91d');
+  assert.equal(recentQuery(['a@x.org', 'B@y.org', 'a@x.org']), '{from:a@x.org from:b@y.org} newer_than:91d');
+});
+
+test('an organisation has several addresses', () => {
+  const lc = org('lenches-club');
+  const hall = org('church-lench-hall');
+  const contacts = [
+    { email: 'chair@example.org', organisation: 'The Lenches Club committee', status: 'organiser', last_contact: '2026-10-20', other_emails: 'chair2@example.org' },
+    { email: 'sec@example.org', organisation: 'Lenches Club', status: 'ignore', last_contact: '2026-10-20' },
+    { email: 'cl@example.org', organisation: 'Church Lench', status: 'contributor', last_contact: '2026-10-20' },
+  ];
+  const row = { id: 'lenches-club', other_emails: 'Treasurer@Example.org, junk' };
+  assert.deepEqual(addressesFor(lc, row, contacts).sort(), ['chair2@example.org', 'chair@example.org', lc.email, 'treasurer@example.org'].sort());
+  assert.deepEqual(addressesFor(hall, null, contacts), [hall.email], '"Church Lench" is not the village hall; ignore rows never count');
+  assert.equal(orgState(lc, { contacts, today: TODAY }).state, 'regular', 'a member\'s recent mail counts');
+  assert.equal(orgState(lc, { contacts: [], orgRow: row, today: TODAY, recent: new Set(['lenches-club']) }).state, 'regular');
+  const reply = { reply_id: 'm2-ack', message_id: 'm2', to: 'treasurer@example.org', type: 'ack', status: 'sent', created_at: '2026-10-10 12:00' };
+  assert.equal(orgState(lc, { replies: [sentCheck('lenches-club', lc.email, '2026-10-01'), reply], contacts: [], orgRow: row, today: TODAY }).state, 'replied',
+    'a reply from another address counts');
+  const d = dueOrgs([lc], { replies: [], contacts, orgRows: [{ ...row, next_check: '2027-10-27' }], today: '2027-03-01' })[0];
+  assert.ok(d.addresses.includes('treasurer@example.org') && d.addresses.includes('chair@example.org'), 'Gmail looks up every address');
+  assert.deepEqual(planOtherEmails(' A@b.org ,c@d.org; a@b.org '), { value: 'a@b.org, c@d.org' });
+  assert.deepEqual(planOtherEmails(''), { value: '' });
+  assert.ok(planOtherEmails('a@b.org, nope').error);
   // Another organisation's rows never count.
-  assert.equal(at([sentCheck('tennis', lc.email, '2026-10-20')]), 'due');
+  assert.equal(orgState(lc, { replies: [sentCheck('tennis', lc.email, '2026-10-20')], contacts: [], today: TODAY }).state, 'due');
 });
 
 test('lists, cap and plans', () => {
