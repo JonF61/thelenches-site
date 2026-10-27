@@ -1,6 +1,7 @@
 ---
 layout: base.njk
 title: Home
+search: false
 description: Events, notices, roadworks and information for the Lenches villages in Worcestershire, and the weekly Thursday newsletter.
 cards:
   - { title: "Events", url: "/events/", icon: calendar, text: "What's on across the villages, week by week." }
@@ -69,7 +70,7 @@ livingCards:
   </section>
 
   {#- Feedback form near the foot of the page (other pages: above the sign-up band). -#}
-  <div class="home-feedback">{% include "feedback.njk" %}</div>
+  <div class="home-feedback" data-pagefind-ignore>{% include "feedback.njk" %}</div>
 
   <img class="banner-img home-aerial" src="{{ '/images/lenches-aerial.jpg' | url }}" alt="The Lenches, Worcestershire, seen from the air" loading="lazy">
 

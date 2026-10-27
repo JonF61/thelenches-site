@@ -1,0 +1,38 @@
+---
+layout: base.njk
+title: Search
+description: Search the Lenches website for events, notices, groups, services and village information.
+permalink: /search/
+search: false
+---
+{#- Pagefind search. The index (/pagefind/) is made by build.yml after Eleventy, so it is missing from a plain
+    local build: the page then says search isn't available. ?q= in the link starts a search. -#}
+<link href="{{ '/pagefind/pagefind-ui.css' | url }}" rel="stylesheet">
+<style>
+#search{--pagefind-ui-scale:.9;--pagefind-ui-primary:#b5471b;--pagefind-ui-text:#2b2b2b;--pagefind-ui-background:#fff;--pagefind-ui-border:#e5e0d8;--pagefind-ui-tag:#f4efe7;--pagefind-ui-border-width:1px;--pagefind-ui-border-radius:10px;--pagefind-ui-font:"Work Sans",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;margin:1rem 0 1.5rem}
+#search .pagefind-ui__result-link{color:#b5471b}
+#search mark{background:#f9eeda;color:inherit}
+.sr-help{color:#666;font-size:.92rem}
+</style>
+<main class="container">
+  <h1>Search</h1>
+  <p class="sr-help">Search events, notices, groups, services and village information across the website.</p>
+  <div id="search"></div>
+  <noscript><p>Search needs JavaScript turned on. Every page is listed at the foot of this page.</p></noscript>
+</main>
+<script src="{{ '/pagefind/pagefind-ui.js' | url }}"></script>
+<script>
+(function () {
+  var box = document.getElementById('search');
+  if (typeof PagefindUI !== 'function') {
+    box.innerHTML = '<p>Search isn\'t available just now. Every page is listed at the foot of this page.</p>';
+    return;
+  }
+  var ui = new PagefindUI({
+    element: '#search', showSubResults: true, showImages: false, resetStyles: false, autofocus: true,
+    translations: { placeholder: 'Search the website', zero_results: 'Nothing found for [SEARCH_TERM]. Try a shorter or different word.' }
+  });
+  var q = new URLSearchParams(location.search).get('q');
+  if (q) ui.triggerSearch(q);
+})();
+</script>
