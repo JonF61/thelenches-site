@@ -74,9 +74,14 @@
 //   POST /admin/api/photo-file      { op: rename|move|discard|restore, ... }: Drive file
 //                                   management, stale-checked, inside Lenches Photos only
 //                                   (photofiles.js); nothing is ever created, binned or deleted
+//   GET  /admin/page?p=/privacy/    Edit page: the live page with the in-page editor
+//                                   (pageedit.js; footer "Edit page" link on the site)
+//   POST /admin/api/page-save       { path, changes }: wording and link edits to that page's
+//                                   .njk file, one commit to main (pageedit.js savePage)
 //   GET  /admin/img/mail/MSG/PART   a Pending image (email attachment)
 //   GET  /admin/img/drive/ID[?size=N]  a Photos image (Drive thumbnail, else the file)
-// Nothing here can send the newsletter or change repository code: the only GitHub call
+// Nothing here can send the newsletter or change repository code, except Edit page's
+// wording edits to page templates (src/*.njk, pageedit.js). Otherwise the only GitHub call
 // is decide(), for the item and reply actions listed in actions.js, the Feedback
 // actions in feedback.js, outreach's nudge (a draft only; it never sends) and approving or
 // rejecting a proposed Holly lesson.
@@ -116,8 +121,10 @@ import {
 } from './lessons.js';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
+import { PAGEEDIT_JS, PAGEEDIT_CSS, PAGEEDIT_VERSION } from './ui/pageedit.js';
+import { editorPage, savePage } from './pageedit.js';
 
-const MAX_BODY = 20000;
+const MAX_BODY = 60000;
 const SECURITY_HEADERS = {
   'cache-control': 'no-store',
   'x-robots-tag': 'noindex',
@@ -696,6 +703,17 @@ export async function handleAdmin(request, env) {
       if (path === '/admin') return shell();
       if (path === '/admin/app.js') return asset(CLIENT_JS, 'text/javascript');
       if (path === '/admin/app.css') return asset(CLIENT_CSS, 'text/css');
+      if (path === '/admin/pageedit.js') return asset(PAGEEDIT_JS, 'text/javascript');
+      if (path === '/admin/pageedit.css') return asset(PAGEEDIT_CSS, 'text/css');
+      if (path === '/admin/page') {
+        const pg = await editorPage(env, {
+          page: url.searchParams.get('p'), origin: url.origin, csrf: await makeCsrf(env, auth.email), version: PAGEEDIT_VERSION,
+        });
+        return new Response(pg.html, {
+          status: pg.status,
+          headers: { ...SECURITY_HEADERS, 'content-type': 'text/html; charset=utf-8', 'content-security-policy': pg.csp },
+        });
+      }
       if (path === '/admin/api/mail-images') return await mailImages(env, url);
       if (path === '/admin/api/mail-text') return await mailText(env, url);
       if (path === '/admin/api/session') return json({ email: auth.email, csrf: await makeCsrf(env, auth.email) });
@@ -732,6 +750,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/orgemails') return await doOrgEmails(env, body);
       if (path === '/admin/api/lesson') return await doLesson(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(env, body);
+      if (path === '/admin/api/page-save') return fromResult(await savePage(env, body));
       return json({ ok: false, error: 'Not found' }, 404);
     }
     return new Response('Method not allowed', { status: 405, headers: SECURITY_HEADERS });
