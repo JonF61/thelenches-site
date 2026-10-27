@@ -24,11 +24,22 @@ description: Contact the Lenches newsletter, submit content, and find village co
       <caption class="sr-only">Village contacts</caption>
       <thead><tr><th scope="col">Organisation</th><th scope="col">Contact</th></tr></thead>
       <tbody>
-        <tr><th scope="row">The Lenches Club</th><td><a href="mailto:lenchesclubmail@gmail.com">lenchesclubmail@gmail.com</a> &middot; 01386 870221</td></tr>
-        <tr><th scope="row">Church Lench Village Hall</th><td><a href="mailto:clvillagehallbookings@gmail.com">clvillagehallbookings@gmail.com</a></td></tr>
-        <tr><th scope="row">Tennis Club</th><td><a href="mailto:lenchestc@gmail.com">lenchestc@gmail.com</a></td></tr>
-        <tr><th scope="row">Cricket Club</th><td><a href="mailto:cricket.lenches@googlemail.com">cricket.lenches@googlemail.com</a></td></tr>
-        <tr><th scope="row">Newsletter / website</th><td><a href="mailto:{{ site.email }}">{{ site.email }}</a></td></tr>
+        {#- Rows come from src/_data/contacts.json (council and school rows read council.json and schools.json). -#}
+        {%- for id in contacts.table %}
+        {%- set o = contacts.orgs[id] %}
+        {%- set d = o %}
+        {%- if o.council %}{% for p in council.parishes %}{% if p.key == o.council %}{% set d = p %}{% endif %}{% endfor %}{% endif %}
+        {%- if o.school %}{% for sc in schools.local %}{% if sc.name == o.school %}{% set d = sc %}{% endif %}{% endfor %}{% endif %}
+        {%- set email = site.email if o.siteEmail else d.email %}
+        <tr><th scope="row">{{ o.name }}</th><td>
+          {%- if o.see %}<a href="{{ o.see | url }}">Contact details on the Groups page</a>
+          {%- else %}
+            {%- if o.council %}Clerk: {% endif %}
+            {%- if email %}<a href="mailto:{{ email }}">{{ email }}</a>{% endif %}
+            {%- if d.phone %}{% if email %} &middot; {% endif %}{{ d.phone }}{% endif %}
+            {%- if not email and not d.phone %}{% if d.contactUrl %}<a href="{{ d.contactUrl }}" target="_blank" rel="noopener">Contact form</a>{% elif o.url %}<a href="{{ o.url }}" target="_blank" rel="noopener">Website</a>{% endif %}{% endif %}
+          {%- endif %}</td></tr>
+        {%- endfor %}
       </tbody>
     </table>
   </section>

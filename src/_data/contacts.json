@@ -1,0 +1,20 @@
+{
+  "_about": "Single source for organisation contact details. The Contact page table lists `table` in order; Groups and Halls read their emails and phones from `orgs`. A `council` key reads the clerk details from council.json and a `school` key reads from schools.json, so those stay in one place. `see` sends the table row to that page instead of repeating an individual's personal details.",
+  "table": ["lenches-club", "church-lench-hall", "rous-lench-hall", "south-lenches-pc", "rous-lench-pc", "first-school", "preschool", "tennis", "cricket", "glads", "walking", "orchard", "amphitheatre", "website"],
+  "orgs": {
+    "lenches-club": { "name": "The Lenches Club", "email": "lenchesclubmail@gmail.com", "phone": "01386 870221", "url": "https://thelenchesclub.co.uk/" },
+    "church-lench-hall": { "name": "Church Lench Village Hall", "email": "clvillagehallbookings@gmail.com" },
+    "rous-lench-hall": { "name": "Rous Lench Village Hall", "email": "info@rouslench.com", "phone": "01386 896155", "url": "https://rouslench.com/" },
+    "south-lenches-pc": { "name": "South Lenches Parish Council", "council": "south-lenches" },
+    "rous-lench-pc": { "name": "Rous Lench Parish Council", "council": "rous-lench" },
+    "first-school": { "name": "Church Lench CofE First School", "school": "Church Lench CofE First School" },
+    "preschool": { "name": "The Lenches Pre-school", "school": "The Lenches Pre-school" },
+    "tennis": { "name": "Lenches Tennis Club", "email": "lenchestc@gmail.com", "url": "https://clubspark.lta.org.uk/TheLenchesTennisClub" },
+    "cricket": { "name": "Lenches Cricket Club", "email": "cricket.lenches@googlemail.com", "url": "https://lenchescc.play-cricket.com/" },
+    "glads": { "name": "GLADS (amateur dramatics)", "person": "John Tookney", "email": "John@tookney.swiftserve.net", "facebook": "https://www.facebook.com/gladslenches", "see": "/groups/#glads" },
+    "walking": { "name": "The Lenches Walking Group", "person": "Pete Marston", "email": "petemarston@msn.com", "phone": "01386 872717", "see": "/groups/#walking" },
+    "orchard": { "name": "Yates Community Orchard", "person": "Jonathan Hazlewood", "email": "jbpmh1013@gmail.com", "see": "/groups/#orchard" },
+    "amphitheatre": { "name": "Lenches Amphitheatre", "url": "https://lenchestheatre.co.uk/" },
+    "website": { "name": "Newsletter / website", "siteEmail": true }
+  }
+}
