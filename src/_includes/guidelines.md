@@ -31,7 +31,7 @@ A poster or photo is welcome: photos (JPEG, PNG or straight from an iPhone) or a
 
 ### When items appear
 
-- Events appear no more than **two weeks** before they take place. Larger events may get one earlier "save the date" mention.
+- Events are listed on the website as soon as we've added them, and appear in the newsletter no more than **two weeks** before they take place. Larger events may get one earlier "save the date" mention in the newsletter.
 - The website lists an event until its date.
 - The newsletter shows an item **up to three times**.
 - A flyer or poster image is shown **no more than twice** in total.

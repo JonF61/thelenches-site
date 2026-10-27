@@ -17,14 +17,14 @@ Hi {name},
 Thanks for sending "{title}", it's on its way to the website and Thursday's newsletter.
 
 ## ack_one_held
-Thanks for sending "{title}". We list events up to two weeks ahead, so we'll hang on to it and start showing it from {show_from}.
+Thanks for sending "{title}", it's on its way to the website. We include events in the newsletter up to two weeks ahead, so it'll go in from {show_from}.
 
 ## ack_many
 Thanks for these, they're on their way to the website and Thursday's newsletter:
 {titles}
 
 ## ack_many_held
-Thanks for these. We list events up to two weeks ahead, so we'll hang on to them and they'll start showing nearer the time:
+Thanks for these, they're on their way to the website. We include events in the newsletter up to two weeks ahead, so they'll go in nearer the time:
 {titles}
 
 ## ack_none
@@ -37,10 +37,10 @@ No problem, we'll use your wording for "{title}" exactly as written, just fixing
 Sorry, we couldn't open {files}. Photos (JPEG, PNG or straight off an iPhone) and PDF flyers work best, or just paste the details into an email.
 
 ## too_early
-"{title}" is a little way off yet, so we'll hang on to it and start showing it from {show_from} (we list events up to two weeks ahead).
+"{title}" is on its way to the website too, and will go in the newsletter from {show_from} (we include events up to two weeks ahead).
 
 ## too_early_many
-These ones are a little way off yet, so we'll hang on to them and start showing each one two weeks before (we list events up to two weeks ahead):
+These ones are on their way to the website too, and will go in the newsletter nearer the time (we include events up to two weeks ahead):
 {titles}
 
 ## after_deadline
