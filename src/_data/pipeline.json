@@ -105,6 +105,38 @@
         "url": "/images/items/1a17d10d5d56383f-5.webp",
         "alt": "Hands arranging a festive wreath of fir, berries and pine cones on a wooden table"
       }
+    },
+    {
+      "id": "1a17d10d5d56383f-6",
+      "title": "Children's Christmas Party — The Vale Golf & Country Club",
+      "body": "A Christmas party for children with Santa at The Vale Golf and Country Club, Bishampton. Sunday 13 December, 11am-2.30pm, £20 per child. Booking via the club's website.",
+      "date": "2026-12-13",
+      "village": "Lenches",
+      "expires": "2026-12-13",
+      "link": {
+        "text": "Children's Christmas Party: booking",
+        "url": "https://thevaleworcestershire.co.uk/upcoming-events/childrens-christmas-party-2026/"
+      },
+      "image": {
+        "url": "/images/items/1a17d10d5d56383f-6.webp",
+        "alt": "Santa with children and adults celebrating with confetti at a Christmas party"
+      }
+    },
+    {
+      "id": "1a17d10d5d56383f-7",
+      "title": "90s and 00s January Party Night — The Vale Golf & Country Club",
+      "body": "A 90s and 00s themed party night with DJ at The Vale Golf and Country Club, Bishampton. Saturday 23 January, 7pm, £39 per person. Booking via the club's website.",
+      "date": "2027-01-23",
+      "village": "Lenches",
+      "expires": "2027-01-23",
+      "link": {
+        "text": "January Party Night: booking",
+        "url": "https://thevaleworcestershire.co.uk/upcoming-events/january-party-night/"
+      },
+      "image": {
+        "url": "/images/items/1a17d10d5d56383f-7.webp",
+        "alt": "People dancing under disco balls at a 90s and 00s themed party night"
+      }
     }
   ],
   "notices": [
