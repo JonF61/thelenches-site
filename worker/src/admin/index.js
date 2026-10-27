@@ -48,7 +48,7 @@
 //   GET  /admin/api/orgs            organisation outreach (orgoutreach.mjs orgLists): each
 //                                   organisation in contacts.json `outreach` and its state, from
 //                                   Replies, Contacts and the Org outreach tab, plus a Gmail
-//                                   search per due one (emailed us in 6 months = regular contact)
+//                                   search per due one (emailed us in 3 months = regular contact)
 //   POST /admin/api/orgcheck        { id }: Draft check / Draft chaser, if planOrgCheck allows it
 //                                   today, through decide() (action orgcheck, id = the slug)
 //   POST /admin/api/orgnext         { id, expected, value }: Done / Snooze / Never / Clear, one
@@ -497,7 +497,7 @@ async function readOrgTab(env) {
 async function orgContext(env) {
   const [replies, contacts, tab] = await Promise.all([readTable(env, 'Replies'), readTable(env, CONTACTS_TAB), readOrgTab(env)]);
   const ctx = { replies: replies.rows, contacts: contacts.rows, orgRows: tab.rows, hasTab: tab.headers.includes('next_check'), today: ukToday() };
-  // In regular contact: those otherwise due who emailed us in the last 6 months (one Gmail
+  // In regular contact: those otherwise due (or held by a date) who emailed us in the last 3 months (one Gmail
   // search each, so only the due ones; a few dozen at most).
   const due = dueEmails(ORGS, ctx);
   const found = await Promise.all(due.map((e) => gmailAny(env, recentQuery(e))));

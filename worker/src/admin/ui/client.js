@@ -21,7 +21,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '34';
+export const UI_VERSION = '35';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -2235,7 +2235,7 @@ export const CLIENT_JS = String.raw`
       section('Draft waiting', 'A check or chaser is waiting for your Approve.', L.draft),
       section('Waiting for a reply', 'Checked or chased in the last 3 weeks.', L.waiting.concat(L.chased)),
       section('No reply', 'Chased 3 weeks ago or more with no reply: taken as all fine until next year.', L.noreply),
-      section('In regular contact', 'They emailed us in the last 6 months, so no check is needed.', L.regular || []),
+      section('In regular contact', 'They emailed us in the last 3 months, so no check is needed (it lapses 3 months after their last email).', L.regular || []),
       section('Done, snoozed or never', 'Held back until the date shown, or for good.', L.held),
       section('No email', 'No address to write to: check these by phone or on their website.', L.noemail)
     ];
