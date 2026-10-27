@@ -4,6 +4,9 @@
 // /admin/api/page-save, with GitHub's contents API mocked from src/. Edits a Privacy
 // paragraph, adds a link, saves, and checks the committed file. Saves screenshots (SHOTS=dir).
 // Run: node worker/test/ui-pageedit.check.mjs
+// and bundled as Wrangler does (keep-names), which is how the editor script really ships:
+//   npx esbuild@0.25 worker/test/ui-pageedit.check.mjs --bundle --keep-names --platform=node \
+//     --format=esm --external:playwright --outfile=worker/test/.bundled-check.mjs && node worker/test/.bundled-check.mjs
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';

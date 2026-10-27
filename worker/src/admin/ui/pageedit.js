@@ -7,7 +7,7 @@
 // changes or removes a link. Save shows each change (before / after), then sends the
 // changed blocks, re-serialised as text plus simple inline tags, to /admin/api/page-save.
 
-export const PAGEEDIT_VERSION = '1';
+export const PAGEEDIT_VERSION = '2';
 
 function editor() {
   const data = JSON.parse(document.getElementById('lenches-edit-data').textContent);
@@ -230,7 +230,10 @@ function editor() {
   refresh();
 }
 
-export const PAGEEDIT_JS = `(${editor.toString()})();\n`;
+// Wrangler bundles with keep-names, which puts __name(fn, "name") calls inside editor();
+// in the browser that helper doesn't exist, so a stand-in comes first (28 Oct: without it
+// the editor never started). ui-pageedit.check.mjs is run bundled the same way.
+export const PAGEEDIT_JS = `var __name = function (f) { return f; };\n(${editor.toString()})();\n`;
 
 export const PAGEEDIT_CSS = `
 .le-bar{position:fixed;top:0;left:0;right:0;z-index:10000;display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .6rem;padding:.55rem 1rem;background:#2E3D26;color:#fff;font:500 15px/1.4 system-ui,-apple-system,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.25)}
