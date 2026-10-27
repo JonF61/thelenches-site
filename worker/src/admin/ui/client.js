@@ -21,7 +21,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '36';
+export const UI_VERSION = '37';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -31,7 +31,7 @@ export const CLIENT_JS = String.raw`
     picked: {}, ff: '', openF: {}, drag: null, busy: false, order: {}, shown: '' };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
-  var VIEWS = [['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['health', 'Health']];
+  var VIEWS = [['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['health', 'Health'], ['activity', 'Activity']];
   // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
   var INTROS = {
     queue: 'Events and notices sent in by email or picked up from feeds, waiting for you to approve or reject. Approved items go on the website and into Thursday\'s newsletter.',
@@ -41,7 +41,8 @@ export const CLIENT_JS = String.raw`
     lessons: 'Rules Holly follows in every draft. Approve or reject the weekly suggestions, edit or delete any lesson, or add your own (yours count as approved).',
     contacts: 'Everyone who sends in, or could send in, news and events, with their profile, contributions and status. Outreach shows who is due a friendly nudge; Organisations, the yearly check of each organisation\'s entry on the site.',
     photos: 'Photos in the Lenches Photos folders in Google Drive. Approve or reject new ones, rename them, or move them between folders.',
-    health: 'The daily diagnostic, the watchdog and the Google account the panel uses. Look here if something seems wrong.'
+    health: 'The daily diagnostic, the watchdog and the Google account the panel uses. Look here if something seems wrong.',
+    activity: 'What the website\'s automatic jobs on GitHub are doing: checking email, publishing, building the site, sending. Newest first; tap a name to open it on GitHub.'
   };
   function intro(view) { return h('p', { class: 'meta intro' }, INTROS[view]); }
   var FLAG_LABELS = {
@@ -315,7 +316,7 @@ export const CLIENT_JS = String.raw`
       owed: Array.isArray(d.owed) ? d.owed.filter(function (o) { return !S.done['reply:' + o.holding.reply_id]; }).length : '!',
       photos: d.photos && !d.photos.error ? d.photos.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length : '!',
       feedback: d.feedback && !d.feedback.error ? fbRows(d, 'waiting').length + fbRows(d, 'reply').length : '!',
-      contacts: null, lessons: null, health: null
+      contacts: null, lessons: null, health: null, activity: null
     };
   }
 
@@ -342,6 +343,7 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'feedback') return [h('div', { class: 'list wide' }, top, feedbackView(d))];
     if (S.view === 'contacts') return [h('div', { class: 'list wide' }, top, contactsView())];
     if (S.view === 'lessons') return [h('div', { class: 'list wide' }, top, lessonsView())];
+    if (S.view === 'activity') return [h('div', { class: 'list wide' }, top, activityView())];
     return split(withIntro(queueList(d)), 'pending');
   }
 
@@ -2592,6 +2594,59 @@ export const CLIENT_JS = String.raw`
       })));
     els.push(h('div', { class: 'card' }, h('h2', null, 'Daily diagnostic (latest 7)'), t, h('div', { class: 'actions' }, sheetLink('Health', 1))));
     return els;
+  }
+
+  /* ------------------------------------------------------------- activity -- */
+
+  // GitHub Actions runs (admin/runs.js), read-only; refreshed every 15 seconds while open.
+  async function loadRuns() {
+    S.rLoading = true;
+    var r = await api('/admin/api/runs');
+    S.rLoading = false;
+    S.runs = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    S.runsAt = Date.now();
+    if (S.view === 'activity') render();
+  }
+  setInterval(function () {
+    if (S.view === 'activity' && !document.hidden && !S.rLoading) loadRuns();
+  }, 15000);
+
+  function mins(ms) {
+    var s = Math.max(0, Math.round(ms / 1000));
+    return s < 60 ? s + 's' : Math.floor(s / 60) + 'm ' + String(s % 60).padStart(2, '0') + 's';
+  }
+  function hhmm(iso) {
+    var d = new Date(iso);
+    if (isNaN(d)) return '';
+    var today = new Date().toDateString() === d.toDateString();
+    return d.toLocaleString('en-GB', today ? { hour: '2-digit', minute: '2-digit' }
+      : { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function activityView() {
+    var t = S.runs;
+    if (!t) {
+      if (!S.rLoading) loadRuns();
+      return [h('p', { class: 'loading' }, 'Loading activity…')];
+    }
+    if (t.error) return [errorNote(t, 'Activity'), h('button', { class: 'btn', onclick: function () { S.runs = null; render(); } }, 'Try again')];
+    var rows = (t.runs || []).map(function (r) {
+      var running = r.status !== 'completed';
+      var c = r.conclusion;
+      var icon = running ? '⟳' : c === 'success' ? '✓' : (c === 'failure' || c === 'timed_out' || c === 'startup_failure') ? '✗' : '–';
+      var label = running ? (r.status === 'in_progress' ? 'running' : 'waiting') : c === 'success' ? 'done' : c === 'failure' ? 'failed' : str(c).replace(/_/g, ' ');
+      var took = running ? mins(Date.now() - Date.parse(r.started)) : mins(Date.parse(r.updated) - Date.parse(r.started));
+      return h('tr', { class: running ? 'run-on' : (icon === '✗' ? 'run-bad' : null) },
+        h('td', { class: 'run-i', 'aria-hidden': 'true' }, icon),
+        h('td', null, h('a', { href: r.url, target: '_blank', rel: 'noopener' }, str(r.name)),
+          h('div', { class: 'meta' }, [str(r.title), str(r.event)].filter(Boolean).join(' · '))),
+        h('td', null, label),
+        h('td', { class: 'run-t' }, hhmm(r.started), h('div', { class: 'meta' }, took)));
+    });
+    return [h('div', { class: 'card' },
+      h('table', { class: 'h runs' }, h('thead', null, h('tr', null, h('th', null, ''), h('th', null, 'Job'), h('th', null, 'Status'), h('th', null, 'Started'))),
+        h('tbody', null, rows.length ? rows : h('tr', null, h('td', { colspan: 4 }, 'No runs yet.')))),
+      h('p', { class: 'meta' }, 'The latest ' + rows.length + ' runs · updates every 15 seconds' + (S.runsAt ? ' · checked ' + hhmm(new Date(S.runsAt).toISOString()) : '')))];
   }
 
   wideQ.addEventListener('change', function () { if (S.data) render(); });

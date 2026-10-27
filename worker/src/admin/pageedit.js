@@ -185,7 +185,15 @@ export async function savePage(env, body) {
     return { ok: false, status: 409, error: 'The page changed while saving. Reload and try again.' };
   }
   if (!r.ok) return { ok: false, status: 502, error: `GitHub did not accept the change (HTTP ${r.status}). Nothing has changed.` };
-  return { ok: true, count: done.count, message: `Saved ${done.count} change${done.count === 1 ? '' : 's'}. Live in about 2 minutes.` };
+  const commit = ((await r.json().catch(() => ({}))).commit) || {};
+  return {
+    ok: true,
+    count: done.count,
+    message: `Saved ${done.count} change${done.count === 1 ? '' : 's'}.`,
+    // For the editor's "Building… / Live" status (/admin/api/build-status).
+    sha: commit.sha || '',
+    at: (commit.committer && commit.committer.date) || new Date().toISOString(),
+  };
 }
 
 /* ---------------------------------------------------------- editor page -- */
@@ -251,7 +259,7 @@ export async function editorPage(env, { page, origin, csrf, version, fetcher = f
   const blocks = editableBlocks(text).map(({ tag, raw, text: t }) => ({ tag, raw, text: t })); // whole stays here
   return {
     status: 200,
-    html: editorHtml(html, { origin, site, page: p, version, data: { page: p, path, sha, csrf, blocks, live: new URL(p, site).href, api: `${origin}/admin/api/page-save` } }),
+    html: editorHtml(html, { origin, site, page: p, version, data: { page: p, path, sha, csrf, blocks, live: new URL(p, site).href, api: `${origin}/admin/api/page-save`, statusApi: `${origin}/admin/api/build-status` } }),
     csp: editorCsp(origin, site),
   };
 }
