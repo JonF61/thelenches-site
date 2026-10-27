@@ -79,7 +79,8 @@
 //   POST /admin/api/page-save       { path, changes }: wording and link edits to that page's
 //                                   .njk file, one commit to main (pageedit.js savePage)
 //   GET  /admin/api/runs            Activity: the latest 20 GitHub Actions runs (runs.js; read-only)
-//   GET  /admin/api/build-status?sha=&at=  whether an Edit page commit's site build is live
+//   GET  /admin/api/build-status?sha=&at=&p=&text=  whether an Edit page commit is live: its
+//                                   site build succeeded AND the page (fresh copy) shows text
 //   GET  /admin/img/mail/MSG/PART   a Pending image (email attachment)
 //   GET  /admin/img/drive/ID[?size=N]  a Photos image (Drive thumbnail, else the file)
 // Nothing here can send the newsletter or change repository code, except Edit page's
@@ -124,7 +125,7 @@ import {
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 import { PAGEEDIT_JS, PAGEEDIT_CSS, PAGEEDIT_VERSION } from './ui/pageedit.js';
-import { editorPage, savePage } from './pageedit.js';
+import { editorPage, savePage, showsText } from './pageedit.js';
 import { recentRuns, buildStatus } from './runs.js';
 
 const MAX_BODY = 60000;
@@ -727,7 +728,13 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/lessons') return json(lessonRows(await readLessons(env)));
       if (path === '/admin/api/runs') return json({ runs: await recentRuns(env, 20) });
       if (path === '/admin/api/build-status') {
-        return fromResult(await buildStatus(env, url.searchParams.get('sha'), url.searchParams.get('at')));
+        const st = await buildStatus(env, url.searchParams.get('sha'), url.searchParams.get('at'));
+        // Built is not yet visible: wait until the published page shows the new wording.
+        if (st.ok && st.state === 'live' && !(await showsText(env, url.searchParams.get('p'), url.searchParams.get('text')))) {
+          st.state = 'building';
+          st.phase = 'publishing';
+        }
+        return fromResult(st);
       }
       if (path === '/admin/api/photo-file') return fromResult(await fileInfo(env, String(url.searchParams.get('id') || '')));
       if (path === '/admin/api/photo-group') return fromResult(await dupMembers(env, String(url.searchParams.get('id') || '')));

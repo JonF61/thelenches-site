@@ -196,6 +196,27 @@ export async function savePage(env, body) {
   };
 }
 
+/* ------------------------------------------------------- live or not -- */
+
+// The page's visible text, loosely (unknown entities kept as written), for showsText.
+const looseText = (html) => (textOf(String(html).replace(/<(script|style)\b[\s\S]*?<\/\1\s*>/gi, ' ')
+  .replace(/&[a-z][a-z0-9]*;/gi, (m) => (m.slice(1, -1) in ENTITIES ? m : ' '))) || '');
+
+// Whether the published page already shows a saved block's text (a fresh copy, past the
+// Pages cache). The build can finish a minute before the new copy reaches the cache's edge.
+export async function showsText(env, page, text, fetcher = fetch) {
+  const p = validPagePath(page);
+  const want = String(text || '').replace(/[\s\u00a0]+/g, ' ').trim();
+  if (!p || !want) return true; // nothing to check: trust the build
+  const site = String(env.SITE_URL || 'https://thelenches.org.uk/');
+  try {
+    const r = await fetcher(`${new URL(p, site).href}?live=${Date.now()}`, { headers: { 'cache-control': 'no-cache' } });
+    return r.ok && looseText(await r.text()).includes(want);
+  } catch {
+    return false;
+  }
+}
+
 /* ---------------------------------------------------------- editor page -- */
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
