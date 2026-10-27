@@ -66,6 +66,19 @@
       ]
     }
   },
+  "abbots morton road|abbots morton": {
+    "road": "Abbots Morton Road",
+    "village": "Abbots Morton",
+    "looked_up": "2026-10-27",
+    "source": "village",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        -1.9546,
+        52.1883
+      ]
+    }
+  },
   "badgers hill|sheriffs lench": {
     "road": "Badgers Hill",
     "village": "Sheriffs Lench",
@@ -283,6 +296,149 @@
             -1.92586,
             52.14306
           ]
+        ]
+      ]
+    }
+  },
+  "morton wood lane|abbots morton": {
+    "road": "Morton Wood Lane",
+    "village": "Abbots Morton",
+    "looked_up": "2026-10-27",
+    "source": "nominatim",
+    "geometry": {
+      "type": "MultiLineString",
+      "coordinates": [
+        [
+          [
+            -1.95818,
+            52.18942
+          ],
+          [
+            -1.9582,
+            52.18841
+          ],
+          [
+            -1.95801,
+            52.18634
+          ],
+          [
+            -1.95746,
+            52.18553
+          ],
+          [
+            -1.95733,
+            52.18498
+          ]
+        ],
+        [
+          [
+            -1.95733,
+            52.18498
+          ],
+          [
+            -1.95653,
+            52.1821
+          ]
+        ],
+        [
+          [
+            -1.95653,
+            52.1821
+          ],
+          [
+            -1.95638,
+            52.18153
+          ],
+          [
+            -1.95622,
+            52.18135
+          ]
+        ]
+      ]
+    }
+  },
+  "orchard place|harvington": {
+    "road": "Orchard Place",
+    "village": "Harvington",
+    "looked_up": "2026-10-27",
+    "source": "nominatim",
+    "geometry": {
+      "type": "MultiLineString",
+      "coordinates": [
+        [
+          [
+            -1.92715,
+            52.14373
+          ],
+          [
+            -1.9278,
+            52.14325
+          ]
+        ],
+        [
+          [
+            -1.92741,
+            52.14287
+          ],
+          [
+            -1.92772,
+            52.14259
+          ]
+        ],
+        [
+          [
+            -1.92814,
+            52.14183
+          ],
+          [
+            -1.92803,
+            52.14204
+          ]
+        ],
+        [
+          [
+            -1.92755,
+            52.1426
+          ],
+          [
+            -1.92765,
+            52.14265
+          ]
+        ]
+      ]
+    }
+  },
+  "station road|harvington": {
+    "road": "Station Road",
+    "village": "Harvington",
+    "looked_up": "2026-10-27",
+    "source": "nominatim",
+    "geometry": {
+      "type": "LineString",
+      "coordinates": [
+        [
+          -1.92071,
+          52.14063
+        ],
+        [
+          -1.92043,
+          52.14032
+        ],
+        [
+          -1.91985,
+          52.14017
+        ],
+        [
+          -1.91907,
+          52.1398
+        ],
+        [
+          -1.91799,
+          52.13896
+        ],
+        [
+          -1.91734,
+          52.13822
         ]
       ]
     }

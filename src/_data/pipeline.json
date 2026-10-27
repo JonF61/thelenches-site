@@ -29,6 +29,86 @@
   ],
   "notices": [
     {
+      "id": "1a17b925a43a5bc3-1",
+      "title": "Road Closure — Badgers Hill, Sheriffs Lench",
+      "body": "Badgers Hill to Handgate Lane will be closed from Tuesday 27 October to Sunday 29 November for Severn Trent Water streetworks, with a diversion via Handgate Lane, Church Lench.",
+      "date": "2026-10-27",
+      "village": "Sheriffs Lench",
+      "start": "2026-10-27",
+      "end": "2026-11-29",
+      "road": "Badgers Hill",
+      "expires": "2026-11-29",
+      "added": "2026-10-27",
+      "link": {
+        "text": "Road closure details",
+        "url": "https://one.network?GBTMI45377659"
+      }
+    },
+    {
+      "id": "1a17b925a43a5bc3-2",
+      "title": "Road Closure — Abbots Morton Road, Abbots Morton",
+      "body": "Abbots Morton Road will be closed from Wednesday 4 to Friday 6 November for Openreach works, with a signed diversion in place.",
+      "date": "2026-11-04",
+      "village": "Abbots Morton",
+      "start": "2026-11-04",
+      "end": "2026-11-06",
+      "road": "Abbots Morton Road",
+      "expires": "2026-11-17",
+      "added": "2026-10-27",
+      "link": {
+        "text": "Road closure details",
+        "url": "https://one.network?GBTMI47078759"
+      }
+    },
+    {
+      "id": "1a17b925a43a5bc3-3",
+      "title": "Roadworks — Morton Wood Lane, Abbots Morton",
+      "body": "Morton Wood Lane will be closed from Wednesday 4 to Friday 6 November for Openreach works, with delays likely.",
+      "date": "2026-11-04",
+      "village": "Abbots Morton",
+      "start": "2026-11-04",
+      "end": "2026-11-06",
+      "road": "Morton Wood Lane",
+      "expires": "2026-11-17",
+      "added": "2026-10-27",
+      "link": {
+        "text": "Roadworks details",
+        "url": "https://one.network?GB153149243"
+      }
+    },
+    {
+      "id": "1a17b925a43a5bc3-4",
+      "title": "Roadworks — Station Road, Harvington",
+      "body": "Station Road, Harvington, will have give-and-take traffic control from Wednesday 28 to Friday 30 October for Nexfibre Networks works, with possible delays.",
+      "date": "2026-10-28",
+      "village": "Harvington",
+      "start": "2026-10-28",
+      "end": "2026-10-30",
+      "road": "Station Road",
+      "expires": "2026-11-17",
+      "added": "2026-10-27",
+      "link": {
+        "text": "Roadworks details",
+        "url": "https://one.network?GB153220250"
+      }
+    },
+    {
+      "id": "1a17b925a43a5bc3-5",
+      "title": "Roadworks — Orchard Place, Harvington",
+      "body": "Orchard Place, Harvington, will have some carriageway incursion from Wednesday 28 to Friday 30 October for Nexfibre Networks works, with delays unlikely.",
+      "date": "2026-10-28",
+      "village": "Harvington",
+      "start": "2026-10-28",
+      "end": "2026-10-30",
+      "road": "Orchard Place",
+      "expires": "2026-11-17",
+      "added": "2026-10-27",
+      "link": {
+        "text": "Roadworks details",
+        "url": "https://one.network?GB153176187"
+      }
+    },
+    {
       "id": "1a15f6e84d8946ce-1",
       "title": "Tennis Club Tour to Porto — The Lenches Tennis Club",
       "body": "Sixteen men from The Lenches Tennis Club enjoyed a tour to Porto, combining tennis with a trip up the Douro Valley and a river boat trip. Next tours planned to Edgbaston and possibly for the Ladies section in spring.",
