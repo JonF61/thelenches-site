@@ -10,8 +10,9 @@ description: Notices and news from across the Lenches villages, from parish coun
     link to them, so keep them in step.
     Three sections: "official": true (parish councils and other official bodies, printed in their
     own words) in boxed panels, first paragraph shown and the rest behind "Read the full statement";
-    "Around the villages" (everything else without a source), first paragraph shown and the rest
-    behind "More"; "Worth knowing" ("source": Evesham Journal signposts), title and link only.
+    "Around the villages" (everything else without a source) as cards, two columns on desktop
+    (28 Oct): title, a small thumbnail if it has an image, the opening (leadSplit: the first
+    paragraph cut after ~140 characters at a sentence end) and the rest behind "More"; "Worth knowing" ("source": Evesham Journal signposts), title and link only.
     The script at the end opens the <details> of a notice a URL hash points at. -#}
 <style>
 .np-head{border-bottom:1px solid var(--line);padding-bottom:.6rem;margin-bottom:1.5rem}
@@ -32,10 +33,6 @@ description: Notices and news from across the Lenches villages, from parish coun
 .np-official:target{background:#FDEBD8;padding:1rem 1.15rem}
 .np-official h3{font-size:1.1rem;margin:0 0 .5rem;color:var(--green-dark);line-height:1.35}
 .np-official .np-link{margin-top:.5rem}
-.np-row{padding:.65rem 0;border-top:1px solid var(--line)}
-.np-row:last-child{border-bottom:1px solid var(--line)}
-.np-row:target{padding:.65rem .75rem}
-.np-row strong{color:var(--green-dark)}
 .np-meta{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin:0 0 .15rem}
 .np-meta .np-label{display:inline;margin:0}
 .np-new{display:inline-block;padding:0 .45rem;border-radius:4px;font-size:.7rem;font-weight:600;line-height:1.6;background:var(--accent);color:#fff}

@@ -77,6 +77,7 @@ Minimal notice (`src/items/notices/hall-car-park-resurfacing.json`):
 - Before pushing: `npm ci`, Eleventy build, and offline tests/sample renders of anything you changed (mock the Claude API and Google calls). Show Jon previews of visual or email changes.
 - Anonymity: nothing public or sent to anyone but Jon may name him or expose jon@. System mail uses from_name "The Lenches Website and Newsletter Team"; Holly signs as "Holly / Lenches website assistant".
 - Statements from parish councils, councillors and other official bodies are published in their own words: only obvious typos and broken links fixed.
+- Sponsorship is ours alone: never publish another organisation's sponsors or sponsorship deals (e.g. "sponsored by …" lines in a club's event text); leave them out (Jon, 27 Oct).
 - Newsletter: content is frozen in the build snapshot and covered by a content hash; sends never happen without Jon's tap except holiday mode; extra sends are always manual. Email must be Outlook-safe: 600px table layout, inline CSS, JPEG not WebP.
 - Sheet: code reads columns by header name. Never rename or move headers or tabs; add new columns at the END only. The grid ends at the last column and tidyTabs hides technical columns, so tell Jon to unhide and insert columns before typing headers, with exact cells and header text.
 - Cloudflare cron day-of-week is 1=Sunday..7=Saturday: always write day names (WED,THU).
