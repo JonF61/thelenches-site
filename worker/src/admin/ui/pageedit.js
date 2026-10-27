@@ -7,7 +7,7 @@
 // changes or removes a link. Save shows each change (before / after), then sends the
 // changed blocks, re-serialised as text plus simple inline tags, to /admin/api/page-save.
 
-export const PAGEEDIT_VERSION = '3';
+export const PAGEEDIT_VERSION = '4';
 
 function editor() {
   const data = JSON.parse(document.getElementById('lenches-edit-data').textContent);
@@ -224,6 +224,7 @@ function editor() {
     done.setAttribute('role', 'status');
     msg.replaceWith(done);
     cancelBtn.textContent = 'Close';
+    res.check = norm(list[0].el.textContent); // the wording the live page must show
     watchBuild(done, res);
   });
 
@@ -232,6 +233,7 @@ function editor() {
   function watchBuild(el, res) {
     const t0 = Date.now();
     let state = 'building';
+    let phase = '';
     let link = '';
     const clock = () => {
       const s = Math.floor((Date.now() - t0) / 1000);
@@ -241,7 +243,8 @@ function editor() {
       el.textContent = '';
       if (state === 'live') {
         const view = h('a', 'le-view', 'View page');
-        view.href = data.live;
+        // A fresh copy, not the one the browser or the Pages cache still holds.
+        view.href = `${data.live}?v=${String(res.sha || Date.now()).slice(0, 7)}`;
         el.append('Live ✓ – ', view);
       } else if (state === 'failed') {
         el.append('⚠ Build failed – Kryten can see why. ');
@@ -253,7 +256,7 @@ function editor() {
           el.append(a);
         }
       } else {
-        el.append(`Saved ✓ · Building the site… (${clock()})`);
+        el.append(`Saved ✓ · ${phase === 'publishing' ? 'Built; waiting for the page to update…' : 'Building the site…'} (${clock()})`);
       }
     };
     const timer = setInterval(() => { if (state === 'building') show(); }, 1000);
@@ -264,9 +267,10 @@ function editor() {
         return;
       }
       try {
-        const r = await fetch(`${data.statusApi}?sha=${encodeURIComponent(res.sha)}&at=${encodeURIComponent(res.at || '')}`);
+        const q = new URLSearchParams({ sha: res.sha, at: res.at || '', p: data.page, text: (res.check || '').slice(0, 200) });
+        const r = await fetch(`${data.statusApi}?${q}`);
         const j = await r.json();
-        if (j.ok && j.state) { state = j.state; link = j.url || link; }
+        if (j.ok && j.state) { state = j.state; link = j.url || link; phase = j.phase || ''; }
       } catch (e) { /* try again next time */ }
       show();
       if (state === 'building') setTimeout(check, 10000);

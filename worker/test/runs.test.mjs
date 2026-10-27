@@ -38,3 +38,16 @@ test('statusFrom: not listed yet is building, then failed after 10 minutes', () 
   assert.equal(statusFrom([run({ created_at: '2026-10-28T10:00:05Z' })], SHA, at, t + 30000).state, 'live');
   assert.equal(statusFrom([run({ created_at: '2026-10-28T09:00:00Z' })], SHA, at, t + 11 * 60000).state, 'failed');
 });
+
+test('showsText: live only once the published page shows the new wording', async () => {
+  const { showsText } = await import('../src/admin/pageedit.js');
+  const env = { SITE_URL: 'https://site.example/' };
+  const page = (body) => async (url) => {
+    assert.match(url, /^https:\/\/site\.example\/privacy\/\?live=\d+$/);
+    return new Response(`<html><head><script>var x = "Hello new";</script></head><body><p>Hello&nbsp;<a href="/">new</a>   words &ldquo;here&rdquo; &unknownthing;</p></body></html>`.replace('new</a>', body));
+  };
+  assert.equal(await showsText(env, '/privacy/', 'Hello new words “here”', page('new</a>')), true);
+  assert.equal(await showsText(env, '/privacy/', 'Hello new words “here”', page('old</a>')), false);
+  assert.equal(await showsText(env, '/privacy/', '', page('old</a>')), true, 'nothing to check');
+  assert.equal(await showsText(env, '/privacy/', 'x', async () => { throw new Error('down'); }), false);
+});

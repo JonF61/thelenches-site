@@ -83,7 +83,9 @@ const worker = await listen(async (req, res) => {
       assert.equal(u.searchParams.get('sha'), 'a'.repeat(40));
       statusChecks += 1;
       res.writeHead(200, { 'content-type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, state: statusChecks > 1 ? 'live' : 'building' }));
+      assert.equal(u.searchParams.get('p'), '/privacy/');
+      assert.equal(u.searchParams.get('text'), 'For the Lenches website and community mailing list. (updated)');
+      res.end(JSON.stringify({ ok: true, state: statusChecks > 2 ? 'live' : 'building', phase: statusChecks === 2 ? 'publishing' : '' }));
     } else if (u.pathname === '/admin/api/page-save' && req.method === 'POST') {
       assert.equal(req.headers['x-csrf-token'], 'tok');
       assert.equal(req.headers.origin, origin);
@@ -138,8 +140,9 @@ for (const size of [{ width: 1200, height: 900, name: 'desktop' }, { width: 390,
     await page.click('.le-dlg button:has-text("Save and publish")');
     await page.locator('.le-bar', { hasText: 'Building the site…' }).waitFor();
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pageedit-building.png') });
+    await page.locator('.le-bar', { hasText: 'waiting for the page to update' }).waitFor({ timeout: 25000 });
     await page.locator('.le-bar', { hasText: 'Live ✓' }).waitFor({ timeout: 25000 });
-    assert.equal(await page.locator('.le-view').getAttribute('href'), `${SITE}privacy/`);
+    assert.equal(await page.locator('.le-view').getAttribute('href'), `${SITE}privacy/?v=aaaaaaa`);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pageedit-saved.png') });
     assert.equal(puts.length, 1);
     assert.equal(puts[0].path, 'src/privacy.njk');
