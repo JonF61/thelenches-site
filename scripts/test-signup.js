@@ -59,7 +59,7 @@ const previews = {};
   const payload = JSON.parse(Buffer.from(link[1].split('.')[0], 'base64url').toString());
   assert.deepStrictEqual({ a: payload.a, i: payload.i }, { a: 'signup', i: ID });
   assert.strictEqual(payload.e, Math.floor(MS / 1000) + 7 * 86400);
-  assert.ok(mail.html.includes('width="600"') && mail.html.includes('Yes, add me to the list'), 'Outlook-safe HTML with button');
+  assert.ok(mail.html.includes('Yes, add me to the list:') && mail.html.includes(`href="${link[0].replace(/&/g, '&amp;')}"`) && !/<table|background/i.test(mail.html), 'plain HTML with the link written out');
   assert.ok(!/jon@/i.test(mail.html + mail.text), 'never exposes jon@');
   assert.strictEqual(w.tabs['Sign-ups'][0].status, 'sent');
   previews.confirm = mail;
