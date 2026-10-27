@@ -23,8 +23,8 @@ const fbHeaders = require('./ingest/feedback').HEADERS;
 const HEADERS = {
   Replies: ['reply_id', 'message_id', 'thread_id', 'to', 'type', 'status', 'policy_codes', 'subject', 'body',
     'notes', 'created_at', 'sent_at', 'sent_gmail_id', 'decided_at', 'alerted_at', 'class', 'class_confidence', 'hold_reason'],
-  Contacts: ['email', 'name', 'status', 'last_contact', 'other_emails'],
-  'Org outreach': ['id', 'next_check', 'notes'],
+  Contacts: ['email', 'name', 'organisation', 'status', 'last_contact', 'other_emails'],
+  'Org outreach': ['id', 'next_check', 'notes', 'other_emails'],
   'Reply feedback': fbHeaders,
 };
 let tables;
@@ -137,6 +137,15 @@ async function main() {
   ok(await orgs.draftOrgCheck('cricket') === null && tables.Replies.length === 0, 'regular contact (Contacts): no check');
   tables.Contacts[0].last_contact = shift(-100);
   ok(await orgs.draftOrgCheck('cricket'), 'last email over 3 months ago: due');
+
+  // Several addresses: another address on the Org outreach tab, or a Contacts row for the group.
+  reset();
+  tables['Org outreach'] = [pick('Org outreach', { id: 'tennis', other_emails: 'sec@example.org' })];
+  recentMail = ['sec@example.org'];
+  ok(await orgs.draftOrgCheck('tennis') === null && searches.pop() === '{from:lenchestc@gmail.com from:sec@example.org} newer_than:91d', 'mail from another address: regular contact');
+  reset();
+  tables.Contacts.push(pick('Contacts', { email: 'chair@example.org', organisation: 'Lenches Cricket Club', status: 'organiser', last_contact: shift(-10) }));
+  ok(await orgs.draftOrgCheck('cricket') === null && tables.Replies.length === 0, 'a member in Contacts: regular contact');
 
   // No email, never, the daily cap, replies off.
   reset();

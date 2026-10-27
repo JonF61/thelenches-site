@@ -37,7 +37,7 @@ function reset() {
     { ...sent('orchard', TODAY), status: 'awaiting' }];
   orgRows = [{ id: 'grey-gable', next_check: '2027-01-27' }];
 }
-const view = (count = 1) => ({ ...orgLists(ORGS, { replies, contacts: [], orgRows, hasTab: true, today: TODAY, recent: new Set([email('rous-lench-hall')]) }), count });
+const view = (count = 1) => ({ ...orgLists(ORGS, { replies, contacts: [], orgRows, hasTab: true, today: TODAY, recent: new Set(['rous-lench-hall']) }), count });
 
 let count = 1;
 const posts = [];
@@ -114,6 +114,18 @@ try {
     assert.deepEqual(posts.pop(), { path: '/admin/api/orgnext', id: 'grey-gable', expected: '2027-01-27', value: '' });
     assert.equal(await page.locator('.crow', { hasText: 'Rous Lench Village Hall' }).getByRole('button').count(), 0, 'no buttons when in regular contact');
     assert.equal(await page.locator('.crow', { hasText: 'The Lenches Amphitheatre' }).getByRole('button').count(), 0, 'no buttons without an email');
+
+    // Other addresses: saved as typed, stale-checked against what loaded.
+    const club = page.locator('.crow', { hasText: 'Lenches Tennis Club' });
+    await club.getByText('Other addresses').click();
+    await club.locator('textarea').fill('sec@example.org, chair@example.org');
+    await club.getByRole('button', { name: 'Save addresses' }).click();
+    await page.locator('.toast', { hasText: 'Saved: other addresses' }).waitFor();
+    assert.deepEqual(posts.pop(), { path: '/admin/api/orgemails', id: 'tennis', expected: '', value: 'sec@example.org, chair@example.org' });
+    if (SHOTS && name === 'desktop') {
+      await page.locator('.crow', { hasText: 'Lenches Cricket Club' }).getByText('Other addresses').click();
+      await page.locator('.crow', { hasText: 'Lenches Cricket Club' }).screenshot({ path: path.join(SHOTS, 'orgs-emails.png') });
+    }
 
     // Daily cap: Draft goes, Done stays.
     count = 10;

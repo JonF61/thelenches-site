@@ -21,7 +21,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '35';
+export const UI_VERSION = '36';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -2189,6 +2189,25 @@ export const CLIENT_JS = String.raw`
     render();
   }
 
+  // Other addresses (Org outreach other_emails): saved as typed, stale-checked.
+  async function gEmails(e, value, btn) {
+    btn.disabled = true;
+    var res = await api('/admin/api/orgemails', { id: e.id, expected: e.other_emails, value: value });
+    toast(res.ok ? 'Saved: other addresses for ' + e.name : (res.json.error || ('HTTP ' + res.status)), !res.ok);
+    btn.disabled = false;
+    if (res.ok) { S.orgs = null; render(); }
+  }
+
+  function orgEmails(e) {
+    var n = e.other_emails ? e.other_emails.split(',').length : 0;
+    var box = h('textarea', { class: 'f', rows: '2', 'aria-label': 'Other addresses for ' + e.name, placeholder: 'secretary@example.org, chair@example.org' }, e.other_emails);
+    var save = h('button', { class: 'btn', onclick: function () { gEmails(e, box.value, save); } }, 'Save addresses');
+    return h('details', { class: 'org-emails' },
+      h('summary', null, 'Other addresses' + (n ? ' (' + n + ')' : '')),
+      h('p', { class: 'meta' }, 'Anyone who writes for this group from another address, separated by commas. Mail from any of them counts as contact; Holly still writes only to the address above. Contacts whose organisation is "' + e.name + '" count too.'),
+      box, h('div', { class: 'actions' }, save));
+  }
+
   function orgRow(e, o) {
     var acts = [];
     if ((e.state === 'due' || e.state === 'chase') && o.count < o.cap) {
@@ -2210,7 +2229,9 @@ export const CLIENT_JS = String.raw`
           h('a', { href: e.pageUrl, target: '_blank', rel: 'noopener' }, e.pageName)),
         h('div', { class: 'meta' }, [e.email, e.why].filter(Boolean).join(' · ').replace(/\d{4}-\d{2}-\d{2}/g, cDay)),
         h('div', { class: 'meta' }, e.shown.join(' · ')),
-        acts.length ? h('div', { class: 'actions' }, acts) : null));
+        e.addresses > 1 ? h('div', { class: 'meta' }, (e.addresses - 1) + ' other address' + (e.addresses > 2 ? 'es' : '') + ' count as this group') : null,
+        acts.length ? h('div', { class: 'actions' }, acts) : null,
+        e.state !== 'noemail' ? orgEmails(e) : null));
   }
 
   function orgsView() {
