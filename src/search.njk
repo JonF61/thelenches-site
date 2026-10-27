@@ -6,7 +6,9 @@ permalink: /search/
 search: false
 ---
 {#- Pagefind search. The index (/pagefind/) is made by build.yml after Eleventy, so it is missing from a plain
-    local build: the page then says search isn't available. ?q= in the link starts a search. -#}
+    local build: the page then says search isn't available. ?q= in the link starts a search.
+    Two or more words without quotes are searched as an exact phrase first ("lenches club" would otherwise match
+    every page with both words anywhere); if the phrase finds nothing, the words are searched loosely. -#}
 <link href="{{ '/pagefind/pagefind-ui.css' | url }}" rel="stylesheet">
 <style>
 #search{--pagefind-ui-scale:.9;--pagefind-ui-primary:#b5471b;--pagefind-ui-text:#2b2b2b;--pagefind-ui-background:#fff;--pagefind-ui-border:#e5e0d8;--pagefind-ui-tag:#f4efe7;--pagefind-ui-border-width:1px;--pagefind-ui-border-radius:10px;--pagefind-ui-font:"Work Sans",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;margin:1rem 0 1.5rem}
@@ -17,6 +19,7 @@ search: false
 <main class="container">
   <h1>Search</h1>
   <p class="sr-help">Search events, notices, groups, services and village information across the website.</p>
+  <p class="sr-help">Tip: put words in quotes, like "lenches club", to find them together.</p>
   <div id="search"></div>
   <noscript><p>Search needs JavaScript turned on. Every page is listed at the foot of this page.</p></noscript>
 </main>
@@ -28,8 +31,30 @@ search: false
     box.innerHTML = '<p>Search isn\'t available just now. Every page is listed at the foot of this page.</p>';
     return;
   }
-  var ui = new PagefindUI({
-    element: '#search', showSubResults: true, showImages: false, resetStyles: false, autofocus: true,
+  var phraseFound = {}, api = null, ui;
+  function phraseFor(term) {
+    var t = term.trim();
+    if (t.indexOf('"') !== -1 || t.split(/\s+/).length < 2) return null;
+    return '"' + t + '"';
+  }
+  // Called (synchronously) for every search. Unknown phrases are checked in the background; a phrase
+  // with no results re-runs the search, which then goes loose.
+  function processTerm(term) {
+    var phrase = phraseFor(term);
+    if (!phrase) return term;
+    var key = phrase.toLowerCase();
+    if (key in phraseFound) return phraseFound[key] ? phrase : term;
+    (api || (api = import('{{ '/pagefind/pagefind.js' | url }}'))).then(function (pf) {
+      return pf.search(phrase);
+    }).then(function (r) {
+      phraseFound[key] = !!(r && r.results && r.results.length);
+      // The same term again is ignored, so a trailing space makes it a new search (processTerm trims it).
+      if (!phraseFound[key]) ui.triggerSearch(term.trim() + ' ');
+    }).catch(function () { phraseFound[key] = true; });
+    return phrase;
+  }
+  ui = new PagefindUI({
+    element: '#search', showSubResults: true, showImages: false, resetStyles: false, autofocus: true, processTerm: processTerm,
     translations: { placeholder: 'Search the website', zero_results: 'Nothing found for [SEARCH_TERM]. Try a shorter or different word.' }
   });
   var q = new URLSearchParams(location.search).get('q');
