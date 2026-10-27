@@ -53,10 +53,10 @@ We've shown the flyer for "{title}" twice now, which is as often as we show any 
 "{title}" has had its three newsletter outings now, but it'll stay on the website right up to the day.
 
 ## people_in_image
-Quick one about the photo for "{title}": could you check everyone in it is happy for it to go online, and that parents are OK with it for any children? If not, just say and we'll leave it out.
+Quick one about the photo for "{title}": as it shows children, could you check their parents are happy for it to go online? If not, just say and we'll leave it out.
 
 ## people_in_image_many
-Quick one about the photos for {titles}: could you check everyone in them is happy for them to go online, and that parents are OK with it for any children? If not, just say and we'll leave them out.
+Quick one about the photos for {titles}: as they show children, could you check their parents are happy for them to go online? If not, just say and we'll leave them out.
 
 ## out_of_scope
 We mainly cover the Lenches and the villages around them, plus bigger events in Evesham, Pershore and Inkberrow, so this one might be a bit outside our patch.

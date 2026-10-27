@@ -131,7 +131,7 @@ const TOOL = {
               description: 'Required details genuinely absent from the submission (see REQUIRED DETAILS); empty if none',
             },
             image_index: { type: 'integer', description: 'Number of the image belonging to this item, or -1 if none' },
-            people_in_image: { type: 'boolean', description: 'True if that image shows identifiable people or any children (organisers\' posters and publicity images do not count; see the rules)' },
+            people_in_image: { type: 'boolean', description: 'True only if that image may be an ordinary (non-promotional) photograph showing a child; see the rules' },
             alt_text: { type: 'string', description: 'Concise alt text for that image; empty if no image' },
             official: { type: 'boolean', description: 'True if this is a notice issued by an official body for publication (see OWN WORDING in the rules)' },
             verbatim_requested: { type: 'boolean', description: 'True if the submitter asks for their own wording to be used for this item' },

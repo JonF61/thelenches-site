@@ -67,11 +67,12 @@ Leave all three empty for anything that is not a road closure or roadworks.
   election promotion, or advertising whose main purpose is selling a product or service.
   Community events at commercial venues (clubs, pubs, golf club) are fine and not flagged.
   Always extract flagged items; the editor decides.
-- people_in_image: TRUE if the image shows any identifiable person or any child.
-  Illustrations and clip-art figures on posters don't count, and nor do professionally
-  produced posters, event headers or publicity photos sent by the organiser (e.g. a
-  venue's event banner or a speaker's promotional photo): only photographs of real local
-  people, such as snaps taken at an event. If unsure, TRUE.
+- people_in_image: TRUE only if the image is, or may be, an ordinary photograph (not
+  promotional material) AND it shows, or may show, a child whose face can be seen.
+  FALSE for adults only, for hands, backs or distant figures, for illustrations and
+  clip-art, and for promotional material of any kind: posters, flyers, event headers,
+  banners and publicity or stock photos, even with children in them. If you can't tell
+  whether a photo with a child in it is promotional, TRUE.
 - confidence: 0.9+ when what, where, when and contact are all clear; 0.6–0.8 when one detail
   is missing or inferred; below 0.6 when the item is unclear or you have guessed.
   List what is missing in notes.

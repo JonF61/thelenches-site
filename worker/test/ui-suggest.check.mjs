@@ -54,7 +54,7 @@ function stateData() {
       row('m1-1', 'Quiz night — Rous Lench Village Hall', { _suggest: [
         { id: 'm1-1#1', source: 'own', rank: '1', caption: '', credit: '', page: '', licence: '', people: 'none', thumb: T.hall, alt: 'Rous Lench Village Hall sign', status: '' },
         { id: 'm1-1#2', source: 'organiser', rank: '2', caption: 'Image: Rous Lench Village Hall', credit: 'Rous Lench Village Hall', page: 'https://hall.example.org/quiz', licence: '', people: 'none', thumb: T.poster, alt: '', status: '' },
-        { id: 'm1-1#3', source: 'library', rank: '3', caption: 'Photo by Ann Lee on Pexels', credit: 'Ann Lee / Pexels', page: 'https://www.pexels.com/photo/1/', licence: 'https://www.pexels.com/license/', people: 'identifiable', thumb: T.pexels, alt: 'People at a quiz', status: '' },
+        { id: 'm1-1#3', source: 'library', rank: '3', caption: 'Photo by Ann Lee on Pexels', credit: 'Ann Lee / Pexels', page: 'https://www.pexels.com/photo/1/', licence: 'https://www.pexels.com/license/', people: 'unknown', thumb: T.pexels, alt: 'People at a quiz', status: '' },
       ] }),
       { ...row('m2-1', 'Christmas fair — Atch Lench', { _suggest: [] }), _row: 3, village: 'Atch Lench' },
     ] },

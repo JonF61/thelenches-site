@@ -108,7 +108,8 @@ export function planPhoto({ action, expected }, row) {
 export const SUGGEST_TAB = 'Image suggestions';
 export const SUGGEST_SOURCES = { own: 'Own photo', organiser: "Organiser's site", library: 'Library' };
 const SUGGEST_ID = /^[A-Za-z0-9_-]{1,100}#[1-9]$/;
-const PEOPLE_FLAG = new Set(['identifiable', 'unknown']);
+// Only an unchecked image: adults in organiser's or library images are promotional (27 Oct).
+const PEOPLE_FLAG = new Set(['unknown']);
 const one = (v, max) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
 
 export const hasOwnImage = (row) => Boolean(String(row.image_part_id || '').trim() || String(row.image_url || '').trim());

@@ -64,7 +64,7 @@ function longDate(ymd) {
 function flagsOf(item) {
   const f = [];
   if (truthy(item.urgent)) f.push('URGENT');
-  if (truthy(item.people_in_image)) f.push('People in image');
+  if (truthy(item.people_in_image)) f.push('Children in photo');
   if (truthy(item.political_commercial)) f.push('Political/commercial');
   if (truthy(item.possible_repeat)) f.push('Possible repeat');
   const conf = Number(item.confidence);
