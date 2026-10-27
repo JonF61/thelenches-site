@@ -28,7 +28,8 @@
       { "title": "Getting around", "url": "/living-here/getting-around/" },
       { "title": "Council & planning", "url": "/living-here/council/" },
       { "title": "Schools", "url": "/living-here/schools/" },
-      { "title": "Walks & footpaths", "url": "/living-here/walks/" }
+      { "title": "Walks & footpaths", "url": "/living-here/walks/" },
+      { "title": "What to do if…", "url": "/living-here/what-to-do/" }
     ] },
     { "title": "About", "links": [
       { "title": "Contact & About", "url": "/contact/" },

@@ -151,6 +151,15 @@ module.exports = async function (eleventyConfig) {
 
   eleventyConfig.addFilter("isArray", (v) => Array.isArray(v));
 
+  // What to do if… call button: { ref } takes its number from health.json numbers (one copy of
+  // each number); a ref that isn't there stops the build rather than showing a blank button.
+  eleventyConfig.addFilter("callNumber", (c, numbers) => {
+    if (!c.ref) return c.number;
+    const n = (numbers || []).find((x) => x.label === c.ref);
+    if (!n) throw new Error(`whattodo.json: no health.json number labelled "${c.ref}"`);
+    return n.number;
+  });
+
   // bins.json trimmed for the home page script: areas, and collections from a week before the build
   eleventyConfig.addFilter("binsSoon", (bins) => {
     const from = new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10);

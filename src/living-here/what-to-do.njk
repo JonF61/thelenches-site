@@ -1,0 +1,63 @@
+---
+layout: base.njk
+title: What to do if…
+description: Who to call in the Lenches villages for a power cut, gas leak, flooding, crime, a lost pet, loose animals, fly-tipping, fallen trees, potholes or a blocked footpath.
+---
+{#- Topics, steps and links are in _data/whattodo.json; call buttons with a ref take their number from health.json. -#}
+{%- set w = whattodo -%}
+<style>
+.wt-jump{display:flex;flex-wrap:wrap;gap:.4rem;margin:.75rem 0 1rem;padding:0;list-style:none}
+.wt-jump a{display:inline-block;padding:.3rem .7rem;border:1px solid #e5e0d8;border-radius:999px;background:#fff;font-size:.9rem;text-decoration:none}
+.wt-jump a:hover,.wt-jump a:focus{border-color:#b5471b}
+.wt-bar{display:block;margin:.75rem 0 .5rem;padding:.7rem 1rem;border-radius:10px;background:#a32d2d;color:#fff;font-weight:700;text-decoration:none}
+.wt-bar:hover,.wt-bar:focus{background:#791f1f;color:#fff}
+.wt-topic{scroll-margin-top:1rem}
+.wt-topic h2{margin:0 0 .5rem;font-size:1.15rem}
+.wt-calls{display:flex;flex-wrap:wrap;gap:.4rem;margin:0 0 .6rem}
+.wt-calls a{display:inline-flex;gap:.45rem;align-items:baseline;padding:.35rem .75rem;border:1px solid #e5e0d8;border-radius:8px;background:#faf8f4;color:inherit;text-decoration:none;font-size:.92rem}
+.wt-calls a b{color:#b5471b;white-space:nowrap}
+.wt-calls a.wt-urgent{background:#fcebeb;border-color:#f0c9c9;color:#791f1f}
+.wt-calls a.wt-urgent b{color:#791f1f}
+.wt-topic ul{margin:0;padding-left:1.2rem}
+.wt-topic li+li{margin-top:.3rem}
+.wt-links{margin:.6rem 0 0;font-size:.92rem}
+.wt-muted{color:#666;font-size:.92rem}
+</style>
+<main class="container">
+
+  <section>
+    <h1>What to do if…</h1>
+    <p>{{ w.intro }}</p>
+    <a class="wt-bar" href="tel:999">Emergency? Call 999</a>
+    <ul class="wt-jump">
+      {%- for t in w.topics %}
+      <li><a href="#{{ t.id }}">{{ t.title }}</a></li>
+      {%- endfor %}
+    </ul>
+  </section>
+
+  {%- for t in w.topics %}
+  <section id="{{ t.id }}" class="card wt-topic">
+    <h2>{{ t.title }}</h2>
+    {%- if t.calls and t.calls.length %}
+    <div class="wt-calls">
+      {%- for c in t.calls %}
+      {%- set num = c | callNumber(health.numbers) %}
+      <a{% if num == '999' %} class="wt-urgent"{% endif %} href="tel:{{ num | replace(' ', '') }}"><span>{{ c.label or c.ref }}</span><b>{{ num }}</b></a>
+      {%- endfor %}
+    </div>
+    {%- endif %}
+    <ul>
+      {%- for s in t.steps %}
+      <li>{{ s | safe }}</li>
+      {%- endfor %}
+    </ul>
+    {%- if t.links and t.links.length %}
+    <p class="wt-links">{% for l in t.links %}<a href="{{ l.url }}" target="_blank" rel="noopener">{{ l.text }}</a>{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
+    {%- endif %}
+  </section>
+  {%- endfor %}
+
+  <p class="wt-muted">Numbers and links last checked {{ w.checked }}. See also <a href="{{ '/living-here/health/' | url }}">Health &amp; emergencies</a>. Spotted something out of date? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+
+</main>
