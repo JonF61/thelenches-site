@@ -171,7 +171,7 @@ function renderHtml(m, subject) {
 
   rows.push(`<tr><td class="px" style="background:${C.cream};padding:18px 24px;border-bottom:3px solid ${C.accent};">`
     + `<div style="font-family:${SANS};font-size:22px;font-weight:bold;color:${C.green};">The Lenches Newsletter</div>`
-    + `<div style="font-family:${SANS};font-size:12px;color:${C.muted};">Church · Rous · Ab · Atch · Sheriffs · Harvington</div>`
+    + `<div style="font-family:${SANS};font-size:12px;color:${C.muted};">Church · Rous · Ab · Atch · Sheriffs</div>`
     + `<div style="font-family:${SANS};font-size:13px;color:${C.accentText};margin-top:8px;">${esc(p.long)} · ${a(LINKS.site, 'thelenches.org.uk', C.accentText)}</div>`
     + `</td></tr>`);
   // "New on the website" intro (select.js siteUpdates); no row at all when there are none,
@@ -243,7 +243,7 @@ function renderText(m) {
     out.push('');
   };
 
-  out.push('THE LENCHES NEWSLETTER', 'Church · Rous · Ab · Atch · Sheriffs · Harvington', `${p.long} · ${LINKS.site}`, '');
+  out.push('THE LENCHES NEWSLETTER', 'Church · Rous · Ab · Atch · Sheriffs', `${p.long} · ${LINKS.site}`, '');
   for (const u of m.siteUpdates || []) out.push(u.text, u.url, '');
   out.push(summaryLine(m));
   if (m.events.length || m.regulars) {

@@ -11,7 +11,6 @@
     { "name": "Ab Lench", "day": "Monday", "offset": 0 },
     { "name": "Atch Lench", "day": "Monday", "offset": 0 },
     { "name": "Sheriffs Lench", "day": "Monday", "offset": 0 },
-    { "name": "Harvington", "day": "Monday", "offset": 0 },
     { "name": "Rous Lench", "day": "Friday", "offset": 4 }
   ],
   "collections": [

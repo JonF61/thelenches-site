@@ -23,7 +23,7 @@ const STATUS_GUIDE = `status: what this person is to the website and newsletter.
 - none: wrote only to subscribe or unsubscribe, ask a question, complain, report a problem with the site, or about something else; not a contributor or potential one. Such people are not kept.`;
 const STATUS_ENUM = ['official', 'organiser', 'business', 'media', 'collaborator', 'contributor', 'lead', 'other', 'none'];
 
-const SYSTEM = `You keep the contact list for a volunteer-run community website and weekly newsletter for the Lenches villages in Worcestershire (Church, Rous, Ab, Atch and Sheriffs Lench, plus Harvington). People email website@ with events, notices, photos, questions and news.
+const SYSTEM = `You keep the contact list for a volunteer-run community website and weekly newsletter for the Lenches villages in Worcestershire (Church, Rous, Ab, Atch and Sheriffs Lench). People email website@ with events, notices, photos, questions and news.
 
 From one person's emails, record who they are and a short profile that helps the team deal with them well. British English, plain and factual, kind. Use only what the emails show; leave a field empty rather than guess. Never record health, religious belief beyond a church role, politics, money troubles or other sensitive personal details, and nothing about third parties.
 
