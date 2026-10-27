@@ -18,7 +18,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '31';
+export const UI_VERSION = '32';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -43,7 +43,7 @@ export const CLIENT_JS = String.raw`
   function intro(view) { return h('p', { class: 'meta intro' }, INTROS[view]); }
   var FLAG_LABELS = {
     own_wording: 'Asked for own wording', too_early: 'Too early', after_deadline: 'After deadline',
-    flyer_limit: 'Flyer limit', newsletter_limit: 'Newsletter limit', people_in_image: 'People in image',
+    flyer_limit: 'Flyer limit', newsletter_limit: 'Newsletter limit', people_in_image: 'Children in photo',
     classified: 'Classified ad', political_commercial: 'Political or commercial', anonymous: 'Anonymous'
   };
   var PHOTO_CONSENT = ['identifiable', 'children', 'unknown'];
@@ -447,7 +447,7 @@ export const CLIENT_JS = String.raw`
     b.push(h('span', { class: 'badge' }, lower(r.category) === 'event' ? 'Event' : 'Notice'));
     if (str(r.road)) b.push(h('span', { class: 'badge' }, 'Road'));
     if (r._official) b.push(h('span', { class: 'badge info' }, 'Official, own words'));
-    if (truthy(r.people_in_image)) b.push(h('span', { class: 'badge bad' }, truthy(r.people_ok) ? 'People: OK given' : 'People in image'));
+    if (truthy(r.people_in_image)) b.push(h('span', { class: 'badge bad' }, truthy(r.people_ok) ? 'Children: OK given' : 'Children in photo'));
     str(r.policy_flags).split(',').map(str).filter(Boolean).forEach(function (f) {
       if (f === 'people_in_image') return;
       b.push(h('span', { class: 'badge warn' }, FLAG_LABELS[f] || f.replace(/_/g, ' ')));
@@ -492,7 +492,7 @@ export const CLIENT_JS = String.raw`
     if (str(r.link_url)) extra.push('Link: ' + (str(r.link_text) ? str(r.link_text) + ' – ' : '') + str(r.link_url));
     if (extra.length) add(c, h('div', { class: 'meta' }, extra.join(' · ')));
     add(c, images(r));
-    if (truthy(r.people_in_image)) add(c, peopleTick('Pending', r.id, r, 'The image shows people or children. Tick only if they are happy to appear.'));
+    if (truthy(r.people_in_image)) add(c, peopleTick('Pending', r.id, r, 'The photo may show children. Tick only if their parents are happy for it to appear.'));
     add(c, suggestStrip(r));
     add(c, h('label', { class: 'f', for: 'cat-' + r.id }, 'Category'));
     add(c, categorySelect(r));
@@ -533,7 +533,7 @@ export const CLIENT_JS = String.raw`
   }
 
   var SUGGEST_LABELS = { own: 'Own photo', organiser: 'Organiser\'s site', library: 'Library' };
-  var flaggedPeople = function (s) { return s.people === 'identifiable' || s.people === 'unknown'; };
+  var flaggedPeople = function (s) { return s.people === 'unknown'; };
 
   function suggestStrip(r) {
     var list = r._suggest;

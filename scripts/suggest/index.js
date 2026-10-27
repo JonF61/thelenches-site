@@ -9,7 +9,8 @@
 //   3. Library: Pexels, else Pixabay, by event type and kind of place only (library.js),
 //      only if the PEXELS_API_KEY or PIXABAY_API_KEY secret is set.
 // External images are checked by Sonnet (scripts/eventimages/check.js): children = dropped,
-// identifiable people = flagged (Choose then needs "People OK"), logos allowed only as the
+// people recorded, but only a failed check ("unknown") needs "People OK" to Choose: adults in
+// an organiser's or library image are promotional (27 Oct); logos allowed only as the
 // organiser's fallback, screenshots and unrelated images dropped.
 // An event that gets nothing has one "none" row so it isn't tried again (delete it to retry).
 // No image means: Pending status "pending", category event, dated today or later, not a

@@ -669,7 +669,7 @@ function suggestTables() {
     SUGG_HEADERS.slice(),
     ['m1-1#1', 'm1-1', '2026-11-14|Quiz night', '1', 'own', '/images/photos/rous-hall.webp', '', '', '', '', '', 'none', 'score=6', THUMB, 'Rous Lench', 'Events', '', '', 'Hall', '', '2026-10-24'],
     ['m1-1#2', 'm1-1', '2026-11-14|Quiz night', '2', 'organiser', 'https://hall.example.org/q.jpg', 'https://hall.example.org/quiz', 'Rous Lench Village Hall', 'Image: Rous Lench Village Hall', 'https://hall.example.org/quiz', '', 'none', 'kind=photo', THUMB, 'Rous Lench', 'Events', '2026-11-14 Quiz night.jpg', 'event:quiz night', '', '', '2026-10-24'],
-    ['m1-1#3', 'm1-1', '2026-11-14|Quiz night', '3', 'library', 'https://images.pexels.com/1.jpeg', 'https://www.pexels.com/photo/1/', 'Ann Lee / Pexels', 'Photo by Ann Lee on Pexels', 'https://www.pexels.com/photo/1/', 'https://www.pexels.com/license/', 'identifiable', 'kind=photo', THUMB, 'Rous Lench', 'Events', '2026-11-14 Quiz night.jpg', 'event:quiz night', 'Quiz', '', '2026-10-24'],
+    ['m1-1#3', 'm1-1', '2026-11-14|Quiz night', '3', 'library', 'https://images.pexels.com/1.jpeg', 'https://www.pexels.com/photo/1/', 'Ann Lee / Pexels', 'Photo by Ann Lee on Pexels', 'https://www.pexels.com/photo/1/', 'https://www.pexels.com/license/', 'unknown', 'kind=photo', THUMB, 'Rous Lench', 'Events', '2026-11-14 Quiz night.jpg', 'event:quiz night', 'Quiz', '', '2026-10-24'],
     ['m2-1#0', 'm2-1', '2026-12-01|Fete', '0', 'none', '', '', '', '', '', '', '', 'nothing found', '', 'Atch Lench', 'Events', '', '', '', '', '2026-10-24'],
   ];
   t['Image fetch'] = [FETCH_HEADERS.slice()];
@@ -686,8 +686,10 @@ test('Suggest mapping: only pending items with no image; people need people_ok; 
   assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, row, s(), opts).save.url, 'https://x.org/a.jpg');
   assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#1' }, row, s({ source: 'own' }), opts).save, null, 'own photos are already in Lenches Photos');
   assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, row, s({ status: 'saved' }), opts).save, null, 'saved once only');
-  assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, row, s({ people: 'identifiable' }), opts).status, 409);
-  assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, { ...row, people_ok: 'yes' }, s({ people: 'identifiable' }), opts).value, 'm1-1#2');
+  assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, row, s({ people: 'unknown' }), opts).status, 409);
+  assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, { ...row, people_ok: 'yes' }, s({ people: 'unknown' }), opts).value, 'm1-1#2');
+  // Adults in an organiser's or library image are promotional: no tick needed (27 Oct).
+  assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, row, s({ people: 'identifiable' }), opts).value, 'm1-1#2');
   assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, { ...row, people_ok: 'yes' }, s({ people: 'children' }), opts).status, 409);
   assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, { ...row, image_part_id: '2' }, s(), opts).status, 409);
   assert.equal(planSuggest({ id: 'm1-1', sid: 'm1-1#2' }, { ...row, status: 'approved' }, s(), opts).status, 409);
@@ -784,9 +786,10 @@ test('E2E suggest: unticking People OK after choosing a people-flagged image blo
   await post('/admin/api/suggest', { id: 'm1-1', sid: 'm1-1#2', expected: 'm1-1#3' });
   r = await post('/admin/api/action', { kind: 'pending', id: 'm1-1', action: 'approve' });
   assert.equal(r.status, 200, JSON.stringify(r.json));
-  assert.equal(planPending({ action: 'approve', id: 'm1-1' }, { id: 'm1-1', status: 'pending', people_ok: '' }, { choicePeople: 'identifiable' }).status, 409);
-  assert.ok(planPending({ action: 'approve', id: 'm1-1' }, { id: 'm1-1', status: 'pending', people_ok: 'yes' }, { choicePeople: 'identifiable' }).p);
-  assert.ok(planPending({ action: 'reject', id: 'm1-1' }, { id: 'm1-1', status: 'pending', people_ok: '' }, { choicePeople: 'identifiable' }).p, 'reject never needs the tick');
+  assert.equal(planPending({ action: 'approve', id: 'm1-1' }, { id: 'm1-1', status: 'pending', people_ok: '' }, { choicePeople: 'unknown' }).status, 409);
+  assert.ok(planPending({ action: 'approve', id: 'm1-1' }, { id: 'm1-1', status: 'pending', people_ok: 'yes' }, { choicePeople: 'unknown' }).p);
+  assert.ok(planPending({ action: 'reject', id: 'm1-1' }, { id: 'm1-1', status: 'pending', people_ok: '' }, { choicePeople: 'unknown' }).p, 'reject never needs the tick');
+  assert.ok(planPending({ action: 'approve', id: 'm1-1' }, { id: 'm1-1', status: 'pending', people_ok: '' }, { choicePeople: 'identifiable' }).p, 'promotional adults need no tick');
 });
 
 /* ----------------------------------------------------------- contacts -- */
