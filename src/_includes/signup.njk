@@ -1,8 +1,16 @@
 <section id="signup" class="signup">
   <div class="signup-text">
     <h2>The Thursday newsletter</h2>
+    {%- if site.signupUrl and site.turnstileSiteKey %}
+    <p>Free, and sent every Thursday morning. Enter your email and we'll send you a link to confirm.</p>
+    {% include "signup-form.njk" %}
+    <p class="small">Unsubscribe any time &middot; <a href="{{ '/privacy/' | url }}">Privacy policy</a></p>
+    {%- else %}
     <p>Free, and sent every Thursday morning. To join, email <a href="mailto:{{ site.email }}?subject=Add%20me%20to%20the%20mailing%20list">{{ site.email }}</a> and ask to be added.</p>
     <p class="small">Unsubscribe any time &middot; <a href="{{ '/privacy/' | url }}">Privacy policy</a></p>
+    {%- endif %}
   </div>
+  {%- if not (site.signupUrl and site.turnstileSiteKey) %}
   <a class="btn" href="mailto:{{ site.email }}?subject=Add%20me%20to%20the%20mailing%20list">Email to join</a>
+  {%- endif %}
 </section>

@@ -9,6 +9,7 @@
   "noindex": false,
   "teamUrl": "https://approvals.lenches.workers.dev/admin",
   "feedbackUrl": "https://approvals.lenches.workers.dev/f",
+  "signupUrl": "https://approvals.lenches.workers.dev/s",
   "turnstileSiteKey": "0x4AAAAAAFleBJ36URNQhdUv",
   "footer": [
     { "title": "Around the villages", "links": [

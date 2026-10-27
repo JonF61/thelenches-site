@@ -1,0 +1,74 @@
+{#- Newsletter sign-up form: the band on every page (signup.njk) and the home page's sign-up
+    card (hub-cards.njk); a page has one or the other, never both. Posts to the approvals
+    Worker (POST /s, worker/src/signup.js), which checks Turnstile, saves a Sign-ups row and
+    has signup.yml email a confirmation link (double opt-in). Turnstile loads only when
+    someone clicks into the form; without JavaScript the Worker answers with a page
+    offering the email address instead. Shown only when site.json has signupUrl and
+    turnstileSiteKey (the callers fall back to "Email to join"). -#}
+<form class="su-form" method="post" action="{{ site.signupUrl }}" data-sitekey="{{ site.turnstileSiteKey }}">
+  <label class="sr-only" for="su-email">Your email address</label>
+  <div class="su-row">
+    <input id="su-email" name="email" type="email" maxlength="200" autocomplete="email" placeholder="your@email" required>
+    <button type="submit" class="btn su-join">Join</button>
+  </div>
+  <div class="fb-hp" aria-hidden="true"><label for="su-website">Leave this empty</label><input id="su-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+  <input type="hidden" name="js" value="">
+  <div class="su-ts"></div>
+  <p class="su-status" role="status" aria-live="polite"></p>
+</form>
+{% include "turnstile-loader.njk" %}
+<script>
+(function () {
+  var form = document.querySelector('.su-form');
+  if (!form || !window.fetch || !window.FormData) return;
+  var status = form.querySelector('.su-status'), box = form.querySelector('.su-ts'), button = form.querySelector('.su-join');
+  var widget = null, token = '', waiting = [];
+  form.elements.js.value = '1';
+  function say(text, bad) { status.textContent = text; status.className = 'su-status' + (bad ? ' bad' : text ? ' ok' : ''); }
+  function got(t) { token = t || ''; var w = waiting; waiting = []; w.forEach(function (f) { f(token); }); }
+  function render() {
+    if (widget !== null || !window.turnstile) return;
+    widget = window.turnstile.render(box, {
+      sitekey: form.getAttribute('data-sitekey'), appearance: 'interaction-only', theme: 'light',
+      callback: got, 'expired-callback': function () { token = ''; },
+      'error-callback': function () { got(''); }
+    });
+  }
+  // Turnstile loads only when someone starts using the form.
+  form.addEventListener('focusin', function () {
+    window.lenchesTurnstile(render, function () { say('The robot check could not load. Please email {{ site.email }} and ask to be added.', true); });
+  });
+  function tokenSoon() {
+    if (token) return Promise.resolve(token);
+    return new Promise(function (resolve) {
+      waiting.push(resolve);
+      setTimeout(function () { resolve(token); }, 15000);
+    });
+  }
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (button.disabled) return;
+    button.disabled = true;
+    say('Sending…');
+    window.lenchesTurnstile(render);
+    tokenSoon().then(function (t) {
+      if (!t) throw new Error('We couldn\'t confirm you\'re not a robot. Please try again in a moment.');
+      var data = new FormData(form);
+      data.set('cf-turnstile-response', t);
+      return fetch(form.action, { method: 'POST', body: data }).then(function (r) {
+        return r.json().catch(function () { return { ok: false, message: 'Sorry, something went wrong. Please try again later.' }; });
+      });
+    }).then(function (res) {
+      if (!res.ok) throw new Error(res.message || 'Sorry, something went wrong. Please try again later.');
+      form.reset();
+      say(res.message);
+    }).catch(function (err) {
+      say(err && err.message && !/fetch|network/i.test(err.message) ? err.message : 'Sorry, that couldn\'t be sent. Please check your connection and try again.', true);
+    }).then(function () {
+      button.disabled = false;
+      token = '';
+      if (widget !== null && window.turnstile) window.turnstile.reset(widget);
+    });
+  });
+})();
+</script>

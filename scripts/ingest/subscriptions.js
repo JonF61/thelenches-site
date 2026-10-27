@@ -18,8 +18,10 @@ const ADDRESS_RE = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[a-z]{2,}$/i;
 const lc = (v) => String(v ?? '').trim().toLowerCase();
 
 // kind: 'subscribe' | 'unsubscribe'. stamp: 'YYYY-MM-DD HH:MM' (UK).
+// opts.source / opts.notes: what a new Subscribers row says (the web sign-up form,
+// scripts/signup, passes its own); the default is Holly's email route.
 // Returns { done: 'subscribed' | 'already' | 'unsubscribed' | 'already_off' } or { refused: why }.
-async function applyListRequest(kind, address, stamp) {
+async function applyListRequest(kind, address, stamp, opts = {}) {
   const email = lc(address);
   if (!ADDRESS_RE.test(email) || email.endsWith(`@${OWN_DOMAIN}`)) return { refused: 'not a usable address' };
   const [subscribers, dns] = await Promise.all([g.readTable('Subscribers'), g.readTable('Do Not Send')]);
@@ -42,8 +44,8 @@ async function applyListRequest(kind, address, stamp) {
   if (rows.some(active)) return { done: 'already' };
   if (rows.length) return { refused: `their Subscribers row has status "${rows[0].status}"` };
   await g.appendRows('Subscribers', [{
-    email, status: 'active', source: 'email to website@', date, added_at: stamp,
-    notes: 'added automatically by Holly',
+    email, status: 'active', source: opts.source || 'email to website@', date, added_at: stamp,
+    notes: opts.notes || 'added automatically by Holly',
   }]);
   return { done: 'subscribed' };
 }
