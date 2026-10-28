@@ -71,6 +71,16 @@ function countsOn() {
   }
 }
 
+// True if the Worker's /o answers with its image (a non-date issue, so nothing is counted).
+async function workerCounts() {
+  try {
+    const r = await fetch(`${String(process.env.WORKER_URL || '').replace(/\/+$/, '')}/o?i=check`, { signal: AbortSignal.timeout(10000) });
+    return r.ok && /^image\/gif/i.test(r.headers.get('content-type') || '');
+  } catch {
+    return false;
+  }
+}
+
 function stamp(ms = Date.now()) {
   const p = {};
   for (const x of new Intl.DateTimeFormat('en-GB', {
@@ -510,8 +520,14 @@ async function main() {
   const fromName = g.fromNameFor(settings);
   // Anonymous counts (site.json newsletterCounts): live sends only, after every check above,
   // so the tested content and its hash are untouched (track.js).
-  const sendIssue = mode === 'live' && countsOn() ? trackIssue(issue, issueDate) : issue;
-  if (sendIssue !== issue) console.log(`Counted links: ${sendIssue.trackedLinks}, plus the open image.`);
+  // Only if the Worker answers its count image: never send links to routes that aren't live.
+  let sendIssue = issue;
+  if (mode === 'live' && countsOn()) {
+    if (await workerCounts()) {
+      sendIssue = trackIssue(issue, issueDate);
+      console.log(`Counted links: ${sendIssue.trackedLinks}, plus the open image.`);
+    } else console.warn('Warning: the Worker\'s count image did not answer: sending with plain links (no counts).');
+  }
   const res = await sendAll({ key, targets, issue: sendIssue, fromName, runId, startedMs });
   const summary = `${mode}${autosend ? ' (auto)' : ''} ${stamp()}: ${res.sent} sent, ${res.failed} failed, ${res.stuck} stuck, ${res.queued} queued`;
   console.log(summary + (res.stop ? ` (stopped: ${res.stop})` : ''));
