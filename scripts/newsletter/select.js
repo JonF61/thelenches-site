@@ -21,6 +21,8 @@
 //   Site        src/_data/siteupdates.json: a linked line under the header from its
 //               "from" date (to "until", if set) until one issue carrying it is sent
 //               live. Shadow, canary and test copies don't count, so it stays due.
+//   On this day src/_data/onthisday.json: the entry keyed by the issue's MM-DD (any year),
+//               one italic line under the header; none = no line (28 Oct 2026).
 //   Images      Pending and whatson items: the JPEG copy of an /images/items/*.webp
 //               (publish.js makes it; classic Outlook can't show WebP), else text only.
 //   Wording     item text is the rewrite or the submitter's own wording (lib/wording.js).
@@ -159,7 +161,14 @@ function siteUpdatesFor(siteupdates, issues, issueDate) {
   return out.map(({ from, ...rest }) => rest);
 }
 
-function select({ issueDate, pending, whatson, bins, siteupdates, issues, settings, sources, jpegFor, cutoff }) {
+// The "On this day" line for the issue's date (MM-DD, any year), or null.
+function onThisDayFor(onthisday, issueDate) {
+  const e = onthisday && onthisday.entries && onthisday.entries[issueDate.slice(5)];
+  const text = str(e && e.text);
+  return text ? { text } : null;
+}
+
+function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, issues, settings, sources, jpegFor, cutoff }) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate || '')) throw new Error(`Bad issue date "${issueDate}"`);
   const deadline = str(cutoff);
   if (deadline && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(deadline)) throw new Error(`Bad cutoff "${cutoff}"`);
@@ -306,6 +315,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, issues, settin
     issueDate,
     holiday,
     siteUpdates,
+    onThisDay: onThisDayFor(onthisday, issueDate),
     lastIssue,
     cutoff: deadline,
     held,

@@ -174,6 +174,13 @@ function renderHtml(m, subject) {
     + `<div style="font-family:${SANS};font-size:12px;color:${C.muted};">Church · Rous · Ab · Atch · Sheriffs</div>`
     + `<div style="font-family:${SANS};font-size:13px;color:${C.accentText};margin-top:8px;">${esc(p.long)} · ${a(LINKS.site, 'thelenches.org.uk', C.accentText)}</div>`
     + `</td></tr>`);
+  // "On this day" line (select.js onThisDay); no row when there is none, as for site updates.
+  if (m.onThisDay) {
+    rows.push(`<tr><td class="px" style="background:${C.cream};padding:10px 24px;border-bottom:1px solid ${C.line};">`
+      + `<div style="font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1px;color:${C.accentText};">ON THIS DAY</div>`
+      + `<div style="font-family:${SERIF};font-size:14px;font-style:italic;line-height:1.5;color:${C.ink};">${esc(m.onThisDay.text)}</div>`
+      + `</td></tr>`);
+  }
   // "New on the website" intro (select.js siteUpdates); no row at all when there are none,
   // so older snapshots render exactly as before.
   const site = m.siteUpdates || [];
@@ -244,6 +251,7 @@ function renderText(m) {
   };
 
   out.push('THE LENCHES NEWSLETTER', 'Church · Rous · Ab · Atch · Sheriffs', `${p.long} · ${LINKS.site}`, '');
+  if (m.onThisDay) out.push(`On this day: ${m.onThisDay.text}`, '');
   for (const u of m.siteUpdates || []) out.push(u.text, u.url, '');
   out.push(summaryLine(m));
   if (m.events.length || m.regulars) {
