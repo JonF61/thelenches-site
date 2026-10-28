@@ -18,6 +18,9 @@ const LINKS = {
   bins: `${SITE}/bins/`,
   submit: 'website@thelenches.org.uk',
 };
+// The Website update paragraph: each entry's text, joined with spaces.
+const siteParagraph = (site) => site.map((u) => String(u.text || '').trim()).filter(Boolean).join(' ');
+
 const C = {
   green: '#3F5233', greenDark: '#2E3D26', greenLight: '#EFE7D3', ink: '#2E2A1F',
   muted: '#5B5240', accentText: '#9A5312', cream: '#F6F1E4', paper: '#FBF8F1',
@@ -181,12 +184,13 @@ function renderHtml(m, subject) {
       + `<div style="font-family:${SERIF};font-size:14px;font-style:italic;line-height:1.5;color:${C.ink};">${esc(m.onThisDay.text)}</div>`
       + `</td></tr>`);
   }
-  // "New on the website" intro (select.js siteUpdates); no row at all when there are none,
-  // so older snapshots render exactly as before.
+  // "Website update" (select.js siteUpdates): one paragraph, the due entries' text joined,
+  // then one link to the site (Jon, 28 Oct); no row at all when there are none.
   const site = m.siteUpdates || [];
   if (site.length) {
-    rows.push(`<tr><td class="px" style="background:${C.cream};padding:10px 24px;border-bottom:1px solid ${C.line};font-family:${SANS};font-size:13px;line-height:1.5;">`
-      + site.map((u) => `<div style="margin:2px 0;">${a(u.url, u.text, C.accentText)}</div>`).join('')
+    rows.push(`<tr><td class="px" style="background:${C.cream};padding:10px 24px;border-bottom:1px solid ${C.line};">`
+      + `<div style="font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1px;color:${C.accentText};">WEBSITE UPDATE</div>`
+      + `<div style="font-family:${SANS};font-size:13px;line-height:1.5;color:${C.ink};">${esc(siteParagraph(site))} Have a look at ${a(LINKS.site, 'thelenches.org.uk', C.accentText)}.</div>`
       + `</td></tr>`);
   }
   rows.push(`<tr><td class="px" style="padding:16px 24px 0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${C.ink};">${esc(summaryLine(m))}</td></tr>`);
@@ -252,7 +256,7 @@ function renderText(m) {
 
   out.push('THE LENCHES NEWSLETTER', 'Church · Rous · Ab · Atch · Sheriffs', `${p.long} · ${LINKS.site}`, '');
   if (m.onThisDay) out.push(`On this day: ${m.onThisDay.text}`, '');
-  for (const u of m.siteUpdates || []) out.push(u.text, u.url, '');
+  if ((m.siteUpdates || []).length) out.push(`Website update: ${siteParagraph(m.siteUpdates)} Have a look at ${LINKS.site}`, '');
   out.push(summaryLine(m));
   if (m.events.length || m.regulars) {
     head('Coming up');
