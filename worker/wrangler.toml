@@ -62,11 +62,10 @@ simple = { limit = 5, period = 60 }
 
 # Anonymous newsletter counts (src/track.js: /c clicks, /o opens), read by the panel's
 # Newsletter stats through the SQL API (CF_ANALYTICS_TOKEN, CF_ACCOUNT_ID).
-# Off until Analytics Engine is enabled in the Cloudflare dashboard (deploys fail with code
-# 10089 otherwise; 28 Oct). Then uncomment and set site.json newsletterCounts to true.
-# [[analytics_engine_datasets]]
-# binding = "NL_STATS"
-# dataset = "lenches_newsletter"
+# Analytics Engine enabled by Jon in the dashboard (28 Oct; dataset lenches_newsletter).
+[[analytics_engine_datasets]]
+binding = "NL_STATS"
+dataset = "lenches_newsletter"
 
 [observability]
 enabled = true
