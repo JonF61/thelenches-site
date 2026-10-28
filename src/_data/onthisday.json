@@ -1,0 +1,25 @@
+{
+  "_help": "\"On this day\" line under the newsletter header. One entry per day, keyed MM-DD (the issue's date, any year), each with text (approved by Jon; starts \"In <year>, …\" as the label already says On this day; nothing sombre) and source (a page that confirms it; never shown). No entry for an issue's date = no line. Frozen in the issue snapshot when the issue is built.",
+  "entries": {
+    "10-29": {
+      "text": "In 1969, the first message was sent between two computers on the ARPANET, the forerunner of the internet. It was meant to say “LOGIN”, but the system crashed after two letters, so the first message ever was “LO”.",
+      "source": "https://www.livescience.com/technology/communications/science-history-first-computer-to-computer-message-lays-the-foundation-for-the-internet-but-it-crashes-halfway-through-oct-29-1969"
+    },
+    "11-05": {
+      "text": "Bonfire Night has a local twist: two of the Gunpowder plotters, Robert and Thomas Wintour, came from Huddington Court near Droitwich, where the fleeing conspirators arrived on 6 November 1605.",
+      "source": "https://gunpowder-plot.org/huddington.html"
+    },
+    "11-12": {
+      "text": "In 1615, the Puritan writer Richard Baxter was born. Years later, while recovering at Rous Lench Court in 1647, he wrote most of The Saints’ Everlasting Rest, one of the best-selling books of the century.",
+      "source": "https://encyclopedia.com/history/encyclopedias-almanacs-transcripts-and-maps/baxter-richard"
+    },
+    "11-19": {
+      "text": "In 1969, Apollo 12 landed on the Moon, the second crewed landing. Astronaut Pete Conrad stepped out with “Whoopee!”",
+      "source": "https://www.npr.org/2019/11/19/780602012/50-years-ago-americans-made-the-2nd-moon-landing-why-doesnt-anyone-remember"
+    },
+    "11-26": {
+      "text": "In 1922, Howard Carter peered by candlelight into Tutankhamun’s tomb. Asked if he could see anything, he replied: “Yes, wonderful things.”",
+      "source": "https://www.history.com/this-day-in-history/november-26/archaeologists-enter-tomb-of-king-tut"
+    }
+  }
+}
