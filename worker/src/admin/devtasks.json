@@ -7,11 +7,6 @@
       "added": "2026-10-28"
     },
     {
-      "task": "Newsletter counts: switch on (uncomment the Analytics Engine binding in wrangler.toml, set site.json newsletterCounts to true)",
-      "waiting": "you: enable Analytics Engine in the Cloudflare dashboard",
-      "added": "2026-10-28"
-    },
-    {
       "task": "Weekly regulars: add the tai chi organiser's description, contact and any taster session",
       "waiting": "a reply by email",
       "added": "2026-10-28"

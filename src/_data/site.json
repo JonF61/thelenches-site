@@ -11,7 +11,7 @@
   "feedbackUrl": "https://approvals.lenches.workers.dev/f",
   "signupUrl": "https://approvals.lenches.workers.dev/s",
   "turnstileSiteKey": "0x4AAAAAAFleBJ36URNQhdUv",
-  "newsletterCounts": false,
+  "newsletterCounts": true,
   "cfAnalyticsToken": "0f8fc2cc80c34667b0cbf46777d33341",
   "footer": [
     { "title": "Around the villages", "links": [
