@@ -21,6 +21,10 @@ const LINKS = {
 // The Website update paragraph: each entry's text, joined with spaces.
 const siteParagraph = (site) => site.map((u) => String(u.text || '').trim()).filter(Boolean).join(' ');
 
+// Weekly regulars: "Wednesday 7-8pm" (no time: the day alone); site-relative links made absolute.
+const regularWhen = (r) => [r.day, r.time].filter(Boolean).join(' ');
+const siteUrl = (u) => (/^\//.test(String(u || '')) ? `${SITE}${u}` : String(u || ''));
+
 const C = {
   green: '#3F5233', greenDark: '#2E3D26', greenLight: '#EFE7D3', ink: '#2E2A1F',
   muted: '#5B5240', accentText: '#9A5312', cream: '#F6F1E4', paper: '#FBF8F1',
@@ -195,12 +199,24 @@ function renderHtml(m, subject) {
   }
   rows.push(`<tr><td class="px" style="padding:16px 24px 0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${C.ink};">${esc(summaryLine(m))}</td></tr>`);
 
-  if (m.events.length || m.regulars) {
+  const oldRegulars = typeof m.regulars === 'string' ? m.regulars : '';
+  if (m.events.length || oldRegulars) {
     rows.push(sectionHead('Coming up'));
     for (const ev of m.events) rows.push(eventCard(ev));
-    if (m.regulars) {
-      rows.push(`<tr><td class="px" style="padding:10px 24px 0;font-family:${SANS};font-size:13px;line-height:1.5;color:${C.muted};">${para(m.regulars)}</td></tr>`);
+    // Snapshots from before 28 Oct: the one-paragraph footnote.
+    if (oldRegulars) {
+      rows.push(`<tr><td class="px" style="padding:10px 24px 0;font-family:${SANS};font-size:13px;line-height:1.5;color:${C.muted};">${para(oldRegulars)}</td></tr>`);
     }
+  }
+  // Weekly regulars: their own section, one line each, Monday first (lib/whatson.js sorts them).
+  const regs = Array.isArray(m.regulars) ? m.regulars : [];
+  if (regs.length) {
+    rows.push(sectionHead('Weekly regulars'));
+    rows.push(`<tr><td class="px" style="padding:10px 24px 0;font-family:${SANS};font-size:14px;line-height:1.5;color:${C.ink};">`
+      + regs.map((r) => `<div style="margin:0 0 5px;"><b>${esc(regularWhen(r))}</b> · ${esc(r.what)}${r.where ? ` · ${esc(r.where)}` : ''}`
+        + `${r.note ? ` <span style="color:${C.muted};">(${esc(r.note)})</span>` : ''}`
+        + `${r.link ? ` · ${a(siteUrl(r.link.url), r.link.text, C.accentText)}` : ''}</div>`).join('')
+      + `</td></tr>`);
   }
   // No News section since 21 Oct 2026 (select.js gives news: []); kept for older snapshots.
   if ((m.news || []).length) {
@@ -258,10 +274,19 @@ function renderText(m) {
   if (m.onThisDay) out.push(`On this day: ${m.onThisDay.text}`, '');
   if ((m.siteUpdates || []).length) out.push(`Website update: ${siteParagraph(m.siteUpdates)} Have a look at ${LINKS.site}`, '');
   out.push(summaryLine(m));
-  if (m.events.length || m.regulars) {
+  const oldRegs = typeof m.regulars === 'string' ? m.regulars : '';
+  if (m.events.length || oldRegs) {
     head('Coming up');
     for (const ev of m.events) item(`${dateParts(ev.date).short} · ${ev.title}${ev.lenches ? ' [Lenches]' : ''}`, ev.meta, ev.body, ev.link);
-    if (m.regulars) out.push(paras(m.regulars).join('\n\n'), '');
+    if (oldRegs) out.push(paras(oldRegs).join('\n\n'), '');
+  }
+  if (Array.isArray(m.regulars) && m.regulars.length) {
+    head('Weekly regulars');
+    for (const r of m.regulars) {
+      out.push([regularWhen(r), r.what, r.where].filter(Boolean).join(' · ')
+        + (r.note ? ` (${r.note})` : '') + (r.link ? ` · ${r.link.text}: ${siteUrl(r.link.url)}` : ''));
+    }
+    out.push('');
   }
   if ((m.news || []).length) {
     head('News');

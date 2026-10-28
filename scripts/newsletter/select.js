@@ -320,7 +320,8 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     cutoff: deadline,
     held,
     events: events.map(strip),
-    regulars: str(w.eventsFootnote),
+    // Weekly regulars (src/items/regulars.json), every issue; older snapshots hold a string.
+    regulars: (w.regulars || []).length ? w.regulars : str(w.eventsFootnote),
     news: [],
     notices: notices.map(strip),
     roads: roads.map(strip),
