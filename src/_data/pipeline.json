@@ -141,6 +141,19 @@
   ],
   "notices": [
     {
+      "id": "rss-8788c72fe9d78161-1",
+      "title": "MP backs climate petition after Harvington wildfire",
+      "body": "Local MP Chris Bloor has supported a National Trust petition calling for climate action to be made a national mission, following a wildfire near Harvington, close to Evesham.",
+      "village": "Harvington",
+      "expires": "2026-11-18",
+      "added": "2026-10-28",
+      "source": "Evesham Journal",
+      "link": {
+        "text": "Read more at Evesham Journal",
+        "url": "https://www.eveshamjournal.co.uk/news/26674465.national-trust-petition-supported-mp-summer-wildfire/"
+      }
+    },
+    {
       "id": "1a17b925a43a5bc3-1",
       "title": "Road Closure — Badgers Hill, Sheriffs Lench",
       "body": "Badgers Hill to Handgate Lane will be closed from Tuesday 27 October to Sunday 29 November for Severn Trent Water streetworks, with a diversion via Handgate Lane, Church Lench.",
