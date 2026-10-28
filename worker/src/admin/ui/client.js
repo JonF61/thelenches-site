@@ -26,7 +26,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '43';
+export const UI_VERSION = '44';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -104,7 +104,13 @@ export const CLIENT_JS = String.raw`
       init.headers = { 'content-type': 'application/json', 'x-csrf-token': S.csrf };
       init.body = JSON.stringify(body);
     }
-    var r = await fetch(path, init);
+    var r;
+    try {
+      r = await fetch(path, init);
+    } catch (e) {
+      // Cloudflare Access sign-in expired: the request is sent to its login page, which fails here.
+      return { status: 0, ok: false, json: { error: 'Signed out: reload the page' } };
+    }
     var j = {};
     try { j = await r.json(); } catch (e) { j = { error: 'HTTP ' + r.status }; }
     if (r.status === 403 && body) j.error = j.error || 'Signed out: reload the page';
@@ -356,6 +362,8 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'lessons') return [h('div', { class: 'list wide' }, top, lessonsView())];
     if (S.view === 'activity') return [h('div', { class: 'list wide' }, top, activityView())];
     if (S.view === 'stats') return [h('div', { class: 'list wide' }, top, statsView())];
+    // Each time the draft screen opens, check the Cloudflare sign-in is still valid (draftView).
+    if (S.view === 'draft' && S.shown.split('|')[0] !== 'draft') S.draftAuth = null;
     if (S.view === 'draft') return [h('div', { class: 'list wide' }, top, draftView(d))];
     if (S.view === 'summary') return [h('div', { class: 'list wide' }, top, summaryView(d))];
     return split(withIntro(queueList(d)), 'pending');
@@ -2676,7 +2684,27 @@ export const CLIENT_JS = String.raw`
     setTimeout(tick, 15000);
   }
 
+  // Signed in? An expired Cloudflare Access sign-in sends /admin requests to its login page
+  // (a redirect, or a refusal), which can't be shown in the frame ("blocked").
+  async function checkDraftAuth() {
+    S.draftAuth = 'checking';
+    var out = false;
+    try {
+      var r = await fetch('/admin/api/draft', { credentials: 'same-origin', redirect: 'manual' });
+      out = r.type === 'opaqueredirect' || r.status === 401 || r.status === 403 || (r.status >= 300 && r.status < 400);
+    } catch (e) {
+      out = true;
+    }
+    S.draftAuth = out ? 'out' : 'ok';
+    if (S.view === 'draft') render();
+  }
+
   function draftView(d) {
+    if (!S.draftAuth) checkDraftAuth();
+    if (S.draftAuth === 'out') {
+      return [h('div', { class: 'note warn' }, 'You\'ve been signed out of Cloudflare: reload the page to sign in again. ',
+        h('button', { class: 'btn', onclick: function () { window.location.reload(); } }, 'Reload'))];
+    }
     var m = draftMetaOf(d);
     var els = [];
     if (d.draft && d.draft.error) els.push(errorNote(d.draft, 'The Newsletter draft tab'));
@@ -2693,7 +2721,9 @@ export const CLIENT_JS = String.raw`
       h('div', { class: 'actions' },
         h('button', { class: 'btn primary', disabled: S.draftBusy ? true : null, onclick: refreshDraft }, S.draftBusy ? 'Refreshing…' : 'Refresh'),
         h('a', { class: 'btn link', href: '/admin/draft', target: '_blank', rel: 'noopener' }, 'Open in new tab'))));
-    els.push(h('iframe', { class: 'draft-frame', src: '/admin/draft?v=' + encodeURIComponent(m ? str(m.as_of) : '0'), title: 'Newsletter draft' }));
+    els.push(S.draftAuth === 'ok'
+      ? h('iframe', { class: 'draft-frame', src: '/admin/draft?v=' + encodeURIComponent(m ? str(m.as_of) : '0'), title: 'Newsletter draft' })
+      : h('p', { class: 'loading' }, 'Loading the draft…'));
     return els;
   }
 
