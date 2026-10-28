@@ -30,6 +30,7 @@ const g = require('../ingest/google');
 const { linksEnabled } = require('../ingest/links');
 const { render } = require('./render');
 const { personalise } = require('./unsub');
+const { trackIssue } = require('./track');
 
 const TZ = 'Europe/London';
 const FROM = 'website@thelenches.org.uk';
@@ -61,6 +62,15 @@ const errMsg = (e) => String((e && e.message) || e).replace(/\s+/g, ' ').slice(0
 const londonDate = (ms) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(ms);
 
 // "YYYY-MM-DD HH:MM:SS", UK time (the Sheet's other tabs use UK time too).
+// Anonymous open and click counts are on while site.json has "newsletterCounts": true.
+function countsOn() {
+  try {
+    return JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'src', '_data', 'site.json'), 'utf8')).newsletterCounts === true;
+  } catch {
+    return false;
+  }
+}
+
 function stamp(ms = Date.now()) {
   const p = {};
   for (const x of new Intl.DateTimeFormat('en-GB', {
@@ -498,7 +508,11 @@ async function main() {
   if (!check || str(check.send_run) !== runId) throw new Error('Send lock taken by another run: stopping');
 
   const fromName = g.fromNameFor(settings);
-  const res = await sendAll({ key, targets, issue, fromName, runId, startedMs });
+  // Anonymous counts (site.json newsletterCounts): live sends only, after every check above,
+  // so the tested content and its hash are untouched (track.js).
+  const sendIssue = mode === 'live' && countsOn() ? trackIssue(issue, issueDate) : issue;
+  if (sendIssue !== issue) console.log(`Counted links: ${sendIssue.trackedLinks}, plus the open image.`);
+  const res = await sendAll({ key, targets, issue: sendIssue, fromName, runId, startedMs });
   const summary = `${mode}${autosend ? ' (auto)' : ''} ${stamp()}: ${res.sent} sent, ${res.failed} failed, ${res.stuck} stuck, ${res.queued} queued`;
   console.log(summary + (res.stop ? ` (stopped: ${res.stop})` : ''));
 
