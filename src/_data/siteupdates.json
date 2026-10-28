@@ -19,13 +19,15 @@
       "key": "home-notices-roads-2026-10",
       "from": "2026-10-29",
       "link": "https://thelenches.org.uk/",
-      "text": "The website has a new home page with an illustrated map of the villages, a Notices page for news from around the villages, and a Roads page with a map of closures and roadworks and a slider to see what's on any day in the next 8 weeks."
+      "text": "The website has a new home page with an illustrated map of the villages, a Notices page for news from around the villages, and a Roads page with a map of closures and roadworks and a slider to see what's on any day in the next 8 weeks.",
+      "until": "2026-10-28"
     },
     {
       "key": "menu-pills-2026-11",
       "from": "2026-11-05",
       "link": "https://thelenches.org.uk/",
-      "text": "The menu at the top of every page is now a row of buttons, and on phones a Menu button opens it."
+      "text": "The menu at the top of every page is now a row of buttons, and on phones a Menu button opens it.",
+      "until": "2026-10-28"
     },
     {
       "key": "events-pictures-2026-10",
@@ -38,13 +40,21 @@
       "key": "what-to-do-2026-11",
       "from": "2026-11-05",
       "link": "https://thelenches.org.uk/living-here/what-to-do/",
-      "text": "There's also a new 'What to do if…' page saying who to call for power cuts, gas leaks, flooding, lost pets, fly-tipping, potholes and blocked footpaths."
+      "text": "There's also a new 'What to do if…' page saying who to call for power cuts, gas leaks, flooding, lost pets, fly-tipping, potholes and blocked footpaths.",
+      "until": "2026-10-28"
     },
     {
       "key": "web-signup-2026-10",
       "from": "2026-10-29",
       "link": "https://thelenches.org.uk/newsletter/",
-      "text": "The Events page now shows a picture beside each event, and you can now join this newsletter straight from the website: enter your email and click the link we send you."
+      "text": "The Events page now shows a picture beside each event, and you can now join this newsletter straight from the website: enter your email and click the link we send you.",
+      "until": "2026-10-28"
+    },
+    {
+      "key": "site-refresh-2026-10-29",
+      "from": "2026-10-29",
+      "link": "https://thelenches.org.uk/",
+      "text": "The website has had a refresh. The home page now opens with Events, Notices, Bins and newsletter sign-up, with the Community and Living here sections below, and the menu is a row of buttons (a Menu button on phones) with a new Search page. There's a Notices page for parish council notices and news from around the villages, a Roads page with a map of closures and roadworks and a slider to see any day in the next 8 weeks, and a 'What to do if…' page saying who to call for power cuts, flooding, lost pets, fly-tipping, potholes and more. The Events page now shows a picture beside each event, every page has a 'Suggest an update' box for anything wrong or missing, and you can now join this newsletter straight from the website."
     }
   ]
 }
