@@ -67,7 +67,7 @@ function binList(bins) {
 
 function binLines(bins) {
   if (bins.expired || !bins.groups.length) return [];
-  return bins.groups.map((g) => {
+  return bins.groups.slice().sort((x, y) => String(x.date).localeCompare(String(y.date))).map((g) => {
     const note = g.note ? ` (${g.note})` : '';
     return `${g.names.join(', ')}: ${dateParts(g.date).short}, ${binList(g.bins)}${note}`;
   });
@@ -154,6 +154,20 @@ function storyBlock(it, titleSize, kind) {
     + `${linkLine(it.link)}${img}</td></tr>`;
 }
 
+// Bins first, in a box of their own (Jon, 28 Oct): one line per collection day, date in bold.
+function binsBox(m) {
+  const b = m.bins || {};
+  const groups = b.expired || !(b.groups || []).length ? [] : b.groups.slice().sort((x, y) => String(x.date).localeCompare(String(y.date)));
+  const body = groups.length
+    ? groups.map((g) => `<div style="margin:2px 0;">${esc(g.names.join(', '))}: <strong>${esc(dateParts(g.date).short)}</strong> · ${esc(binList(g.bins))}${g.note ? ` (${esc(g.note)})` : ''}</div>`).join('')
+      + `<div style="margin-top:4px;font-size:13px;">${a(LINKS.bins, 'Check your day on our Bins page', C.accentText)}</div>`
+    : `<div>Check your collection day on ${a(b.lookup, 'Wychavon\'s lookup', C.accentText)}</div>`;
+  return `<tr><td class="px" style="padding:12px 24px 0;">`
+    + `<div style="background:${C.cream};border-left:4px solid ${C.green};padding:10px 14px;font-family:${SANS};font-size:15px;line-height:1.5;color:${C.ink};">`
+    + `<div style="font-size:11px;font-weight:bold;letter-spacing:1px;color:${C.accentText};margin-bottom:2px;">BINS THIS WEEK</div>${body}</div>`
+    + `</td></tr>`;
+}
+
 function roadsAndBins(m) {
   const lines = [];
   for (const r of m.roads) {
@@ -163,12 +177,7 @@ function roadsAndBins(m) {
       + (r.body ? para(r.body) : '')
       + (r.link ? `<div>${a(r.link.url, r.link.text, C.accentText)}</div>` : '') + `</div>`);
   }
-  const bl = binLines(m.bins);
-  if (bl.length) {
-    lines.push(`<div><span style="color:${C.accentText};">Bins</span> · ${bl.map(esc).join(' · ')} · ${a(LINKS.bins, 'Bins page', C.accentText)}</div>`);
-  } else {
-    lines.push(`<div><span style="color:${C.accentText};">Bins</span> · Check your collection day on ${a(m.bins.lookup, 'Wychavon\'s lookup', C.accentText)}</div>`);
-  }
+  if (!lines.length) return '';
   return `<tr><td class="px" style="padding:12px 24px 0;font-family:${SANS};font-size:13px;line-height:1.6;color:${C.ink};">${lines.join('')}</td></tr>`;
 }
 
@@ -227,8 +236,10 @@ function renderHtml(m, subject) {
     rows.push(sectionHead('Notices'));
     for (const it of m.notices) rows.push(storyBlock(it, 15, 'notice'));
   }
-  rows.push(sectionHead('Roads and bins'));
-  rows.push(roadsAndBins(m));
+  rows.push(sectionHead(m.roads.length ? 'Bins and roads' : 'Bins'));
+  rows.push(binsBox(m));
+  const roadRows = roadsAndBins(m);
+  if (roadRows) rows.push(roadRows);
   if (m.elsewhere.length) {
     rows.push(sectionHead('Elsewhere'));
     rows.push(`<tr><td class="px" style="padding:12px 24px 0;font-family:${SANS};font-size:13px;line-height:1.6;color:${C.ink};">`
@@ -296,11 +307,11 @@ function renderText(m) {
     head('Notices');
     for (const it of m.notices) item(it.title, it.meta, it.body, it.link);
   }
-  head('Roads and bins');
-  for (const r of m.roads) item(`Roadworks · ${r.title}${r.date ? ` (from ${dateParts(r.date).short})` : ''}`, '', r.body, r.link);
+  head(m.roads.length ? 'Bins and roads' : 'Bins');
   const bl = binLines(m.bins);
-  if (bl.length) out.push(`Bins · ${bl.join(' · ')}`, `Bins page: ${LINKS.bins}`);
-  else out.push(`Bins · Check your collection day: ${m.bins.lookup}`);
+  if (bl.length) out.push('Bins this week:', ...bl, `Check your day on our Bins page: ${LINKS.bins}`, '');
+  else out.push(`Bins: check your collection day: ${m.bins.lookup}`, '');
+  for (const r of m.roads) item(`Roadworks · ${r.title}${r.date ? ` (from ${dateParts(r.date).short})` : ''}`, '', r.body, r.link);
   if (m.elsewhere.length) {
     head('Elsewhere');
     for (const e of m.elsewhere) out.push(`${e.title} · ${e.link.text}: ${e.link.url}`);
