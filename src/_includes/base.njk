@@ -150,5 +150,9 @@
   })();
   </script>
 
+  {%- if site.cfAnalyticsToken %}
+  {#- Cloudflare Web Analytics: counts visits, no cookies (privacy page section 11). -#}
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "{{ site.cfAnalyticsToken }}"}'></script>
+  {%- endif %}
 </body>
 </html>
