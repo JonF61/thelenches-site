@@ -60,6 +60,7 @@ nav.side button[aria-current="page"] .n{background:rgba(255,255,255,.25);color:i
 span.sum-h{color:inherit;cursor:default}
 .sum-l{margin:6px 0 0;padding-left:18px;line-height:1.5}
 .sum-l li{margin:2px 0}
+.sum-clear{margin:0;color:var(--ok)}
 .sum-hol{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .their-h{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:10px 0 4px}
 .their-fold summary,.their-more summary{cursor:pointer;color:var(--muted);margin:8px 0}
