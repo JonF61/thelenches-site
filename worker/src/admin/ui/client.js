@@ -26,7 +26,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '42';
+export const UI_VERSION = '43';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -36,11 +36,12 @@ export const CLIENT_JS = String.raw`
     picked: {}, ff: '', openF: {}, drag: null, busy: false, order: {}, shown: '' };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
-  var VIEWS = [['summary', 'Summary'], ['draft', 'Newsletter draft'], ['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
+  var VIEWS = [['summary', 'Summary'], ['draft', 'Newsletter draft'], ['stats', 'Newsletter stats'], ['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
   // Health has no menu entry (28 Oct): the top bar's Diagnostic and Watchdog open it, as does Summary's Site health.
   // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
   var INTROS = {
     draft: 'The next newsletter as it would be built now from what is approved. It updates after each approval and every 3 hours. Once the issue is built on Thursday, this shows it exactly as built.',
+    stats: 'How each newsletter did: how many it went to, bounces, and anonymous opens and link clicks. Counts are totals only: nobody can see who opened or clicked.',
     summary: 'What needs you now, and what is coming up, in one place. Tap a heading to open its page.',
     queue: 'Events and notices sent in by email or picked up from feeds, waiting for you to approve or reject. Approved items go on the website and into Thursday\'s newsletter.',
     replies: 'Holly\'s draft emails waiting for you to Approve, Edit, Redraft or Reject. Below them: emails still owed a reply, and everything already sent.',
@@ -326,7 +327,7 @@ export const CLIENT_JS = String.raw`
       owed: Array.isArray(d.owed) ? d.owed.filter(function (o) { return !S.done['reply:' + o.holding.reply_id]; }).length : '!',
       photos: d.photos && !d.photos.error ? d.photos.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length : '!',
       feedback: d.feedback && !d.feedback.error ? fbRows(d, 'waiting').length + fbRows(d, 'reply').length : '!',
-      summary: null, draft: null, contacts: null, lessons: null, health: null, activity: null
+      summary: null, draft: null, stats: null, contacts: null, lessons: null, health: null, activity: null
     };
   }
 
@@ -354,6 +355,7 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'contacts') return [h('div', { class: 'list wide' }, top, contactsView())];
     if (S.view === 'lessons') return [h('div', { class: 'list wide' }, top, lessonsView())];
     if (S.view === 'activity') return [h('div', { class: 'list wide' }, top, activityView())];
+    if (S.view === 'stats') return [h('div', { class: 'list wide' }, top, statsView())];
     if (S.view === 'draft') return [h('div', { class: 'list wide' }, top, draftView(d))];
     if (S.view === 'summary') return [h('div', { class: 'list wide' }, top, summaryView(d))];
     return split(withIntro(queueList(d)), 'pending');
@@ -2580,6 +2582,62 @@ export const CLIENT_JS = String.raw`
       other.length ? section('Not in use', other, '') : null];
   }
 
+  /* ------------------------------------------------------- newsletter stats -- */
+
+  async function loadStats(pick) {
+    S.nlLoading = true;
+    var r = await api('/admin/api/nlstats' + (pick ? '?i=' + encodeURIComponent(pick) : ''));
+    S.nlLoading = false;
+    S.nl = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'stats') render();
+  }
+
+  // 8 -> "8–9am", 12 -> "12–1pm", 23 -> "11pm–12am".
+  function hourLabel(hr) {
+    var f = function (x) { x = x % 24; return (x % 12 || 12) + (x < 12 ? 'am' : 'pm'); };
+    var a = f(hr);
+    var b = f(hr + 1);
+    return a.slice(-2) === b.slice(-2) ? a.slice(0, -2) + '–' + b : a + '–' + b;
+  }
+
+  function statsView() {
+    var t = S.nl;
+    if (!t) {
+      if (!S.nlLoading) loadStats(S.nlPick);
+      return [h('p', { class: 'loading' }, 'Loading newsletter stats…')];
+    }
+    if (t.error && !t.issues) return [errorNote(t, 'Newsletter stats'), h('button', { class: 'btn', onclick: function () { S.nl = null; render(); } }, 'Try again')];
+    var els = [];
+    if (!t.on) els.push(h('div', { class: 'note warn' }, 'Opens and clicks need the Worker secrets CF_ANALYTICS_TOKEN and CF_ACCOUNT_ID.'));
+    if (t.error) els.push(h('div', { class: 'note bad' }, 'Opens and clicks could not be read: ' + t.error));
+    if (!(t.issues || []).length) { els.push(h('p', { class: 'empty' }, 'No newsletters sent yet.')); return els; }
+    var cur = t.detail ? t.detail.date : '';
+    var n = function (v) { return v === null || v === undefined ? '–' : String(v); };
+    els.push(h('div', { class: 'card' }, h('table', { class: 'h nlstats' },
+      h('thead', null, h('tr', null, ['Issue', 'Sent', 'Bounced', 'Opens*', 'Clicks'].map(function (x) { return h('th', null, x); }))),
+      h('tbody', null, t.issues.map(function (x) {
+        return h('tr', { class: x.date === cur ? 'sel' : null, tabindex: '0', role: 'button', title: 'Show this issue',
+          onclick: function () { S.nlPick = x.date; S.nl = null; render(); },
+          onkeydown: function (e) { if (e.key === 'Enter') { S.nlPick = x.date; S.nl = null; render(); } } },
+          h('td', null, day(x.date)), h('td', null, n(x.sent)), h('td', null, n(x.bounced)), h('td', null, n(x.opens)), h('td', null, n(x.clicks)));
+      })))));
+    var d = t.detail;
+    if (d) {
+      var row = t.issues.filter(function (x) { return x.date === d.date; })[0] || {};
+      els.push(h('div', { class: 'card' },
+        h('h2', null, day(d.date)),
+        h('p', null, 'Sent ' + n(row.sent) + ' · Bounced ' + n(row.bounced) + ' · Opens ' + n(row.opens) + '* · Link clicks ' + n(row.clicks)),
+        d.days.length ? h('p', null, h('b', null, 'Opens by day: '), d.days.map(function (x) { return day(x.day) + ' ' + x.n; }).join(' · ')) : h('p', { class: 'meta' }, 'No opens counted yet.'),
+        d.hours.length ? h('p', null, h('b', null, 'Busiest hours: '), d.hours.map(function (x) { return hourLabel(x.hour) + ' ' + x.n; }).join(' · ')) : null,
+        h('h3', null, 'Most-clicked links'),
+        d.links.length ? h('table', { class: 'h' }, h('tbody', null, d.links.map(function (l) {
+          return h('tr', null, h('td', { class: 'run-t' }, String(l.n)), h('td', null, h('a', { href: l.url, target: '_blank', rel: 'noopener' }, l.url.replace(/^https?:\/\/(www\.)?/, ''))));
+        }))) : h('p', { class: 'meta' }, 'No clicks counted yet.')));
+    }
+    els.push(h('p', { class: 'meta' }, '* Opens are approximate: some email apps open every image automatically, others block images. Clicks may include link checkers in some email services. Counts are kept for about 3 months.'));
+    return els;
+  }
+
   /* ------------------------------------------------------- newsletter draft -- */
 
   // The draft's meta: the newest seen (after a Refresh), else the one /api/state brought.
@@ -2830,6 +2888,13 @@ export const CLIENT_JS = String.raw`
       var link = sheetLink('Issues', issue.row);
       if (link) card.appendChild(h('div', { class: 'actions' }, link));
       els.push(card);
+    }
+
+    // The last newsletter sent: its counts (Newsletter stats).
+    var lastNl = all.lastSent;
+    if (lastNl) {
+      els.push(sumCard('Last newsletter: ' + day(lastNl.date), go('stats'), [line(lastNl.sent + ' sent, ' + lastNl.bounced + ' bounced' +
+        (lastNl.opens === null || lastNl.opens === undefined ? '' : ', ~' + lastNl.opens + ' opens, ' + lastNl.clicks + ' clicks'), '', [])]));
     }
 
     // 8. Coming up this week.

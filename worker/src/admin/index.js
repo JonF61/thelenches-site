@@ -88,6 +88,9 @@
 //                                   (draft.js; scripts/newsletter/draft.js), framed by the panel
 //   GET  /admin/api/draft           that draft's meta only (as_of, issue_date, mode, counts)
 //   POST /admin/api/draft-refresh   runs newsletter-draft.yml now (repository_dispatch); sends nothing
+//   GET  /admin/api/nlstats?i=DATE  Newsletter stats (nlstats.js): sent issues with sent, bounced,
+//                                   and anonymous opens and clicks; for one issue, opens by day and
+//                                   hour and the most-clicked links (totals only, never per person)
 //   GET  /admin/api/runs            Activity: the latest 20 GitHub Actions runs (runs.js; read-only)
 //   GET  /admin/api/build-status?sha=&at=&p=&text=  whether an Edit page commit is live: its
 //                                   site build succeeded AND the page (fresh copy) shows text
@@ -141,6 +144,7 @@ import {
   nextIssue, failingRuns, subscriberChanges, lastSentDate, comingWeek, comingUpFile, devTasks,
 } from './summary.js';
 import { visitors } from './visitors.js';
+import { nlStats } from './nlstats.js';
 import { DRAFT_TAB, DRAFT_RANGE, draftMeta, draftHtml, draftPage } from './draft.js';
 
 const MAX_BODY = 60000;
@@ -513,9 +517,9 @@ async function outreach(env) {
 // both outreach counts; organisations take the same Gmail look-ups as their own screen.
 async function summary(env) {
   const today = ukToday();
-  const [issues, pending, subs, dns, lessons, contacts, replies, orgTab, runs, coming, seen] = await settled([
+  const [issues, pending, subs, dns, lessons, contacts, replies, orgTab, runs, coming, seen, sends] = await settled([
     readTable(env, 'Issues'), readTable(env, 'Pending'), readTable(env, 'Subscribers'), readTable(env, 'Do Not Send'),
-    readLessons(env), readTable(env, CONTACTS_TAB), readTable(env, 'Replies'), readOrgTab(env), recentRuns(env, 50), comingUpFile(env), visitors(env),
+    readLessons(env), readTable(env, CONTACTS_TAB), readTable(env, 'Replies'), readOrgTab(env), recentRuns(env, 50), comingUpFile(env), visitors(env), readTable(env, 'Sends'),
   ]);
   const fail = (t) => (t && t.error ? { error: t.error } : null);
   const issueRows = issues.error ? [] : issues.rows;
@@ -548,6 +552,9 @@ async function summary(env) {
     lessons: lessons.error ? fail(lessons) : lessonRows(lessons).rows.filter((r) => r.status.toLowerCase() === 'proposed').map((r) => ({ id: r.id, lesson: r.lesson })),
     devTasks: devTasks(),
     visitors: seen,
+    // The last newsletter sent: sent, bounced, opens, clicks (no per-issue detail).
+    lastSent: issues.error || sends.error || dns.error ? null
+      : ((await nlStats(env, { issues: issues.rows, sends: sends.rows, dns: dns.rows }, '', false)).issues[0] || null),
   };
 }
 
@@ -799,6 +806,10 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/orgs') return json(orgLists(ORGS, await orgContext(env)));
       if (path === '/admin/api/lessons') return json(lessonRows(await readLessons(env)));
       if (path === '/admin/api/summary') return json(await summary(env));
+      if (path === '/admin/api/nlstats') {
+        const [issues, sends, dns] = await Promise.all([readTable(env, 'Issues'), readTable(env, 'Sends'), readTable(env, 'Do Not Send')]);
+        return json(await nlStats(env, { issues: issues.rows, sends: sends.rows, dns: dns.rows }, String(url.searchParams.get('i') || '')));
+      }
       if (path === '/admin/api/runs') return json({ runs: await recentRuns(env, 20) });
       if (path === '/admin/api/build-status') {
         const st = await buildStatus(env, url.searchParams.get('sha'), url.searchParams.get('at'));

@@ -11,7 +11,9 @@
 //                    repository_dispatch "signup" (send), which emails a confirmation link
 //   GET  /s?t=TOKEN  sign-up confirm page (a button: link scanners only GET)
 //   POST /s?t=TOKEN  the button; fires repository_dispatch "signup" (confirm)
-//                    Public: Cloudflare Access must never cover /a, /u, /f or /s
+//   GET  /c?t=TOKEN  a link in a sent newsletter: one anonymous click counted, then 302 on
+//   GET  /o?i=DATE   the newsletter's 1x1 image: one anonymous open counted (track.js)
+//                    Public: Cloudflare Access must never cover /a, /u, /f, /s, /c or /o
 //                    (readers and mail providers have no Access login).
 //   /admin, /admin/*  admin panel (admin/index.js): Cloudflare Access only, decisions go
 //                    through the same decide() as POST /a (core.js)
@@ -40,6 +42,7 @@
 // The Rebuild button's build carries rebuild: true, which lifts the Wednesday 18:00
 // deadline cutoff (the scheduled 06:30 build keeps it).
 
+import { handleClick, handleOpen } from './track.js';
 import {
   ACTIONS, validPayload, github, dispatch, decide, cleanReason, cleanBody,
 } from './core.js';
@@ -535,6 +538,9 @@ export default {
     if (url.pathname === '/a') return handleApproval(request, env);
     if (url.pathname === '/u') return handleUnsubscribe(request, env);
     if (url.pathname === '/f') return handleFeedback(request, env);
+    // Anonymous newsletter counts (track.js): public, never behind Cloudflare Access.
+    if (url.pathname === '/c') return handleClick(request, env);
+    if (url.pathname === '/o') return handleOpen(request, env);
     if (url.pathname === '/s') {
       return url.searchParams.has('t') ? handleSignupConfirm(request, env) : handleSignup(request, env);
     }
