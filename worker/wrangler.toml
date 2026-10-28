@@ -8,6 +8,8 @@
 # Reader feedback form (POST /f, public: Cloudflare Access must cover /admin only, never
 # /f, /a or /u): Worker secret TURNSTILE_SECRET, added by hand the same way. Until it is
 # set, every submission is refused.
+# Summary page visitors (admin/visitors.js): secrets CF_ANALYTICS_TOKEN (custom API token,
+# Account Analytics: Read only) and CF_ACCOUNT_ID, added by hand the same way.
 name = "approvals"
 main = "src/index.js"
 compatibility_date = "2026-09-01"

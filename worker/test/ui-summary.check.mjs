@@ -43,6 +43,7 @@ const stateData = () => ({
 const summaryData = () => (empty ? {
   today: '2026-10-28', failing: [], devTasks: [], lessons: [], outreach: { seasonal: 0, quiet: 0, lead: 0 }, orgs: { due: 0, chase: 0 },
   coming: { events: [], roads: [] }, subscribers: { since: '2026-10-22', joined: 0, left: 0, total: 425 },
+  visitors: { off: true },
   issue: { date: '2026-10-29', deadline: '2026-10-28 18:00', deadlineAt: new Date(now - 2 * H).toISOString(), status: 'tested', row: 0, onThisDay: '', events: 0, fresh: 0 },
 } : {
   today: '2026-10-28',
@@ -53,6 +54,8 @@ const summaryData = () => (empty ? {
   coming: { events: [{ date: '2026-10-31', end: '', title: 'Halloween trail', url: 'https://thelenches.org.uk/events/#ev' }],
     roads: [{ start: '2026-11-02', end: '2026-11-06', title: 'Road closure — Ab Lench Road', url: 'https://thelenches.org.uk/living-here/roads/' }] },
   subscribers: { since: '2026-10-22', joined: 4, left: 1, total: 428 },
+  visitors: { since: 'x', views: 812, visits: 301, days: [{ date: '2026-10-27', views: 400, visits: 150 }, { date: '2026-10-28', views: 412, visits: 151 }],
+    pages: [{ path: '/', views: 300 }, { path: '/bins/', views: 120 }] },
   issue: { date: '2026-10-29', deadline: '2026-10-28 18:00', deadlineAt: new Date(now + 28 * H).toISOString(), status: '', row: 12, onThisDay: 'In 1886, the Statue of Liberty was dedicated in New York.', events: 6, fresh: 3 },
 });
 
@@ -102,6 +105,7 @@ try {
     assert.match(text, /1 organisation due a check/);
     assert.match(text, /Holly lessons awaiting approval \(1\)[\s\S]*Thank council clerks/);
     assert.match(text, /\+4 joined, −1 unsubscribed or blocked · since the newsletter of Thu 22 Oct/);
+    assert.match(text, /Visitors[\s\S]*812 page views, 301 visits · last 7 days[\s\S]*By day: Tue 27 Oct 400 · Wed 28 Oct 412[\s\S]*\/bins\/ · 120 views/);
     assert.equal(/Holiday mode is ON/.test(text), holiday, 'holiday banner only when on');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `summary-${name}.png`), fullPage: true });
     // A heading opens its screen.
@@ -122,6 +126,7 @@ try {
     assert.match(t2, /No On this day line for Thu 29 Oct/);
     assert.match(t2, /Deadline passed[\s\S]*Preview emailed: waiting for your tap/);
     assert.match(t2, /Nothing in the next 7 days/);
+    assert.match(t2, /Not set up: the Worker needs CF_ANALYTICS_TOKEN/);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `summary-${name}-empty.png`), fullPage: true });
     assert.deepEqual(errors, []);
     await page.close();
