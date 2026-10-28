@@ -111,6 +111,7 @@ async function main() {
     bins: readJson('src/_data/bins.json'),
     siteupdates: readJson('src/_data/siteupdates.json'),
     onthisday: readJson('src/_data/onthisday.json'),
+    photos: readJson('src/_data/photos.json'),
   });
   const issue = render(model);
   console.log(`Issue ${issueDate}: ${model.keys.length} items (${model.events.length} events, `

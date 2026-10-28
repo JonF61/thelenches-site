@@ -43,7 +43,7 @@ function snapshotModel(row) {
   return model;
 }
 
-// inputs: { today, pending, issues, settings, sources, whatson, bins, siteupdates, onthisday, jpegFor }
+// inputs: { today, pending, issues, settings, sources, whatson, bins, siteupdates, onthisday, photos, jpegFor }
 // -> { meta, html }
 function buildDraft(inputs) {
   const issues = inputs.issues || [];
@@ -59,7 +59,7 @@ function buildDraft(inputs) {
   if (!model) {
     model = select({
       issueDate, pending: inputs.pending, issues, settings: inputs.settings, sources: inputs.sources, jpegFor: inputs.jpegFor,
-      cutoff: deadlineFor(issueDate), whatson: inputs.whatson, bins: inputs.bins, siteupdates: inputs.siteupdates, onthisday: inputs.onthisday,
+      cutoff: deadlineFor(issueDate), whatson: inputs.whatson, bins: inputs.bins, siteupdates: inputs.siteupdates, onthisday: inputs.onthisday, photos: inputs.photos,
     });
   }
   const issue = forPreview(render(model));
@@ -94,6 +94,7 @@ async function main() {
   const { meta, html } = buildDraft({
     today, pending, issues, settings, sources, jpegFor, whatson: loadWhatson(),
     bins: readJson('src/_data/bins.json'), siteupdates: readJson('src/_data/siteupdates.json'), onthisday: readJson('src/_data/onthisday.json'),
+    photos: readJson('src/_data/photos.json'),
   });
   await g.replaceTab(TAB, draftRows(meta, html, new Date().toISOString()));
   console.log(`Draft for ${meta.issue_date} (${meta.mode}${meta.status ? `, Issues ${meta.status}` : ''}): ${meta.items} items `

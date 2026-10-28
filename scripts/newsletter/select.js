@@ -24,7 +24,9 @@
 //   On this day src/_data/onthisday.json: the entry keyed by the issue's MM-DD (any year),
 //               one italic line under the header; none = no line (28 Oct 2026).
 //   Images      Pending and whatson items: the JPEG copy of an /images/items/*.webp
-//               (publish.js makes it; classic Outlook can't show WebP), else text only.
+//               (publish.js makes it; classic Outlook can't show WebP); an event with no
+//               image of its own: its Lenches Photos picture (photos.json event: target,
+//               as the Events page), else text only.
 //   Wording     item text is the rewrite or the submitter's own wording (lib/wording.js).
 //   Holiday     items flagged people_in_image or political_commercial are left out.
 //   Deadline    with a cutoff (the scheduled Thursday build: Wednesday 18:00 UK), Pending
@@ -168,7 +170,7 @@ function onThisDayFor(onthisday, issueDate) {
   return text ? { text } : null;
 }
 
-function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, issues, settings, sources, jpegFor, cutoff }) {
+function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, issues, settings, sources, jpegFor, cutoff, photos }) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate || '')) throw new Error(`Bad issue date "${issueDate}"`);
   const deadline = str(cutoff);
   if (deadline && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(deadline)) throw new Error(`Bad cutoff "${cutoff}"`);
@@ -217,8 +219,29 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     }
     return img;
   }
-  const imageFor = (row, key) => emailImage(row.image_url, row.alt_text, key, row.flyer_count, row.image_credit, row.image_credit_url);
-  const whatsonImage = (it, key) => (it.image ? emailImage(it.image.url, it.image.alt, key, 0, it.image.credit, it.image.creditUrl) : null);
+  // An event with no image of its own: the Lenches Photos picture tagged for it (photos.json
+  // targets "event:<words in its title>"), as the Events page shows it (.eleventy.js eventImage).
+  // Same appearance limit; its JPEG copy (made by the photos run) must be in the repo.
+  const squash = (t) => str(t).toLowerCase().replace(/[^a-z0-9]+/g, '');
+  function standingImage(title, key, flyerCount) {
+    const t = squash(title);
+    if (!t) return null;
+    for (const ph of photos || []) {
+      const hit = (ph.targets || []).some((x) => {
+        const m = String(x).match(/^event:(.+)$/);
+        return m && squash(m[1]) && t.includes(squash(m[1]));
+      });
+      if (!hit || !/^\/images\/photos\/[a-z0-9-]{1,100}\.webp$/.test(str(ph.src))) continue;
+      if (Math.max(num(flyerCount), imaged.get(key) || 0) >= MAX_IMAGE) return null;
+      const src = jpegFor ? jpegFor(str(ph.src)) : '';
+      return src ? { src, alt: str(ph.alt) } : null;
+    }
+    return null;
+  }
+  const imageFor = (row, key) => emailImage(row.image_url, row.alt_text, key, row.flyer_count, row.image_credit, row.image_credit_url)
+    || (str(row.image_url) || str(row.category).toLowerCase() !== 'event' ? null : standingImage(row.title, key, row.flyer_count));
+  const whatsonImage = (it, key, isEvent) => (it.image ? emailImage(it.image.url, it.image.alt, key, 0, it.image.credit, it.image.creditUrl)
+    : (isEvent ? standingImage(it.title, key, 0) : null));
 
   // ---- Pending: approved/auto rows; later rows win, as on the site.
   const byKey = new Map();
@@ -281,7 +304,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     if (pendingEvents.has(`${normTitle(ev.title)}|${date}`)) continue;
     const key = whatsonKey('events', ev);
     if ((shown.get(key) || 0) >= MAX_APPEARANCES) continue;
-    events.push({ key, title: str(ev.title), body: str(ev.body), meta: '', link: linkOf(ev.link && ev.link.text, ev.link && ev.link.url), date, sortStart: '', lenches: inLenches(ev), image: whatsonImage(ev, key) });
+    events.push({ key, title: str(ev.title), body: str(ev.body), meta: '', link: linkOf(ev.link && ev.link.text, ev.link && ev.link.url), date, sortStart: '', lenches: inLenches(ev), image: whatsonImage(ev, key, true) });
   }
   for (const it of [...(w.notices || []), ...(w.news || [])]) {
     if (!str(it.title)) continue;
