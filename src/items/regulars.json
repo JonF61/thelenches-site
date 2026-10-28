@@ -1,0 +1,12 @@
+{
+  "_help": "Weekly regulars: things that happen every week (classes, clubs, services). One entry each, shown under its own Weekly regulars heading on the Events page and in every newsletter, in day order from Monday, then by time. Fields: day (Monday..Sunday), time (as shown, e.g. 9.45am or 5.30-6.30pm; may be blank), what, where (may be blank), optional note (one short line), optional link {text, url}. A one-off taster or special night goes in events as usual.",
+  "regulars": [
+    { "day": "Monday", "time": "9.45am", "what": "Yoga", "where": "Abbots Morton Village Hall" },
+    { "day": "Tuesday", "time": "6.30pm", "what": "Cardio", "where": "Lenches Tennis Club" },
+    { "day": "Wednesday", "time": "10am", "what": "Tai chi", "where": "Abbots Morton" },
+    { "day": "Wednesday", "time": "5.30-6.30pm", "what": "Tai chi", "where": "Lenches Lakes" },
+    { "day": "Wednesday", "time": "7-8pm", "what": "Tai chi", "where": "Rous Lench Village Hall" },
+    { "day": "Thursday", "time": "6.30pm", "what": "Candlelight yoga", "where": "Rous Lench Village Hall" },
+    { "day": "Sunday", "time": "", "what": "Church services", "where": "", "link": { "text": "times on our Churches page", "url": "/churches/" } }
+  ]
+}
