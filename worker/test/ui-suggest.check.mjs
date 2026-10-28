@@ -99,6 +99,7 @@ async function check(viewport, tag) {
   page.on('pageerror', (e) => { throw e; });
   page.on('request', (r) => { if (!r.url().startsWith(BASE) && !r.url().startsWith('data:')) outside.push(r.url()); });
   await page.goto(`${BASE}/admin`);
+  await page.locator('nav.side button', { hasText: 'Submissions' }).click();
   const strip = page.locator('section.suggest').first();
   await strip.waitFor();
   await strip.scrollIntoViewIfNeeded();

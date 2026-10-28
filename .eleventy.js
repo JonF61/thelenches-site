@@ -248,6 +248,11 @@ module.exports = async function (eleventyConfig) {
     const out = photoPages(results, photos.map((p) => p.slug));
     out.eventEnds = eventEnds(require("./lib/whatson.js").loadWhatson({ all: true }).events);
     fs.writeFileSync(path.join(dir.output, "photo-pages.json"), JSON.stringify(out, null, 1) + "\n");
+    // Events and road works coming up, for the admin panel's Summary page (lib/comingup.js).
+    const ukToday = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
+    const pipeline = JSON.parse(fs.readFileSync(path.join(__dirname, "src/_data/pipeline.json"), "utf8"));
+    const coming = require("./lib/comingup.js").comingUp({ whatson: require("./lib/whatson.js").loadWhatson(), pipeline }, ukToday);
+    fs.writeFileSync(path.join(dir.output, "coming-up.json"), JSON.stringify(coming, null, 1) + "\n");
   });
 
   // "Friday 31 July 2026"
