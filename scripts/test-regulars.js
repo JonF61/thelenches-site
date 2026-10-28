@@ -36,4 +36,16 @@ const old = render({ ...model, regulars: 'Weekly regulars: yoga on Mondays.' });
 assert.ok(old.text.includes('Weekly regulars: yoga on Mondays.'));
 assert.ok(!old.text.includes('WEEKLY REGULARS'));
 
+// until: the last day shown (a block's final session)
+const { loadWhatson } = require('../lib/whatson');
+const fs = require('fs'), os = require('os'), path = require('path');
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'regs-'));
+fs.writeFileSync(path.join(tmp, 'regulars.json'), JSON.stringify({ regulars: [
+  { day: 'Wednesday', time: '7-8pm', what: 'Tai chi', until: '2026-12-09' },
+  { day: 'Monday', time: '9.45am', what: 'Yoga' }] }));
+const shown = (today) => loadWhatson({ dir: tmp, today }).regulars.map((x) => x.what);
+assert.deepStrictEqual(shown('2026-12-09'), ['Yoga', 'Tai chi'], 'shown on its last day');
+assert.deepStrictEqual(shown('2026-12-10'), ['Yoga'], 'gone the day after');
+assert.strictEqual(loadWhatson({ dir: tmp, today: '2026-12-10', all: true }).regulars.length, 2);
+
 console.log('weekly regulars: all tests passed');
