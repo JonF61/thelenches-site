@@ -1,0 +1,20 @@
+name: Feed check (temporary)
+on:
+  push:
+    branches: [claude/bold-gates-vtzgk3]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Fetch Harvington PC feed as the pipeline does
+        run: |
+          curl -sS -o feed.xml -w "HTTP %{http_code} %{content_type}\n" \
+            -A 'LenchesPipeline/1.0 (+https://thelenches.org.uk)' \
+            -H 'Accept: application/rss+xml, application/xml;q=0.9, */*;q=0.8' \
+            https://harvington-pc.gov.uk/feed/ || true
+          echo "items: $(grep -c '<item>' feed.xml || true)"
+          grep -o '<title>[^<]*</title>' feed.xml | head -4 || true
+          head -c 300 feed.xml; echo
