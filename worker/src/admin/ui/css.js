@@ -55,6 +55,12 @@ nav.side button[aria-current="page"] .n{background:rgba(255,255,255,.25);color:i
 .card.done{opacity:.55}
 .meta{color:var(--muted);font-size:.88rem}
 .intro{margin:2px 2px 12px;line-height:1.4}
+.card.sum{margin-bottom:10px}
+.sum-h{font:inherit;font-weight:700;background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:none;text-align:left}
+span.sum-h{color:inherit;cursor:default}
+.sum-l{margin:6px 0 0;padding-left:18px;line-height:1.5}
+.sum-l li{margin:2px 0}
+.sum-hol{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .their-h{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:10px 0 4px}
 .their-fold summary,.their-more summary{cursor:pointer;color:var(--muted);margin:8px 0}
 .badges{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}

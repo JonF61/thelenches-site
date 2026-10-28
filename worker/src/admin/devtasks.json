@@ -1,0 +1,7 @@
+{
+  "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD.",
+  "tasks": [
+    { "task": "Groups page: add the group once its organiser's consent reply arrives", "waiting": "a reply by email", "added": "2026-10-28" },
+    { "task": "Summary page part 2: visitors and most popular pages (Cloudflare Web Analytics)", "waiting": "you: a read-only Cloudflare API token and the account ID", "added": "2026-10-28" }
+  ]
+}

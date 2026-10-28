@@ -12,6 +12,8 @@ on:
       - "src/_data/schools.json"
       - "src/_data/health.json"
       - "src/_data/transport.json"
+      # Bundled into the admin panel's Summary page (worker/src/admin/summary.js).
+      - "src/_data/onthisday.json"
   workflow_dispatch:
 
 permissions:

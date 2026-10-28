@@ -18,22 +18,25 @@
 // Organisations (27 Oct): every organisation the site lists and where its yearly check is
 // (/admin/api/orgs), with Draft check / Draft chaser (/admin/api/orgcheck), and Done, Snooze
 // 3 months, Never and Clear (next_check writes through /admin/api/orgnext).
+// Summary (28 Oct): first in the menu and the page the panel opens on; one short section per
+// screen, written by code from /admin/api/state and /admin/api/summary, each linking to its screen.
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '37';
+export const UI_VERSION = '38';
 
 export const CLIENT_JS = String.raw`
 (function () {
   'use strict';
 
-  var S = { data: null, csrf: '', view: 'queue', filter: 'all', sel: {}, done: {}, imgs: {}, pf: '', files: {}, open: {},
+  var S = { data: null, csrf: '', view: 'summary', filter: 'all', sel: {}, done: {}, imgs: {}, pf: '', files: {}, open: {},
     picked: {}, ff: '', openF: {}, drag: null, busy: false, order: {}, shown: '' };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
-  var VIEWS = [['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['health', 'Health'], ['activity', 'Activity']];
+  var VIEWS = [['summary', 'Summary'], ['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['health', 'Health'], ['activity', 'Activity']];
   // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
   var INTROS = {
+    summary: 'What needs you now, and what is coming up, in one place. Tap a heading to open its page.',
     queue: 'Events and notices sent in by email or picked up from feeds, waiting for you to approve or reject. Approved items go on the website and into Thursday\'s newsletter.',
     replies: 'Holly\'s draft emails waiting for you to Approve, Edit, Redraft or Reject. Below them: emails still owed a reply, and everything already sent.',
     owed: 'Emails that got an automatic holding reply over 2 days ago but no real answer yet. Redraft one, reply yourself, or close it.',
@@ -159,6 +162,7 @@ export const CLIENT_JS = String.raw`
       S.contacts = null;
       S.outreach = null;
       S.orgs = null;
+      S.summary = null;
       render();
       if (!quiet) toast('Up to date');
     } catch (e) {
@@ -316,7 +320,7 @@ export const CLIENT_JS = String.raw`
       owed: Array.isArray(d.owed) ? d.owed.filter(function (o) { return !S.done['reply:' + o.holding.reply_id]; }).length : '!',
       photos: d.photos && !d.photos.error ? d.photos.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length : '!',
       feedback: d.feedback && !d.feedback.error ? fbRows(d, 'waiting').length + fbRows(d, 'reply').length : '!',
-      contacts: null, lessons: null, health: null, activity: null
+      summary: null, contacts: null, lessons: null, health: null, activity: null
     };
   }
 
@@ -344,6 +348,7 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'contacts') return [h('div', { class: 'list wide' }, top, contactsView())];
     if (S.view === 'lessons') return [h('div', { class: 'list wide' }, top, lessonsView())];
     if (S.view === 'activity') return [h('div', { class: 'list wide' }, top, activityView())];
+    if (S.view === 'summary') return [h('div', { class: 'list wide' }, top, summaryView(d))];
     return split(withIntro(queueList(d)), 'pending');
   }
 
@@ -2572,6 +2577,219 @@ export const CLIENT_JS = String.raw`
       section('Suggested', by('proposed'), 'No suggestions waiting. New ones come each Monday.'),
       section('In use', by('approved'), 'No lessons in use yet.'),
       other.length ? section('Not in use', other, '') : null];
+  }
+
+  /* ------------------------------------------------------------- summary -- */
+
+  // /admin/api/summary: the sections not in /api/state (admin/summary.js).
+  async function loadSummary() {
+    S.sLoading = true;
+    var r = await api('/admin/api/summary');
+    S.sLoading = false;
+    S.summary = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'summary') render();
+  }
+
+  function go(view, tab) {
+    return function () {
+      S.view = view;
+      if (tab) { S.cTab = tab; S.outreach = null; S.orgs = null; }
+      closeOverlay(); render(); window.scrollTo(0, 0);
+    };
+  }
+
+  var plural = function (n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); };
+  function stampMs(s) {
+    var v = str(s);
+    var t = Date.parse(/T/.test(v) ? v : v.replace(' ', 'T'));
+    return isNaN(t) ? NaN : t;
+  }
+  // "5 min", "3 hours", "2 days" since a Sheet stamp ('' if unreadable).
+  function age(s) {
+    var t = stampMs(s);
+    if (isNaN(t)) return '';
+    var m = Math.max(0, (Date.now() - t) / 60000);
+    if (m < 60) return plural(Math.round(m), 'min', 'min');
+    if (m < 1440) return plural(Math.round(m / 60), 'hour');
+    return plural(Math.floor(m / 1440), 'day');
+  }
+  // "1 day 4 hours", "3 hours 10 min" until an instant ('' once passed).
+  function until(iso) {
+    var m = Math.floor((Date.parse(iso) - Date.now()) / 60000);
+    if (!(m > 0)) return '';
+    if (m < 60) return plural(m, 'min', 'min');
+    var hrs = Math.floor(m / 60);
+    if (hrs < 24) return plural(hrs, 'hour') + (m % 60 ? ' ' + plural(m % 60, 'min', 'min') : '');
+    return plural(Math.floor(hrs / 24), 'day') + (hrs % 24 ? ' ' + plural(hrs % 24, 'hour') : '');
+  }
+  function dayRange(a, b) { return str(b) && str(b) !== str(a) ? day(a) + ' to ' + day(b) : day(a); }
+
+  // One section: a heading that opens its screen (go, a URL, or nothing), then lines,
+  // or "Nothing waiting". max: lines shown before "and N more".
+  function sumCard(title, open, lines, opts) {
+    var o = opts || {};
+    var list = (lines || []).filter(Boolean);
+    var shown = o.max ? list.slice(0, o.max) : list;
+    var head = typeof open === 'function'
+      ? h('button', { class: 'sum-h', onclick: open }, title, h('span', { 'aria-hidden': 'true' }, ' →'))
+      : open ? h('a', { class: 'sum-h', href: open, target: '_blank', rel: 'noopener' }, title, h('span', { 'aria-hidden': 'true' }, ' ↗'))
+        : h('span', { class: 'sum-h' }, title);
+    return h('div', { class: 'card sum' }, h('h2', null, head),
+      o.top || null,
+      list.length ? h('ul', { class: 'sum-l' }, shown.map(function (l) { return h('li', null, l); })) : (o.top ? null : h('p', { class: 'meta' }, o.empty || 'Nothing waiting')),
+      list.length > shown.length ? h('p', { class: 'meta' }, 'and ' + (list.length - shown.length) + ' more') : null);
+  }
+  function line(main, meta, badges) {
+    return [h('span', null, main), meta ? h('span', { class: 'meta' }, ' · ' + meta) : null,
+      (badges || []).filter(Boolean).map(function (b) { return [' ', h('span', { class: 'badge ' + (b[1] || '') }, b[0])]; })];
+  }
+  function loadingNote(sm, what) {
+    if (!sm) return h('p', { class: 'meta' }, 'Loading…');
+    if (sm.error) return errorNote(sm, what);
+    return null;
+  }
+
+  var ISSUE_STATES = {
+    '': ['Not built yet: it builds on Thursday morning', ''], built: ['Built: the preview is on its way', ''],
+    tested: ['Preview emailed: waiting for your tap', 'warn'], shadow: ['Shadow copy only', ''],
+    sending: ['Sending now', 'info'], sent: ['Sent', 'ok'], failed: ['The build failed: see Activity', 'bad']
+  };
+
+  function summaryView(d) {
+    var sm = S.summary;
+    if (!sm && !S.sLoading) loadSummary();
+    var all = sm && !sm.error ? sm : null;
+    var els = [];
+    var hol = d.holiday || {};
+    if (hol.on) {
+      els.push(h('div', { class: 'note bad sum-hol' }, h('b', null, 'Holiday mode is ON. '),
+        'The newsletter can send itself on Thursday and replies that normally wait for you can go out automatically. ',
+        h('button', { class: 'btn', onclick: toggleHoliday }, 'Turn off')));
+    }
+    if (sm && sm.error) els.push(errorNote(sm, 'Part of the summary'));
+    var issue = all && all.issue && !all.issue.error ? all.issue : null;
+    var left = issue ? until(issue.deadlineAt) : '';
+
+    // 1. Submissions to approve.
+    var pend = d.pending && !d.pending.error ? d.pending.rows.filter(function (r) { return !S.done['pending:' + r.id]; }) : [];
+    pend = pend.slice().sort(function (a, b) { return (truthy(b.urgent) ? 1 : 0) - (truthy(a.urgent) ? 1 : 0) || str(a.received).localeCompare(str(b.received)); });
+    var dl = null;
+    if (issue && pend.length && ['', 'built'].indexOf(issue.status) >= 0) {
+      dl = left
+        ? (Date.parse(issue.deadlineAt) - Date.now() < 48 * 3600000 ? h('div', { class: 'note warn' }, 'Newsletter deadline (Wednesday 6pm) in ' + left + '.') : null)
+        : h('div', { class: 'note warn' }, 'The deadline has passed: items sent in before it still go in ' + day(issue.date) + '\'s issue if you approve them before it is built.');
+    }
+    els.push(sumCard('Submissions to approve (' + pend.length + ')', go('queue'), d.pending && d.pending.error ? [] : pend.map(function (r) {
+      var rec = str(r.received);
+      // Once the deadline has passed: which items still make this week's issue.
+      var late = issue && dl && !left && rec ? (rec.replace('T', ' ').slice(0, 16) <= issue.deadline ? ['In time for ' + day(issue.date), 'info'] : ['For next week', '']) : null;
+      return line(str(r.title) || '(no title)', [str(r.source) || 'email', age(rec)].filter(Boolean).join(' · '),
+        [truthy(r.urgent) ? ['Urgent', 'bad'] : null, /possible spam/i.test(str(r.notes)) ? ['Possible spam', 'warn'] : null, late]);
+    }), { max: 6, top: d.pending && d.pending.error ? errorNote(d.pending, 'Pending') : dl, empty: 'Nothing waiting' }));
+
+    // 2. Replies needed.
+    var reps = d.replies && !d.replies.error ? d.replies.rows.filter(function (r) { return !S.done['reply:' + r.reply_id]; }) : [];
+    reps = reps.slice().sort(function (a, b) { return str(a.created_at).localeCompare(str(b.created_at)); });
+    els.push(sumCard('Replies needed (' + reps.length + ')', go('replies'), reps.map(function (r) {
+      var t = lower(r.type);
+      return line(str(r.to) + ' · ' + (str(r.subject) || '(no subject)'), age(r.created_at) ? 'waiting ' + age(r.created_at) : '',
+        [str(r.hold_reason) ? ['Held: ' + str(r.hold_reason), 'warn'] : null, t === 'own' ? ['Your own thread', 'info'] : null, t === 'outreach' ? ['Outreach', 'info'] : null]);
+    }), { max: 6, top: errorNote(d.replies, 'Replies') }));
+
+    // 3. Owed.
+    var owed = Array.isArray(d.owed) ? d.owed.filter(function (o) { return !S.done['reply:' + o.holding.reply_id]; }) : [];
+    els.push(sumCard('Owed a reply (' + owed.length + ')', go('owed'), owed.map(function (o) {
+      return line(str(o.holding.to) + ' · ' + (str(o.holding.subject) || '(no subject)'), age(o.holding.sent_at) ? 'holding reply ' + age(o.holding.sent_at) + ' ago' : '',
+        [o.draft && o.draft.status === 'awaiting' ? ['Draft waiting', 'warn'] : null]);
+    }), { max: 6, top: Array.isArray(d.owed) ? null : errorNote(d.owed, 'Replies') }));
+
+    // 4. Feedback.
+    var fbw = fbRows(d, 'waiting');
+    var fbr = fbRows(d, 'reply');
+    els.push(sumCard('Feedback (' + fbw.length + ')', go('feedback'), fbw.map(function (r) {
+      var n = Number(r.rating) || 0;
+      var msg = str(r.message);
+      return line((n ? '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n) + ' ' : '') + '"' + (msg.length > 80 ? msg.slice(0, 79) + '…' : msg) + '"',
+        [str(r.page_title) || str(r.page_url), age(r.received)].filter(Boolean).join(' · '), [str(r.type) ? [str(r.type), ''] : null]);
+    }).concat(fbr.length ? [h('span', { class: 'meta' }, plural(fbr.length, 'reply', 'replies') + ' to send')] : []),
+    { max: 5, top: d.feedback && d.feedback.error ? errorNote(d.feedback, 'Feedback') : null }));
+
+    // 5. Site health.
+    var health = [];
+    var dog = d.watchdog || {};
+    if (dog.error) health.push(line('Watchdog could not be checked', dog.error, [['Check', 'warn']]));
+    else if (dog.open) health.push(line('Watchdog alert since ' + when(dog.since), (dog.problems || []).join('; '), [['Alert', 'bad']]));
+    var hl = Array.isArray(d.health) ? d.health[0] : null;
+    var hs = hl ? str(hl.status).toUpperCase() : '';
+    if (hl && hs !== 'OK' && hs !== 'CLEARED') {
+      var probs = str(hl.problems) ? str(hl.problems).split(' | ') : [str(hl.summary) || hs];
+      probs.forEach(function (p) { health.push(line('Diagnostic (' + when(hl.date) + '): ' + p, '', [[hs, hs === 'FIXED' ? 'warn' : 'bad']])); });
+    }
+    if (all && Array.isArray(all.failing)) {
+      all.failing.forEach(function (r) {
+        health.push([h('a', { href: r.url, target: '_blank', rel: 'noopener' }, str(r.name)), h('span', { class: 'meta' }, ' · last run failed ' + hhmm(r.started)), ' ', h('span', { class: 'badge bad' }, 'Failed')]);
+      });
+    }
+    var hTop = all && all.failing && all.failing.error ? errorNote(all.failing, 'GitHub runs') : (!sm ? loadingNote(sm) : null);
+    els.push(sumCard('Site health', go('health'), health, { top: hTop, empty: 'All clear: watchdog, diagnostic' + (all ? ' and automatic jobs' : '') + ' are fine' }));
+
+    if (!all) {
+      els.push(sm && sm.error ? h('button', { class: 'btn', onclick: function () { S.summary = null; render(); } }, 'Try again') : loadingNote(sm));
+      return els;
+    }
+
+    // 6. Development tasks (devtasks.json, kept by Kryten).
+    els.push(sumCard('Development tasks (' + (all.devTasks || []).length + ')', null, (all.devTasks || []).map(function (t) {
+      return line(t.task, t.waiting ? 'waiting on ' + t.waiting : '', []);
+    }), { empty: 'Nothing outstanding' }));
+
+    // 7. Next newsletter.
+    if (all.issue && all.issue.error) els.push(sumCard('Next newsletter', null, [], { top: errorNote(all.issue, 'Issues') }));
+    else {
+      var st = ISSUE_STATES[issue.status] || [issue.status, ''];
+      var nl = [
+        line(left ? 'Deadline in ' + left : 'Deadline passed', 'Wednesday 6pm', []),
+        line(st[0], issue.sentAt ? when(issue.sentAt) : '', []),
+        line(issue.events === null ? 'Events: the site\'s list could not be read' : plural(issue.events, 'event') + ' in its two weeks, ' + plural(issue.fresh, 'new item') + ' approved since the last issue', 'a guide; the build decides', []),
+        issue.onThisDay ? line('On this day: ' + issue.onThisDay, '', []) : line('No On this day line for ' + day(issue.date), '', [['Missing', 'warn']])
+      ];
+      var card = sumCard('Next newsletter: ' + day(issue.date), null, nl);
+      if (st[1]) card.querySelectorAll('li')[1].appendChild(h('span', { class: 'badge ' + st[1] }, issue.status));
+      var link = sheetLink('Issues', issue.row);
+      if (link) card.appendChild(h('div', { class: 'actions' }, link));
+      els.push(card);
+    }
+
+    // 8. Coming up this week.
+    var cw = all.coming || {};
+    els.push(sumCard('Coming up this week', 'https://thelenches.org.uk/events/', cw.error ? [] : (cw.events || []).map(function (e) {
+      return [h('span', { class: 'meta' }, dayRange(e.date, e.end) + ' · '), e.url ? h('a', { href: e.url, target: '_blank', rel: 'noopener' }, str(e.title)) : str(e.title)];
+    }).concat((cw.roads || []).map(function (r) {
+      return [h('span', { class: 'badge warn' }, 'Road'), ' ', h('a', { href: r.url, target: '_blank', rel: 'noopener' }, str(r.title)),
+        h('span', { class: 'meta' }, ' · ' + (r.end ? 'until ' + day(r.end) : 'end date not given'))];
+    })), { top: cw.error ? errorNote(cw, 'The site\'s coming-up list') : null, empty: 'Nothing in the next 7 days' }));
+
+    // 9. Outreach due.
+    var ou = all.outreach || {};
+    var og = all.orgs || {};
+    var ol = [];
+    if (!ou.error && ou.seasonal + ou.quiet + ou.lead) ol.push([h('button', { class: 'btn link', onclick: go('contacts', 'outreach') }, plural(ou.seasonal + ou.quiet + ou.lead, 'contact') + ' due a nudge'),
+      h('span', { class: 'meta' }, ' · ' + [ou.seasonal ? ou.seasonal + ' seasonal' : '', ou.quiet ? ou.quiet + ' gone quiet' : '', ou.lead ? plural(ou.lead, 'lead') : ''].filter(Boolean).join(', '))]);
+    if (!og.error && og.due + og.chase) ol.push([h('button', { class: 'btn link', onclick: go('contacts', 'orgs') }, plural(og.due, 'organisation') + ' due a check' + (og.chase ? ', ' + plural(og.chase, 'chaser') + ' due' : ''))]);
+    els.push(sumCard('Outreach due', go('contacts', 'outreach'), ol, { top: ou.error ? errorNote(ou, 'Contacts') : og.error ? errorNote(og, 'Organisations') : null }));
+
+    // 10. Holly lessons awaiting approval.
+    var ls = Array.isArray(all.lessons) ? all.lessons : [];
+    els.push(sumCard('Holly lessons awaiting approval (' + ls.length + ')', go('lessons'), ls.map(function (l) { return line(str(l.lesson), '', []); }),
+      { max: 5, top: all.lessons && all.lessons.error ? errorNote(all.lessons, 'Holly lessons') : null }));
+
+    // 11. Subscribers (counts only).
+    var sb = all.subscribers || {};
+    els.push(sumCard('Subscribers', null, sb.error ? [] : [
+      line('+' + sb.joined + ' joined, −' + sb.left + ' unsubscribed or blocked', 'since the newsletter of ' + day(sb.since), []),
+      line(plural(sb.total, 'subscriber') + ' on the list', '', [])
+    ], { top: sb.error ? errorNote(sb, 'Subscribers') : null }));
+    return els;
   }
 
   /* --------------------------------------------------------------- health -- */

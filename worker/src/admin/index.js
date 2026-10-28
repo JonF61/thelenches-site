@@ -78,6 +78,10 @@
 //                                   (pageedit.js; footer "Edit page" link on the site)
 //   POST /admin/api/page-save       { path, changes }: wording and link edits to that page's
 //                                   .njk file, one commit to main (pageedit.js savePage)
+//   GET  /admin/api/summary         the Summary page's own sections (summary.js): next newsletter,
+//                                   failing runs, subscriber counts, coming up this week, outreach
+//                                   due, lessons awaiting approval, dev tasks (each { error } alone
+//                                   if its source can't be read); the rest comes from /api/state
 //   GET  /admin/api/runs            Activity: the latest 20 GitHub Actions runs (runs.js; read-only)
 //   GET  /admin/api/build-status?sha=&at=&p=&text=  whether an Edit page commit is live: its
 //                                   site build succeeded AND the page (fresh copy) shows text
@@ -127,6 +131,9 @@ import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 import { PAGEEDIT_JS, PAGEEDIT_CSS, PAGEEDIT_VERSION } from './ui/pageedit.js';
 import { editorPage, savePage, showsText } from './pageedit.js';
 import { recentRuns, buildStatus } from './runs.js';
+import {
+  nextIssue, failingRuns, subscriberChanges, lastSentDate, comingWeek, comingUpFile, devTasks,
+} from './summary.js';
 
 const MAX_BODY = 60000;
 const SECURITY_HEADERS = {
@@ -482,6 +489,47 @@ async function outreach(env) {
   return { today: ukToday(), hasNextNudge: contacts.headers.includes('next_nudge'), ...(await outreachLists(live, replies.rows, ukToday())) };
 }
 
+// The Summary page's sections not in /api/state. Contacts and Replies are read once for
+// both outreach counts; organisations take the same Gmail look-ups as their own screen.
+async function summary(env) {
+  const today = ukToday();
+  const [issues, pending, subs, dns, lessons, contacts, replies, orgTab, runs, coming] = await settled([
+    readTable(env, 'Issues'), readTable(env, 'Pending'), readTable(env, 'Subscribers'), readTable(env, 'Do Not Send'),
+    readLessons(env), readTable(env, CONTACTS_TAB), readTable(env, 'Replies'), readOrgTab(env), recentRuns(env, 50), comingUpFile(env),
+  ]);
+  const fail = (t) => (t && t.error ? { error: t.error } : null);
+  const issueRows = issues.error ? [] : issues.rows;
+  let outreachDue;
+  let orgsDue;
+  if (contacts.error || replies.error) {
+    outreachDue = fail(contacts) || fail(replies);
+    orgsDue = outreachDue;
+  } else {
+    const o = await outreachLists(contactRows(contacts).rows, replies.rows, today);
+    outreachDue = { seasonal: o.seasonal.length, quiet: o.quiet.length, lead: o.lead.length };
+    if (orgTab.error) orgsDue = fail(orgTab);
+    else {
+      try {
+        const { lists } = orgLists(ORGS, await orgContext(env, [replies, contacts, orgTab]));
+        orgsDue = { due: lists.due.length, chase: lists.chase.length };
+      } catch (e) {
+        orgsDue = { error: e.message };
+      }
+    }
+  }
+  return {
+    today,
+    issue: issues.error ? fail(issues) : nextIssue({ today, issues: issueRows, pending: pending.error ? [] : pending.rows, coming: coming.error ? null : coming }),
+    failing: runs.error ? fail(runs) : failingRuns(runs),
+    subscribers: subs.error || dns.error ? (fail(subs) || fail(dns)) : subscriberChanges(subs.rows, dns.rows, lastSentDate(today, issueRows)),
+    coming: comingWeek(coming, today),
+    outreach: outreachDue,
+    orgs: orgsDue,
+    lessons: lessons.error ? fail(lessons) : lessonRows(lessons).rows.filter((r) => r.status.toLowerCase() === 'proposed').map((r) => ({ id: r.id, lesson: r.lesson })),
+    devTasks: devTasks(),
+  };
+}
+
 async function doNudge(env, body) {
   const email = String(body.email ?? '');
   const [contacts, replies] = await Promise.all([readTable(env, CONTACTS_TAB), readTable(env, 'Replies')]);
@@ -507,8 +555,9 @@ async function readOrgTab(env) {
   }
 }
 
-async function orgContext(env) {
-  const [replies, contacts, tab] = await Promise.all([readTable(env, 'Replies'), readTable(env, CONTACTS_TAB), readOrgTab(env)]);
+// pre: the Replies, Contacts and Org outreach tables when already read (Summary).
+async function orgContext(env, pre = null) {
+  const [replies, contacts, tab] = pre || await Promise.all([readTable(env, 'Replies'), readTable(env, CONTACTS_TAB), readOrgTab(env)]);
   const ctx = { replies: replies.rows, contacts: contacts.rows, orgRows: tab.rows, hasTab: tab.headers.includes('next_check'), today: ukToday() };
   // In regular contact: those otherwise due (or held by a date) who emailed us from any of their
   // addresses in the last 3 months (one Gmail search each, only for those; a few dozen at most).
@@ -726,6 +775,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/outreach') return json(await outreach(env));
       if (path === '/admin/api/orgs') return json(orgLists(ORGS, await orgContext(env)));
       if (path === '/admin/api/lessons') return json(lessonRows(await readLessons(env)));
+      if (path === '/admin/api/summary') return json(await summary(env));
       if (path === '/admin/api/runs') return json({ runs: await recentRuns(env, 20) });
       if (path === '/admin/api/build-status') {
         const st = await buildStatus(env, url.searchParams.get('sha'), url.searchParams.get('at'));
