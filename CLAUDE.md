@@ -89,7 +89,7 @@ Minimal notice (`src/items/notices/hall-car-park-resurfacing.json`):
 - Cloudflare cron day-of-week is 1=Sunday..7=Saturday: always write day names (WED,THU).
 - Commits made with GITHUB_TOKEN don't trigger other workflows.
 - GitHub Actions concurrency groups keep only one waiting run: a newer queued run cancels the waiting one, even with `cancel-in-progress: false`. Where every dispatch must run (e.g. approval.yml), key the group per item (`approval-${{ github.event.client_payload.id }}`); never use a shared group for such workflows (22 Oct: rapid Approve/Reject taps were silently dropped).
-- When you make a significant visible site change, propose an entry for `src/_data/siteupdates.json` (Jon decides; never reuse a key).
+- When you make a significant visible site change, propose an entry for `src/_data/siteupdates.json` (Jon decides; never reuse a key). The newsletter joins the due entries into one WEBSITE UPDATE paragraph (render.js, Jon 28 Oct), so write each text as plain sentences that read well joined: no "New on the website:", no "Have a look" (one site link is added after them).
 
 ## Finishing a job
 **PR description**: the record of the work. What changed (files and behaviour), anything Jon must do by hand (Sheet cells, settings, workflow pastes), how it was tested, and what to check on the next live/shadow run. Keep it factual and complete.

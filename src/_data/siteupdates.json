@@ -1,23 +1,25 @@
 {
-  "_help": "Lines shown under the newsletter header. Each entry: key (unique, letters/numbers/hyphens, never reused), from (first issue date it can appear, YYYY-MM-DD), optional until (last date), text, link. Shown in one issue that is sent live, then retired automatically.",
+  "_help": "Short paragraph under the newsletter header, labelled WEBSITE UPDATE: the due entries' text joined in order of from date, then key, then one 'Have a look at thelenches.org.uk.' link (render.js). So write each text as one or two plain sentences that read well joined to others: no 'New on the website:' and no 'Have a look'. Each entry: key (unique, letters/numbers/hyphens, never reused), from (first issue date it can appear, YYYY-MM-DD), optional until (last date), text, link (kept for the record; not shown). Shown in one issue that is sent live, then retired automatically.",
   "entries": [
     {
       "key": "add-to-contacts-2026-10",
       "from": "2026-10-15",
       "link": "mailto:website@thelenches.org.uk",
-      "text": "This newsletter comes from website@thelenches.org.uk. To make sure it keeps reaching your inbox, please add that address to your contacts."
+      "text": "This newsletter comes from website@thelenches.org.uk. To make sure it keeps reaching your inbox, please add that address to your contacts.",
+      "until": "2026-10-28"
     },
     {
       "key": "site-catchup-2026-10",
       "from": "2026-10-22",
       "link": "https://thelenches.org.uk/",
-      "text": "New on the website: a fresh look, events and news from around the Lenches updated daily, church service times with links to each Sunday's Bible readings, and your bin days. Have a look at thelenches.org.uk."
+      "text": "New on the website: a fresh look, events and news from around the Lenches updated daily, church service times with links to each Sunday's Bible readings, and your bin days. Have a look at thelenches.org.uk.",
+      "until": "2026-10-28"
     },
     {
       "key": "home-notices-roads-2026-10",
       "from": "2026-10-29",
       "link": "https://thelenches.org.uk/",
-      "text": "New on the website: a new home page with an illustrated map of the villages, a Notices page for notices and news from around the villages, and a Roads page with a map of closures and roadworks and a slider to see what's on any day in the next 8 weeks."
+      "text": "The website has a new home page with an illustrated map of the villages, a Notices page for news from around the villages, and a Roads page with a map of closures and roadworks and a slider to see what's on any day in the next 8 weeks."
     },
     {
       "key": "menu-pills-2026-11",
@@ -29,19 +31,20 @@
       "key": "events-pictures-2026-10",
       "from": "2026-10-29",
       "link": "https://thelenches.org.uk/events/",
-      "text": "The Events page now shows a picture beside each event. Have a look at what's on."
+      "text": "The Events page now shows a picture beside each event.",
+      "until": "2026-10-28"
     },
     {
       "key": "what-to-do-2026-11",
       "from": "2026-11-05",
       "link": "https://thelenches.org.uk/living-here/what-to-do/",
-      "text": "New on the website: a 'What to do if…' page saying who to call for power cuts, gas leaks, flooding, lost pets, fly-tipping, potholes and blocked footpaths."
+      "text": "There's also a new 'What to do if…' page saying who to call for power cuts, gas leaks, flooding, lost pets, fly-tipping, potholes and blocked footpaths."
     },
     {
       "key": "web-signup-2026-10",
       "from": "2026-10-29",
       "link": "https://thelenches.org.uk/newsletter/",
-      "text": "You can now join the Thursday newsletter straight from the website: enter your email and click the link we send you."
+      "text": "The Events page now shows a picture beside each event, and you can now join this newsletter straight from the website: enter your email and click the link we send you."
     }
   ]
 }
