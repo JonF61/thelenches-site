@@ -89,7 +89,7 @@ try {
     await page.goto(`${base}/admin`);
     // Menu order and labels, and each page's reminder line (agreed 26 Oct).
     const menu = (await page.locator('nav.side button').allInnerTexts()).map((t) => t.replace(/\s*\d+$/, '').trim());
-    assert.deepEqual(menu, ['Summary', 'Submissions', 'Replies', 'Owed', 'Feedback', 'Holly lessons', 'Contacts', 'Photos', 'Health', 'Activity']);
+    assert.deepEqual(menu, ['Summary', 'Newsletter draft', 'Submissions', 'Replies', 'Owed', 'Feedback', 'Holly lessons', 'Contacts', 'Photos', 'Health', 'Activity']);
     assert.match(await page.locator('.intro').innerText(), /^What needs you now/);
     await page.locator('nav.side button', { hasText: 'Submissions' }).click();
     assert.match(await page.locator('.intro').innerText(), /^Events and notices sent in by email/);

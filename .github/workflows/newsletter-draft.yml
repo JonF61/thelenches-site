@@ -1,0 +1,46 @@
+name: Newsletter draft
+
+# The admin panel's Newsletter draft (scripts/newsletter/draft.js): the next issue as it
+# would be built now, or its frozen copy once built. Sends nothing; writes only the
+# "Newsletter draft" tab. Runs after approvals, publishing, site builds and newsletter runs,
+# every 3 hours, and from the panel's Refresh button (repository_dispatch newsletter-draft).
+# One shared group, cancel-in-progress: only the newest run matters (each rebuilds it all).
+on:
+  workflow_run:
+    workflows: ["Apply approval", "Publish to site", "Build and deploy to GitHub Pages", "Newsletter build and send"]
+    types: [completed]
+  schedule:
+    - cron: "23 */3 * * *"
+  repository_dispatch:
+    types: [newsletter-draft]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: newsletter-draft
+  cancel-in-progress: true
+
+jobs:
+  draft:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Build the draft
+        run: node scripts/newsletter/draft.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: jon@thelenches.org.uk

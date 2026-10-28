@@ -480,6 +480,20 @@ async function updateRow(tab, rowNumber, fields) {
   });
 }
 
+// Replaces a whole tab's values (A:Z) with rows, making the tab if missing. Only for tabs that
+// code alone owns and rewrites (Newsletter draft), never for tabs people edit.
+async function replaceTab(tab, rows) {
+  await ensureTab(tab, rows[0] || []);
+  await sheets().spreadsheets.values.clear({ spreadsheetId: spreadsheetId(), range: `'${tab}'!A:Z` });
+  await sheets().spreadsheets.values.update({
+    spreadsheetId: spreadsheetId(),
+    range: `'${tab}'!A1`,
+    valueInputOption: 'RAW',
+    requestBody: { values: rows },
+  });
+  delete headerCache[tab];
+}
+
 module.exports = {
   listMessageIds,
   searchMessageIds,
@@ -497,6 +511,7 @@ module.exports = {
   fromNameFor,
   getSheetGid,
   ensureTab,
+  replaceTab,
   appendRows,
   updateRow,
   spreadsheetId,

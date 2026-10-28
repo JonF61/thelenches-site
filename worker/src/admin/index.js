@@ -83,6 +83,11 @@
 //                                   due, lessons awaiting approval, dev tasks, visitors (visitors.js;
 //                                   { off } until its secrets are set) (each { error } alone
 //                                   if its source can't be read); the rest comes from /api/state
+//   GET  /admin/draft               Newsletter draft: the next issue as it would be built now (or
+//                                   its frozen copy once built), from the Newsletter draft tab
+//                                   (draft.js; scripts/newsletter/draft.js), framed by the panel
+//   GET  /admin/api/draft           that draft's meta only (as_of, issue_date, mode, counts)
+//   POST /admin/api/draft-refresh   runs newsletter-draft.yml now (repository_dispatch); sends nothing
 //   GET  /admin/api/runs            Activity: the latest 20 GitHub Actions runs (runs.js; read-only)
 //   GET  /admin/api/build-status?sha=&at=&p=&text=  whether an Edit page commit is live: its
 //                                   site build succeeded AND the page (fresh copy) shows text
@@ -94,7 +99,7 @@
 // actions in feedback.js, outreach's nudge (a draft only; it never sends) and approving or
 // rejecting a proposed Holly lesson.
 
-import { ACTIONS, decide, github } from '../core.js';
+import { ACTIONS, decide, github, dispatch } from '../core.js';
 import { verifyAccess } from './access.js';
 import { makeCsrf, checkCsrf, sameOrigin } from './csrf.js';
 import {
@@ -136,6 +141,7 @@ import {
   nextIssue, failingRuns, subscriberChanges, lastSentDate, comingWeek, comingUpFile, devTasks,
 } from './summary.js';
 import { visitors } from './visitors.js';
+import { DRAFT_TAB, DRAFT_RANGE, draftMeta, draftHtml, draftPage } from './draft.js';
 
 const MAX_BODY = 60000;
 const SECURITY_HEADERS = {
@@ -236,13 +242,23 @@ async function readFeedback(env) {
   }
 }
 
+// The Newsletter draft tab's rows; none yet (made by its first run) reads as empty.
+async function readDraft(env, range) {
+  try {
+    return await getValues(env, range);
+  } catch (e) {
+    if (e.status === 400 && /Unable to parse range/i.test(e.message)) return [];
+    throw e;
+  }
+}
+
 async function state(env, email) {
   const photosRead = readTable(env, 'Photos');
-  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite, bin, sugg, fb] = await settled([
+  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite, bin, sugg, fb, draftRows] = await settled([
     readTable(env, 'Pending'), readTable(env, 'Replies'), photosRead,
     readSettingsPairs(env), readTable(env, 'Health'), readTable(env, 'Issues'), sheetGids(env),
     readSources(env), readTable(env, 'Image fetch'), watchdog(env), folderList(env), photoPages(env),
-    binList(env, photosRead), readTable(env, SUGGEST_TAB), readFeedback(env),
+    binList(env, photosRead), readTable(env, SUGGEST_TAB), readFeedback(env), readDraft(env, `'${DRAFT_TAB}'!A1:B13`),
   ]);
   const suggested = suggestionsByItem(sugg);
   const holiday = settings.error ? settings : (settings.find((p) => p.key === 'holiday_mode') || { value: '' });
@@ -277,6 +293,8 @@ async function state(env, email) {
     gids: gids.error ? {} : gids,
     holiday: holiday.error ? holiday : { value: holiday.value, on: String(holiday.value).trim().toUpperCase() === 'TRUE' },
     newsletter,
+    // The Newsletter draft's meta (null until its first run).
+    draft: draftRows.error ? draftRows : draftMeta(draftRows),
     health: health.error ? health : filled(health).slice(-7).reverse(),
     watchdog: dog,
     // The Google service account in use (the panel is admins only, behind Access).
@@ -770,6 +788,8 @@ export async function handleAdmin(request, env) {
           headers: { ...SECURITY_HEADERS, 'content-type': 'text/html; charset=utf-8', 'content-security-policy': pg.csp },
         });
       }
+      if (path === '/admin/draft') return draftPage(await draftHtml(await readDraft(env, DRAFT_RANGE)));
+      if (path === '/admin/api/draft') return json({ meta: draftMeta(await readDraft(env, `'${DRAFT_TAB}'!A1:B13`)) });
       if (path === '/admin/api/mail-images') return await mailImages(env, url);
       if (path === '/admin/api/mail-text') return await mailText(env, url);
       if (path === '/admin/api/session') return json({ email: auth.email, csrf: await makeCsrf(env, auth.email) });
@@ -817,6 +837,10 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/orgemails') return await doOrgEmails(env, body);
       if (path === '/admin/api/lesson') return await doLesson(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(env, body);
+      if (path === '/admin/api/draft-refresh') {
+        if (!(await dispatch(env, 'newsletter-draft', {}, 2))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);
+        return json({ ok: true, message: 'Refreshing: the new draft shows in a minute or two.' });
+      }
       if (path === '/admin/api/page-save') return fromResult(await savePage(env, body));
       return json({ ok: false, error: 'Not found' }, 404);
     }
