@@ -74,7 +74,7 @@ try {
     await page.waitForTimeout(300);
     assert.ok(calls > before, 'refreshed after 15 seconds');
     // Leaving the screen stops the refresh.
-    await page.locator('nav.side button', { hasText: 'Health' }).click();
+    await page.locator('.top .chip button', { hasText: 'Diagnostic' }).click();
     const left = calls;
     await page.clock.runFor(31000);
     await page.waitForTimeout(300);

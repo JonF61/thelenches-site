@@ -26,7 +26,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '41';
+export const UI_VERSION = '42';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -36,7 +36,8 @@ export const CLIENT_JS = String.raw`
     picked: {}, ff: '', openF: {}, drag: null, busy: false, order: {}, shown: '' };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
-  var VIEWS = [['summary', 'Summary'], ['draft', 'Newsletter draft'], ['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['health', 'Health'], ['activity', 'Activity']];
+  var VIEWS = [['summary', 'Summary'], ['draft', 'Newsletter draft'], ['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
+  // Health has no menu entry (28 Oct): the top bar's Diagnostic and Watchdog open it, as does Summary's Site health.
   // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
   var INTROS = {
     draft: 'The next newsletter as it would be built now from what is approved. It updates after each approval and every 3 hours. Once the issue is built on Thursday, this shows it exactly as built.',
@@ -284,10 +285,10 @@ export const CLIENT_JS = String.raw`
         h('div', { class: 'chip' }, h('b', null, 'Holiday mode'), holSwitch, hol.error ? 'not readable' : (hol.on ? 'ON' : 'off')),
         nlChip,
         h('div', { class: 'chip' }, h('span', { class: 'dot ' + (hs === 'OK' || hs === 'CLEARED' ? 'ok' : hs === 'FIXED' ? 'warn' : 'bad') }),
-          h('b', null, 'Diagnostic'), hl ? hs + ' · ' + when(hl.date) : 'no runs',
+          h('button', { class: 'btn link chip-link', title: 'Open the Health page', onclick: go('health') }, h('b', null, 'Diagnostic')), hl ? hs + ' · ' + when(hl.date) : 'no runs',
           hl && hs !== 'OK' && hs !== 'CLEARED' ? h('button', { class: 'btn link', title: 'Mark this run\'s problems as dealt with', onclick: clearDiagnostic }, 'Clear') : null),
         h('div', { class: 'chip' }, h('span', { class: 'dot ' + (dog.error ? 'warn' : dog.open ? 'bad' : 'ok') }),
-          h('b', null, 'Watchdog'), dog.error ? 'not readable' : dog.open ? 'alert since ' + when(dog.since) : 'clear'),
+          h('button', { class: 'btn link chip-link', title: 'Open the Health page', onclick: go('health') }, h('b', null, 'Watchdog')), dog.error ? 'not readable' : dog.open ? 'alert since ' + when(dog.since) : 'clear'),
         h('button', { class: 'btn', onclick: function () { load(); } }, 'Reload')));
   }
 

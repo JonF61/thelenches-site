@@ -89,11 +89,16 @@ try {
     await page.goto(`${base}/admin`);
     // Menu order and labels, and each page's reminder line (agreed 26 Oct).
     const menu = (await page.locator('nav.side button').allInnerTexts()).map((t) => t.replace(/\s*\d+$/, '').trim());
-    assert.deepEqual(menu, ['Summary', 'Newsletter draft', 'Submissions', 'Replies', 'Owed', 'Feedback', 'Holly lessons', 'Contacts', 'Photos', 'Health', 'Activity']);
+    assert.deepEqual(menu, ['Summary', 'Newsletter draft', 'Submissions', 'Replies', 'Owed', 'Feedback', 'Holly lessons', 'Contacts', 'Photos', 'Activity']);
     assert.match(await page.locator('.intro').innerText(), /^What needs you now/);
     await page.locator('nav.side button', { hasText: 'Submissions' }).click();
     assert.match(await page.locator('.intro').innerText(), /^Events and notices sent in by email/);
-    for (const [label, start] of [['Owed', /^Emails that got an automatic holding reply/], ['Health', /^The daily diagnostic/], ['Photos', /^Photos in the Lenches Photos folders/]]) {
+    // Health: opened from the top bar's Diagnostic (no menu entry since 28 Oct).
+    await page.locator('.top .chip button', { hasText: 'Diagnostic' }).click();
+    assert.match(await page.locator('.intro').innerText(), /^The daily diagnostic/);
+    await page.locator('.top .chip button', { hasText: 'Watchdog' }).click();
+    assert.match(await page.locator('.intro').innerText(), /^The daily diagnostic/);
+    for (const [label, start] of [['Owed', /^Emails that got an automatic holding reply/], ['Photos', /^Photos in the Lenches Photos folders/]]) {
       await page.locator('nav.side button', { hasText: label }).click();
       assert.match(await page.locator('.intro').innerText(), start, label);
     }
