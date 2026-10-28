@@ -23,7 +23,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '38';
+export const UI_VERSION = '39';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -2789,6 +2789,21 @@ export const CLIENT_JS = String.raw`
       line('+' + sb.joined + ' joined, −' + sb.left + ' unsubscribed or blocked', 'since the newsletter of ' + day(sb.since), []),
       line(plural(sb.total, 'subscriber') + ' on the list', '', [])
     ], { top: sb.error ? errorNote(sb, 'Subscribers') : null }));
+
+    // 12. Visitors (Cloudflare Web Analytics, admin/visitors.js).
+    var vs = all.visitors || {};
+    var vl = [];
+    if (!vs.error && !vs.off) {
+      vl.push(line(plural(vs.views, 'page view') + ', ' + plural(vs.visits, 'visit'), 'last 7 days', []));
+      if ((vs.days || []).length) vl.push(h('span', { class: 'meta' }, 'By day: ' + vs.days.map(function (x) { return day(x.date) + ' ' + x.views; }).join(' · ')));
+      (vs.pages || []).forEach(function (p) {
+        vl.push([h('a', { href: 'https://thelenches.org.uk' + str(p.path), target: '_blank', rel: 'noopener' }, str(p.path)), h('span', { class: 'meta' }, ' · ' + plural(p.views, 'view'))]);
+      });
+    }
+    els.push(sumCard('Visitors', 'https://dash.cloudflare.com/?to=/:account/web-analytics', vl, {
+      top: vs.error ? errorNote(vs, 'Visitor counts') : null,
+      empty: vs.off ? 'Not set up: the Worker needs CF_ANALYTICS_TOKEN and CF_ACCOUNT_ID' : 'No visits counted yet'
+    }));
     return els;
   }
 

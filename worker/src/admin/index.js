@@ -80,7 +80,8 @@
 //                                   .njk file, one commit to main (pageedit.js savePage)
 //   GET  /admin/api/summary         the Summary page's own sections (summary.js): next newsletter,
 //                                   failing runs, subscriber counts, coming up this week, outreach
-//                                   due, lessons awaiting approval, dev tasks (each { error } alone
+//                                   due, lessons awaiting approval, dev tasks, visitors (visitors.js;
+//                                   { off } until its secrets are set) (each { error } alone
 //                                   if its source can't be read); the rest comes from /api/state
 //   GET  /admin/api/runs            Activity: the latest 20 GitHub Actions runs (runs.js; read-only)
 //   GET  /admin/api/build-status?sha=&at=&p=&text=  whether an Edit page commit is live: its
@@ -134,6 +135,7 @@ import { recentRuns, buildStatus } from './runs.js';
 import {
   nextIssue, failingRuns, subscriberChanges, lastSentDate, comingWeek, comingUpFile, devTasks,
 } from './summary.js';
+import { visitors } from './visitors.js';
 
 const MAX_BODY = 60000;
 const SECURITY_HEADERS = {
@@ -493,9 +495,9 @@ async function outreach(env) {
 // both outreach counts; organisations take the same Gmail look-ups as their own screen.
 async function summary(env) {
   const today = ukToday();
-  const [issues, pending, subs, dns, lessons, contacts, replies, orgTab, runs, coming] = await settled([
+  const [issues, pending, subs, dns, lessons, contacts, replies, orgTab, runs, coming, seen] = await settled([
     readTable(env, 'Issues'), readTable(env, 'Pending'), readTable(env, 'Subscribers'), readTable(env, 'Do Not Send'),
-    readLessons(env), readTable(env, CONTACTS_TAB), readTable(env, 'Replies'), readOrgTab(env), recentRuns(env, 50), comingUpFile(env),
+    readLessons(env), readTable(env, CONTACTS_TAB), readTable(env, 'Replies'), readOrgTab(env), recentRuns(env, 50), comingUpFile(env), visitors(env),
   ]);
   const fail = (t) => (t && t.error ? { error: t.error } : null);
   const issueRows = issues.error ? [] : issues.rows;
@@ -527,6 +529,7 @@ async function summary(env) {
     orgs: orgsDue,
     lessons: lessons.error ? fail(lessons) : lessonRows(lessons).rows.filter((r) => r.status.toLowerCase() === 'proposed').map((r) => ({ id: r.id, lesson: r.lesson })),
     devTasks: devTasks(),
+    visitors: seen,
   };
 }
 
