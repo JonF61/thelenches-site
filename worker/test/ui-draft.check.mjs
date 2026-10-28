@@ -34,6 +34,7 @@ const draft = buildDraft({
 });
 let rows = draftRows(draft.meta, draft.html, '2026-10-28T12:00:00.000Z');
 let refreshed = 0;
+let signedOut = false;
 
 const stateData = () => ({
   email: 'admin@example.org', sheetId: 'sheet', gids: {}, holiday: { value: 'FALSE', on: false },
@@ -53,7 +54,7 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/admin/api/session') return send({ email: 'admin@example.org', csrf: 'c' });
   if (url.pathname === '/admin/api/state') return send(stateData());
   if (url.pathname === '/admin/api/summary') return send({ error: 'not in this check' }, 'application/json', 500);
-  if (url.pathname === '/admin/api/draft') return send({ meta: draftMeta(rows) });
+  if (url.pathname === '/admin/api/draft') return signedOut ? send('Forbidden', 'text/plain', 403) : send({ meta: draftMeta(rows) });
   if (url.pathname === '/admin/api/draft-refresh' && req.method === 'POST') {
     refreshed += 1;
     rows = draftRows({ ...draft.meta, items: draft.meta.items + 1, notices: draft.meta.notices + 1 }, draft.html, '2026-10-28T13:05:00.000Z');
@@ -105,6 +106,13 @@ try {
     await page.clock.runFor(16000);
     await main.locator('.meta', { hasText: String(draft.meta.items + 1) + ' item' }).waitFor();
     assert.match(await main.locator('iframe.draft-frame').getAttribute('src'), /13%3A05/);
+    // Signed out of Cloudflare: a message and Reload instead of a blocked frame.
+    signedOut = true;
+    await page.locator('nav.side button', { hasText: 'Summary' }).click();
+    await page.locator('nav.side button', { hasText: 'Newsletter draft' }).click();
+    await main.locator('.note', { hasText: 'signed out of Cloudflare' }).waitFor();
+    assert.equal(await main.locator('iframe.draft-frame').count(), 0);
+    signedOut = false;
     assert.deepEqual(errors, []);
     await page.close();
   }
