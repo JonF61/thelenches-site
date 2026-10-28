@@ -20,10 +20,13 @@
 // 3 months, Never and Clear (next_check writes through /admin/api/orgnext).
 // Summary (28 Oct): first in the menu and the page the panel opens on; one short section per
 // screen, written by code from /admin/api/state and /admin/api/summary, each linking to its screen.
+// Newsletter draft (28 Oct): the next issue as it would be built now (or as built, once it is),
+// framed from /admin/draft, with Refresh (runs newsletter-draft.yml); the top bar's Newsletter chip
+// opens it (it replaced the Feedback chip).
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '40';
+export const UI_VERSION = '41';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -33,9 +36,10 @@ export const CLIENT_JS = String.raw`
     picked: {}, ff: '', openF: {}, drag: null, busy: false, order: {}, shown: '' };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
-  var VIEWS = [['summary', 'Summary'], ['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['health', 'Health'], ['activity', 'Activity']];
+  var VIEWS = [['summary', 'Summary'], ['draft', 'Newsletter draft'], ['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['health', 'Health'], ['activity', 'Activity']];
   // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
   var INTROS = {
+    draft: 'The next newsletter as it would be built now from what is approved. It updates after each approval and every 3 hours. Once the issue is built on Thursday, this shows it exactly as built.',
     summary: 'What needs you now, and what is coming up, in one place. Tap a heading to open its page.',
     queue: 'Events and notices sent in by email or picked up from feeds, waiting for you to approve or reject. Approved items go on the website and into Thursday\'s newsletter.',
     replies: 'Holly\'s draft emails waiting for you to Approve, Edit, Redraft or Reject. Below them: emails still owed a reply, and everything already sent.',
@@ -264,10 +268,13 @@ export const CLIENT_JS = String.raw`
       'aria-label': 'Holiday mode', disabled: hol.error ? true : null, onclick: toggleHoliday
     });
     var nl = d.newsletter;
+    var dm = draftMetaOf(d);
     var nlChip = h('div', { class: 'chip' }, h('b', null, 'Newsletter'),
       nl && !nl.error ? [str(nl.issue_date || nl.issue_id), ' · ', str(nl.status) || 'no state',
         nl.sent_at ? ' · sent ' + when(nl.sent_at) : '', sheetLink('Issues', nl._row)]
-        : (nl && nl.error ? 'not readable' : 'none yet'));
+        : (nl && nl.error ? 'not readable' : 'none yet'),
+      h('button', { class: 'btn link', title: 'The next newsletter as it would be built now', onclick: go('draft') },
+        dm ? 'Draft ' + day(dm.issue_date) + ' · ' + hhmm(dm.as_of) : 'Draft'));
     var hl = Array.isArray(d.health) ? d.health[0] : null;
     var hs = hl ? str(hl.status).toUpperCase() : '';
     var dog = d.watchdog || {};
@@ -281,8 +288,6 @@ export const CLIENT_JS = String.raw`
           hl && hs !== 'OK' && hs !== 'CLEARED' ? h('button', { class: 'btn link', title: 'Mark this run\'s problems as dealt with', onclick: clearDiagnostic }, 'Clear') : null),
         h('div', { class: 'chip' }, h('span', { class: 'dot ' + (dog.error ? 'warn' : dog.open ? 'bad' : 'ok') }),
           h('b', null, 'Watchdog'), dog.error ? 'not readable' : dog.open ? 'alert since ' + when(dog.since) : 'clear'),
-        h('button', { class: 'chip', onclick: function () { S.view = 'feedback'; closeOverlay(); render(); window.scrollTo(0, 0); } },
-          h('b', null, 'Feedback'), fbCountText(d)),
         h('button', { class: 'btn', onclick: function () { load(); } }, 'Reload')));
   }
 
@@ -320,7 +325,7 @@ export const CLIENT_JS = String.raw`
       owed: Array.isArray(d.owed) ? d.owed.filter(function (o) { return !S.done['reply:' + o.holding.reply_id]; }).length : '!',
       photos: d.photos && !d.photos.error ? d.photos.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length : '!',
       feedback: d.feedback && !d.feedback.error ? fbRows(d, 'waiting').length + fbRows(d, 'reply').length : '!',
-      summary: null, contacts: null, lessons: null, health: null, activity: null
+      summary: null, draft: null, contacts: null, lessons: null, health: null, activity: null
     };
   }
 
@@ -348,6 +353,7 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'contacts') return [h('div', { class: 'list wide' }, top, contactsView())];
     if (S.view === 'lessons') return [h('div', { class: 'list wide' }, top, lessonsView())];
     if (S.view === 'activity') return [h('div', { class: 'list wide' }, top, activityView())];
+    if (S.view === 'draft') return [h('div', { class: 'list wide' }, top, draftView(d))];
     if (S.view === 'summary') return [h('div', { class: 'list wide' }, top, summaryView(d))];
     return split(withIntro(queueList(d)), 'pending');
   }
@@ -1892,12 +1898,6 @@ export const CLIENT_JS = String.raw`
     if (!d.feedback || d.feedback.error) return [];
     return d.feedback.rows.filter(function (r) { return r._state === state && !S.done['feedback:' + r.id]; });
   }
-  function fbCountText(d) {
-    if (!d.feedback || d.feedback.error) return 'not readable';
-    var n = fbRows(d, 'waiting').length;
-    var m = fbRows(d, 'reply').length;
-    return (n ? n + ' waiting' : 'none waiting') + (m ? ' · ' + m + ' repl' + (m === 1 ? 'y' : 'ies') : '');
-  }
   // Highest rating first (not rated yet last), then oldest first.
   function fbOrder(a, b) {
     var ra = Number(a.rating) || 0;
@@ -2579,6 +2579,65 @@ export const CLIENT_JS = String.raw`
       other.length ? section('Not in use', other, '') : null];
   }
 
+  /* ------------------------------------------------------- newsletter draft -- */
+
+  // The draft's meta: the newest seen (after a Refresh), else the one /api/state brought.
+  function draftMetaOf(d) {
+    var a = S.draftMeta || null;
+    var b = d && d.draft && !d.draft.error ? d.draft : null;
+    if (a && b) return str(a.as_of) >= str(b.as_of) ? a : b;
+    return a || b;
+  }
+
+  // Refresh: runs newsletter-draft.yml, then checks every 15 seconds (up to 6 minutes) for
+  // a newer draft and shows it.
+  async function refreshDraft() {
+    if (S.draftBusy) return;
+    var before = str((draftMetaOf(S.data) || {}).as_of);
+    var r = await api('/admin/api/draft-refresh', {});
+    if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); return; }
+    toast(r.json.message || 'Refreshing');
+    S.draftBusy = true;
+    render();
+    var tries = 0;
+    var tick = async function () {
+      tries += 1;
+      var m = await api('/admin/api/draft');
+      var meta = m.ok && m.json.meta;
+      if (meta && str(meta.as_of) > before) {
+        S.draftMeta = meta;
+        S.draftBusy = false;
+        toast('Draft updated');
+        render();
+        return;
+      }
+      if (tries >= 24) { S.draftBusy = false; toast('No new draft yet: see Activity for the Newsletter draft run', true); render(); return; }
+      setTimeout(tick, 15000);
+    };
+    setTimeout(tick, 15000);
+  }
+
+  function draftView(d) {
+    var m = draftMetaOf(d);
+    var els = [];
+    if (d.draft && d.draft.error) els.push(errorNote(d.draft, 'The Newsletter draft tab'));
+    var counts = m ? [plural(m.events, 'event'), plural(m.notices, 'notice'), m.roads ? plural(m.roads, 'road item') : '', m.elsewhere ? plural(m.elsewhere, 'link') : '']
+      .filter(Boolean).join(', ') : '';
+    els.push(h('div', { class: 'card draft-bar' },
+      h('div', null,
+        h('h2', null, m ? 'Draft for ' + day(m.issue_date) : 'No draft yet'),
+        m ? h('div', { class: 'meta' }, 'As of ' + when(m.as_of) + ' · ' + plural(m.items, 'item') + (counts ? ' (' + counts + ')' : '') +
+          (m.held ? ' · ' + m.held + ' held as late, for next week' : '')) : h('div', { class: 'meta' }, 'Tap Refresh to make the first one.'),
+        m ? h('div', { class: 'badges' }, m.mode === 'frozen'
+          ? h('span', { class: 'badge ok' }, 'Built: as it will go out' + (m.status ? ' (' + m.status + ')' : ''))
+          : h('span', { class: 'badge info' }, 'Live draft: changes as items are approved')) : null),
+      h('div', { class: 'actions' },
+        h('button', { class: 'btn primary', disabled: S.draftBusy ? true : null, onclick: refreshDraft }, S.draftBusy ? 'Refreshing…' : 'Refresh'),
+        h('a', { class: 'btn link', href: '/admin/draft', target: '_blank', rel: 'noopener' }, 'Open in new tab'))));
+    els.push(h('iframe', { class: 'draft-frame', src: '/admin/draft?v=' + encodeURIComponent(m ? str(m.as_of) : '0'), title: 'Newsletter draft' }));
+    return els;
+  }
+
   /* ------------------------------------------------------------- summary -- */
 
   // /admin/api/summary: the sections not in /api/state (admin/summary.js).
@@ -2765,7 +2824,7 @@ export const CLIENT_JS = String.raw`
         line(issue.events === null ? 'Events: the site\'s list could not be read' : plural(issue.events, 'event') + ' in its two weeks, ' + plural(issue.fresh, 'new item') + ' approved since the last issue', 'a guide; the build decides', []),
         issue.onThisDay ? line('On this day: ' + issue.onThisDay, '', []) : line('No On this day line for ' + day(issue.date), '', [['Missing', 'warn']])
       ];
-      var card = sumCard('Next newsletter: ' + day(issue.date), null, nl);
+      var card = sumCard('Next newsletter: ' + day(issue.date), go('draft'), nl);
       if (st[1]) card.querySelectorAll('li')[1].appendChild(h('span', { class: 'badge ' + st[1] }, issue.status));
       var link = sheetLink('Issues', issue.row);
       if (link) card.appendChild(h('div', { class: 'actions' }, link));

@@ -13,6 +13,7 @@ export const WORKFLOW_NAMES = {
   'publish.yml': 'Publish',
   'approval.yml': 'Apply approval',
   'newsletter.yml': 'Newsletter',
+  'newsletter-draft.yml': 'Newsletter draft',
   'deploy-worker.yml': 'Deploy Worker',
   'digest.yml': 'Digest',
   'daily-approvals.yml': 'Daily approvals email',

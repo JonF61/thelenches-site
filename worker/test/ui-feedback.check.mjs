@@ -1,6 +1,6 @@
 // worker/test/ui-feedback.check.mjs
 // Browser check of the panel's Feedback screen (ui/client.js) against a mock API, on desktop
-// and phone sizes: the status-strip chip and count, the Waiting / Reply drafts / Approved,
+// and phone sizes: the menu count, the Waiting / Reply drafts / Approved,
 // awaiting build / Postponed sections, the page link, rating and commentary, and what each
 // button posts (Approve, Reject, Postpone with its date, Add note with the stale-check
 // value, Mark implemented, Send, Edit, Skip).
@@ -76,13 +76,13 @@ try {
     const page = await browser.newPage({ viewport });
     page.on('dialog', (d) => d.accept());
     await page.goto(`${base}/admin`);
-    const chip = page.locator('button.chip', { hasText: 'Feedback' });
-    await chip.waitFor();
-    assert.match(await chip.innerText(), /3 waiting · 2 replies/);
+    // The top bar's Feedback chip gave way to the Newsletter draft link (28 Oct): the menu count stays.
+    await page.locator('nav.side button', { hasText: 'Feedback' }).waitFor();
+    assert.equal(await page.locator('button.chip', { hasText: 'Feedback' }).count(), 0);
     const navN = page.locator('nav.side button', { hasText: 'Feedback' }).locator('.n');
     assert.equal(await navN.innerText(), '5', 'waiting plus reply drafts');
     assert.match(await navN.getAttribute('class'), /attn/);
-    await chip.click();
+    await page.locator('nav.side button', { hasText: 'Feedback' }).click();
     const text = await page.locator('.main').textContent();
     for (const s of ['Waiting (3)', 'Reply drafts (2)', 'Approved, awaiting build (1)', 'Postponed (1)', 'History (2)']) assert.ok(text.includes(s), s);
     assert.ok(!text.includes('bin day is wrong'), 'history hidden until shown');
