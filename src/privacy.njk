@@ -15,15 +15,17 @@ description: How the Lenches website and community mailing list collect, use and
     <p>The Lenches Community Mailing List is operated as part of the website <a href="https://thelenches.org.uk/">thelenches.org.uk</a>, which serves the local community. It is run by a local volunteer as a private individual, not by the Village Hall or the Parish Council. The Lenches Club CIC (Ab Lench Road, Church Lench, WR11 4UQ) is collaborating with us to manage a joint mailing list to provide news, events, and community information. The Data Controller responsible for your data is the volunteer who runs thelenches.org.uk, who can be contacted at <a href="mailto:website@thelenches.org.uk">website@thelenches.org.uk</a>.</p>
 
     <h2>3. What data we collect</h2>
+    {#- Visit counting wording follows site.json cfAnalyticsToken (Cloudflare Web Analytics, 28 Oct 2026). -#}
+    {% set visitsLine = "This website counts visits anonymously (see section 11) but does not track you." if site.cfAnalyticsToken else "This website has no analytics and no tracking." %}
     {#- The feedback wording shows only once the form itself is live (site.json turnstileSiteKey). -#}
     {% if site.feedbackUrl and site.turnstileSiteKey %}
     {% if site.signupUrl %}
-    <p>This website has no analytics and no tracking. Its only forms are the newsletter sign-up, which sends us the email address you type, and &ldquo;Suggest an update&rdquo; at the foot of each page, which sends us your message, the page you were on and, only if you choose to give it, your email address. We collect and process the following personal data only when you ask to join our mailing list, email us, or give your email address in one of those forms:</p>
+    <p>{{ visitsLine }} Its only forms are the newsletter sign-up, which sends us the email address you type, and &ldquo;Suggest an update&rdquo; at the foot of each page, which sends us your message, the page you were on and, only if you choose to give it, your email address. We collect and process the following personal data only when you ask to join our mailing list, email us, or give your email address in one of those forms:</p>
     {% else %}
-    <p>This website has no analytics and no tracking. Its only form is &ldquo;Suggest an update&rdquo; at the foot of each page, which sends us your message, the page you were on and, only if you choose to give it, your email address. We collect and process the following personal data only when you ask to join our mailing list, email us, or give your email address in that form:</p>
+    <p>{{ visitsLine }} Its only form is &ldquo;Suggest an update&rdquo; at the foot of each page, which sends us your message, the page you were on and, only if you choose to give it, your email address. We collect and process the following personal data only when you ask to join our mailing list, email us, or give your email address in that form:</p>
     {% endif %}
     {% else %}
-    <p>This website contains no forms, no analytics and no tracking, so it collects no personal data from visitors. We collect and process the following personal data only when you ask to join our mailing list, or when you email us:</p>
+    <p>{% if site.cfAnalyticsToken %}This website contains no forms, counts visits anonymously (see section 11) and does not track you, so it collects no personal data from visitors.{% else %}This website contains no forms, no analytics and no tracking, so it collects no personal data from visitors.{% endif %} We collect and process the following personal data only when you ask to join our mailing list, or when you email us:</p>
     {% endif %}
     <ul>
       <li>Name</li>
@@ -76,7 +78,11 @@ description: How the Lenches website and community mailing list collect, use and
     <p>If you have any questions about this policy or wish to exercise your data rights, please contact us at <a href="mailto:website@thelenches.org.uk">website@thelenches.org.uk</a>.</p>
 
     <h2>11. Cookies and website tracking</h2>
+    {% if site.cfAnalyticsToken %}
+    <p>This website does not set any cookies and does not track you. We use Cloudflare Web Analytics to count how many people visit and which pages are most viewed. We see only totals, never anything about an individual visitor, and we do not build a profile of anyone. When a page loads, your browser sends your IP address and some browser details to Cloudflare, which does not use cookies or fingerprinting to recognise you; Cloudflare&rsquo;s own privacy policy applies.</p>
+    {% else %}
     <p>This website does not set any cookies and does not use analytics or tracking of any kind. We do not build a profile of visitors, and nothing you do on this site is recorded by us.</p>
+    {% endif %}
     <p>Some pages link out to other organisations &mdash; for example Google Calendar for hall and club bookings, and ticketing, club and parish websites. Those services set their own cookies once you follow the link, and are covered by their own privacy policies rather than this one.</p>
     {% if site.feedbackUrl and site.turnstileSiteKey %}<p>{% if site.signupUrl %}The newsletter sign-up and &ldquo;Suggest an update&rdquo; forms use Cloudflare Turnstile to check that they are used by people rather than robots. It loads only when you start using one of them, sending{% else %}The &ldquo;Suggest an update&rdquo; form uses Cloudflare Turnstile to check that messages come from people rather than robots. It loads only when you open the form, sending{% endif %} your IP address and some browser details to Cloudflare, whose own privacy policy applies.</p>{% endif %}
     <p>The map on our Roads page uses map images from OpenStreetMap and map software delivered by Cloudflare (cdnjs), so viewing that page sends your IP address to the OpenStreetMap Foundation and to Cloudflare, whose own privacy policies apply.</p>
