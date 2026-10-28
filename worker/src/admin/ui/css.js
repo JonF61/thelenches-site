@@ -61,6 +61,7 @@ span.sum-h{color:inherit;cursor:default}
 .sum-l{margin:6px 0 0;padding-left:18px;line-height:1.5}
 .sum-l li{margin:2px 0}
 .sum-clear{margin:0;color:var(--ok)}
+.chip-link{padding:0;min-height:0;color:inherit}
 .draft-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
 .draft-bar .actions{margin:0}
 .draft-frame{display:block;width:100%;height:78vh;border:1px solid var(--line);border-radius:10px;background:#fff}
