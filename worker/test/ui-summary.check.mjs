@@ -106,6 +106,10 @@ try {
     assert.match(text, /Holly lessons awaiting approval \(1\)[\s\S]*Thank council clerks/);
     assert.match(text, /\+4 joined, −1 unsubscribed or blocked · since the newsletter of Thu 22 Oct/);
     assert.match(text, /Visitors[\s\S]*812 page views, 301 visits · last 7 days[\s\S]*By day: Tue 27 Oct 400 · Wed 28 Oct 412[\s\S]*\/bins\/ · 120 views/);
+    // Order: Site health first, Holly lessons straight after Feedback.
+    const heads = (await main.locator('.card.sum h2').allInnerTexts()).map((t) => t.replace(/\s*[→↗]$/, '').replace(/ \(\d+\)$/, ''));
+    assert.deepEqual(heads.slice(0, 7), ['Site health', 'Submissions to approve', 'Replies needed', 'Owed a reply', 'Feedback', 'Holly lessons awaiting approval', 'Development tasks']);
+    assert.doesNotMatch(text, /No action needed/);
     assert.equal(/Holiday mode is ON/.test(text), holiday, 'holiday banner only when on');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `summary-${name}.png`), fullPage: true });
     // A heading opens its screen.
@@ -119,8 +123,8 @@ try {
     await main.locator('.card.sum', { hasText: 'Subscribers' }).waitFor();
     await page.waitForTimeout(300);
     const t2 = await main.innerText();
-    assert.match(t2, /Submissions to approve \(0\)[\s→]*Nothing waiting/);
-    assert.match(t2, /Replies needed \(0\)[\s→]*Nothing waiting/);
+    assert.match(t2, /No action needed on: Submissions \/ Replies \/ Owed \/ Feedback \/ Holly lessons/);
+    assert.doesNotMatch(t2, /Submissions to approve|Replies needed|Owed a reply|Feedback \(|Holly lessons awaiting/);
     assert.match(t2, /All clear/);
     assert.match(t2, /Development tasks \(0\)[\s→]*Nothing outstanding/);
     assert.match(t2, /No On this day line for Thu 29 Oct/);

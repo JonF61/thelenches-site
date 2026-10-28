@@ -23,7 +23,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '39';
+export const UI_VERSION = '40';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -2670,51 +2670,7 @@ export const CLIENT_JS = String.raw`
     var issue = all && all.issue && !all.issue.error ? all.issue : null;
     var left = issue ? until(issue.deadlineAt) : '';
 
-    // 1. Submissions to approve.
-    var pend = d.pending && !d.pending.error ? d.pending.rows.filter(function (r) { return !S.done['pending:' + r.id]; }) : [];
-    pend = pend.slice().sort(function (a, b) { return (truthy(b.urgent) ? 1 : 0) - (truthy(a.urgent) ? 1 : 0) || str(a.received).localeCompare(str(b.received)); });
-    var dl = null;
-    if (issue && pend.length && ['', 'built'].indexOf(issue.status) >= 0) {
-      dl = left
-        ? (Date.parse(issue.deadlineAt) - Date.now() < 48 * 3600000 ? h('div', { class: 'note warn' }, 'Newsletter deadline (Wednesday 6pm) in ' + left + '.') : null)
-        : h('div', { class: 'note warn' }, 'The deadline has passed: items sent in before it still go in ' + day(issue.date) + '\'s issue if you approve them before it is built.');
-    }
-    els.push(sumCard('Submissions to approve (' + pend.length + ')', go('queue'), d.pending && d.pending.error ? [] : pend.map(function (r) {
-      var rec = str(r.received);
-      // Once the deadline has passed: which items still make this week's issue.
-      var late = issue && dl && !left && rec ? (rec.replace('T', ' ').slice(0, 16) <= issue.deadline ? ['In time for ' + day(issue.date), 'info'] : ['For next week', '']) : null;
-      return line(str(r.title) || '(no title)', [str(r.source) || 'email', age(rec)].filter(Boolean).join(' · '),
-        [truthy(r.urgent) ? ['Urgent', 'bad'] : null, /possible spam/i.test(str(r.notes)) ? ['Possible spam', 'warn'] : null, late]);
-    }), { max: 6, top: d.pending && d.pending.error ? errorNote(d.pending, 'Pending') : dl, empty: 'Nothing waiting' }));
-
-    // 2. Replies needed.
-    var reps = d.replies && !d.replies.error ? d.replies.rows.filter(function (r) { return !S.done['reply:' + r.reply_id]; }) : [];
-    reps = reps.slice().sort(function (a, b) { return str(a.created_at).localeCompare(str(b.created_at)); });
-    els.push(sumCard('Replies needed (' + reps.length + ')', go('replies'), reps.map(function (r) {
-      var t = lower(r.type);
-      return line(str(r.to) + ' · ' + (str(r.subject) || '(no subject)'), age(r.created_at) ? 'waiting ' + age(r.created_at) : '',
-        [str(r.hold_reason) ? ['Held: ' + str(r.hold_reason), 'warn'] : null, t === 'own' ? ['Your own thread', 'info'] : null, t === 'outreach' ? ['Outreach', 'info'] : null]);
-    }), { max: 6, top: errorNote(d.replies, 'Replies') }));
-
-    // 3. Owed.
-    var owed = Array.isArray(d.owed) ? d.owed.filter(function (o) { return !S.done['reply:' + o.holding.reply_id]; }) : [];
-    els.push(sumCard('Owed a reply (' + owed.length + ')', go('owed'), owed.map(function (o) {
-      return line(str(o.holding.to) + ' · ' + (str(o.holding.subject) || '(no subject)'), age(o.holding.sent_at) ? 'holding reply ' + age(o.holding.sent_at) + ' ago' : '',
-        [o.draft && o.draft.status === 'awaiting' ? ['Draft waiting', 'warn'] : null]);
-    }), { max: 6, top: Array.isArray(d.owed) ? null : errorNote(d.owed, 'Replies') }));
-
-    // 4. Feedback.
-    var fbw = fbRows(d, 'waiting');
-    var fbr = fbRows(d, 'reply');
-    els.push(sumCard('Feedback (' + fbw.length + ')', go('feedback'), fbw.map(function (r) {
-      var n = Number(r.rating) || 0;
-      var msg = str(r.message);
-      return line((n ? '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n) + ' ' : '') + '"' + (msg.length > 80 ? msg.slice(0, 79) + '…' : msg) + '"',
-        [str(r.page_title) || str(r.page_url), age(r.received)].filter(Boolean).join(' · '), [str(r.type) ? [str(r.type), ''] : null]);
-    }).concat(fbr.length ? [h('span', { class: 'meta' }, plural(fbr.length, 'reply', 'replies') + ' to send')] : []),
-    { max: 5, top: d.feedback && d.feedback.error ? errorNote(d.feedback, 'Feedback') : null }));
-
-    // 5. Site health.
+    // Site health (first, agreed 28 Oct).
     var health = [];
     var dog = d.watchdog || {};
     if (dog.error) health.push(line('Watchdog could not be checked', dog.error, [['Check', 'warn']]));
@@ -2732,6 +2688,62 @@ export const CLIENT_JS = String.raw`
     }
     var hTop = all && all.failing && all.failing.error ? errorNote(all.failing, 'GitHub runs') : (!sm ? loadingNote(sm) : null);
     els.push(sumCard('Site health', go('health'), health, { top: hTop, empty: 'All clear: watchdog, diagnostic' + (all ? ' and automatic jobs' : '') + ' are fine' }));
+
+    // Screens that need action; any with nothing waiting go in one "No action needed" box.
+    var clear = [];
+    var action = function (name, count, readable, card) {
+      if (count === 0 && readable) clear.push(name); else els.push(card);
+    };
+
+    // 1. Submissions to approve.
+    var pend = d.pending && !d.pending.error ? d.pending.rows.filter(function (r) { return !S.done['pending:' + r.id]; }) : [];
+    pend = pend.slice().sort(function (a, b) { return (truthy(b.urgent) ? 1 : 0) - (truthy(a.urgent) ? 1 : 0) || str(a.received).localeCompare(str(b.received)); });
+    var dl = null;
+    if (issue && pend.length && ['', 'built'].indexOf(issue.status) >= 0) {
+      dl = left
+        ? (Date.parse(issue.deadlineAt) - Date.now() < 48 * 3600000 ? h('div', { class: 'note warn' }, 'Newsletter deadline (Wednesday 6pm) in ' + left + '.') : null)
+        : h('div', { class: 'note warn' }, 'The deadline has passed: items sent in before it still go in ' + day(issue.date) + '\'s issue if you approve them before it is built.');
+    }
+    action('Submissions', pend.length, !(d.pending && d.pending.error), sumCard('Submissions to approve (' + pend.length + ')', go('queue'), d.pending && d.pending.error ? [] : pend.map(function (r) {
+      var rec = str(r.received);
+      // Once the deadline has passed: which items still make this week's issue.
+      var late = issue && dl && !left && rec ? (rec.replace('T', ' ').slice(0, 16) <= issue.deadline ? ['In time for ' + day(issue.date), 'info'] : ['For next week', '']) : null;
+      return line(str(r.title) || '(no title)', [str(r.source) || 'email', age(rec)].filter(Boolean).join(' · '),
+        [truthy(r.urgent) ? ['Urgent', 'bad'] : null, /possible spam/i.test(str(r.notes)) ? ['Possible spam', 'warn'] : null, late]);
+    }), { max: 6, top: d.pending && d.pending.error ? errorNote(d.pending, 'Pending') : dl, empty: 'Nothing waiting' }));
+
+    // 2. Replies needed.
+    var reps = d.replies && !d.replies.error ? d.replies.rows.filter(function (r) { return !S.done['reply:' + r.reply_id]; }) : [];
+    reps = reps.slice().sort(function (a, b) { return str(a.created_at).localeCompare(str(b.created_at)); });
+    action('Replies', reps.length, !(d.replies && d.replies.error), sumCard('Replies needed (' + reps.length + ')', go('replies'), reps.map(function (r) {
+      var t = lower(r.type);
+      return line(str(r.to) + ' · ' + (str(r.subject) || '(no subject)'), age(r.created_at) ? 'waiting ' + age(r.created_at) : '',
+        [str(r.hold_reason) ? ['Held: ' + str(r.hold_reason), 'warn'] : null, t === 'own' ? ['Your own thread', 'info'] : null, t === 'outreach' ? ['Outreach', 'info'] : null]);
+    }), { max: 6, top: errorNote(d.replies, 'Replies') }));
+
+    // 3. Owed.
+    var owed = Array.isArray(d.owed) ? d.owed.filter(function (o) { return !S.done['reply:' + o.holding.reply_id]; }) : [];
+    action('Owed', owed.length, Array.isArray(d.owed), sumCard('Owed a reply (' + owed.length + ')', go('owed'), owed.map(function (o) {
+      return line(str(o.holding.to) + ' · ' + (str(o.holding.subject) || '(no subject)'), age(o.holding.sent_at) ? 'holding reply ' + age(o.holding.sent_at) + ' ago' : '',
+        [o.draft && o.draft.status === 'awaiting' ? ['Draft waiting', 'warn'] : null]);
+    }), { max: 6, top: Array.isArray(d.owed) ? null : errorNote(d.owed, 'Replies') }));
+
+    // 4. Feedback.
+    var fbw = fbRows(d, 'waiting');
+    var fbr = fbRows(d, 'reply');
+    action('Feedback', fbw.length + fbr.length, !(d.feedback && d.feedback.error), sumCard('Feedback (' + fbw.length + ')', go('feedback'), fbw.map(function (r) {
+      var n = Number(r.rating) || 0;
+      var msg = str(r.message);
+      return line((n ? '★★★★★'.slice(0, n) + '☆☆☆☆☆'.slice(0, 5 - n) + ' ' : '') + '"' + (msg.length > 80 ? msg.slice(0, 79) + '…' : msg) + '"',
+        [str(r.page_title) || str(r.page_url), age(r.received)].filter(Boolean).join(' · '), [str(r.type) ? [str(r.type), ''] : null]);
+    }).concat(fbr.length ? [h('span', { class: 'meta' }, plural(fbr.length, 'reply', 'replies') + ' to send')] : []),
+    { max: 5, top: d.feedback && d.feedback.error ? errorNote(d.feedback, 'Feedback') : null }));
+
+    // Holly lessons awaiting approval (below Feedback, agreed 28 Oct).
+    var ls = all && Array.isArray(all.lessons) ? all.lessons : [];
+    if (all) action('Holly lessons', ls.length, !all.lessons.error, sumCard('Holly lessons awaiting approval (' + ls.length + ')', go('lessons'), ls.map(function (l) { return line(str(l.lesson), '', []); }),
+      { max: 5, top: all.lessons && all.lessons.error ? errorNote(all.lessons, 'Holly lessons') : null }));
+    if (clear.length) els.push(h('div', { class: 'card sum' }, h('p', { class: 'sum-clear' }, h('b', null, 'No action needed on: '), clear.join(' / '))));
 
     if (!all) {
       els.push(sm && sm.error ? h('button', { class: 'btn', onclick: function () { S.summary = null; render(); } }, 'Try again') : loadingNote(sm));
@@ -2777,11 +2789,6 @@ export const CLIENT_JS = String.raw`
       h('span', { class: 'meta' }, ' · ' + [ou.seasonal ? ou.seasonal + ' seasonal' : '', ou.quiet ? ou.quiet + ' gone quiet' : '', ou.lead ? plural(ou.lead, 'lead') : ''].filter(Boolean).join(', '))]);
     if (!og.error && og.due + og.chase) ol.push([h('button', { class: 'btn link', onclick: go('contacts', 'orgs') }, plural(og.due, 'organisation') + ' due a check' + (og.chase ? ', ' + plural(og.chase, 'chaser') + ' due' : ''))]);
     els.push(sumCard('Outreach due', go('contacts', 'outreach'), ol, { top: ou.error ? errorNote(ou, 'Contacts') : og.error ? errorNote(og, 'Organisations') : null }));
-
-    // 10. Holly lessons awaiting approval.
-    var ls = Array.isArray(all.lessons) ? all.lessons : [];
-    els.push(sumCard('Holly lessons awaiting approval (' + ls.length + ')', go('lessons'), ls.map(function (l) { return line(str(l.lesson), '', []); }),
-      { max: 5, top: all.lessons && all.lessons.error ? errorNote(all.lessons, 'Holly lessons') : null }));
 
     // 11. Subscribers (counts only).
     var sb = all.subscribers || {};
