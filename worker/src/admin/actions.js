@@ -157,3 +157,17 @@ export function planSuggest({ id, sid }, row, suggestion, { hasChoice = false, h
   const save = source !== 'own' && norm(suggestion.status) !== 'saved' ? imageFetchRow(row, suggestion) : null;
   return { value: String(sid), save };
 }
+
+// Newsletter draft screen: Rebuild (nlquiet: rebuild, nothing sent) or Test send (nltest:
+// the preview of that build to Jon only). The issue date is the draft's, today to 7 days on.
+// Returns { p } for decide(), or { error, status }.
+export function planNewsletter({ action, issueDate }, today) {
+  const a = { rebuild: 'nlquiet', test: 'nltest' }[String(action || '')];
+  if (!a) return { error: `Unknown newsletter action "${action}"`, status: 400 };
+  const i = String(issueDate || '');
+  const p = { a, i };
+  if (!validPayload(p)) return { error: 'Bad issue date', status: 400 };
+  const last = new Date(Date.parse(`${today}T12:00:00Z`) + 7 * 86400000).toISOString().slice(0, 10);
+  if (i < today || i > last) return { error: `The ${i} issue is not the next one: Refresh the draft first`, status: 409 };
+  return { p };
+}

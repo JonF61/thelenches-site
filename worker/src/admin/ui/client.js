@@ -21,7 +21,8 @@
 // Summary (28 Oct): first in the menu and the page the panel opens on; one short section per
 // screen, written by code from /admin/api/state and /admin/api/summary, each linking to its screen.
 // Newsletter draft (28 Oct): the next issue as it would be built now (or as built, once it is),
-// framed from /admin/draft, with Refresh (runs newsletter-draft.yml); the top bar's Newsletter chip
+// framed from /admin/draft, with Refresh (runs newsletter-draft.yml), Rebuild (nlquiet: sends
+// nothing) and, once built, Test send (nltest: the preview to Jon only); the top bar's Newsletter chip
 // opens it (it replaced the Feedback chip).
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
@@ -2664,7 +2665,33 @@ export const CLIENT_JS = String.raw`
     var r = await api('/admin/api/draft-refresh', {});
     if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); return; }
     toast(r.json.message || 'Refreshing');
-    S.draftBusy = true;
+    pollDraft(before, 'Refreshing…');
+  }
+
+  // Rebuild (nothing sent) or Test send (the preview, with its Send button, to Jon only),
+  // through decide(), after a confirm. Rebuild then watches for the new build as Refresh does.
+  function nlConfirm(action, m) {
+    var rebuild = action === 'rebuild';
+    var btn = h('button', { class: 'btn primary', type: 'submit' }, rebuild ? 'Rebuild' : 'Test send');
+    overlay(rebuild ? 'Rebuild the newsletter' : 'Test send', h('form', { onsubmit: async function (e) {
+      e.preventDefault();
+      btn.disabled = true;
+      var before = str((draftMetaOf(S.data) || {}).as_of);
+      var r = await api('/admin/api/newsletter', { action: action, issue_date: m.issue_date });
+      closeOverlay();
+      if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); return; }
+      toast(r.json.message || 'Started');
+      if (rebuild) pollDraft(before, 'Rebuilding…', 40);
+    } },
+    h('p', null, rebuild
+      ? 'Builds the ' + day(m.issue_date) + ' issue again with everything approved, including items that came in after the Wednesday deadline. Nothing is sent. Any Send button in an earlier preview stops working; use Test send for a new one.'
+      : 'Sends the preview of the ' + day(m.issue_date) + ' issue, exactly as built, to your thelenches.org.uk inbox only, with the usual Send, Rebuild, Approve and Reject buttons. No subscriber and no test copy gets anything.'),
+    h('div', { class: 'actions' }, btn)));
+  }
+
+  // Checks every 15 seconds (default up to 6 minutes) for a draft newer than before.
+  function pollDraft(before, label, maxTries) {
+    S.draftBusy = label;
     render();
     var tries = 0;
     var tick = async function () {
@@ -2678,7 +2705,7 @@ export const CLIENT_JS = String.raw`
         render();
         return;
       }
-      if (tries >= 24) { S.draftBusy = false; toast('No new draft yet: see Activity for the Newsletter draft run', true); render(); return; }
+      if (tries >= (maxTries || 24)) { S.draftBusy = false; toast('No new draft yet: see Activity for the Newsletter draft run', true); render(); return; }
       setTimeout(tick, 15000);
     };
     setTimeout(tick, 15000);
@@ -2719,7 +2746,9 @@ export const CLIENT_JS = String.raw`
           ? h('span', { class: 'badge ok' }, 'Built: as it will go out' + (m.status ? ' (' + m.status + ')' : ''))
           : h('span', { class: 'badge info' }, 'Live draft: changes as items are approved')) : null),
       h('div', { class: 'actions' },
-        h('button', { class: 'btn primary', disabled: S.draftBusy ? true : null, onclick: refreshDraft }, S.draftBusy ? 'Refreshing…' : 'Refresh'),
+        h('button', { class: 'btn primary', disabled: S.draftBusy ? true : null, onclick: refreshDraft }, S.draftBusy || 'Refresh'),
+        m ? h('button', { class: 'btn', disabled: S.draftBusy ? true : null, title: 'Build this issue again now; sends nothing', onclick: function () { nlConfirm('rebuild', m); } }, 'Rebuild') : null,
+        m && m.mode === 'frozen' ? h('button', { class: 'btn', disabled: S.draftBusy ? true : null, title: 'Email the preview, with its Send button, to you only', onclick: function () { nlConfirm('test', m); } }, 'Test send') : null,
         h('a', { class: 'btn link', href: '/admin/draft', target: '_blank', rel: 'noopener' }, 'Open in new tab'))));
     els.push(S.draftAuth === 'ok'
       ? h('iframe', { class: 'draft-frame', src: '/admin/draft?v=' + encodeURIComponent(m ? str(m.as_of) : '0'), title: 'Newsletter draft' })

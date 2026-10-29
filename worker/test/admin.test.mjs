@@ -11,10 +11,10 @@ import { verifyAccess, resetCertCache } from '../src/admin/access.js';
 import { makeCsrf, checkCsrf, sameOrigin, CSRF_TTL_MS } from '../src/admin/csrf.js';
 import { editCell, colLetter, isTypoFix, wordsChanged } from '../src/admin/sheet.js';
 import { owedReplies } from '../src/admin/owed.js';
-import { planPending, planReply, planPhoto, trustKeyFor, planSuggest } from '../src/admin/actions.js';
+import { planPending, planReply, planPhoto, trustKeyFor, planSuggest, planNewsletter } from '../src/admin/actions.js';
 import { resetTokenCache, accessToken, serviceAccountJwt, SCOPES } from '../src/admin/google.js';
 import { bytesToB64url, jsonToB64url } from '../src/admin/b64.js';
-import { dispatchFor } from '../src/core.js';
+import { dispatchFor, validPayload, PANEL_ONLY } from '../src/core.js';
 import worker from '../src/index.js';
 
 const enc = new TextEncoder();
@@ -909,4 +909,18 @@ test('E2E contacts: refused without CSRF or Access', async () => {
   r = await worker.fetch(await reqWith('/admin/api/contacts', { token: 'bad' }), env());
   assert.equal(r.status, 403);
   assert.equal(calls.writes.length, 0);
+});
+
+test('Newsletter draft: Rebuild and Test send map to nlquiet / nltest, panel only', () => {
+  const today = '2026-10-29';
+  assert.deepEqual(planNewsletter({ action: 'rebuild', issueDate: '2026-10-29' }, today).p, { a: 'nlquiet', i: '2026-10-29' });
+  assert.deepEqual(planNewsletter({ action: 'test', issueDate: '2026-11-05' }, today).p, { a: 'nltest', i: '2026-11-05' });
+  assert.equal(planNewsletter({ action: 'send', issueDate: '2026-10-29' }, today).status, 400);
+  assert.equal(planNewsletter({ action: 'test', issueDate: 'x' }, today).status, 400);
+  assert.equal(planNewsletter({ action: 'test', issueDate: '2026-10-22' }, today).status, 409);
+  assert.equal(planNewsletter({ action: 'test', issueDate: '2026-11-06' }, today).status, 409);
+  assert.deepEqual(dispatchFor({ a: 'nlquiet', i: '2026-10-29' }), ['newsletter', { action: 'build', issue_date: '2026-10-29', rebuild: true, step: 'build' }]);
+  assert.deepEqual(dispatchFor({ a: 'nltest', i: '2026-10-29' }), ['newsletter', { action: 'build', issue_date: '2026-10-29', step: 'preview' }]);
+  assert.equal(validPayload({ a: 'nltest', i: 'abc' }), false);
+  assert.deepEqual(PANEL_ONLY, ['nlquiet', 'nltest']);
 });

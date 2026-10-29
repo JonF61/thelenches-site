@@ -14,6 +14,9 @@
 // "snapshot" column. send.js sends exactly that, so nothing ingested, published or
 // edited after the build changes the issue; only a Rebuild does.
 // Issues tab: one row per issue; a rebuild of the same issue updates its row.
+// Admin panel (client_payload.step): "build" rebuilds and saves the snapshot (status built)
+// but sends nothing; "preview" builds nothing and sends only the preview (with its Send
+// button) of the issue exactly as last built, to preview_to, then marks it tested.
 'use strict';
 
 const fs = require('fs');
@@ -90,7 +93,11 @@ async function main() {
   const issueDate = str(process.env.ISSUE_DATE) || comingThursday(today);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate)) throw new Error(`ISSUE_DATE must be YYYY-MM-DD, got "${issueDate}"`);
   const shadow = /^true$/i.test(str(process.env.SHADOW));
-  const rebuild = dispatchPayload().rebuild === true;
+  const payload = dispatchPayload();
+  const step = str(payload.step);
+  if (step && !['build', 'preview'].includes(step)) throw new Error(`Unknown step "${step}"`);
+  if (step === 'preview') return previewOnly(issueDate);
+  const rebuild = payload.rebuild === true;
   const cutoff = rebuild ? '' : deadlineFor(issueDate);
 
   const [{ sources, settings }, pending, issues, subscribers, dns] = await Promise.all([
@@ -156,6 +163,12 @@ async function main() {
     throw new Error('Content snapshot was not saved: add the header "snapshot" to the Issues tab (column Q)');
   }
 
+  if (step === 'build') {
+    await g.updateRow('Issues', rowNumber, { notes: [fields.notes, 'panel rebuild: nothing sent'].join('; ') });
+    console.log(`Issues row ${rowNumber}: built. Nothing sent (use Test send in the admin panel for the preview).`);
+    return;
+  }
+
   try {
     await assertSendAs();
     const fromName = g.fromNameFor(settings);
@@ -190,6 +203,41 @@ async function main() {
     });
     throw err;
   }
+}
+
+// The admin panel's Test send: the preview of the issue exactly as built (its snapshot,
+// which must still render to the saved hash), to preview_to only. Nothing is rebuilt and
+// nothing goes to test_to or any subscriber.
+async function previewOnly(issueDate) {
+  const [{ settings }, pending, issues, subscribers, dns] = await Promise.all([
+    g.readSettings(), g.readTable('Pending'), g.readTable('Issues'),
+    g.readTable('Subscribers'), g.readTable('Do Not Send'),
+  ]);
+  const previewTo = recipient(settings.preview_to, PREVIEW_ALLOWED, 'preview_to');
+  const row = issues.filter((r) => str(r.issue_id) === issueDate).pop();
+  if (!row) throw new Error(`No Issues row for ${issueDate}: Rebuild first`);
+  const status = str(row.status).toLowerCase();
+  if (!['built', 'tested', 'shadow'].includes(status)) throw new Error(`Issue ${issueDate} is "${status || 'blank'}": Test send needs built, tested or shadow`);
+  const model = JSON.parse(zlib.inflateSync(Buffer.from(str(row.snapshot), 'base64')).toString('utf8'));
+  if (!model || model.issueDate !== issueDate) throw new Error('The Issues snapshot is for a different issue: Rebuild first');
+  const issue = render(model);
+  if (issue.hash !== str(row.content_hash)) throw new Error('The snapshot no longer renders to the built copy (the newsletter code changed): Rebuild first');
+
+  await assertSendAs();
+  const next = status === 'shadow' ? 'shadow' : 'tested';
+  const actions = buttons({ issueDate, hash: issue.hash, settings, subscribers, dns, pending });
+  const preview = wrapPreview(forPreview(issue), { testTo: '', status: next, warning: str(process.env.BUILD_WAIT_NOTE), ...actions });
+  await sendChecked({
+    to: previewTo, subject: preview.subject, html: preview.html, text: preview.text, fromName: g.fromNameFor(settings),
+    headers: { 'Auto-Submitted': 'auto-generated' },
+  });
+  console.log(`Preview sent to ${previewTo}${actions.send ? ` (button: ${actions.send.label})` : ' (no Send button)'}; no test copy.`);
+  await g.updateRow('Issues', row._row, {
+    status: next,
+    tested_at: new Date().toISOString(),
+    notes: [str(row.notes), `panel test send: preview ${previewTo}`].filter(Boolean).join('; ').slice(-500),
+  });
+  console.log(`Issues row ${row._row}: ${next}.`);
 }
 
 main().catch((err) => {

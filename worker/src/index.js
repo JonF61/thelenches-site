@@ -44,7 +44,7 @@
 
 import { handleClick, handleOpen } from './track.js';
 import {
-  ACTIONS, validPayload, github, dispatch, decide, cleanReason, cleanBody,
+  ACTIONS, PANEL_ONLY, validPayload, github, dispatch, decide, cleanReason, cleanBody,
 } from './core.js';
 import { handleAdmin } from './admin/index.js';
 import { handleFeedback } from './feedback.js';
@@ -185,7 +185,7 @@ async function handleApproval(request, env) {
   if (request.method === 'GET') {
     const token = url.searchParams.get('t');
     const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
-    if (!p || p.a === 'unsub' || p.a === 'signup') return invalidPage();
+    if (!p || p.a === 'unsub' || p.a === 'signup' || PANEL_ONLY.includes(p.a)) return invalidPage();
     if (p.expired) return expiredPage();
     const [verb, , cls] = ACTIONS[p.a];
     return page(verb, `
@@ -218,7 +218,7 @@ ${confirmExtra(p)}
       return invalidPage();
     }
     const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
-    if (!p || p.a === 'unsub' || p.a === 'signup') return invalidPage();
+    if (!p || p.a === 'unsub' || p.a === 'signup' || PANEL_ONLY.includes(p.a)) return invalidPage();
     if (p.expired) return expiredPage();
     reason = cleanReason(reason, p.a === 'redraft' ? 500 : 300);
     if (p.a === 'redraft' && reason.length < 3) return page('Nothing to change', '<h1>Say what to change</h1><p>The box was empty. Go back and type what Holly should change.</p>', 400);
