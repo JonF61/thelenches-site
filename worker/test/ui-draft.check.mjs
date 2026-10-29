@@ -2,7 +2,7 @@
 // Browser check of the panel's Newsletter draft screen (ui/client.js, admin/draft.js) against
 // a mock API, on desktop and phone sizes: the menu entry, the top bar's Newsletter chip and
 // its Draft link, the draft (a real render from scripts/newsletter/draft.js) in its frame,
-// and Refresh showing the newer draft. Saves screenshots (SHOTS=dir).
+// Refresh showing the newer draft, and Rebuild / Test send (confirm, then the POST). Saves screenshots (SHOTS=dir).
 // Run: node worker/test/ui-draft.check.mjs
 import http from 'node:http';
 import assert from 'node:assert/strict';
@@ -32,8 +32,10 @@ const draft = buildDraft({
   ],
   issues: [{ issue_id: '2026-10-22', issue_date: '2026-10-22', status: 'sent', item_keys: '', image_keys: '' }],
 });
-let rows = draftRows(draft.meta, draft.html, '2026-10-28T12:00:00.000Z');
+const liveRows = draftRows(draft.meta, draft.html, '2026-10-28T12:00:00.000Z');
+let rows = liveRows;
 let refreshed = 0;
+const nlPosts = [];
 let signedOut = false;
 
 const stateData = () => ({
@@ -59,6 +61,14 @@ const server = http.createServer(async (req, res) => {
     refreshed += 1;
     rows = draftRows({ ...draft.meta, items: draft.meta.items + 1, notices: draft.meta.notices + 1 }, draft.html, '2026-10-28T13:05:00.000Z');
     return send({ ok: true, message: 'Refreshing: the new draft shows in a minute or two.' });
+  }
+  if (url.pathname === '/admin/api/newsletter' && req.method === 'POST') {
+    let b = '';
+    for await (const c of req) b += c;
+    const body = JSON.parse(b);
+    nlPosts.push(body);
+    if (body.action === 'rebuild') rows = draftRows({ ...draft.meta, mode: 'frozen', status: 'built' }, draft.html, '2026-10-28T13:20:00.000Z');
+    return send({ ok: true, message: body.action === 'rebuild' ? 'Rebuilding: nothing is sent.' : 'Test send started.' });
   }
   if (url.pathname === '/admin/draft') {
     const r = draftPage(await draftHtml(rows));
@@ -106,6 +116,23 @@ try {
     await page.clock.runFor(16000);
     await main.locator('.meta', { hasText: String(draft.meta.items + 1) + ' item' }).waitFor();
     assert.match(await main.locator('iframe.draft-frame').getAttribute('src'), /13%3A05/);
+    // Rebuild (live draft: no Test send yet), confirmed, then the frozen build shows Test send.
+    assert.equal(await main.locator('button', { hasText: 'Test send' }).count(), 0);
+    await main.locator('button', { hasText: 'Rebuild' }).click();
+    await page.locator('.overlay', { hasText: 'Nothing is sent' }).waitFor();
+    await page.locator('.overlay button[type=submit]').click();
+    await main.locator('button', { hasText: 'Rebuilding…' }).waitFor();
+    assert.deepEqual(nlPosts.pop(), { action: 'rebuild', issue_date: draft.meta.issue_date });
+    await page.clock.runFor(16000);
+    await main.locator('.badge', { hasText: 'Built: as it will go out (built)' }).waitFor();
+    await main.locator('button', { hasText: 'Test send' }).click();
+    await page.locator('.overlay', { hasText: 'No subscriber and no test copy' }).waitFor();
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `draft-test-${name}.png`), fullPage: false });
+    await page.locator('.overlay button[type=submit]').click();
+    await page.locator('text=Test send started.').waitFor();
+    assert.deepEqual(nlPosts.pop(), { action: 'test', issue_date: draft.meta.issue_date });
+    assert.equal(await page.locator('.overlay').count(), 0);
+    rows = liveRows;
     // Signed out of Cloudflare: a message and Reload instead of a blocked frame.
     signedOut = true;
     await page.locator('nav.side button', { hasText: 'Summary' }).click();

@@ -19,6 +19,10 @@ export const ACTIONS = {
   close: ['Close, no reply needed', 'Closed', 'reject'],
   nlsend: ['Send newsletter', 'Send started', 'approve'],
   nlbuild: ['Rebuild newsletter', 'Rebuild started', 'approve'],
+  // Admin panel only (the Newsletter draft screen; /a refuses them): nlquiet rebuilds and
+  // sends nothing; nltest sends only the preview of that build (with its Send button) to Jon.
+  nlquiet: ['Rebuild newsletter', 'Rebuild started', 'approve'],
+  nltest: ['Test send', 'Test send started', 'approve'],
   unsub: ['Unsubscribe', 'Unsubscribed', 'reject'],
   // Newsletter sign-up confirmation link (/s only; /a refuses it). The id is a Sign-ups row id.
   signup: ['Confirm sign-up', 'Confirmed', 'approve'],
@@ -41,6 +45,9 @@ export const ACTIONS = {
   lesson_no: ['Reject lesson', 'Lesson rejected', 'reject'],
 };
 
+// Never valid in a signed email link (index.js /a).
+export const PANEL_ONLY = ['nlquiet', 'nltest'];
+
 export const FEEDBACK_ACTIONS = ['fb_approve', 'fb_reject', 'fb_postpone', 'fb_done', 'fb_send', 'fb_edit', 'fb_skip'];
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -48,7 +55,7 @@ export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 export function validPayload(p) {
   if (!p || !Object.prototype.hasOwnProperty.call(ACTIONS, p.a)) return false;
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(String(p.i || ''))) return false;
-  if (p.a === 'nlsend' || p.a === 'nlbuild') {
+  if (['nlsend', 'nlbuild', 'nlquiet', 'nltest'].includes(p.a)) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(p.i)) return false;
   }
   if ((p.a === 'edit' || p.a === 'fb_edit') && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
@@ -112,6 +119,8 @@ export function dispatchFor(p, reason = '', body = '') {
     }];
   }
   if (p.a === 'nlbuild') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true }];
+  if (p.a === 'nlquiet') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true, step: 'build' }];
+  if (p.a === 'nltest') return ['newsletter', { action: 'build', issue_date: p.i, step: 'preview' }];
   if ((p.a === 'skip' || p.a === 'redraft') && reason) return ['approval', { id: p.i, action: p.a, reason }];
   if (p.a === 'edit') return ['approval', { id: p.i, action: p.a, body, reason }];
   // approval.yml passes only id, action, reason and body: the postpone date rides in reason.
@@ -121,7 +130,7 @@ export function dispatchFor(p, reason = '', body = '') {
   return ['approval', { id: p.i, action: p.a }];
 }
 
-// One decision (approve, reject, trust, send, skip, edit, redraft, close, nlsend, nlbuild,
+// One decision (approve, reject, trust, send, skip, edit, redraft, close, nlsend, nlbuild, nlquiet, nltest,
 // the reader feedback fb_* actions, nudge, orgcheck, and lesson_ok / lesson_no) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
 export async function decide(env, p, reason = '', body = '') {
   const [eventType, payload] = dispatchFor(p, reason, body);

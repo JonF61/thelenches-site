@@ -88,6 +88,9 @@
 //                                   (draft.js; scripts/newsletter/draft.js), framed by the panel
 //   GET  /admin/api/draft           that draft's meta only (as_of, issue_date, mode, counts)
 //   POST /admin/api/draft-refresh   runs newsletter-draft.yml now (repository_dispatch); sends nothing
+//   POST /admin/api/newsletter      { action: rebuild|test, issue_date } through decide():
+//                                   rebuild (nlquiet) sends nothing; test (nltest) sends only the
+//                                   preview, with its Send button, to preview_to (Jon)
 //   GET  /admin/api/nlstats?i=DATE  Newsletter stats (nlstats.js): sent issues with sent, bounced,
 //                                   and anonymous opens and clicks; for one issue, opens by day and
 //                                   hour and the most-clicked links (totals only, never per person)
@@ -96,7 +99,7 @@
 //                                   site build succeeded AND the page (fresh copy) shows text
 //   GET  /admin/img/mail/MSG/PART   a Pending image (email attachment)
 //   GET  /admin/img/drive/ID[?size=N]  a Photos image (Drive thumbnail, else the file)
-// Nothing here can send the newsletter or change repository code, except Edit page's
+// Nothing here can send the newsletter to subscribers (Test send emails Jon's preview only) or change repository code, except Edit page's
 // wording edits to page templates (src/*.njk, pageedit.js). Otherwise the only GitHub call
 // is decide(), for the item and reply actions listed in actions.js, the Feedback
 // actions in feedback.js, outreach's nudge (a draft only; it never sends) and approving or
@@ -111,6 +114,7 @@ import {
 import { readTable, readSettingsPairs, editCell, checkedWrite, colLetter } from './sheet.js';
 import {
   planPending, planReply, planPhoto, planSuggest, trustKeyFor, truthy, hasOwnImage, SUGGEST_TAB, SUGGEST_SOURCES,
+  planNewsletter,
 } from './actions.js';
 import { owedReplies } from './owed.js';
 import {
@@ -851,6 +855,14 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/draft-refresh') {
         if (!(await dispatch(env, 'newsletter-draft', {}, 2))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);
         return json({ ok: true, message: 'Refreshing: the new draft shows in a minute or two.' });
+      }
+      if (path === '/admin/api/newsletter') {
+        const plan = planNewsletter({ action: body.action, issueDate: body.issue_date }, ukToday());
+        if (plan.error) return json({ ok: false, error: plan.error }, plan.status);
+        if (!(await decide(env, plan.p))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);
+        return json({ ok: true, message: plan.p.a === 'nlquiet'
+          ? 'Rebuilding: nothing is sent. The draft shows the new build in a few minutes.'
+          : 'Test send started: the preview should reach your inbox in a few minutes.' });
       }
       if (path === '/admin/api/page-save') return fromResult(await savePage(env, body));
       return json({ ok: false, error: 'Not found' }, 404);
