@@ -12,8 +12,7 @@
       "added": "2026-10-28"
     },
     {
-      "task": "Newsletter draft: check the first real Rebuild and Test send (preview arrives with a working Send button)",
-      "waiting": "Jon",
+      "task": "Sends tab: monthly tidy moving rows older than about 3 months to an archive tab (keeps send and stats reads quick)",
       "added": "2026-10-29"
     }
   ]
