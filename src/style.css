@@ -70,9 +70,9 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 .home-section h2{margin:0 0 .2rem}
 .home-section > .muted{margin:0}
 .fb-card{display:flex;gap:1rem;align-items:flex-start}
-.fb-card .fb-logo{flex:0 0 auto;margin-top:.15rem}
-.fb-card h2{margin:0 0 .4rem}
-.fb-card p{margin:0 0 .6rem}
+.fb-card .fb-logo{flex:0 0 auto;margin-top:.15rem;width:36px;height:36px}
+.fb-card h2{margin:0 0 .3rem;font-size:1.08rem}
+.fb-card p{margin:0 0 .6rem;font-size:.92rem}
 .fb-card .mb0{margin-bottom:0}
 .section-head{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;margin-bottom:.5rem}
 .section-head h2{margin:0}
