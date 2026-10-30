@@ -6,6 +6,7 @@ description: What's on across the Lenches villages — upcoming events from the 
 {#- Items come from src/items/ (hand-edited, via lib/whatson.js) and pipeline.json (written by scripts/publish). -#}
 {#- A drawn tile (no image) floats right inside .item-body as a small thumbnail so the text wraps under it -#}
 {#- "Lenches" badge marks items in the five Lenches (inLenches filter, lib/lenches.js); order stays by date -#}
+{#- "Add to calendar" downloads /calendar/<event id>.ics (src/calendar.11ty.js, lib/ics.js) -#}
 {#- Image: the item's own, else a standing photo (Photos tab target event:<key>, eventImage filter), else a tile -#}
 {#- Any image (own, organiser's or standing photo) shows beside the text on desktop, 360px wide and floated right so the text wraps
     down its left side (26 Oct: images below the text left a lot of white space); on phones it sits below the text, up to 420px wide.
@@ -18,6 +19,8 @@ description: What's on across the Lenches villages — upcoming events from the 
   .ev-img a{display:block}
   .ev-img img{display:block;width:100%;height:auto;border:1px solid #e6e1d6;border-radius:4px}
   .img-credit{margin:.3rem 0 0}
+  .cal-add{margin:.5rem 0 0;font-size:.9rem}
+  .cal-add a{display:inline-flex;align-items:center;gap:.35rem}
   @media (min-width:760px){
     .item-body > .ev-img{float:right;width:360px;margin:0 0 .5rem 1.2rem}
     .ev-img .img-credit{text-align:right}
@@ -47,6 +50,7 @@ description: What's on across the Lenches villages — upcoming events from the 
         {% if img %}<figure class="ev-img"><a href="{{ img.url | url }}" data-viewer aria-label="View full image"><img src="{{ img.url | url }}" alt="{{ img.alt | escape }}" loading="lazy"></a>{% if img.credit %}<figcaption data-pagefind-ignore class="img-credit small mut">{% if img.creditUrl %}<a href="{{ img.creditUrl | escape }}" target="_blank" rel="noopener">{{ img.credit | escape }}</a>{% else %}{{ img.credit | escape }}{% endif %}</figcaption>{% endif %}</figure>{% else %}{{ e | tileSvg | safe }}{% endif %}
         <h3 id="{{ ('ev-' + e.date + '-' + e.title) | slugify }}-t">{{ e.title | escape }}{% if e | inLenches %} <span class="lenches-badge" data-pagefind-ignore>Lenches</span>{% endif %}</h3>
         {% for p in e.body | paras %}<p>{{ p | escape }}{% if loop.last and e.link %} <a href="{{ e.link.url | escape }}" target="_blank" rel="noopener">{{ e.link.text | escape }} &rarr;</a>{% endif %}</p>{% endfor %}
+        <p class="cal-add" data-pagefind-ignore><a href="{{ ('/calendar/' + (('ev-' + e.date + '-' + e.title) | slugify) + '.ics') | url }}" download><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4M12 12.5v5M9.5 15h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Add to calendar<span class="sr-only">: {{ e.title | escape }}</span></a></p>
       </div>
     </div>
     {% endfor %}
