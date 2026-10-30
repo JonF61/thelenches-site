@@ -18,12 +18,6 @@ description: What's on across the Lenches villages — upcoming events from the 
   .ev-img a{display:block}
   .ev-img img{display:block;width:100%;height:auto;border:1px solid #e6e1d6;border-radius:4px}
   .img-credit{margin:.3rem 0 0}
-  .regulars{margin-top:1.6rem}
-  .reg-list{list-style:none;margin:.4rem 0 0;padding:0;border:1px solid #e6e1d6;border-radius:6px;background:#fff}
-  .reg-list li{display:grid;grid-template-columns:13.5rem 1fr;gap:.2rem 1rem;padding:.55rem .9rem;border-top:1px solid #efeae0}
-  .reg-list li:first-child{border-top:0}
-  .reg-when{white-space:nowrap}
-  @media (max-width:559px){ .reg-list li{grid-template-columns:1fr} }
   @media (min-width:760px){
     .item-body > .ev-img{float:right;width:360px;margin:0 0 .5rem 1.2rem}
     .ev-img .img-credit{text-align:right}
@@ -36,7 +30,7 @@ description: What's on across the Lenches villages — upcoming events from the 
 <main class="container">
   <div class="page-head">
     <h1>Events</h1>
-    <p class="page-intro">What's on across the villages &middot; updated {{ updated | longDate }}{% if whatson.regulars | length %} &middot; <a href="#weekly-regulars">Regular activities &darr;</a>{% endif %}</p>
+    <p class="page-intro">What's on across the villages &middot; updated {{ updated | longDate }}</p>
   </div>
 
   {% set groups = whatson.events | merge(pipeline.events) | upcoming | byMonth %}
@@ -60,18 +54,7 @@ description: What's on across the Lenches villages — upcoming events from the 
   {% else %}
   <p class="muted">Nothing listed at the moment. Check back after Thursday's newsletter.</p>
   {% endfor %}
-  {#- Regular activities (src/items/regulars.json, lib/whatson.js sorts them Monday first): one line each; full details on /regulars/. -#}
-  {% if whatson.regulars | length %}
-  <section class="regulars" id="weekly-regulars">
-    <h2>Regular activities</h2>
-    <p>Who runs them, costs, contacts and flyers are on our <a href="{{ '/regulars/' | url }}">Regular activities</a> page.</p>
-    <ul class="reg-list">
-      {% for r in whatson.regulars %}
-      <li><span class="reg-when"><b>{{ r.day }}</b>{% if r.time %} {{ r.time }}{% endif %}</span><span class="reg-what">{{ r.what }}{% if r.frequency %} <span class="mut">({{ r.frequency }})</span>{% endif %}{% if r.where %} &middot; {{ r.where }}{% endif %}{% if r.note %} <span class="mut">({{ r.note }})</span>{% endif %}{% if r.link %} &middot; <a href="{{ r.link.url | url if r.link.url.startsWith('/') else r.link.url }}">{{ r.link.text }}</a>{% endif %}</span></li>
-      {% endfor %}
-    </ul>
-  </section>
-  {% elif whatson.eventsFootnote %}<p class="small mut">{{ whatson.eventsFootnote }}</p>{% endif %}
+  {#- Regular activities left this page 30 Oct (Jon): they are on /regulars/ and in the newsletter. -#}
 
   <div class="notice submit-note">Got an event to include? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a> by 6pm on Wednesday. See our <a href="{{ '/contact/' | url }}#submit">submission guidelines</a>.</div>
 </main>

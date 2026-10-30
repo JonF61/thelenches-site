@@ -1,6 +1,6 @@
 ---
 layout: base.njk
-title: Notices
+title: News
 description: Notices and news from across the Lenches villages, from parish councils, local groups and the Evesham Journal.
 ---
 {#- Items come from src/items/ (hand-edited, via lib/whatson.js) and pipeline.json (written by scripts/publish);
@@ -12,7 +12,7 @@ description: Notices and news from across the Lenches villages, from parish coun
     own words) in boxed panels, first paragraph shown and the rest behind "Read the full statement";
     "Around the villages" (everything else without a source) as cards, two columns on desktop
     (28 Oct): title, a small thumbnail if it has an image, the opening (leadSplit: the first
-    paragraph cut after ~140 characters at a sentence end) and the rest behind "More"; "Worth knowing" ("source": Evesham Journal signposts), title and link only.
+    paragraph cut after ~140 characters at a sentence end) and the rest behind "More"; sourced items (Evesham Journal signposts) among them, labelled with the source ("Worth knowing" until 30 Oct).
     The script at the end opens the <details> of a notice a URL hash points at. -#}
 <style>
 .np-head{border-bottom:1px solid var(--line);padding-bottom:.6rem;margin-bottom:1.5rem}
@@ -36,13 +36,6 @@ description: Notices and news from across the Lenches villages, from parish coun
 .np-meta{display:flex;flex-wrap:wrap;gap:.35rem;align-items:center;margin:0 0 .15rem}
 .np-meta .np-label{display:inline;margin:0}
 .np-new{display:inline-block;padding:0 .45rem;border-radius:4px;font-size:.7rem;font-weight:600;line-height:1.6;background:var(--accent);color:#fff}
-.np-worth{background:var(--green-light);border-radius:var(--radius);padding:.85rem 1.15rem;font-size:.92rem}
-.np-worth h2{font-size:1.05rem;margin:0;color:var(--green-dark)}
-.np-worth .np-caption{margin:0 0 .5rem;font-size:.8rem;color:var(--muted)}
-.np-worth ul{list-style:none;margin:0;padding:0}
-.np-worth li{padding:.4rem 0;border-top:1px solid var(--line)}
-.np-worth li:target{padding:.4rem .6rem}
-.np-worth a{white-space:nowrap}
 .np-roads{margin:0 0 1.5rem}
 .np-grid{display:grid;grid-template-columns:1fr;gap:1rem;align-items:start}
 @media (min-width:760px){.np-grid{grid-template-columns:1fr 1fr}}
@@ -55,14 +48,14 @@ description: Notices and news from across the Lenches villages, from parish coun
 </style>
 <main class="container">
   <div class="np-head">
-    <h1>Notices</h1>
+    <h1>News</h1>
     <p class="np-date">{{ updated | longDate }}</p>
   </div>
 
   {% set notices = pipeline | allNotices(whatson) | notRoadItems %}
   {% set officials = notices | selectattr("official") %}
-  {% set around = notices | rejectattr("official") | rejectattr("source") %}
-  {% set worth = notices | rejectattr("official") | selectattr("source") %}
+  {#- "Worth knowing" (Evesham Journal signposts, "source" set) folded into Around the villages 30 Oct: same cards, labelled with the source. -#}
+  {% set around = notices | rejectattr("official") %}
 
   {% if officials.length %}
   <section class="np-section">
@@ -92,35 +85,24 @@ description: Notices and news from across the Lenches villages, from parish coun
     {% for n in around %}{% set ps = n.body | leadSplit %}{% set isNew = ([n] | newThisWeek) > 0 %}
     <article class="np-notice np-card{% if n.image %} has-img{% endif %}" id="{{ ('notice-' + n.title) | slugify }}">
       {% if n.image %}<a class="np-thumb" href="{{ n.image.url | url }}" data-viewer data-caption="{{ ((n.image.alt or n.title) + (' — ' + n.image.credit if n.image.credit else '')) | escape }}"><img src="{{ n.image.url | url }}" alt="{{ (n.image.alt or '') | escape }}" loading="lazy"></a>{% endif %}
-      {% if n.village or isNew %}<p class="np-meta" data-pagefind-ignore>{% if n.village %}<span class="np-label">{{ n.village | escape }}</span>{% endif %}{% if isNew %}<span class="np-new">New</span>{% endif %}</p>{% endif %}
+      {% if n.village or n.source or isNew %}<p class="np-meta" data-pagefind-ignore>{% if n.village %}<span class="np-label">{{ n.village | escape }}</span>{% elif n.source %}<span class="np-label">{{ n.source | escape }}</span>{% endif %}{% if isNew %}<span class="np-new">New</span>{% endif %}</p>{% endif %}
       <h3 id="{{ ('notice-' + n.title) | slugify }}-t">{{ n.title | escape }}</h3>
       <p>{{ ps[0] | escape }}</p>
       {% if ps.length > 1 %}<details>
         <summary>More</summary>
         {% for p in ps %}{% if not loop.first %}<p>{{ p | escape }}</p>{% endif %}{% endfor %}
       </details>{% endif %}
-      {% if n.link %}<p class="np-link"><a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a></p>{% endif %}
+      {% if n.link and n.source %}<p class="np-link"><a href="{{ n.link.url | escape }}" target="_blank" rel="noopener external">{{ n.link.text | escape }} &#8599;<span class="sr-only"> (opens the {{ n.source | escape }} website)</span></a></p>{% elif n.link %}<p class="np-link"><a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a></p>{% endif %}
     </article>
     {% endfor %}
     </div>
   </section>
   {% endif %}
 
-  {% if not officials.length and not around.length and not worth.length %}
-  <p class="muted">No notices at the moment.</p>
+  {% if not officials.length and not around.length %}
+  <p class="muted">No news at the moment.</p>
   {% endif %}
 
-  {% if worth.length %}
-  <section class="np-section np-worth">
-    <h2 id="worth-knowing">Worth knowing</h2>
-    <p class="np-caption">From the Evesham Journal</p>
-    <ul>
-      {% for n in worth %}
-      <li class="np-notice" id="{{ ('notice-' + n.title) | slugify }}">{{ n.title | escape }}{% if n.link %}<br><a href="{{ n.link.url | escape }}" target="_blank" rel="noopener external">{{ n.link.text | escape }} &#8599;<span class="sr-only"> (opens the {{ n.source | escape }} website)</span></a>{% endif %}</li>
-      {% endfor %}
-    </ul>
-  </section>
-  {% endif %}
 
   <p class="np-roads">Road closures and roadworks are on the <a href="{{ '/living-here/roads/' | url }}">Roads page</a>.</p>
 
