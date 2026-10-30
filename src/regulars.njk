@@ -4,8 +4,7 @@ title: Regular activities
 description: Weekly classes, clubs and groups across the Lenches villages, in day order from Monday, with who runs them and how to join in.
 ---
 {#- Entries come from src/items/regulars.json (lib/whatson.js regularsPage: day order from Monday, then time; day not known last).
-    Blank detail fields show "awaiting info" while we gather them; detailsElsewhere entries show no detail rows. -#}
-{%- set awaiting = '<span class="reg-await">awaiting info</span>' -%}
+    Blank detail fields are left out while we gather them; detailsElsewhere entries show no detail rows. -#}
 <style>
   .reg-build{margin:0 0 1.4rem}
   .reg-days{display:flex;flex-wrap:wrap;gap:.4rem;margin:.2rem 0 1.4rem;padding:0;list-style:none}
@@ -19,7 +18,6 @@ description: Weekly classes, clubs and groups across the Lenches villages, in da
   .reg-facts{display:grid;grid-template-columns:9rem 1fr;gap:.25rem 1rem;margin:.6rem 0 0}
   .reg-facts dt{font-weight:600}
   .reg-facts dd{margin:0}
-  .reg-await{color:var(--muted);font-style:italic}
   .reg-break{display:inline-block;padding:0 .45rem;border-radius:4px;background:#fbe6d6;color:#8a3e0c;font-size:.8rem;font-weight:600}
   .reg-foot{margin:.7rem 0 0}
   @media (max-width:559px){
@@ -34,7 +32,7 @@ description: Weekly classes, clubs and groups across the Lenches villages, in da
     <p class="page-intro">Classes, clubs and groups that meet regularly across the Lenches and nearby, in day order from Monday. For one-off events, see our <a href="{{ '/events/' | url }}">Events</a> page.</p>
   </div>
 
-  <div class="notice reg-build"><strong>Under construction.</strong> We're gathering details of every regular class, club and group, so some entries still say "awaiting info". If you run or go to one, please help us fill in the gaps: email <a href="mailto:{{ site.email }}?subject=Regular%20activities">{{ site.email }}</a> with the day, time, who runs it, the cost and a flyer if there is one.</div>
+  <div class="notice reg-build"><strong>Under construction.</strong> We're gathering details of every regular class, club and group, so some entries are still missing details. If you run or go to one, please help us fill in the gaps: email <a href="mailto:{{ site.email }}?subject=Regular%20activities">{{ site.email }}</a> with the day, time, who runs it, the cost and a flyer if there is one.</div>
 
   {% set byDay = whatson.regularsPage | groupby("day") %}
   <ul class="reg-days" aria-label="Jump to a day" data-pagefind-ignore>
@@ -51,16 +49,15 @@ description: Weekly classes, clubs and groups across the Lenches villages, in da
       <p class="reg-when">{{ r.frequency or ("Every " + d if d else "") }}{% if r.time %}{% if r.frequency or d %}, {% endif %}{{ r.time }}{% endif %}{% if r.where %}{% if r.frequency or d or r.time %} &middot; {% endif %}{{ r.where }}{% endif %}{% if r.note %} <span class="mut">({{ r.note }})</span>{% endif %}</p>
       {% if r.about %}<p>{{ r.about }}</p>{% endif %}
       {% if r.link %}<p><a href="{{ r.link.url | url if r.link.url.startsWith('/') else r.link.url }}">{{ r.link.text }} &rarr;</a></p>{% endif %}
-      {% if not r.detailsElsewhere %}
+      {% set contact = [r.phone, ('<a href="mailto:' + r.email + '">' + r.email + '</a>') if r.email, ('<a href="' + r.website.url + '" target="_blank" rel="noopener">' + r.website.text + '</a>') if r.website] | select | join(" &middot; ") %}
+      {% if not r.detailsElsewhere and (r.runBy or contact or r.forWho or r.cost or r.booking or r.bring) %}
       <dl class="reg-facts">
-        {% if not d %}<dt>Day and time</dt><dd>{{ awaiting | safe }}</dd>{% endif %}
-        {% if not r.where %}<dt>Where</dt><dd>{{ awaiting | safe }}</dd>{% endif %}
-        <dt>Run by</dt><dd>{{ r.runBy or awaiting | safe }}</dd>
-        <dt>Contact</dt><dd>{% if r.phone or r.email or r.website %}{{ [r.phone, ('<a href="mailto:' + r.email + '">' + r.email + '</a>') if r.email, ('<a href="' + r.website.url + '" target="_blank" rel="noopener">' + r.website.text + '</a>') if r.website] | select | join(" &middot; ") | safe }}{% else %}{{ awaiting | safe }}{% endif %}</dd>
-        <dt>Who it's for</dt><dd>{{ r.forWho or awaiting | safe }}</dd>
-        <dt>Cost</dt><dd>{{ r.cost or awaiting | safe }}</dd>
-        <dt>Booking</dt><dd>{{ r.booking or awaiting | safe }}</dd>
-        <dt>What to bring</dt><dd>{{ r.bring or awaiting | safe }}</dd>
+        {% if r.runBy %}<dt>Run by</dt><dd>{{ r.runBy }}</dd>{% endif %}
+        {% if contact %}<dt>Contact</dt><dd>{{ contact | safe }}</dd>{% endif %}
+        {% if r.forWho %}<dt>Who it's for</dt><dd>{{ r.forWho }}</dd>{% endif %}
+        {% if r.cost %}<dt>Cost</dt><dd>{{ r.cost }}</dd>{% endif %}
+        {% if r.booking %}<dt>Booking</dt><dd>{{ r.booking }}</dd>{% endif %}
+        {% if r.bring %}<dt>What to bring</dt><dd>{{ r.bring }}</dd>{% endif %}
       </dl>
       {% endif %}
       <p class="reg-foot small mut" data-pagefind-ignore>{% if r.checked %}Details checked {{ r.checked | monthYear }}. {% endif %}Know more, or spotted a change? <a href="mailto:{{ site.email }}?subject={{ ('Regular activities: ' + r.what) | urlencode }}">Tell us</a>.</p>
