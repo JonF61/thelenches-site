@@ -32,6 +32,11 @@
       "task": "SEO: submit sitemap.xml in Google Search Console and check the Events rich results report after a few days",
       "waiting": "Jon",
       "added": "2026-10-30"
+    },
+    {
+      "task": "Site visitors: check the first nightly save (Visitors tab should hold 28–30 Oct after 00:10 UK on 31 Oct) and that the panel screen shows them",
+      "waiting": "the first nightly run",
+      "added": "2026-10-30"
     }
   ]
 }
