@@ -27,10 +27,11 @@ const model = select({
 });
 const r = render(model);
 assert.ok(r.html.includes('>Regular activities<'));
+assert.equal((r.html.match(/>Wednesday</g) || []).length, 1, 'each day named once');
 assert.ok(r.html.includes('href="https://thelenches.org.uk/regulars/"'), 'link to the full page');
 assert.ok(r.html.includes('href="https://thelenches.org.uk/churches/"'), 'site path made absolute');
 const t = r.text;
-assert.ok(/REGULAR ACTIVITIES\n-+\n\nWho runs them, costs, contacts and flyers are on our Regular activities page: https:\/\/thelenches\.org\.uk\/regulars\/\n\nMonday 9\.45am · Yoga\nWednesday 10am · Tai chi · Abbots Morton\nWednesday 7-8pm · Tai chi · Rous Lench Village Hall\nSunday · Church services · Churches: https:\/\/thelenches\.org\.uk\/churches\/\n/.test(t), t);
+assert.ok(/REGULAR ACTIVITIES\n-+\n\nWho runs them, costs, contacts and flyers are on our Regular activities page: https:\/\/thelenches\.org\.uk\/regulars\/\n\nMonday\nYoga · 9\.45am\n\nWednesday\nTai chi · 10am · Abbots Morton\nTai chi · 7-8pm · Rous Lench Village Hall\n\nSunday\nChurch services · Churches: https:\/\/thelenches\.org\.uk\/churches\/\n/.test(t), t);
 
 // An older snapshot: the footnote paragraph under Coming up, no Weekly regulars section.
 const old = render({ ...model, regulars: 'Weekly regulars: yoga on Mondays.' });
@@ -65,6 +66,6 @@ const snap = select({ ...{ issueDate: '2026-10-29', pending: [], issues: [], set
   whatson: { events: [], notices: [], regulars: sortRegulars([{ day: 'Tuesday', time: '7pm', what: 'Lenches Ladies', frequency: '1st Tuesday of the month', phone: '01386 000000' }]) },
   bins: {}, siteupdates: { entries: [] }, onthisday: { entries: {} } });
 assert.ok(!('phone' in snap.regulars[0]), 'no page-only fields in the snapshot');
-assert.ok(render(snap).text.includes('Tuesday 7pm (1st Tuesday of the month) · Lenches Ladies'));
+assert.ok(render(snap).text.includes('Tuesday\nLenches Ladies · 7pm (1st Tuesday of the month)'));
 
 console.log('regular activities: all tests passed');
