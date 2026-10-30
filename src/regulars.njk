@@ -1,0 +1,73 @@
+---
+layout: base.njk
+title: Regular activities
+description: Weekly classes, clubs and groups across the Lenches villages, in day order from Monday, with who runs them and how to join in.
+---
+{#- Entries come from src/items/regulars.json (lib/whatson.js regularsPage: day order from Monday, then time; day not known last).
+    Blank detail fields show "awaiting info" while we gather them; detailsElsewhere entries show no detail rows. -#}
+{%- set awaiting = '<span class="reg-await">awaiting info</span>' -%}
+<style>
+  .reg-build{margin:0 0 1.4rem}
+  .reg-days{display:flex;flex-wrap:wrap;gap:.4rem;margin:.2rem 0 1.4rem;padding:0;list-style:none}
+  .reg-days a{display:inline-block;padding:3px 12px;border:1px solid var(--line);border-radius:999px;background:var(--card);text-decoration:none;font-size:.92rem}
+  .reg-day{margin-top:1.6rem}
+  .reg-card{margin:.7rem 0 0;display:flow-root}
+  .reg-card h3{margin:0 0 .2rem}
+  .reg-when{margin:0 0 .5rem;font-weight:600;color:var(--accent-text)}
+  .reg-img{float:right;width:150px;margin:0 0 .6rem 1rem}
+  .reg-img img{display:block;width:100%;height:auto;border:1px solid #e6e1d6;border-radius:4px}
+  .reg-facts{display:grid;grid-template-columns:9rem 1fr;gap:.25rem 1rem;margin:.6rem 0 0}
+  .reg-facts dt{font-weight:600}
+  .reg-facts dd{margin:0}
+  .reg-await{color:var(--muted);font-style:italic}
+  .reg-break{display:inline-block;padding:0 .45rem;border-radius:4px;background:#fbe6d6;color:#8a3e0c;font-size:.8rem;font-weight:600}
+  .reg-foot{margin:.7rem 0 0}
+  @media (max-width:559px){
+    .reg-facts{grid-template-columns:1fr;gap:0}
+    .reg-facts dd{margin:0 0 .35rem}
+    .reg-img{width:110px}
+  }
+</style>
+<main class="container">
+  <div class="page-head">
+    <h1>Regular activities</h1>
+    <p class="page-intro">Classes, clubs and groups that meet regularly across the Lenches and nearby, in day order from Monday. For one-off events, see our <a href="{{ '/events/' | url }}">Events</a> page.</p>
+  </div>
+
+  <div class="notice reg-build"><strong>Under construction.</strong> We're gathering details of every regular class, club and group, so some entries still say "awaiting info". If you run or go to one, please help us fill in the gaps: email <a href="mailto:{{ site.email }}?subject=Regular%20activities">{{ site.email }}</a> with the day, time, who runs it, the cost and a flyer if there is one.</div>
+
+  {% set byDay = whatson.regularsPage | groupby("day") %}
+  <ul class="reg-days" aria-label="Jump to a day" data-pagefind-ignore>
+    {% for d, list in byDay %}<li><a href="#{{ (d or 'other') | slugify }}">{{ d or "Day to be confirmed" }}</a></li>{% endfor %}
+  </ul>
+
+  {% for d, list in byDay %}
+  <section class="reg-day" id="{{ (d or 'other') | slugify }}">
+    <h2>{{ d or "Day to be confirmed" }}</h2>
+    {% for r in list %}
+    <div class="card reg-card" id="{{ ('reg-' + (d or 'other') + '-' + r.what + '-' + r.where) | slugify }}">
+      {% if r.image %}<figure class="reg-img"><a href="{{ r.image.url | url }}" data-viewer aria-label="View full flyer"><img src="{{ r.image.url | url }}" alt="{{ r.image.alt | escape }}" loading="lazy"></a></figure>{% endif %}
+      <h3>{{ r.what }}{% if r.pausedUntil and r.pausedUntil > updated %} <span class="reg-break">Back {{ r.pausedUntil | longDate }}</span>{% endif %}</h3>
+      <p class="reg-when">{{ r.frequency or ("Every " + d if d else "") }}{% if r.time %}{% if r.frequency or d %}, {% endif %}{{ r.time }}{% endif %}{% if r.where %}{% if r.frequency or d or r.time %} &middot; {% endif %}{{ r.where }}{% endif %}{% if r.note %} <span class="mut">({{ r.note }})</span>{% endif %}</p>
+      {% if r.about %}<p>{{ r.about }}</p>{% endif %}
+      {% if r.link %}<p><a href="{{ r.link.url | url if r.link.url.startsWith('/') else r.link.url }}">{{ r.link.text }} &rarr;</a></p>{% endif %}
+      {% if not r.detailsElsewhere %}
+      <dl class="reg-facts">
+        {% if not d %}<dt>Day and time</dt><dd>{{ awaiting | safe }}</dd>{% endif %}
+        {% if not r.where %}<dt>Where</dt><dd>{{ awaiting | safe }}</dd>{% endif %}
+        <dt>Run by</dt><dd>{{ r.runBy or awaiting | safe }}</dd>
+        <dt>Contact</dt><dd>{% if r.phone or r.email or r.website %}{{ [r.phone, ('<a href="mailto:' + r.email + '">' + r.email + '</a>') if r.email, ('<a href="' + r.website.url + '" target="_blank" rel="noopener">' + r.website.text + '</a>') if r.website] | select | join(" &middot; ") | safe }}{% else %}{{ awaiting | safe }}{% endif %}</dd>
+        <dt>Who it's for</dt><dd>{{ r.forWho or awaiting | safe }}</dd>
+        <dt>Cost</dt><dd>{{ r.cost or awaiting | safe }}</dd>
+        <dt>Booking</dt><dd>{{ r.booking or awaiting | safe }}</dd>
+        <dt>What to bring</dt><dd>{{ r.bring or awaiting | safe }}</dd>
+      </dl>
+      {% endif %}
+      <p class="reg-foot small mut" data-pagefind-ignore>{% if r.checked %}Details checked {{ r.checked | monthYear }}. {% endif %}Know more, or spotted a change? <a href="mailto:{{ site.email }}?subject={{ ('Regular activities: ' + r.what) | urlencode }}">Tell us</a>.</p>
+    </div>
+    {% endfor %}
+  </section>
+  {% else %}
+  <p class="muted">Nothing listed at the moment.</p>
+  {% endfor %}
+</main>

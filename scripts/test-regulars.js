@@ -26,15 +26,16 @@ const model = select({
   whatson: { events: [], notices: [], regulars: sorted }, bins: {}, siteupdates: { entries: [] }, onthisday: { entries: {} },
 });
 const r = render(model);
-assert.ok(r.html.includes('>Weekly regulars<'));
+assert.ok(r.html.includes('>Regular activities<'));
+assert.ok(r.html.includes('href="https://thelenches.org.uk/regulars/"'), 'link to the full page');
 assert.ok(r.html.includes('href="https://thelenches.org.uk/churches/"'), 'site path made absolute');
 const t = r.text;
-assert.ok(/WEEKLY REGULARS\n-+\n\nMonday 9\.45am · Yoga\nWednesday 10am · Tai chi · Abbots Morton\nWednesday 7-8pm · Tai chi · Rous Lench Village Hall\nSunday · Church services · Churches: https:\/\/thelenches\.org\.uk\/churches\//.test(t), t);
+assert.ok(/REGULAR ACTIVITIES\n-+\n\nMonday 9\.45am · Yoga\nWednesday 10am · Tai chi · Abbots Morton\nWednesday 7-8pm · Tai chi · Rous Lench Village Hall\nSunday · Church services · Churches: https:\/\/thelenches\.org\.uk\/churches\/\n\nWho runs them, costs, contacts and flyers are on our Regular activities page: https:\/\/thelenches\.org\.uk\/regulars\//.test(t), t);
 
 // An older snapshot: the footnote paragraph under Coming up, no Weekly regulars section.
 const old = render({ ...model, regulars: 'Weekly regulars: yoga on Mondays.' });
 assert.ok(old.text.includes('Weekly regulars: yoga on Mondays.'));
-assert.ok(!old.text.includes('WEEKLY REGULARS'));
+assert.ok(!old.text.includes('REGULAR ACTIVITIES'));
 
 // until: the last day shown (a block's final session)
 const { loadWhatson } = require('../lib/whatson');
@@ -48,4 +49,22 @@ assert.deepStrictEqual(shown('2026-12-09'), ['Yoga', 'Tai chi'], 'shown on its l
 assert.deepStrictEqual(shown('2026-12-10'), ['Yoga'], 'gone the day after');
 assert.strictEqual(loadWhatson({ dir: tmp, today: '2026-12-10', all: true }).regulars.length, 2);
 
-console.log('weekly regulars: all tests passed');
+// Regular activities page: day unknown kept (last), taking a break left out of the short list only
+fs.writeFileSync(path.join(tmp, 'regulars.json'), JSON.stringify({ regulars: [
+  { day: '', what: 'Lenches Ladies', frequency: 'Meets regularly, not every week' },
+  { day: 'Friday', time: '10am', what: 'Keep fit', pausedUntil: '2027-01-08', runBy: ' A teacher ' },
+  { day: 'Monday', time: '9.45am', what: 'Yoga', image: { url: '/images/items/yoga.jpg' } }] }));
+const w = loadWhatson({ dir: tmp, today: '2026-12-01' });
+assert.deepStrictEqual(w.regulars.map((x) => x.what), ['Yoga'], 'short list: known day, not on a break');
+assert.deepStrictEqual(w.regularsPage.map((x) => x.what), ['Yoga', 'Keep fit', 'Lenches Ladies'], 'page: all, unknown day last');
+assert.strictEqual(w.regularsPage[1].runBy, 'A teacher');
+assert.deepStrictEqual(w.regularsPage[0].image, { url: '/images/items/yoga.jpg', alt: '' });
+assert.deepStrictEqual(loadWhatson({ dir: tmp, today: '2027-01-08' }).regulars.map((x) => x.what), ['Yoga', 'Keep fit'], 'back on its day');
+// Newsletter snapshot keeps the one-line fields only; frequency shows after the time
+const snap = select({ ...{ issueDate: '2026-10-29', pending: [], issues: [], settings: {}, sources: [], jpegFor: () => '', cutoff: '' },
+  whatson: { events: [], notices: [], regulars: sortRegulars([{ day: 'Tuesday', time: '7pm', what: 'Lenches Ladies', frequency: '1st Tuesday of the month', phone: '01386 000000' }]) },
+  bins: {}, siteupdates: { entries: [] }, onthisday: { entries: {} } });
+assert.ok(!('phone' in snap.regulars[0]), 'no page-only fields in the snapshot');
+assert.ok(render(snap).text.includes('Tuesday 7pm (1st Tuesday of the month) · Lenches Ladies'));
+
+console.log('regular activities: all tests passed');

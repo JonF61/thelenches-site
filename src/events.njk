@@ -36,7 +36,7 @@ description: What's on across the Lenches villages — upcoming events from the 
 <main class="container">
   <div class="page-head">
     <h1>Events</h1>
-    <p class="page-intro">What's on across the villages &middot; updated {{ updated | longDate }}{% if whatson.regulars | length %} &middot; <a href="#weekly-regulars">Weekly regulars &darr;</a>{% endif %}</p>
+    <p class="page-intro">What's on across the villages &middot; updated {{ updated | longDate }}{% if whatson.regulars | length %} &middot; <a href="#weekly-regulars">Regular activities &darr;</a>{% endif %}</p>
   </div>
 
   {% set groups = whatson.events | merge(pipeline.events) | upcoming | byMonth %}
@@ -60,13 +60,14 @@ description: What's on across the Lenches villages — upcoming events from the 
   {% else %}
   <p class="muted">Nothing listed at the moment. Check back after Thursday's newsletter.</p>
   {% endfor %}
-  {#- Weekly regulars (src/items/regulars.json, lib/whatson.js sorts them Monday first): one line each. -#}
+  {#- Regular activities (src/items/regulars.json, lib/whatson.js sorts them Monday first): one line each; full details on /regulars/. -#}
   {% if whatson.regulars | length %}
   <section class="regulars" id="weekly-regulars">
-    <h2>Weekly regulars</h2>
+    <h2>Regular activities</h2>
+    <p>Who runs them, costs, contacts and flyers are on our <a href="{{ '/regulars/' | url }}">Regular activities</a> page.</p>
     <ul class="reg-list">
       {% for r in whatson.regulars %}
-      <li><span class="reg-when"><b>{{ r.day }}</b>{% if r.time %} {{ r.time }}{% endif %}</span><span class="reg-what">{{ r.what }}{% if r.where %} &middot; {{ r.where }}{% endif %}{% if r.note %} <span class="mut">({{ r.note }})</span>{% endif %}{% if r.link %} &middot; <a href="{{ r.link.url | url if r.link.url.startsWith('/') else r.link.url }}">{{ r.link.text }}</a>{% endif %}</span></li>
+      <li><span class="reg-when"><b>{{ r.day }}</b>{% if r.time %} {{ r.time }}{% endif %}</span><span class="reg-what">{{ r.what }}{% if r.frequency %} <span class="mut">({{ r.frequency }})</span>{% endif %}{% if r.where %} &middot; {{ r.where }}{% endif %}{% if r.note %} <span class="mut">({{ r.note }})</span>{% endif %}{% if r.link %} &middot; <a href="{{ r.link.url | url if r.link.url.startsWith('/') else r.link.url }}">{{ r.link.text }}</a>{% endif %}</span></li>
       {% endfor %}
     </ul>
   </section>

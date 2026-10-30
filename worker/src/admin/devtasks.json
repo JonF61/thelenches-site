@@ -7,13 +7,30 @@
       "added": "2026-10-28"
     },
     {
-      "task": "Weekly regulars: add the tai chi organiser's description, contact and any taster session",
+      "task": "Regular activities: add the tai chi organiser's description, contact and any taster session",
       "waiting": "a reply by email",
       "added": "2026-10-28"
     },
     {
       "task": "Sends tab: monthly tidy moving rows older than about 3 months to an archive tab (keeps send and stats reads quick)",
       "added": "2026-10-29"
+    },
+    {
+      "task": "Regular activities: fill in organisers, contacts, costs and flyers (with consent to publish), and the day and time for keep fit, exercise classes and Lenches Ladies",
+      "waiting": "organisers' replies",
+      "added": "2026-10-30"
+    },
+    {
+      "task": "Regular activities: add each organiser to Holly's yearly check (contacts.json outreach) once their email is known; consider a 6-monthly check",
+      "added": "2026-10-30"
+    },
+    {
+      "task": "Regular activities: make simple images for entries with no flyer (mock up first)",
+      "added": "2026-10-30"
+    },
+    {
+      "task": "Regular activities: take down the under-construction box once most entries are filled in",
+      "added": "2026-10-30"
     }
   ]
 }
