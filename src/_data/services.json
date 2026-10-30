@@ -1,5 +1,5 @@
 {
-  "source": "ARCH Messenger, October 2026",
+  "source": "ARCH Messenger, November 2026",
   "midweek": "A midweek Eucharist is held every Wednesday at 11am at St James the Great, Harvington.",
   "dates": [
     {
@@ -113,6 +113,7 @@
       "date": "2026-11-02",
       "name": "All Souls' Day",
       "services": [
+        { "time": "6.30pm", "village": "Church Lench", "service": "All Souls service" },
         { "time": "6.30pm", "village": "Harvington", "service": "Tree of Light service" }
       ]
     },
@@ -172,6 +173,101 @@
         { "time": "10am", "village": "Harvington", "service": "Eucharist" },
         { "time": "11am", "village": "Church Lench", "service": "Eucharist" },
         { "time": "6.30pm", "village": "Rous Lench", "service": "Advent reflection", "note": "cakes and hot drinks at the village hall from 5.30pm" }
+      ]
+    },
+    {
+      "date": "2026-12-06",
+      "name": "2nd Sunday of Advent",
+      "readings": [
+        { "ref": "Isaiah 40:1-11" },
+        { "ref": "Psalm 85:1-2,8-13" },
+        { "ref": "2 Peter 3:8-15" },
+        { "ref": "Mark 1:1-8" }
+      ],
+      "services": [
+        { "time": "10am", "village": "Norton", "service": "Eucharist" },
+        { "time": "10am", "village": "Harvington", "service": "Church" },
+        { "time": "11am", "village": "Church Lench", "service": "Communion" },
+        { "time": "11am", "village": "Abbots Morton", "service": "Church" },
+        { "time": "6.30pm", "village": "Harvington", "service": "Holy Communion (BCP)" }
+      ]
+    },
+    {
+      "date": "2026-12-13",
+      "name": "3rd Sunday of Advent",
+      "readings": [
+        { "ref": "Isaiah 61:1-4,8-end", "q": "Isaiah 61:1-4,8-11" },
+        { "ref": "Psalm 126" },
+        { "ref": "1 Thessalonians 5:16-24" },
+        { "ref": "John 1:6-8,19-28" }
+      ],
+      "services": [
+        { "time": "8.30am", "village": "Rous Lench", "service": "Holy Communion (BCP)" },
+        { "time": "10am", "village": "Harvington", "service": "Eucharist" },
+        { "time": "11am", "village": "Church Lench", "service": "Christingle" },
+        { "time": "3pm", "village": "Norton", "service": "Vale Carols", "note": "with the Vale Connection Ladies Choir" }
+      ]
+    },
+    {
+      "date": "2026-12-20",
+      "name": "4th Sunday of Advent",
+      "readings": [
+        { "ref": "2 Samuel 7:1-11,16" },
+        { "ref": "Psalm 89:1-8" },
+        { "ref": "Romans 16:25-end", "q": "Romans 16:25-27" },
+        { "ref": "Luke 1:26-38" }
+      ],
+      "services": [
+        { "time": "10am", "village": "Norton", "service": "Church" },
+        { "time": "10am", "village": "Harvington", "service": "Eucharist" },
+        { "time": "4pm", "village": "Harvington", "service": "Christingle" },
+        { "time": "6.30pm", "village": "Church Lench", "service": "Carol service" },
+        { "time": "6.30pm", "village": "Rous Lench", "service": "Candlelit carol service" }
+      ]
+    },
+    {
+      "date": "2026-12-24",
+      "name": "Christmas Eve",
+      "readings": [
+        { "ref": "Isaiah 9:2-7" },
+        { "ref": "Psalm 96" },
+        { "ref": "Titus 2:11-14" },
+        { "ref": "Luke 2:1-20" }
+      ],
+      "services": [
+        { "time": "3pm", "village": "Church Lench", "service": "Crib and carol service" },
+        { "time": "6pm", "village": "Harvington", "service": "Crib and carol service" },
+        { "time": "9pm", "village": "Abbots Morton", "service": "Candlelight Mass" },
+        { "time": "11.30pm", "village": "Norton", "service": "Midnight Mass" },
+        { "time": "11.30pm", "village": "Harvington", "service": "Midnight Mass" }
+      ]
+    },
+    {
+      "date": "2026-12-25",
+      "name": "Christmas Day",
+      "readings": [
+        { "ref": "Isaiah 52:7-10" },
+        { "ref": "Psalm 98" },
+        { "ref": "Hebrews 1:1-12" },
+        { "ref": "John 1:1-14" }
+      ],
+      "services": [
+        { "time": "10am", "village": "Norton", "service": "Christmas Communion" },
+        { "time": "10am", "village": "Harvington", "service": "Christmas Communion" },
+        { "time": "11am", "village": "Church Lench", "service": "Christmas Communion" }
+      ]
+    },
+    {
+      "date": "2026-12-27",
+      "name": "1st Sunday of Christmas",
+      "readings": [
+        { "ref": "Isaiah 61:10-62:3" },
+        { "ref": "Psalm 148" },
+        { "ref": "Galatians 4:4-7" },
+        { "ref": "Luke 2:15-21" }
+      ],
+      "services": [
+        { "time": "11am", "village": "Church Lench", "service": "Benefice Communion" }
       ]
     }
   ]
