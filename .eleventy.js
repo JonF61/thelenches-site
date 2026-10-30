@@ -216,6 +216,24 @@ module.exports = async function (eleventyConfig) {
     return null;
   });
 
+  // schema.org JSON-LD for search engines (lib/schema.js): the site on the home page, and the
+  // Events page's upcoming events (ids as the page anchors, images as eventImage).
+  const schema = require("./lib/schema.js");
+  eleventyConfig.addFilter("siteLd", (site) => schema.ldJson(schema.siteSchema(site)));
+  eleventyConfig.addFilter("eventsLd", (events, photos, site) => {
+    const slugify = eleventyConfig.getFilter("slugify");
+    const imageOf = eleventyConfig.getFilter("eventImage");
+    const seen = new Set();
+    const list = (events || []).filter((e) => {
+      const id = slugify("ev-" + e.date + "-" + e.title);
+      return e.title && !seen.has(id) && seen.add(id);
+    }).map((e) => {
+      const img = imageOf(e, photos);
+      return schema.eventSchema(e, { siteUrl: site.url, id: slugify("ev-" + e.date + "-" + e.title), image: (img && img.url) || site.ogImage });
+    });
+    return schema.ldJson({ "@context": "https://schema.org", "@graph": list });
+  });
+
   // True for items in the five Lenches ("Lenches" badge on Events; lib/lenches.js)
   const { inLenches } = require("./lib/lenches.js");
   eleventyConfig.addFilter("inLenches", inLenches);
