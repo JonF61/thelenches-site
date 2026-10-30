@@ -255,6 +255,11 @@ module.exports = async function (eleventyConfig) {
     fs.writeFileSync(path.join(dir.output, "coming-up.json"), JSON.stringify(coming, null, 1) + "\n");
   });
 
+  // "October 2026" from "2026-10" (Regular activities: details last checked)
+  eleventyConfig.addFilter("monthYear", (ym) =>
+    /^\d{4}-\d{2}$/.test(String(ym || "")) ? fmt(`${ym}-01`, { month: "long", year: "numeric" }) : ""
+  );
+
   // "Friday 31 July 2026"
   eleventyConfig.addFilter("longDate", (iso) =>
     fmt(iso, { weekday: "long", day: "numeric", month: "long", year: "numeric" })

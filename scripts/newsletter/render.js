@@ -21,8 +21,10 @@ const LINKS = {
 // The Website update paragraph: each entry's text, joined with spaces.
 const siteParagraph = (site) => site.map((u) => String(u.text || '').trim()).filter(Boolean).join(' ');
 
-// Weekly regulars: "Wednesday 7-8pm" (no time: the day alone); site-relative links made absolute.
-const regularWhen = (r) => [r.day, r.time].filter(Boolean).join(' ');
+// Regular activities: "Wednesday 7-8pm" (no time: the day alone; not weekly: "Tuesday 7pm (1st of the month)");
+// site-relative links made absolute.
+const regularWhen = (r) => [r.day, r.time].filter(Boolean).join(' ') + (r.frequency ? ` (${r.frequency})` : '');
+const REGULARS_MORE = 'Who runs them, costs, contacts and flyers are on our';
 const siteUrl = (u) => (/^\//.test(String(u || '')) ? `${SITE}${u}` : String(u || ''));
 
 const C = {
@@ -217,14 +219,16 @@ function renderHtml(m, subject) {
       rows.push(`<tr><td class="px" style="padding:10px 24px 0;font-family:${SANS};font-size:13px;line-height:1.5;color:${C.muted};">${para(oldRegulars)}</td></tr>`);
     }
   }
-  // Weekly regulars: their own section, one line each, Monday first (lib/whatson.js sorts them).
+  // Regular activities (weekly regulars until 30 Oct): their own section, one line each, Monday
+  // first (lib/whatson.js sorts them), then a link to the full /regulars/ page.
   const regs = Array.isArray(m.regulars) ? m.regulars : [];
   if (regs.length) {
-    rows.push(sectionHead('Weekly regulars'));
+    rows.push(sectionHead('Regular activities'));
     rows.push(`<tr><td class="px" style="padding:10px 24px 0;font-family:${SANS};font-size:14px;line-height:1.5;color:${C.ink};">`
       + regs.map((r) => `<div style="margin:0 0 5px;"><b>${esc(regularWhen(r))}</b> · ${esc(r.what)}${r.where ? ` · ${esc(r.where)}` : ''}`
         + `${r.note ? ` <span style="color:${C.muted};">(${esc(r.note)})</span>` : ''}`
         + `${r.link ? ` · ${a(siteUrl(r.link.url), r.link.text, C.accentText)}` : ''}</div>`).join('')
+      + `<div style="margin:8px 0 0;">${esc(REGULARS_MORE)} ${a(siteUrl('/regulars/'), 'Regular activities page', C.accentText)}.</div>`
       + `</td></tr>`);
   }
   // No News section since 21 Oct 2026 (select.js gives news: []); kept for older snapshots.
@@ -292,12 +296,12 @@ function renderText(m) {
     if (oldRegs) out.push(paras(oldRegs).join('\n\n'), '');
   }
   if (Array.isArray(m.regulars) && m.regulars.length) {
-    head('Weekly regulars');
+    head('Regular activities');
     for (const r of m.regulars) {
       out.push([regularWhen(r), r.what, r.where].filter(Boolean).join(' · ')
         + (r.note ? ` (${r.note})` : '') + (r.link ? ` · ${r.link.text}: ${siteUrl(r.link.url)}` : ''));
     }
-    out.push('');
+    out.push('', `${REGULARS_MORE} Regular activities page: ${siteUrl('/regulars/')}`, '');
   }
   if ((m.news || []).length) {
     head('News');

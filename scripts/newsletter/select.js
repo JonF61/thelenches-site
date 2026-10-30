@@ -344,7 +344,10 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     held,
     events: events.map(strip),
     // Weekly regulars (src/items/regulars.json), every issue; older snapshots hold a string.
-    regulars: (w.regulars || []).length ? w.regulars : str(w.eventsFootnote),
+    // Only the one-line fields go in the snapshot (the rest is for the /regulars/ page).
+    regulars: (w.regulars || []).length
+      ? w.regulars.map(({ day, time, what, where, note, link, frequency }) => ({ day, time, what, where, note, link, ...(frequency ? { frequency } : {}) }))
+      : str(w.eventsFootnote),
     news: [],
     notices: notices.map(strip),
     roads: roads.map(strip),
