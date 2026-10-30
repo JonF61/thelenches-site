@@ -5,7 +5,7 @@
 // Account Analytics: Read only) and CF_ACCOUNT_ID. Without both, the section says so.
 // Read-only: page views and visits over the last 7 days, and the most viewed pages.
 
-const API = 'https://api.cloudflare.com/client/v4/graphql';
+export const API = 'https://api.cloudflare.com/client/v4/graphql';
 const DAYS = 7;
 const TOP = 8;
 export const HOST = 'thelenches.org.uk';
