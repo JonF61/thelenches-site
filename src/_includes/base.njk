@@ -125,6 +125,19 @@
     });
   })();
   (function () {
+    // Sticky header: slim it once scrolled (on at 80px, off under 20px so it doesn't flicker), and keep --hdr at its height for anchor links.
+    var h = document.querySelector('.site-header'), r = document.documentElement;
+    if (!h) return;
+    function size() { r.style.setProperty('--hdr', (h.offsetHeight + 8) + 'px'); }
+    function onScroll() {
+      var y = window.scrollY, s = h.classList.contains('scrolled');
+      if (!s && y > 80) { h.classList.add('scrolled'); size(); } else if (s && y < 20) { h.classList.remove('scrolled'); size(); }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', size);
+    size(); onScroll();
+  })();
+  (function () {
     var d = document.getElementById('img-viewer');
     if (!d || typeof d.showModal !== 'function') return;
     var img = d.querySelector('img'), cap = d.querySelector('.iv-cap'), from = null;
