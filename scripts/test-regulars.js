@@ -66,6 +66,6 @@ const snap = select({ ...{ issueDate: '2026-10-29', pending: [], issues: [], set
   whatson: { events: [], notices: [], regulars: sortRegulars([{ day: 'Tuesday', time: '7pm', what: 'Lenches Ladies', frequency: '1st Tuesday of the month', phone: '01386 000000' }]) },
   bins: {}, siteupdates: { entries: [] }, onthisday: { entries: {} } });
 assert.ok(!('phone' in snap.regulars[0]), 'no page-only fields in the snapshot');
-assert.ok(render(snap).text.includes('Tuesday 7pm (1st Tuesday of the month) · Lenches Ladies'));
+assert.ok(render(snap).text.includes('Tuesday\nLenches Ladies · 7pm (1st Tuesday of the month)'));
 
 console.log('regular activities: all tests passed');
