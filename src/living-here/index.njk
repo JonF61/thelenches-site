@@ -1,18 +1,13 @@
 ---
-permalink: /living-here/
-eleventyExcludeFromCollections: true
+layout: base.njk
+title: Living here
+description: Regular activities, groups and clubs, village halls, churches and practical information for everyone in the Lenches villages.
 ---
-{#- Living here page folded into the home page (24 Oct 2026). Old links land on its home page section. -#}
-<!DOCTYPE html>
-<html lang="en-GB">
-<head>
-  <meta charset="UTF-8">
-  <meta name="robots" content="noindex">
-  <meta http-equiv="refresh" content="0; url={{ '/#living-here' | url }}">
-  <link rel="canonical" href="{{ site.url }}/">
-  <title>Moved — The Lenches</title>
-</head>
-<body>
-  <p>This page has moved to <a href="{{ '/#living-here' | url }}">Living here on the home page</a>.</p>
-</body>
-</html>
+{#- The same cards as the home page's Living here section (src/_data/livinghere.json). Was a redirect to /#living-here from 24 to 30 Oct 2026. -#}
+<main class="container">
+  <div class="page-head">
+    <h1>Living here</h1>
+    <p class="page-intro">{{ livinghere.intro }}</p>
+  </div>
+  {% set cards = livinghere.cards %}{% set cardHeading = "h2" %}{% include "hub-cards.njk" %}
+</main>

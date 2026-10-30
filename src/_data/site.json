@@ -17,17 +17,15 @@
     { "title": "Around the villages", "links": [
       { "title": "Home", "url": "/" },
       { "title": "Events", "url": "/events/" },
+      { "title": "Regular activities", "url": "/regulars/" },
       { "title": "Notices", "url": "/notices/" },
       { "title": "Roads", "url": "/living-here/roads/" },
       { "title": "Bins", "url": "/bins/" }
     ] },
-    { "title": "Community", "links": [
-      { "title": "Regular activities", "url": "/regulars/" },
+    { "title": "Living here", "links": [
       { "title": "Groups & Clubs", "url": "/groups/" },
       { "title": "Village Halls", "url": "/halls/" },
-      { "title": "Churches", "url": "/churches/" }
-    ] },
-    { "title": "Living here", "links": [
+      { "title": "Churches", "url": "/churches/" },
       { "title": "Health & emergencies", "url": "/living-here/health/" },
       { "title": "Getting around", "url": "/living-here/getting-around/" },
       { "title": "Council & planning", "url": "/living-here/council/" },
@@ -46,8 +44,8 @@
     { "title": "Events", "url": "/events/" },
     { "title": "Notices", "url": "/notices/", "match": ["notices"] },
     { "title": "Bins", "url": "/bins/" },
-    { "title": "Community", "url": "/#community", "match": [ "regulars","groups", "halls", "churches"] },
-    { "title": "Living here", "url": "/#living-here", "match": ["living-here"] },
+    { "title": "Regular activities", "url": "/regulars/" },
+    { "title": "Living here", "url": "/living-here/", "match": ["living-here", "groups", "halls", "churches"] },
     { "title": "Contact", "url": "/contact/" },
     { "title": "Search", "url": "/search/" }
   ]

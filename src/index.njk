@@ -7,24 +7,9 @@ cards:
   - { title: "Events", url: "/events/", icon: calendar, text: "What's on across the villages, week by week." }
   - { title: "Notices", url: "/notices/", icon: notice, text: "Parish council notices and news from around the villages." }
   - { title: "Bins", url: "/bins/", icon: bins, text: "Collection days and what goes in which bin." }
-communityIntro: Clubs, halls and churches across the Lenches.
-communityCards:
-  - { title: "Regular activities", url: "/regulars/", icon: calendar, text: "Weekly classes, clubs and groups, Monday to Sunday." }
-  - { title: "Groups & Clubs", url: "/groups/", icon: users, text: "Clubs, societies and activities across the villages." }
-  - { title: "Village Halls", url: "/halls/", icon: hall, text: "Church Lench and Rous Lench halls, history and bookings." }
-  - { title: "Churches", url: "/churches/", icon: church, text: "Service times and readings across the ARCH Benefice." }
-livingIntro: Practical information for everyone in the Lenches.
-livingCards:
-  - { title: "Health & emergencies", url: "/living-here/health/", icon: health, text: "GPs, pharmacies, hospitals and defibrillators." }
-  - { title: "Getting around", url: "/living-here/getting-around/", icon: bus, text: "Buses, on-demand and community transport, stations." }
-  - { title: "Council & planning", url: "/living-here/council/", icon: council, text: "Parish councils, councillors and planning searches." }
-  - { title: "Schools", url: "/living-here/schools/", icon: school, text: "Local schools, applying and term dates." }
-  - { title: "Roads", url: "/living-here/roads/", icon: road, text: "Road closures and roadworks in and around the Lenches." }
-  - { title: "Walks & footpaths", url: "/living-here/walks/", icon: walk, text: "Circular walks, maps and the Countryside Code." }
-  - { title: "What to do if…", url: "/living-here/what-to-do/", icon: alert, text: "Power cuts, flooding, lost pets, fly-tipping and who to call." }
 ---
-{#- Three cards plus the newsletter sign-up card (hub-cards.njk, signupCard), then the Community and Living here sections (folded in from
-    their own pages, 24 Oct 2026; the old URLs redirect to #community and #living-here).
+{#- Three cards plus the newsletter sign-up card (hub-cards.njk, signupCard), then the Living here section (src/_data/livinghere.json, shared with /living-here/;
+    Community folded into it 30 Oct 2026; /community/ redirects to /living-here/).
     Live lines are worked out at build time (every commit, and the pipeline commits several
     times a day): next event, notices added in the last 7 days
     (hidden if none), roads on now / coming up, next bin collection for each collection day (Monday villages and Rous Lench), recalculated in the browser
@@ -58,16 +43,10 @@ livingCards:
     {% set signupCard = true %}{% include "hub-cards.njk" %}{% set signupCard = false %}
   </section>
 
-  <section id="community" class="home-section">
-    <h2>Community</h2>
-    <p class="muted">{{ communityIntro }}</p>
-    {% set cards = communityCards %}{% set cardHeading = "h3" %}{% include "hub-cards.njk" %}
-  </section>
-
   <section id="living-here" class="home-section">
     <h2>Living here</h2>
-    <p class="muted">{{ livingIntro }}</p>
-    {% set cards = livingCards %}{% include "hub-cards.njk" %}
+    <p class="muted">{{ livinghere.intro }}</p>
+    {% set cards = livinghere.cards %}{% set cardHeading = "h3" %}{% include "hub-cards.njk" %}
   </section>
 
   {#- Feedback form near the foot of the page (other pages: above the sign-up band). -#}
