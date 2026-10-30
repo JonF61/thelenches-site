@@ -13,25 +13,27 @@
   {% set pageDesc = description or site.description %}
   {% set pageImage = ogImage or site.ogImage %}
   {% set pageImageAlt = ogImageAlt or site.ogImageAlt %}
-  <title>{{ pageTitle }}</title>
+  <title>{{ pageTitle | safe }}</title>
   {% if pageDesc %}<meta name="description" content="{{ pageDesc }}">{% endif %}
   <link rel="canonical" href="{{ site.url }}{{ page.url }}">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="The Lenches Website">
   <meta property="og:locale" content="en_GB">
-  <meta property="og:title" content="{{ pageTitle }}">
+  <meta property="og:title" content="{{ pageTitle | safe }}">
   {% if pageDesc %}<meta property="og:description" content="{{ pageDesc }}">{% endif %}
   <meta property="og:url" content="{{ site.url }}{{ page.url }}">
   {% if pageImage %}<meta property="og:image" content="{{ pageImage }}">
   <meta property="og:image:alt" content="{{ pageImageAlt }}">{% endif %}
 
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="{{ pageTitle }}">
+  <meta name="twitter:title" content="{{ pageTitle | safe }}">
   {% if pageDesc %}<meta name="twitter:description" content="{{ pageDesc }}">{% endif %}
   {% if pageImage %}<meta name="twitter:image" content="{{ pageImage }}">
   <meta name="twitter:image:alt" content="{{ pageImageAlt }}">{% endif %}
 
+  {#- pageTitle is escaped once inside its set block, so | safe stops "&" showing as "&amp;amp;". -#}
+  {% if page.url == "/" %}<script type="application/ld+json">{{ site | siteLd | safe }}</script>{% endif %}
   <link rel="stylesheet" href="{{ '/style.css' | url }}?v={{ cssv }}">
   {#- Set before first paint so the phone menu starts closed without a jump; without JavaScript the menu is always shown. -#}
   <script>document.documentElement.classList.add('js')</script>

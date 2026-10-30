@@ -27,6 +27,11 @@
     {
       "task": "Regular activities: take down the under-construction box once most entries are filled in",
       "added": "2026-10-30"
+    },
+    {
+      "task": "SEO: submit sitemap.xml in Google Search Console and check the Events rich results report after a few days",
+      "waiting": "Jon",
+      "added": "2026-10-30"
     }
   ]
 }

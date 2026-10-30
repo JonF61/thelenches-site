@@ -36,7 +36,10 @@ description: What's on across the Lenches villages — upcoming events from the 
     <p class="page-intro">What's on across the villages &middot; updated {{ updated | longDate }}</p>
   </div>
 
-  {% set groups = whatson.events | merge(pipeline.events) | upcoming | byMonth %}
+  {% set upcomingEvents = whatson.events | merge(pipeline.events) | upcoming %}
+  {#- Google event listings (lib/schema.js). -#}
+  <script type="application/ld+json">{{ upcomingEvents | eventsLd(photos, site) | safe }}</script>
+  {% set groups = upcomingEvents | byMonth %}
   {% for g in groups %}
   <section class="month">
     <h2 class="list-label" id="{{ g.label | slugify }}">{{ g.label }}</h2>
