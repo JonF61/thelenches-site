@@ -5,5 +5,6 @@
     "text": "Email Elliot",
     "url": "mailto:elliot@barfieldgrainger.com"
   },
-  "order": 70
+  "order": 70,
+  "expires": "2026-11-03"
 }
