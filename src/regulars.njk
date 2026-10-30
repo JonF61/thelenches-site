@@ -3,7 +3,7 @@ layout: base.njk
 title: Regular activities
 description: Weekly classes, clubs and groups across the Lenches villages, in day order from Monday, with who runs them and how to join in.
 ---
-{#- Entries come from src/items/regulars.json (lib/whatson.js regularsPage: day order from Monday, then time; day not known last).
+{#- No flyer: a drawn tile (lib/tiles.js, from what/about, or the entry's tile key). Entries come from src/items/regulars.json (lib/whatson.js regularsPage: day order from Monday, then time; day not known last).
     Blank detail fields are left out while we gather them; detailsElsewhere entries show no detail rows. -#}
 <style>
   .reg-build{margin:0 0 1.4rem}
@@ -14,6 +14,7 @@ description: Weekly classes, clubs and groups across the Lenches villages, in da
   .reg-card h3{margin:0 0 .2rem}
   .reg-when{margin:0 0 .5rem;font-weight:600;color:var(--accent-text)}
   .reg-img{float:right;width:150px;margin:0 0 .6rem 1rem}
+  .reg-card > .tile{float:right;margin:0 0 .6rem 1rem}
   .reg-img img{display:block;width:100%;height:auto;border:1px solid #e6e1d6;border-radius:4px}
   .reg-facts{display:grid;grid-template-columns:9rem 1fr;gap:.25rem 1rem;margin:.6rem 0 0}
   .reg-facts dt{font-weight:600}
@@ -44,7 +45,7 @@ description: Weekly classes, clubs and groups across the Lenches villages, in da
     <h2>{{ d or "Day to be confirmed" }}</h2>
     {% for r in list %}
     <div class="card reg-card" id="{{ ('reg-' + (d or 'other') + '-' + r.what + '-' + r.where) | slugify }}">
-      {% if r.image %}<figure class="reg-img"><a href="{{ r.image.url | url }}" data-viewer aria-label="View full flyer"><img src="{{ r.image.url | url }}" alt="{{ r.image.alt | escape }}" loading="lazy"></a></figure>{% endif %}
+      {% if r.image %}<figure class="reg-img"><a href="{{ r.image.url | url }}" data-viewer aria-label="View full flyer"><img src="{{ r.image.url | url }}" alt="{{ r.image.alt | escape }}" loading="lazy"></a></figure>{% else %}{{ { title: r.what, body: r.about, tile: r.tile } | tileSvg | safe }}{% endif %}
       <h3>{{ r.what }}{% if r.pausedUntil and r.pausedUntil > updated %} <span class="reg-break">Back {{ r.pausedUntil | longDate }}</span>{% endif %}</h3>
       <p class="reg-when">{{ r.frequency or ("Every " + d if d else "") }}{% if r.time %}{% if r.frequency or d %}, {% endif %}{{ r.time }}{% endif %}{% if r.where %}{% if r.frequency or d or r.time %} &middot; {% endif %}{{ r.where }}{% endif %}{% if r.note %} <span class="mut">({{ r.note }})</span>{% endif %}</p>
       {% if r.about %}<p>{{ r.about }}</p>{% endif %}
