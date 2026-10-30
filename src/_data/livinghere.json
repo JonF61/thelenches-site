@@ -1,0 +1,72 @@
+{
+  "_help": "Living here: the cards on the home page's Living here section and on /living-here/ (hub-cards.njk). Community folded in here 30 Oct 2026.",
+  "intro": "Clubs, halls, churches and practical information for everyone in the Lenches.",
+  "cards": [
+    {
+      "title": "Regular activities",
+      "url": "/regulars/",
+      "icon": "calendar",
+      "text": "Weekly classes, clubs and groups, Monday to Sunday."
+    },
+    {
+      "title": "Groups & Clubs",
+      "url": "/groups/",
+      "icon": "users",
+      "text": "Clubs, societies and activities across the villages."
+    },
+    {
+      "title": "Village Halls",
+      "url": "/halls/",
+      "icon": "hall",
+      "text": "Church Lench and Rous Lench halls, history and bookings."
+    },
+    {
+      "title": "Churches",
+      "url": "/churches/",
+      "icon": "church",
+      "text": "Service times and readings across the ARCH Benefice."
+    },
+    {
+      "title": "Health & emergencies",
+      "url": "/living-here/health/",
+      "icon": "health",
+      "text": "GPs, pharmacies, hospitals and defibrillators."
+    },
+    {
+      "title": "Getting around",
+      "url": "/living-here/getting-around/",
+      "icon": "bus",
+      "text": "Buses, on-demand and community transport, stations."
+    },
+    {
+      "title": "Council & planning",
+      "url": "/living-here/council/",
+      "icon": "council",
+      "text": "Parish councils, councillors and planning searches."
+    },
+    {
+      "title": "Schools",
+      "url": "/living-here/schools/",
+      "icon": "school",
+      "text": "Local schools, applying and term dates."
+    },
+    {
+      "title": "Roads",
+      "url": "/living-here/roads/",
+      "icon": "road",
+      "text": "Road closures and roadworks in and around the Lenches."
+    },
+    {
+      "title": "Walks & footpaths",
+      "url": "/living-here/walks/",
+      "icon": "walk",
+      "text": "Circular walks, maps and the Countryside Code."
+    },
+    {
+      "title": "What to do if…",
+      "url": "/living-here/what-to-do/",
+      "icon": "alert",
+      "text": "Power cuts, flooding, lost pets, fly-tipping and who to call."
+    }
+  ]
+}
