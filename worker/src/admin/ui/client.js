@@ -37,11 +37,12 @@ export const CLIENT_JS = String.raw`
     picked: {}, ff: '', openF: {}, drag: null, busy: false, order: {}, shown: '' };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
-  var VIEWS = [['summary', 'Summary'], ['draft', 'Newsletter draft'], ['stats', 'Newsletter stats'], ['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
+  var VIEWS = [['summary', 'Summary'], ['draft', 'Newsletter draft'], ['stats', 'Newsletter stats'], ['visitors', 'Site visitors'], ['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
   // Health has no menu entry (28 Oct): the top bar's Diagnostic and Watchdog open it, as does Summary's Site health.
   // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
   var INTROS = {
     draft: 'The next newsletter as it would be built now from what is approved. It updates after each approval and every 3 hours. Once the issue is built on Thursday, this shows it exactly as built.',
+    visitors: 'How many people use the website: page views and visits by day and by month, and the most viewed pages. Counts only: nobody can be identified.',
     stats: 'How each newsletter did: how many it went to, bounces, and anonymous opens and link clicks. Counts are totals only: nobody can see who opened or clicked.',
     summary: 'What needs you now, and what is coming up, in one place. Tap a heading to open its page.',
     queue: 'Events and notices sent in by email or picked up from feeds, waiting for you to approve or reject. Approved items go on the website and into Thursday\'s newsletter.',
@@ -334,7 +335,7 @@ export const CLIENT_JS = String.raw`
       owed: Array.isArray(d.owed) ? d.owed.filter(function (o) { return !S.done['reply:' + o.holding.reply_id]; }).length : '!',
       photos: d.photos && !d.photos.error ? d.photos.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length : '!',
       feedback: d.feedback && !d.feedback.error ? fbRows(d, 'waiting').length + fbRows(d, 'reply').length : '!',
-      summary: null, draft: null, stats: null, contacts: null, lessons: null, health: null, activity: null
+      summary: null, draft: null, stats: null, visitors: null, contacts: null, lessons: null, health: null, activity: null
     };
   }
 
@@ -363,6 +364,7 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'lessons') return [h('div', { class: 'list wide' }, top, lessonsView())];
     if (S.view === 'activity') return [h('div', { class: 'list wide' }, top, activityView())];
     if (S.view === 'stats') return [h('div', { class: 'list wide' }, top, statsView())];
+    if (S.view === 'visitors') return [h('div', { class: 'list wide' }, top, visitorsView())];
     // Each time the draft screen opens, check the Cloudflare sign-in is still valid (draftView).
     if (S.view === 'draft' && S.shown.split('|')[0] !== 'draft') S.draftAuth = null;
     if (S.view === 'draft') return [h('div', { class: 'list wide' }, top, draftView(d))];
@@ -2647,6 +2649,77 @@ export const CLIENT_JS = String.raw`
     return els;
   }
 
+  /* ---------------------------------------------------------- site visitors -- */
+
+  // Saved days and months from the Visitors tab (admin/sitestats.js) plus today so far.
+  async function loadVisitors() {
+    S.svLoading = true;
+    var r = await api('/admin/api/site-visitors');
+    S.svLoading = false;
+    S.sv = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'visitors') render();
+  }
+
+  function monthName(k) {
+    return new Date(k + '-01T12:00:00').toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  }
+
+  function visitorsView() {
+    var t = S.sv;
+    if (!t) {
+      if (!S.svLoading) loadVisitors();
+      return [h('p', { class: 'loading' }, 'Loading site visitors…')];
+    }
+    var again = h('button', { class: 'btn', onclick: function () { S.sv = null; render(); } }, 'Refresh');
+    if (t.error) return [errorNote(t, 'Site visitors'), again];
+    if (t.off) return [h('div', { class: 'note warn' }, 'Not set up: the Worker needs CF_ANALYTICS_TOKEN and CF_ACCOUNT_ID.')];
+    var els = [];
+    if (t.todayError) els.push(h('div', { class: 'note bad' }, 'Today so far could not be read: ' + t.todayError));
+    var days = t.days || [];
+    if (!days.length) { els.push(h('p', { class: 'empty' }, 'No days saved yet. Each night just after midnight the day before is saved.')); els.push(again); return els; }
+
+    // Last 30 days as bars (oldest left; hover for numbers), then the last 14 in a table, newest first.
+    var last = days.slice(0, 30);
+    var max = Math.max.apply(null, last.map(function (x) { return x.views; }).concat([1]));
+    els.push(h('div', { class: 'card' },
+      h('h2', null, 'Page views by day'),
+      h('div', { class: 'sv-bars', role: 'img', 'aria-label': 'Page views per day for the last ' + last.length + ' days' },
+        last.slice().reverse().map(function (x) {
+          return h('div', { class: 'sv-bar' + (x.today ? ' today' : ''), title: day(x.date) + (x.today ? ' (so far)' : '') + ': ' + plural(x.views, 'page view') + ', ' + plural(x.visits, 'visit') },
+            h('span', { style: 'height:' + Math.max(2, Math.round(100 * x.views / max)) + '%' }));
+        })),
+      h('table', { class: 'h' },
+        h('thead', null, h('tr', null, ['Day', 'Page views', 'Visits'].map(function (x) { return h('th', null, x); }))),
+        h('tbody', null, last.slice(0, 14).map(function (x) {
+          return h('tr', null, h('td', null, day(x.date) + (x.today ? ' (so far)' : '')), h('td', null, String(x.views)), h('td', null, String(x.visits)));
+        })))));
+
+    // Months, newest first; click one for its most viewed pages.
+    var months = t.months || [];
+    var pick = months.filter(function (m) { return m.month === S.svMonth; })[0] || months[0];
+    els.push(h('div', { class: 'card' },
+      h('h2', null, 'By month'),
+      h('table', { class: 'h nlstats' },
+        h('thead', null, h('tr', null, ['Month', 'Page views', 'Visits', 'Days', 'Busiest day'].map(function (x) { return h('th', null, x); }))),
+        h('tbody', null, months.map(function (m) {
+          var choose = function () { S.svMonth = m.month; render(); };
+          return h('tr', { class: m === pick ? 'sel' : null, tabindex: '0', role: 'button', title: 'Show the top pages for this month',
+            onclick: choose, onkeydown: function (e) { if (e.key === 'Enter') choose(); } },
+            h('td', null, monthName(m.month)), h('td', null, String(m.views)), h('td', null, String(m.visits)), h('td', null, String(m.days)),
+            h('td', null, m.busiest ? day(m.busiest.date) + ' (' + m.busiest.views + ')' : '–'));
+        })))));
+    if (pick) {
+      els.push(h('div', { class: 'card' },
+        h('h2', null, 'Most viewed pages: ' + monthName(pick.month)),
+        pick.pages.length ? h('table', { class: 'h' }, h('tbody', null, pick.pages.map(function (p) {
+          return h('tr', null, h('td', { class: 'run-t' }, String(p.views)), h('td', null, h('a', { href: 'https://thelenches.org.uk' + p.path, target: '_blank', rel: 'noopener' }, p.path)));
+        }))) : h('p', { class: 'meta' }, 'No page views counted.')));
+    }
+    els.push(h('p', { class: 'meta' }, 'Days run midnight to midnight UK time. A visit is one person’s session; page views count every page they open. Counted by Cloudflare without cookies, so some visitors who block it are missed. Each day is saved to the Visitors tab of the Sheet just after midnight.'));
+    els.push(again);
+    return els;
+  }
+
   /* ------------------------------------------------------- newsletter draft -- */
 
   // The draft's meta: the newest seen (after a Refresh), else the one /api/state brought.
@@ -2991,7 +3064,7 @@ export const CLIENT_JS = String.raw`
         vl.push([h('a', { href: 'https://thelenches.org.uk' + str(p.path), target: '_blank', rel: 'noopener' }, str(p.path)), h('span', { class: 'meta' }, ' · ' + plural(p.views, 'view'))]);
       });
     }
-    els.push(sumCard('Visitors', 'https://dash.cloudflare.com/?to=/:account/web-analytics', vl, {
+    els.push(sumCard('Visitors', go('visitors'), vl, {
       top: vs.error ? errorNote(vs, 'Visitor counts') : null,
       empty: vs.off ? 'Not set up: the Worker needs CF_ANALYTICS_TOKEN and CF_ACCOUNT_ID' : 'No visits counted yet'
     }));

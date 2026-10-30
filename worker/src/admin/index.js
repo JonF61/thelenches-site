@@ -91,6 +91,8 @@
 //   POST /admin/api/newsletter      { action: rebuild|test, issue_date } through decide():
 //                                   rebuild (nlquiet) sends nothing; test (nltest) sends only the
 //                                   preview, with its Send button, to preview_to (Jon)
+//   GET  /admin/api/site-visitors   Site visitors (sitestats.js): saved days and months from the
+//                                   Visitors tab, plus today so far from Cloudflare.
 //   GET  /admin/api/nlstats?i=DATE  Newsletter stats (nlstats.js): sent issues with sent, bounced,
 //                                   and anonymous opens and clicks; for one issue, opens by day and
 //                                   hour and the most-clicked links (totals only, never per person)
@@ -148,6 +150,7 @@ import {
   nextIssue, failingRuns, subscriberChanges, lastSentDate, comingWeek, comingUpFile, devTasks,
 } from './summary.js';
 import { visitors } from './visitors.js';
+import { visitorHistory } from './sitestats.js';
 import { nlStats } from './nlstats.js';
 import { DRAFT_TAB, DRAFT_RANGE, draftMeta, draftHtml, draftPage } from './draft.js';
 
@@ -810,6 +813,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/orgs') return json(orgLists(ORGS, await orgContext(env)));
       if (path === '/admin/api/lessons') return json(lessonRows(await readLessons(env)));
       if (path === '/admin/api/summary') return json(await summary(env));
+      if (path === '/admin/api/site-visitors') return json(await visitorHistory(env));
       if (path === '/admin/api/nlstats') {
         const [issues, sends, dns] = await Promise.all([readTable(env, 'Issues'), readTable(env, 'Sends'), readTable(env, 'Do Not Send')]);
         return json(await nlStats(env, { issues: issues.rows, sends: sends.rows, dns: dns.rows }, String(url.searchParams.get('i') || '')));

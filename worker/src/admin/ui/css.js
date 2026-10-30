@@ -63,6 +63,10 @@ span.sum-h{color:inherit;cursor:default}
 .sum-clear{margin:0;color:var(--ok)}
 .chip-link{padding:0;min-height:0;color:inherit}
 .nlstats tbody tr{cursor:pointer}
+.sv-bars{display:flex;align-items:flex-end;gap:2px;height:120px;margin:.5rem 0 1rem;border-bottom:1px solid var(--line,#ccc)}
+.sv-bar{flex:1;height:100%;display:flex;align-items:flex-end}
+.sv-bar span{display:block;width:100%;background:var(--accent);border-radius:2px 2px 0 0}
+.sv-bar.today span{opacity:.5}
 .nlstats tr.sel td{background:var(--panel2);font-weight:600}
 .draft-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
 .draft-bar .actions{margin:0}

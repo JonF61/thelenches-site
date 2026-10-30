@@ -25,6 +25,7 @@
 //                       and 17:00 reminders. A failed dispatch raises a watchdog alert.
 //   cron NIGHTLY_CRON   00:10 UK every night: fires repository_dispatch "rebuild" so
 //                       build.yml rebuilds the site and yesterday's events drop off.
+//                       Same cron: saves the day's visitor counts (runVisitorLog, sitestats.js).
 //   cron HOURLY_CRON    :17 past even UK hours 06-22: fires repository_dispatch "ingest"
 //                       (GitHub's own cron ran hours late; it stays in ingest.yml as a backup).
 //                       07:00 UK every day: fires "daily-approvals" (daily approvals email).
@@ -49,6 +50,7 @@ import {
 import { handleAdmin } from './admin/index.js';
 import { handleFeedback } from './feedback.js';
 import { handleSignup } from './signup.js';
+import { logVisitors } from './admin/sitestats.js';
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -358,6 +360,20 @@ async function runNightly(env, ms) {
   if (!ok) await alertDispatchFailed(env, `Nightly site rebuild at ${uk.hm} UK could not be sent to GitHub`);
 }
 
+// 00:10 UK every night (not switched by NIGHTLY): saves yesterday's (and any missed day's)
+// site visitor counts to the Visitors tab (admin/sitestats.js). Logs counts and dates only.
+async function runVisitorLog(env, ms) {
+  const uk = ukNow(ms);
+  if (uk.hm !== NIGHTLY_HM) return;
+  try {
+    const r = await logVisitors(env, ms);
+    if (r.off) return;
+    console.log(`${uk.date} ${uk.hm} UK: visitor counts saved for ${r.saved.length} day(s)${r.failed.length ? `; failed: ${r.failed.join('; ')}` : ''}`);
+  } catch (e) {
+    console.error(`Visitor counts not saved: ${e.message}`);
+  }
+}
+
 // Daily approvals email at 07:00 UK every day (scripts/digest, DIGEST_MODE=daily).
 async function runDaily(env, ms) {
   const uk = ukNow(ms);
@@ -550,7 +566,10 @@ export default {
 
   async scheduled(event, env, ctx) {
     if (event.cron === SCHEDULE_CRON) ctx.waitUntil(runSchedule(env, event.scheduledTime));
-    else if (event.cron === NIGHTLY_CRON) ctx.waitUntil(runNightly(env, event.scheduledTime));
+    else if (event.cron === NIGHTLY_CRON) {
+      ctx.waitUntil(runNightly(env, event.scheduledTime));
+      ctx.waitUntil(runVisitorLog(env, event.scheduledTime));
+    }
     else if (event.cron === HOURLY_CRON) {
       ctx.waitUntil(runIngest(env, event.scheduledTime));
       ctx.waitUntil(runDaily(env, event.scheduledTime));
