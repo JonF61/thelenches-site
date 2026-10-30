@@ -8,7 +8,7 @@
 'use strict';
 
 const crypto = require('crypto');
-const { anchorUrl } = require('../../lib/anchors');
+const { anchorUrl, calendarUrl } = require('../../lib/anchors');
 
 const SITE = 'https://thelenches.org.uk';
 const UNSUB_MARK = '%%UNSUBSCRIBE_URL%%';
@@ -123,6 +123,13 @@ function linkLine(link) {
   return link ? `<div style="margin-top:6px;font-family:${SANS};font-size:13px;">${a(link.url, link.text, C.accentText)}</div>` : '';
 }
 
+// The event's own link (if any) and "Add to calendar" on one line, as on the Events page.
+function eventLinks(ev) {
+  const cal = calendarUrl(ev);
+  const parts = [ev.link ? a(ev.link.url, ev.link.text, C.accentText) : '', cal ? a(cal, 'Add to calendar', C.accentText) : ''].filter(Boolean);
+  return parts.length ? `<div style="margin-top:6px;font-family:${SANS};font-size:13px;">${parts.join(' &nbsp;&middot;&nbsp; ')}</div>` : '';
+}
+
 function eventCard(ev) {
   const p = dateParts(ev.date);
   const tile = `<table role="presentation" width="50" cellpadding="0" cellspacing="0" border="0" style="background:${C.greenLight};">`
@@ -144,7 +151,7 @@ function eventCard(ev) {
     + `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.card};">`
     + `<tr><td width="62" valign="top" style="padding:12px 0 12px 12px;">${tile}</td>`
     + `<td valign="top" style="padding:12px;font-family:${SERIF};font-size:14px;line-height:1.5;color:${C.ink};">`
-    + `${title}${meta}${body}${linkLine(ev.link)}</td></tr>${img}</table></td></tr>`;
+    + `${title}${meta}${body}${eventLinks(ev)}</td></tr>${img}</table></td></tr>`;
 }
 
 function storyBlock(it, titleSize, kind) {
@@ -292,7 +299,11 @@ function renderText(m) {
   const oldRegs = typeof m.regulars === 'string' ? m.regulars : '';
   if (m.events.length || oldRegs) {
     head('Coming up');
-    for (const ev of m.events) item(`${dateParts(ev.date).short} · ${ev.title}${ev.lenches ? ' [Lenches]' : ''}`, ev.meta, ev.body, ev.link);
+    for (const ev of m.events) {
+      item(`${dateParts(ev.date).short} · ${ev.title}${ev.lenches ? ' [Lenches]' : ''}`, ev.meta, ev.body, ev.link);
+      const cal = calendarUrl(ev);
+      if (cal) out.splice(out.length - 1, 0, `Add to calendar: ${cal}`);
+    }
     if (oldRegs) out.push(paras(oldRegs).join('\n\n'), '');
   }
   if (Array.isArray(m.regulars) && m.regulars.length) {
