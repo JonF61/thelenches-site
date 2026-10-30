@@ -9,7 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="icon" href="{{ '/images/favicon.svg' | url }}" type="image/svg+xml">
   {% if site.noindex or noindex %}<meta name="robots" content="noindex, nofollow">{% endif %}
-  {% set pageTitle %}{% if page.url == "/" %}The Lenches — Village Website{% else %}{{ title }} — The Lenches{% endif %}{% endset %}
+  {#- seoTitle (front matter) = the search/tab title only; the page heading and menu keep title. -#}
+  {% set pageTitle %}{% if seoTitle %}{{ seoTitle }}{% elif page.url == "/" %}The Lenches — Village Website{% else %}{{ title }} — The Lenches{% endif %}{% endset %}
   {% set pageDesc = description or site.description %}
   {% set pageImage = ogImage or site.ogImage %}
   {% set pageImageAlt = ogImageAlt or site.ogImageAlt %}
