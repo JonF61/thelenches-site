@@ -60,7 +60,7 @@ jobs:
           GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
           SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
           GMAIL_USER: jon@thelenches.org.uk
-          GMAIL_LABEL: Pipeline
+          GMAIL_LABEL: "Lenches Website/Pipeline"
           START_DATE_OVERRIDE: ${{ github.event.inputs.start_date }}
           CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
           APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}

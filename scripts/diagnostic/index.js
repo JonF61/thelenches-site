@@ -25,7 +25,7 @@ const SITE_HOST = process.env.SITE_HOST || 'thelenches.org.uk';
 const WORKER_URL = (process.env.WORKER_URL || 'https://approvals.lenches.workers.dev').replace(/\/+$/, '');
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
 const DKIM_SELECTOR = process.env.DKIM_SELECTOR || 'google';
-const GMAIL_LABEL = process.env.GMAIL_LABEL || 'Pipeline';
+const GMAIL_LABEL = process.env.GMAIL_LABEL || 'Lenches Website/Pipeline';
 const TZ = 'Europe/London';
 
 const DAY = 86400000;

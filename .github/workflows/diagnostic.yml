@@ -38,5 +38,5 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
           GMAIL_USER: jon@thelenches.org.uk
-          GMAIL_LABEL: Pipeline
+          GMAIL_LABEL: "Lenches Website/Pipeline"
           WORKER_URL: https://approvals.lenches.workers.dev
