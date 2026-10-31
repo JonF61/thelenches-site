@@ -344,7 +344,7 @@ async function main() {
     console.warn(`Trusted tab unreadable, trust ignored this run: ${(err && err.message) || err}`);
   }
 
-  const ids = (await g.listMessageIds(process.env.GMAIL_LABEL || 'Lenches Website/Pipeline', londonMidnightEpoch(startYmd)))
+  const ids = (await g.listMessageIds(process.env.GMAIL_LABEL || 'Lenches Website/2 Pipeline', londonMidnightEpoch(startYmd)))
     .reverse(); // oldest first
   const todo = ids.filter((id) => {
     const r = logById.get(id);
