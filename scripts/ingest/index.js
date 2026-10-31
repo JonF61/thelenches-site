@@ -24,6 +24,7 @@ const { offersChoice } = require('../../lib/wording');
 const { extractLinks } = require('../suggest/organiser');
 const readerFeedback = require('../readerfeedback');
 const { LOW_CLASS_CONFIDENCE } = require('./classify');
+const { loadOffList } = require('./subscriptions');
 
 const MAX_RETRIES = 3;            // after this, a failing message is left for the diagnostic
 const MAX_MESSAGES_PER_RUN = 25;  // caps run time and spend; the rest wait for the next run
@@ -84,6 +85,31 @@ function matchSource(msg, sources) {
   return sources.find((s) => from.includes(s.match))
     || sources.find((s) => recipients.includes(s.match))
     || null;
+}
+
+function offListReason(ctx, address) {
+  const a = String(address || '').trim().toLowerCase();
+  return (ctx.offList && a && ctx.offList.get(a)) || '';
+}
+
+// One plain email to Jon listing what unsubscribed senders sent (to Jon only, never logged).
+function offListAlertText(alerts) {
+  const lines = ['These came from people who have unsubscribed from the newsletter, so nothing was published and Holly did not reply.',
+    'If you want to use one, add it by hand; if they should be back on the list, remove them from Do Not Send (or set their Subscribers status to active).', ''];
+  for (const a of alerts) {
+    lines.push(`From: ${a.from}`, `Subject: ${a.subject}`, `Why: ${a.reason}`,
+      `Items: ${a.items.join('; ')}`, `Email: ${a.link}`, '');
+  }
+  return lines.join('\n');
+}
+
+async function sendOffListAlert(alerts, settings) {
+  await g.sendMail({
+    to: process.env.ALERT_TO || process.env.GMAIL_USER,
+    subject: `Not published: ${alerts.length} email${alerts.length === 1 ? '' : 's'} from unsubscribed senders`,
+    text: offListAlertText(alerts),
+    fromName: g.fromNameFor(settings),
+  });
 }
 
 const normTitle = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -177,6 +203,21 @@ async function processMessage(id, ctx) {
   // approval, marked "Possible spam", never auto-published.
   const spam = result.emailClass === 'spam';
   const sureSpam = spam && result.classConfidence >= LOW_CLASS_CONFIDENCE;
+  // Unsubscribed senders (Do Not Send, or a Subscribers row that isn't active): nothing
+  // they send is published and Holly doesn't reply; Jon gets one alert email per run
+  // (Jon, 31 Oct). Addresses never reach the public log.
+  const offReason = !sureSpam && result.items.length ? offListReason(ctx, msg.fromAddress) : '';
+  if (offReason) {
+    ctx.offListAlerts.push({ from: msg.from, subject: msg.subject, items: result.items.map((i) => i.title),
+      reason: offReason, link: g.gmailLink(msg) });
+    return {
+      status: 'skipped',
+      received,
+      source: source.source,
+      items: 0,
+      error: `Unsubscribed sender: ${result.items.length} item(s) not added, no reply; Jon alerted`,
+    };
+  }
   const items = sureSpam ? [] : result.items;
 
   const link = g.gmailLink(msg);
@@ -325,6 +366,8 @@ async function main() {
     today: londonDate(Date.now()),
     tokensIn: 0,
     tokensOut: 0,
+    offList: await loadOffList(),
+    offListAlerts: [],
   };
   let failed = 0;
   let gaveUp = 0;
@@ -387,6 +430,16 @@ async function main() {
 
   console.log(`Done. ${failed} failed. Claude tokens: ${ctx.tokensIn} in (+${claudeStats.cacheRead} cached, +${claudeStats.cacheWrite} cache write), ${ctx.tokensOut} out.`);
 
+  if (ctx.offListAlerts.length) {
+    try {
+      await sendOffListAlert(ctx.offListAlerts, settings);
+      console.log(`Unsubscribed-sender alert sent (${ctx.offListAlerts.length} email(s) not published).`);
+    } catch (err) {
+      console.error(`Unsubscribed-sender alert failed: ${(err && err.message) || err}`);
+      process.exitCode = 1; // GitHub emails the failure; the Log rows say "Unsubscribed sender"
+    }
+  }
+
   // Runs every time, not just when new items arrive, so a failed alert is retried next run.
   try {
     await sendUrgentAlerts(settings, holiday);
@@ -438,7 +491,11 @@ async function main() {
   }
 }
 
-main().catch((err) => {
-  console.error('Fatal:', err && err.stack ? err.stack : err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error('Fatal:', err && err.stack ? err.stack : err);
+    process.exit(1);
+  });
+}
+
+module.exports = { offListReason, offListAlertText };

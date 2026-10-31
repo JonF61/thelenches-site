@@ -50,4 +50,60 @@ async function applyListRequest(kind, address, stamp, opts = {}) {
   return { done: 'subscribed' };
 }
 
-module.exports = { applyListRequest };
+// Who is off the list (31 Oct): address -> why, for everyone on Do Not Send or with a
+// Subscribers row whose status isn't active. Their contributions aren't published (ingest
+// index.js) and they're never added back automatically (subscribeContacts).
+function offListFrom(subscribers, dns) {
+  const off = new Map();
+  const active = (r) => !('status' in r) || !String(r.status || '').trim() || lc(r.status) === 'active';
+  const activeSet = new Set(subscribers.filter(active).map((r) => lc(r.email)));
+  for (const r of subscribers) {
+    const e = lc(r.email);
+    if (e && !active(r) && !activeSet.has(e)) off.set(e, `Subscribers status "${String(r.status).trim()}"`);
+  }
+  for (const r of dns) {
+    const e = lc(r.email);
+    if (e) off.set(e, `on Do Not Send${String(r.reason || '').trim() ? ` (${String(r.reason).trim()})` : ''}`);
+  }
+  return off;
+}
+
+async function loadOffList() {
+  const [subscribers, dns] = await Promise.all([g.readTable('Subscribers'), g.readTable('Do Not Send')]);
+  return offListFrom(subscribers, dns);
+}
+
+// Contacts get the newsletter (Jon, 31 Oct): every address given that isn't on Subscribers
+// is added as active (source "contact"), in one append; anyone off the list is left off.
+// Returns counts only (addresses never reach the public log).
+function planContactSubscriptions(addresses, subscribers, dns) {
+  const off = offListFrom(subscribers, dns);
+  const listed = new Set(subscribers.map((r) => lc(r.email)).filter(Boolean));
+  const add = [];
+  let already = 0;
+  let offList = 0;
+  let unusable = 0;
+  for (const a of new Set(addresses.map(lc).filter(Boolean))) {
+    if (!ADDRESS_RE.test(a) || a.endsWith(`@${OWN_DOMAIN}`)) unusable++;
+    else if (off.has(a)) offList++;
+    else if (listed.has(a)) already++;
+    else add.push(a);
+  }
+  return { add, already, offList, unusable };
+}
+
+async function subscribeContacts(addresses, stamp) {
+  const [subscribers, dns] = await Promise.all([g.readTable('Subscribers'), g.readTable('Do Not Send')]);
+  if (subscribers.length && !subscribers.some((r) => 'email' in r)) throw new Error('Subscribers has no "email" header');
+  const plan = planContactSubscriptions(addresses, subscribers, dns);
+  const date = stamp.slice(0, 10);
+  if (plan.add.length) {
+    await g.appendRows('Subscribers', plan.add.map((email) => ({
+      email, status: 'active', source: 'contact', date, added_at: stamp,
+      notes: 'added automatically from Contacts',
+    })));
+  }
+  return { added: plan.add.length, already: plan.already, offList: plan.offList, unusable: plan.unusable };
+}
+
+module.exports = { applyListRequest, offListFrom, loadOffList, planContactSubscriptions, subscribeContacts };

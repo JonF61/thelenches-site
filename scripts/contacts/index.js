@@ -16,6 +16,7 @@
 'use strict';
 
 const g = require('../ingest/google');
+const { subscribeContacts } = require('../ingest/subscriptions');
 const c = require('./contacts');
 const { profileFor, classifyFor } = require('./profile');
 
@@ -147,6 +148,17 @@ async function main() {
   if (dry) return;
   for (const u of updates) await g.updateRow(c.TAB, u.rowNumber, u.row);
   if (adds.length) await g.appendRows(c.TAB, adds);
+
+  // Every contact gets the newsletter unless they've unsubscribed (Jon, 31 Oct): each
+  // row's own address (not ignore rows, not other_emails) is added to Subscribers.
+  try {
+    const addresses = [...existingRows.filter((r) => !c.locked(r)), ...adds].map((r) => r.email);
+    const r = await subscribeContacts(addresses, stamp);
+    console.log(`Newsletter: ${r.added} contacts added to Subscribers, ${r.already} already there, ${r.offList} unsubscribed (left off), ${r.unusable} unusable.`);
+  } catch (err) {
+    failed++;
+    console.log(`Adding contacts to Subscribers failed: ${err.message.slice(0, 160)}`);
+  }
   if (failed) process.exitCode = 1;
 }
 
