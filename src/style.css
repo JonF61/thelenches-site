@@ -60,6 +60,10 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 .intro .muted{margin:0 0 1.25rem}
 .intro-news{margin:0 0 .4rem}
 .intro{margin-bottom:0}
+/* Seasonal corner (seasonal-corner.njk): top right of every page, behind nothing clickable. */
+.season-wrap{position:relative;height:0}
+.season-corner{position:absolute;top:0;right:0;width:160px;height:auto;pointer-events:none;z-index:1}
+@media (max-width:600px){.season-corner{width:96px}}
 .home-skyline{margin:.25rem 0 .75rem}
 .home-skyline svg{display:block;width:100%;height:auto}
 .home-aerial{margin:0 0 1.5rem}
