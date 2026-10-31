@@ -1,0 +1,67 @@
+name: Write Sheet cells
+
+# Kryten's write access to the Lenches Pipeline Sheet (scripts/sheetwrite): set cells
+# (stale-checked), append a row, or undo an earlier write. Every write is recorded first in
+# the Kryten log tab (old and new values) so it can be undone with its id; the nightly
+# Lenches backup copy is the fallback. Values are read from the event file, never printed:
+# the log shows masked values only. Refuses Subscribers, Do Not Send, Sends, Deleted
+# contacts, Sign-ups and Kryten log; never writes row 1, formulas or more than 50 cells.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'set, append or undo'
+        required: true
+        type: choice
+        options: [set, append, undo]
+        default: set
+      tab:
+        description: 'Tab name, e.g. Contacts (not needed for undo)'
+        required: false
+        type: string
+        default: ''
+      range:
+        description: 'For set: the top-left cell or block, e.g. N36 or A36:N36'
+        required: false
+        type: string
+        default: ''
+      values:
+        description: 'Plain text for one cell, or JSON rows, e.g. ["a","b"]'
+        required: false
+        type: string
+        default: ''
+      expect:
+        description: 'For set over non-blank cells: their current values (same shape)'
+        required: false
+        type: string
+        default: ''
+      undo_id:
+        description: 'For undo: the id the write printed'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+# No concurrency group: a shared one would silently drop a queued write. Kryten
+# dispatches one write at a time and waits for it.
+
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Write
+        run: node scripts/sheetwrite/index.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI

@@ -14,6 +14,8 @@ const REFUSED_TABS = ['subscribers', 'do not send', 'sends', 'replies', 'feedbac
 const PARTIAL_TABS = {
   contacts: ['email', 'name', 'organisation', 'village', 'role', 'contribution_count',
     'first_contact', 'last_contact', 'message_count', 'status', 'profile_source', 'updated_at', 'next_nudge', 'other_emails'],
+  // Kryten log (scripts/sheetwrite): which writes were made, never their old or new values.
+  'kryten log': ['id', 'at', 'action', 'tab', 'range', 'status', 'run'],
 };
 const MAX_ROWS_CAP = 500;
 const MAX_CELL = 500;
