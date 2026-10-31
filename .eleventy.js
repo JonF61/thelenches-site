@@ -252,6 +252,14 @@ module.exports = async function (eleventyConfig) {
   }));
 
   // "Sat 24 Oct"
+  // Seasonal corner (seasonal-corner.njk): which of n versions a page gets, from a hash of its URL,
+  // so neighbouring pages usually differ but each page always shows the same one.
+  eleventyConfig.addFilter("pickOf", (url, n) => {
+    let h = 0;
+    for (const ch of String(url || "/")) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return h % n;
+  });
+
   eleventyConfig.addFilter("shortDate", (iso) =>
     fmt(iso, { weekday: "short", day: "numeric", month: "short" })
   );

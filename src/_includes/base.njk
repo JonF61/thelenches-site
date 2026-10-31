@@ -63,6 +63,7 @@
   </header>
 
   <div id="main" tabindex="-1">
+    {% include "seasonal-corner.njk" %}
     {#- Pagefind (build.yml, after Eleventy) indexes only this wrapper, so menus, footer and forms stay out
         of search results; a page with "search: false" in its front matter is left out altogether. -#}
     {#- data-src: the page's own template, for the team's Edit page tool (only text written there can be edited). -#}
