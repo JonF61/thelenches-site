@@ -30,9 +30,14 @@ seoTitle: "What's on in the Lenches and near Evesham — Events"
     .item-card .item-body:has(> .ev-img){display:flex;flex-direction:column}
     .item-body > .ev-img{order:9;max-width:420px;margin:.6rem 0 0}
   }
+  /* Halloween cobweb (halloween-web.njk), top right of the heading area; smaller on phones. */
+  .page-head:has(.hw-web){position:relative}
+  .hw-web{position:absolute;top:-.75rem;right:-1.25rem;width:120px;height:auto;pointer-events:none}
+  @media (max-width:600px){.hw-web{width:64px;right:-1rem}}
 </style>
 <main class="container">
   <div class="page-head">
+    {% if seasonal.halloween %}{% include "halloween-web.njk" %}{% endif %}
     <h1>Events</h1>
     <p class="page-intro">What's on across the villages &middot; updated {{ updated | longDate }}</p>
   </div>
