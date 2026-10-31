@@ -2,6 +2,10 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD.",
   "tasks": [
     {
+      "task": "Contacts on the newsletter: check the first contacts run's Newsletter line and that Thursday's send count rose by about that many",
+      "added": "2026-10-31"
+    },
+    {
       "task": "Write Sheet cells: after a few weeks, check the Kryten log tab and tidy old entries",
       "added": "2026-10-31"
     },

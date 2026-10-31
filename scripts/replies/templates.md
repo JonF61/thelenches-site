@@ -30,6 +30,9 @@ Thanks for these, they're on their way to the website. We include events in the 
 ## ack_none
 Thanks for getting in touch.
 
+## ack_newsletter
+We've also added you to our weekly newsletter so you can see your entry. To stop it, just reply UNSUBSCRIBE.
+
 ## own_wording
 No problem, we'll use your wording for "{title}" exactly as written, just fixing any obvious typos or broken links.
 

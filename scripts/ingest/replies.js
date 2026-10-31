@@ -381,7 +381,7 @@ function itemLabels(items) {
 // Several items (27 Oct): one list with dates; when every one is too early for the
 // newsletter the thanks says so (ack_many_held: on the website now, in the newsletter from
 // two weeks before); shared notes are said once (MANY_TEMPLATES).
-function buildBody({ items, outOfScope, clarification, unusable = [], name = '', personal = '' }) {
+function buildBody({ items, outOfScope, clarification, unusable = [], name = '', personal = '', joined = false }) {
   const t = templates();
   const parts = [greeting(name)];
   const many = items.length > 1;
@@ -403,6 +403,7 @@ function buildBody({ items, outOfScope, clarification, unusable = [], name = '',
   }
   else parts.push(fill('ack_none'));
   if (personal) parts.push(personal);
+  if (joined) parts.push(fill('ack_newsletter'));
 
   const notes = [];
   let ownNotes = 0;
@@ -976,6 +977,7 @@ async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, sa
   let drafted = true;
   if (type === 'clarify') ({ text: clarification, drafted } = await draftClarification(needs, anonymous, contact));
   const personal = type === 'ack' ? await draftAckLine({ contact, items, said }) : '';
+  const joined = await joinNewsletter(msg, mode);
 
   let status = 'queued';
   if (mode === 'shadow') status = 'shadow';
@@ -987,10 +989,11 @@ async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, sa
     type,
     policy_codes: codes.join(','),
     subject: replySubject(msg.subject),
-    body: buildBody({ items, outOfScope: result.outOfScope, clarification, unusable, name, personal }),
+    body: buildBody({ items, outOfScope: result.outOfScope, clarification, unusable, name, personal, joined }),
     status,
     notes: [
       personal ? 'Personal line from their Contacts row' : '',
+      joined ? JOINED_NOTE : '',
       type === 'clarify' && contact && drafted ? PERSONAL_NOTE : '',
       limit.over ? `${limit.note}: clarification held for your Approve/Reject, never sent automatically` : '',
       drafted ? '' : 'Clarification uses fallback wording (Claude draft unavailable)',
@@ -999,6 +1002,22 @@ async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, sa
   });
   await feedback.record(row, { theyWrote: stripQuoted(msg.text), mode: modeLabel(mode, ctx.holiday) });
   return row;
+}
+
+// Sending something to publish signs the sender up for the newsletter (Jon, 31 Oct;
+// privacy page section 4), so they can check their entry. Their own From address only;
+// never in shadow mode; true only when they were newly added (the reply then says so).
+const JOINED_NOTE = 'Added to the newsletter list (sent something to publish)';
+async function joinNewsletter(msg, mode) {
+  if (mode === 'shadow') return false;
+  try {
+    const r = await applyListRequest('subscribe', msg.fromAddress, londonDateTime(Date.now()),
+      { source: 'contributor', notes: 'added automatically: sent something to publish' });
+    return r.done === 'subscribed';
+  } catch (err) {
+    console.warn(`Newsletter sign-up for ${msg.id} failed: ${(err && err.message) || err}`);
+    return false;
+  }
 }
 
 const modeLabel = (mode, holiday) => (mode === 'shadow' ? 'shadow' : (holiday ? 'holiday' : 'normal'));
@@ -1689,6 +1708,7 @@ function bodyWithoutQuestion(reply, pending) {
     clarification: '',
     unusable: codes.includes(UNUSABLE_CODE) ? [''] : [],
     name: mine.length ? firstName(mine[0].from) : '',
+    joined: String(reply.notes || '').includes(JOINED_NOTE),
   });
 }
 
