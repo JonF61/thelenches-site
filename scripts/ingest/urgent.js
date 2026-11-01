@@ -405,6 +405,11 @@ async function sheetUrl(tab) {
   return (row) => (gid === null ? base : `${base}#gid=${gid}&range=A${row._row}`);
 }
 
+// Approval emails (1 Nov, Jon): off unless Settings approval_emails is TRUE. Jon decides in
+// the admin panel; drafts, wording choices and owed replies are no longer emailed, and no
+// per-draft cards are sent. Urgent items and replies stuck at "sending" still email him.
+const approvalEmails = (settings) => truthy((settings || {}).approval_emails);
+
 // Returns the number of things alerted. Throws if the email can't be sent (rows stay
 // unstamped, so the next run retries).
 async function sendUrgentAlerts(settings, holiday) {
@@ -448,6 +453,7 @@ async function sendUrgentAlerts(settings, holiday) {
     const inOwed = new Set(owed.map((o) => o.draft && o.draft.reply_id).filter(Boolean));
     drafts = drafts.filter((r) => !inOwed.has(r.reply_id));
   }
+  if (!approvalEmails(settings)) { choices.length = 0; drafts = []; owed = []; }
   // Owed emails go in every action email, but trigger one on their own only once a day.
   const owedNow = replies.owedDue(owed).length;
   if (!items.length && !choices.length && !drafts.length && !stuck.length && !owedNow) return 0;
@@ -500,6 +506,10 @@ async function sendReplyCard(replyId, settings, { title = 'Redrafted reply', sub
   const rows = await g.readTable('Replies');
   const r = rows.find((x) => x.reply_id === replyId);
   if (!r) throw new Error(`Reply ${replyId} not found in Replies`);
+  if (!approvalEmails(settings)) {
+    console.log(`${title} card for ${replyId} not emailed: approval emails are off (it is in the admin panel).`);
+    return null;
+  }
   const mode = replies.repliesMode(settings);
   const buttons = linksEnabled();
   if (!buttons) console.warn('WORKER_URL or APPROVAL_SIGNING_KEY not set: card sent without buttons.');
@@ -525,4 +535,5 @@ async function sendReplyCard(replyId, settings, { title = 'Redrafted reply', sub
   return id;
 }
 
-module.exports = { sendUrgentAlerts, sendReplyCard };
+module.exports = {
+  approvalEmails, sendUrgentAlerts, sendReplyCard };
