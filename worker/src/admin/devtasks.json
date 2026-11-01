@@ -2,7 +2,7 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD.",
   "tasks": [
     {
-      "task": "Holly on Opus 5.5 with looser rules: review the first week's drafts; ask Jon whether the fixed holding reply (templates.md, \"passed this on to the team\") should name him",
+      "task": "Holly on Opus 5.5 with looser rules: review the first week's drafts",
       "added": "2026-11-01"
     },
     {
