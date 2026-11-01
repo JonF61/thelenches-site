@@ -28,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '46';
+export const UI_VERSION = '47';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -202,6 +202,10 @@ export const CLIENT_JS = String.raw`
     }
     S.done[kind + ':' + id] = doneText || 'Done';
     toast(r.json.message || 'Done');
+    if (kind === 'reply' && action === 'redraft') {
+      var was = ((S.data && S.data.replies && S.data.replies.rows) || []).find(function (x) { return x.reply_id === id; });
+      watchDraft(was ? (str(was.subject) || 'the reply') : 'the reply', was ? str(was.to) : '');
+    }
     closeOverlay();
     render();
     return true;
@@ -213,6 +217,70 @@ export const CLIENT_JS = String.raw`
   // same elements (same row, same content), only changed ones are rebuilt, and the scroll
   // position (pinned to the first card in view), the detail's and the menu's scroll come
   // back as they were. A different view or folder starts at the top.
+  // Drafting progress (1 Nov): after a tap that makes Holly draft (Redraft, What to say, Draft
+  // email, Draft nudge, Draft check) a bar shows "Holly is drafting…" with a timer, and the
+  // panel checks every 8 seconds for the new awaiting draft (a Replies row to the same
+  // address that wasn't there before; any new one when the address isn't known). When it
+  // lands: "Draft ready" and a button to Replies. Gives up after 4 minutes (see Activity).
+  var WAIT_POLL_MS = 8000;
+  var WAIT_MAX_MS = 240000;
+  function awaitingIds() {
+    return ((S.data && S.data.replies && S.data.replies.rows) || [])
+      .filter(function (x) { return lower(x.status) === 'awaiting'; }).map(function (x) { return x.reply_id; });
+  }
+  function watchDraft(label, to) {
+    S.wait = S.wait || [];
+    S.wait.push({ label: label, to: lower(to), since: Date.now(), before: awaitingIds() });
+    waitBar();
+    if (!S.waitTimer) S.waitTimer = setInterval(waitTick, 1000);
+  }
+  function waitBar() {
+    var bar = document.querySelector('.waitbar');
+    if (!S.wait || !S.wait.length) { if (bar) bar.remove(); return; }
+    if (!bar) { bar = h('div', { class: 'waitbar', role: 'status' }); document.body.appendChild(bar); }
+    var w = S.wait[0];
+    var secs = Math.round((Date.now() - w.since) / 1000);
+    bar.textContent = 'Holly is drafting: ' + w.label + ' (' + Math.floor(secs / 60) + ':' + ('0' + (secs % 60)).slice(-2) + ')'
+      + (S.wait.length > 1 ? ' and ' + (S.wait.length - 1) + ' more' : '');
+  }
+  async function waitTick() {
+    waitBar();
+    if (!S.wait || !S.wait.length) { clearInterval(S.waitTimer); S.waitTimer = null; return; }
+    var now = Date.now();
+    if (S.waitBusy || now - (S.waitLast || 0) < WAIT_POLL_MS) return;
+    S.waitBusy = true;
+    S.waitLast = now;
+    try {
+      var r = await api('/admin/api/state');
+      if (!r.ok) return;
+      var rows = (r.json.replies && r.json.replies.rows) || [];
+      var ready = [];
+      S.wait = S.wait.filter(function (w) {
+        var fresh = rows.find(function (x) {
+          return lower(x.status) === 'awaiting' && w.before.indexOf(x.reply_id) < 0 && (!w.to || lower(x.to) === w.to);
+        });
+        if (fresh) { ready.push(w); return false; }
+        if (now - w.since > WAIT_MAX_MS) { toast('Still drafting ' + w.label + ' after 4 minutes: check Activity for a failed run.', true); return false; }
+        return true;
+      });
+      if (ready.length) {
+        S.data = r.json;
+        S.done = {};
+        render();
+        var t = h('div', { class: 'toast', role: 'status' }, 'Draft ready: ' + ready.map(function (w) { return w.label; }).join(', ') + ' ',
+          S.view === 'replies' ? null : h('button', { class: 'btn link', onclick: function () { t.remove(); S.view = 'replies'; render(); } }, 'Open Replies'));
+        var old = document.querySelector('.toast');
+        if (old) old.remove();
+        document.body.appendChild(t);
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { t.remove(); }, 12000);
+      }
+    } finally {
+      S.waitBusy = false;
+      waitBar();
+    }
+  }
+
   function render() {
     var d = S.data;
     var view = S.view + '|' + S.pf + '|' + (wide() ? 'w' : 'n');
@@ -2222,6 +2290,7 @@ export const CLIENT_JS = String.raw`
     btn.disabled = true;
     var res = await api('/admin/api/orgcheck', { id: e.id });
     toast(res.ok ? res.json.message : (res.json.error || ('HTTP ' + res.status)), !res.ok);
+    if (res.ok) watchDraft('check for ' + (e.name || e.id), '');
     S.orgs = null;
     render();
   }
@@ -2333,6 +2402,7 @@ export const CLIENT_JS = String.raw`
     btn.disabled = true;
     var res = await api('/admin/api/nudge', { email: e.email });
     toast(res.ok ? res.json.message : (res.json.error || ('HTTP ' + res.status)), !res.ok);
+    if (res.ok) watchDraft('nudge to ' + (e.name || e.email), e.email);
     S.outreach = null;
     render();
   }
@@ -2519,7 +2589,7 @@ export const CLIENT_JS = String.raw`
       btn.disabled = true;
       var res = await api('/admin/api/contactmail', { email: r.email, brief: box.value });
       toast(res.ok ? res.json.message : (res.json.error || ('HTTP ' + res.status)), !res.ok);
-      if (res.ok) box.value = '';
+      if (res.ok) { box.value = ''; watchDraft('email to ' + who, r.email); }
       btn.disabled = false;
     } },
     h('h2', null, 'Email ' + who),

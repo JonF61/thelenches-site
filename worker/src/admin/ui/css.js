@@ -137,6 +137,8 @@ textarea.f{min-height:120px;resize:vertical;line-height:1.4}
 .onsite a{overflow-wrap:anywhere}
 .toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:20;box-shadow:0 2px 10px rgba(0,0,0,.25)}
 .toast.bad{background:var(--bad);color:#fff}
+.toast .btn.link{color:inherit;text-decoration:underline;margin-left:6px}
+.waitbar{position:fixed;left:50%;top:10px;transform:translateX(-50%);max-width:92vw;background:var(--panel);color:var(--ink);border:1px solid var(--line);padding:6px 14px;border-radius:999px;z-index:19;font-size:.9em;box-shadow:0 2px 8px rgba(0,0,0,.15)}
 .folders{display:flex;flex-direction:column;gap:2px;margin:2px 0 8px}
 .ftools{display:flex;flex-direction:column;gap:2px;margin:2px 0 4px}
 .ftools input.f{padding:5px 8px;font-size:.85rem}
