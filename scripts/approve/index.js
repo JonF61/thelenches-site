@@ -114,9 +114,23 @@ async function trustSource(id) {
   await decideItem(id, 'approve');
 }
 
+// Jon's typed text (reason, edited body) comes from the event file, never env: a step's env
+// is printed in the public Actions log (1 Nov). Env REASON / BODY still work for local runs.
+function payloadText() {
+  let p = {};
+  if (process.env.GITHUB_EVENT_PATH) {
+    try { p = JSON.parse(require('fs').readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8')).client_payload || {}; } catch { p = {}; }
+  }
+  return {
+    reason: String(p.reason ?? process.env.REASON ?? ''),
+    body: String(p.body ?? process.env.BODY ?? ''),
+  };
+}
+
 async function main() {
   const id = String(process.env.ITEM_ID || '').trim();
   const action = String(process.env.ACTION || '').trim();
+  const typed = payloadText();
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) throw new Error(`Bad id "${id}"`);
   // Holly's lessons and recent corrections, for any draft this action leads to.
   if (!['send', 'skip', 'close', 'edit', 'lesson_ok', 'lesson_no', 'orgcheck'].includes(action)) await replies.primeLearning();
@@ -124,10 +138,10 @@ async function main() {
   if (ITEM_ACTIONS.includes(action)) return decideItem(id, action);
   if (action === 'trust') return trustSource(id);
   if (action.startsWith('fb_')) {
-    return readerFeedback.decide(id, action, String(process.env.REASON || '').replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 300),
-      String(process.env.BODY || '').replace(/\r\n?/g, '\n').trim().slice(0, 3000));
+    return readerFeedback.decide(id, action, String(typed.reason).replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 300),
+      String(typed.body).replace(/\r\n?/g, '\n').trim().slice(0, 3000));
   }
-  const reason = String(process.env.REASON || '').replace(/[\u0000-\u001f]+/g, ' ').trim()
+  const reason = String(typed.reason).replace(/[\u0000-\u001f]+/g, ' ').trim()
     .slice(0, action === 'redraft' ? 500 : action === 'contactmail' ? 600 : 300);
   if (['send', 'skip'].includes(action)) return replies.decideReply(id, action, reason);
   if (action === 'redraft') {
@@ -163,8 +177,8 @@ async function main() {
     return undefined;
   }
   if (action === 'edit') {
-    const body = String(process.env.BODY || '').replace(/\r\n?/g, '\n').trim();
-    if (body.length < 10) throw new Error('Edit has no text (is BODY passed in approval.yml?)');
+    const body = String(typed.body).replace(/\r\n?/g, '\n').trim();
+    if (body.length < 10) throw new Error('Edit has no text (no body in the dispatch payload?)');
     return replies.applyEdit(id, body, reason);
   }
   throw new Error(`Bad action "${action}"`);

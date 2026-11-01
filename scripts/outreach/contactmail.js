@@ -51,8 +51,10 @@ Rules:
   words. Warm, plain and easy to read.
 - State facts only as the brief gives them. Don't invent dates, details or reasons, and
   never promise anything the brief doesn't.
-- Never claim anything about readership, popularity or numbers, never say we "noticed"
-  or "keep a record", and never mention the profile or anything private from it.
+- Never claim anything about readership, popularity or numbers, never say we "keep a
+  record", and never mention the profile or anything private from it. The brief comes
+  from the team: if it says how we came across them (e.g. their post in a Facebook group),
+  you may say so, plainly.
 - Links: only those in links, each written out in full on a line of its own with nothing
   else on that line, and only where the brief calls for it.
 - No greeting, no sign-off and no opt-out line (all added separately). Never use a
@@ -77,22 +79,48 @@ function promptFacts(row, brief) {
 
 const cleanSubject = (s) => String(s || '').replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, MAX_SUBJECT);
 
+// Claude's JSON answer, tolerating raw line breaks inside strings (which JSON.parse refuses)
+// and any words around the object. null if there is no usable object.
+function parseLoose(raw) {
+  const t = String(raw || '');
+  const a = t.indexOf('{');
+  const b = t.lastIndexOf('}');
+  if (a < 0 || b <= a) return null;
+  const body = t.slice(a, b + 1);
+  try { return JSON.parse(body); } catch { /* try again below */ }
+  let out = '';
+  let inStr = false;
+  let esc = false;
+  for (const ch of body) {
+    if (inStr && !esc && ch === '\n') { out += '\\n'; continue; }
+    if (inStr && !esc && ch === '\r') continue;
+    if (inStr && !esc && ch === '\t') { out += '\\t'; continue; }
+    out += ch;
+    if (esc) esc = false;
+    else if (ch === '\\') esc = inStr;
+    else if (ch === '"') inStr = !inStr;
+  }
+  try { return JSON.parse(out); } catch { return null; }
+}
+
 // Claude's draft -> { subject, text, warnings }. Throws if unusable (nothing is written).
+// One retry if the answer can't be read; the log gives only the stop reason and length.
 async function draftFor(row, brief) {
   const facts = promptFacts(row, brief);
-  const res = await replies.claude().messages.create({
-    model: replies.MODEL(),
-    max_tokens: 900,
-    system: replies.withVoice(SYSTEM, replies.contactFor(row.email)),
-    messages: [{ role: 'user', content: JSON.stringify(facts) }],
-  });
-  const raw = replies.textOf(res);
-  let out;
-  try {
-    out = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
-  } catch {
-    throw new Error('Claude gave no usable draft; nothing written');
+  let out = null;
+  let why = '';
+  for (let tries = 0; tries < 2 && !(out && typeof out.draft === 'string'); tries += 1) {
+    const res = await replies.claude().messages.create({
+      model: replies.MODEL(),
+      max_tokens: 1200,
+      system: replies.withVoice(SYSTEM, replies.contactFor(row.email)),
+      messages: [{ role: 'user', content: JSON.stringify(facts) }],
+    });
+    const raw = replies.textOf(res);
+    out = parseLoose(raw);
+    why = `stop ${res.stop_reason || '?'}, ${raw.length} characters`;
   }
+  if (!out || typeof out.draft !== 'string') throw new Error(`Claude gave no usable draft (${why}); nothing written`);
   const text = replies.sanitiseAnswer(out.draft, new Set(facts.links), { max: MAX_CHARS });
   if (!text) throw new Error('Draft failed the checks (length, links or email address); nothing written');
   const subject = cleanSubject(out.subject) || 'A note from the Lenches website';
@@ -152,4 +180,4 @@ async function draftContactEmail(id, brief) {
   return fresh;
 }
 
-module.exports = { draftContactEmail, draftFor, promptFacts, briefLinks, SYSTEM };
+module.exports = { draftContactEmail, draftFor, promptFacts, briefLinks, parseLoose, SYSTEM };
