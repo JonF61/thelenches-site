@@ -1,6 +1,7 @@
 // scripts/approve/index.js
 // Applies one button click, sent by the Cloudflare Worker via repository_dispatch.
 //   approve / reject  Pending items. Only rows still "pending" change.
+//   done              Pending item dealt with already (panel only): status "done", no sorry note.
 //   approve_own / approve_rewrite
 //                     Approve, publishing the submitter's own wording or our rewrite
 //                     (Pending "wording" column, lib/wording.js). Same rule as approve.
@@ -54,7 +55,7 @@ const lessons = require('../lessons');
 
 const TZ = 'Europe/London';
 const WORDING = { approve_own: 'own', approve_rewrite: 'rewrite' };
-const ITEM_ACTIONS = ['approve', 'reject', ...Object.keys(WORDING)];
+const ITEM_ACTIONS = ['approve', 'reject', 'done', ...Object.keys(WORDING)];
 
 function londonDateTime(ms) {
   const date = new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(ms);
@@ -74,7 +75,9 @@ async function decideItem(id, action) {
     return;
   }
 
-  const status = action === 'reject' ? 'rejected' : 'approved';
+  // done (1 Nov, panel only): Jon dealt with it another way (e.g. already on the site), so
+  // nothing publishes and no "sorry" note goes; Contributions shows it as done, not rejected.
+  const status = action === 'reject' ? 'rejected' : action === 'done' ? 'done' : 'approved';
   const fields = { status, decided_at: londonDateTime(Date.now()) };
   const wording = WORDING[action];
   if (wording) {
@@ -133,7 +136,7 @@ async function main() {
   const typed = payloadText();
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) throw new Error(`Bad id "${id}"`);
   // Holly's lessons and recent corrections, for any draft this action leads to.
-  if (!['send', 'skip', 'close', 'edit', 'lesson_ok', 'lesson_no', 'orgcheck'].includes(action)) await replies.primeLearning();
+  if (!['send', 'skip', 'close', 'edit', 'lesson_ok', 'lesson_no', 'orgcheck', 'done'].includes(action)) await replies.primeLearning();
 
   if (ITEM_ACTIONS.includes(action)) return decideItem(id, action);
   if (action === 'trust') return trustSource(id);

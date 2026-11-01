@@ -922,5 +922,5 @@ test('Newsletter draft: Rebuild and Test send map to nlquiet / nltest, panel onl
   assert.deepEqual(dispatchFor({ a: 'nlquiet', i: '2026-10-29' }), ['newsletter', { action: 'build', issue_date: '2026-10-29', rebuild: true, step: 'build' }]);
   assert.deepEqual(dispatchFor({ a: 'nltest', i: '2026-10-29' }), ['newsletter', { action: 'build', issue_date: '2026-10-29', step: 'preview' }]);
   assert.equal(validPayload({ a: 'nltest', i: 'abc' }), false);
-  assert.deepEqual(PANEL_ONLY, ['nlquiet', 'nltest', 'contactmail']);
+  assert.deepEqual(PANEL_ONLY, ['nlquiet', 'nltest', 'contactmail', 'done']);
 });

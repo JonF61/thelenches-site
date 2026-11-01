@@ -28,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '48';
+export const UI_VERSION = '49';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -737,6 +737,10 @@ export const CLIENT_JS = String.raw`
     a.push(h('button', { class: 'btn danger', onclick: function () {
       if (window.confirm('Reject "' + str(r.title) + '"?')) act('pending', r.id, 'reject', null, 'Rejected');
     } }, 'Reject'));
+    // Done already (1 Nov): dealt with another way; nothing publishes, no sorry note.
+    a.push(h('button', { class: 'btn', title: 'Already on the site or dealt with another way: nothing is published and no note is sent', onclick: function () {
+      if (window.confirm('Mark "' + str(r.title) + '" as done already?\n\nNothing is published and no note goes to the sender. Their Contributions list shows it as done.')) act('pending', r.id, 'done', null, 'Done already');
+    } }, 'Done already'));
     if (r._trust) {
       a.push(h('button', { class: 'btn', disabled: blocked, title: why, onclick: function () {
         if (window.confirm('Trust ' + r._trust + ' and approve this item?\n\nFuture items from it publish without asking, except anything with people in images, political or commercial content, official notices, anonymous or out-of-scope mail, classified ads or low confidence. Its other waiting items are not approved. To undo, delete its row in the Trusted tab.')) {
@@ -2534,10 +2538,38 @@ export const CLIENT_JS = String.raw`
     return res.ok;
   }
 
+  // Village (1 Nov): a dropdown of the Lenches and nearby places, or one Jon types.
+  var C_VILLAGES = ['Church Lench', 'Rous Lench', 'Ab Lench', 'Atch Lench', 'Sheriffs Lench',
+    'Harvington', 'Abbots Morton', 'Norton', 'Evesham', 'Pershore'];
+  function cVillage(r) {
+    var cur = str(r.village);
+    var known = C_VILLAGES.filter(function (v) { return lower(v) === lower(cur); })[0];
+    var mode = !cur ? '' : known || 'own';
+    var pick = h('select', { class: 'f', id: 'c-village', onchange: function () { own.hidden = pick.value !== 'own'; if (!own.hidden) own.focus(); } },
+      h('option', { value: '', selected: mode === '' ? true : null }, 'Not set'),
+      C_VILLAGES.map(function (v) { return h('option', { value: v, selected: mode === v ? true : null }, v); }),
+      h('option', { value: 'own', selected: mode === 'own' ? true : null }, 'Somewhere else…'));
+    var own = h('input', { class: 'f', id: 'c-village-own', maxlength: C_LIMITS.village, placeholder: 'e.g. Inkberrow', 'aria-label': 'Village',
+      value: mode === 'own' ? cur : '' });
+    own.hidden = mode !== 'own';
+    return h('form', { class: 'cfield', onsubmit: async function (e) {
+      e.preventDefault();
+      var want = pick.value === 'own' ? own.value.trim() : pick.value;
+      if (pick.value === 'own' && !want) { toast('Type the place first', true); return; }
+      if (want === cur) { toast('No changes to save'); return; }
+      await cSave(r, 'village', want, 'Village');
+    } },
+    h('label', { class: 'f', for: 'c-village' }, 'Village'),
+    h('div', { class: 'crow-edit' }, pick, h('button', { class: 'btn', type: 'submit' }, 'Save')), own);
+  }
+
   function cField(r, field, label, hint) {
+    if (field === 'village') return cVillage(r);
     var id = 'c-' + field;
     var multi = field === 'profile' || field === 'notes';
-    var el = multi ? h('textarea', { class: 'f', id: id, rows: field === 'notes' ? 4 : 5, maxlength: C_LIMITS[field] }, str(r[field]))
+    // Empty profile or notes: a two-line box (1 Nov), so the page is shorter.
+    var rows = !str(r[field]) ? 2 : field === 'notes' ? 4 : 5;
+    var el = multi ? h('textarea', { class: 'f', id: id, rows: rows, maxlength: C_LIMITS[field] }, str(r[field]))
       : h('input', { class: 'f', id: id, maxlength: C_LIMITS[field], value: str(r[field]) });
     return h('form', { class: 'cfield', onsubmit: async function (e) {
       e.preventDefault();
@@ -2578,23 +2610,34 @@ export const CLIENT_JS = String.raw`
   // Messages (1 Nov): every email between us and this contact, newest first, from Gmail
   // (/admin/api/contact-messages, admin/messages.js): date, who wrote it, just the words.
   var MSG_WHO = { them: 'Them', holly: 'Holly', you: 'You' };
+  var MSG_PAGE = 10;
   var msgDate = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
   function cMessages(r) {
     var box = h('div', { class: 'card msgs' }, h('h2', null, 'Messages'));
     var key = lower(r.email);
     S.msgs = S.msgs || {};
-    var fill = function (t) {
+    // Ten at a time (1 Nov), so Contributions stays near; Show older adds the next ten.
+    var fill = function (t, shown) {
       box.replaceChildren(h('h2', null, 'Messages'));
       if (!t || t.error) { add(box, h('p', { class: 'meta' }, 'Could not load their emails' + (t && t.error ? ': ' + t.error : '') + '.')); return; }
       if (!t.messages.length) { add(box, h('p', { class: 'empty' }, 'No emails with them yet (the newsletter is left out).')); return; }
+      var n = Math.min(shown || MSG_PAGE, t.messages.length);
+      var left = t.messages.length - n;
       add(box, [h('p', { class: 'meta' }, 'Newest first' + (t.messages.length >= t.max ? ', the latest ' + t.max : '') + '. The newsletter and automatic emails are left out.'),
-        t.messages.map(function (m) {
+        t.messages.slice(0, n).map(function (m) {
           return h('div', { class: 'msg ' + m.who },
             h('div', { class: 'msg-h' }, h('b', null, MSG_WHO[m.who] || m.who), ' · ', m.at ? msgDate.format(new Date(m.at)).replace(/^(\w+),/, '$1') : '', m.subject ? ' · ' + m.subject : ''),
             h('div', { class: 'text' }, m.text || '(no text)'));
-        })]);
+        }),
+        h('div', { class: 'actions' },
+          left > 0 ? h('button', { class: 'btn', type: 'button', onclick: function () {
+            S.msgShown = S.msgShown || {}; S.msgShown[key] = n + MSG_PAGE; fill(t, n + MSG_PAGE);
+          } }, 'Show older (' + Math.min(MSG_PAGE, left) + ' more)') : null,
+          n > MSG_PAGE ? h('button', { class: 'btn link', type: 'button', onclick: function () {
+            S.msgShown[key] = MSG_PAGE; fill(t, MSG_PAGE); box.scrollIntoView({ block: 'start' });
+          } }, 'Show fewer') : null)]);
     };
-    if (S.msgs[key]) fill(S.msgs[key]);
+    if (S.msgs[key]) fill(S.msgs[key], S.msgShown && S.msgShown[key]);
     else {
       add(box, h('p', { class: 'loading' }, 'Loading their emails…'));
       api('/admin/api/contact-messages?email=' + encodeURIComponent(r.email)).then(function (res) {

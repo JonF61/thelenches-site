@@ -9,6 +9,8 @@ export const NL_MODES = ['shadow', 'canary', 'live'];
 export const ACTIONS = {
   approve: ['Approve', 'Approved', 'approve'],
   reject: ['Reject', 'Rejected', 'reject'],
+  // Pending item dealt with another way (admin panel only): status "done", nothing publishes.
+  done: ['Done already', 'Marked done already', 'reject'],
   approve_own: ['Approve with their wording', 'Approved with their wording', 'approve'],
   approve_rewrite: ['Approve with rewrite', 'Approved with our rewrite', 'approve'],
   trust: ['Trust this source', 'Source trusted', 'approve'],
@@ -50,7 +52,7 @@ export const ACTIONS = {
 };
 
 // Never valid in a signed email link (index.js /a).
-export const PANEL_ONLY = ['nlquiet', 'nltest', 'contactmail'];
+export const PANEL_ONLY = ['nlquiet', 'nltest', 'contactmail', 'done'];
 
 export const FEEDBACK_ACTIONS = ['fb_approve', 'fb_reject', 'fb_postpone', 'fb_done', 'fb_send', 'fb_edit', 'fb_skip'];
 
