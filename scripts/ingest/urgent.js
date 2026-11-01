@@ -79,6 +79,7 @@ const whenOf = (i) => [longDate(i.event_date), i.event_time].filter(Boolean).joi
 // 'alert', or the reason it is skipped. Undated items always alert (emergencies often have no date).
 function classify(row, today, windowEnd, windowDays) {
   if (row.status === 'rejected') return 'skipped: rejected';
+  if (row.status === 'done') return 'skipped: done already';
   const d = String(row.event_date || '');
   if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
     if (d < today) return 'skipped: event already past';

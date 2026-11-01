@@ -13,7 +13,7 @@
 
 import { validPayload, cleanReason, cleanBody } from '../core.js';
 
-export const PENDING_ACTIONS = ['approve', 'approve_own', 'approve_rewrite', 'reject', 'trust'];
+export const PENDING_ACTIONS = ['approve', 'approve_own', 'approve_rewrite', 'reject', 'done', 'trust'];
 export const REPLY_ACTIONS = { approve: 'send', reject: 'skip', edit: 'edit', redraft: 'redraft', close: 'close' };
 export const PHOTO_ACTIONS = { approve: 'approved', reject: 'rejected' };
 const APPROVING = new Set(['approve', 'approve_own', 'approve_rewrite', 'trust']);

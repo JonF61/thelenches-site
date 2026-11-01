@@ -142,6 +142,7 @@ textarea.f{min-height:120px;resize:vertical;line-height:1.4}
 .msgs .msg.holly,.msgs .msg.you{margin-left:12%;border-left:4px solid var(--accent,#3F5233)}
 .msgs .msg.you{border-left-color:var(--muted)}
 .msgs .msg-h{font-size:.85em;color:var(--muted);margin-bottom:4px}
+.cfield #c-village-own{margin-top:6px}
 .toast .btn.link{color:inherit;text-decoration:underline;margin-left:6px}
 .waitbar{position:fixed;left:50%;top:10px;transform:translateX(-50%);max-width:92vw;background:var(--panel);color:var(--ink);border:1px solid var(--line);padding:6px 14px;border-radius:999px;z-index:19;font-size:.9em;box-shadow:0 2px 8px rgba(0,0,0,.15)}
 .folders{display:flex;flex-direction:column;gap:2px;margin:2px 0 8px}
@@ -202,7 +203,7 @@ table.h td,table.h th{text-align:left;padding:6px 4px;border-bottom:1px solid va
   .list{flex:0 0 42%;max-width:520px;overflow:auto;border-right:1px solid var(--line)}
   .list .card{cursor:pointer;padding:10px 12px}
   .list .card .text{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  .list details.card .text,.list .card.sel .text,.list .their-more .text{display:block;-webkit-line-clamp:none;overflow:visible} /* Sent history, and the card you clicked: the whole text */
+  .list details.card .text,.list .card.sel .text,.list .their-more .text,.list .msgs .text{display:block;-webkit-line-clamp:none;overflow:visible} /* Sent history, and the card you clicked: the whole text */
   .list .card h2.fname{font-size:.8rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .detail{display:block;flex:1;overflow:auto;padding:16px}
   .detail .card{padding:18px}
