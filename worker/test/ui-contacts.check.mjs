@@ -55,6 +55,11 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/admin/api/session') return send({ email: 'admin@example.org', csrf: 'c' });
   if (url.pathname === '/admin/api/state') return send(stateData());
   if (url.pathname === '/admin/api/contacts') return send(contacts());
+  if (url.pathname === '/admin/api/contact-messages') return send({ max: 25, messages: [
+    { id: 'm3', at: '2026-11-01T09:00:00Z', who: 'them', subject: 'Re: Quiz night', text: 'Lovely, thank you!' },
+    { id: 'm2', at: '2026-10-31T10:00:00Z', who: 'holly', subject: 'Re: Quiz night', text: "Hi Jane,\n\nThanks, your quiz night is on its way to the website and Thursday's newsletter." },
+    { id: 'm1', at: '2026-10-31T09:12:00Z', who: 'them', subject: 'Quiz night', text: 'Hi, our quiz night is on 21 November at 7.30pm in the hall. Flyer attached.' },
+  ] });
   let body = '';
   for await (const ch of req) body += ch;
   const b = body ? JSON.parse(body) : {};
@@ -115,6 +120,10 @@ try {
     assert.match(text, /and 5 older/);
     assert.equal(await page.locator('#c-role').inputValue(), 'Secretary');
     assert.equal(await main.locator('a[href^="mailto:"]').count(), 0, 'no email link');
+    // Messages: newest first, who wrote each, just the words.
+    await main.locator('.msgs .msg').first().waitFor();
+    assert.deepEqual(await main.locator('.msgs .msg-h b').allInnerTexts(), ['Them', 'Holly', 'Them']);
+    assert.match(await main.locator('.msgs .msg').nth(1).innerText(), /Sat 31 Oct 2026, 10:00 · Re: Quiz night[\s\S]*on its way to the website/);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `contacts-page-${name}.png`), fullPage: true });
     await page.fill('#c-role', 'Chair');
     await page.locator('form.cfield', { has: page.locator('#c-role') }).getByRole('button', { name: 'Save' }).click();
