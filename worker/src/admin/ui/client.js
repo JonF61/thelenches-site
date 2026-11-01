@@ -13,7 +13,7 @@
 // Contacts: a list (search; status, village and organisation filters; newest contact first)
 // and a page per contact; each field saves on its own, stale-checked.
 // Outreach (26 Oct): who is due a nudge (seasonal, gone quiet, leads; /admin/api/outreach),
-// with Draft nudge (Holly drafts; the card comes by email), Snooze 3 months, Never nudge,
+// with Draft nudge (Holly drafts; the draft appears under Replies), Snooze 3 months, Never nudge,
 // and Clear for those held back (next_nudge writes through /admin/api/contact).
 // A contact's page has Draft email (1 Nov): a brief for Holly (/admin/api/contactmail).
 // Organisations (27 Oct): every organisation the site lists and where its yearly check is
@@ -28,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '45';
+export const UI_VERSION = '46';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -837,6 +837,7 @@ export const CLIENT_JS = String.raw`
     }
     add(c, [h('h3', { class: 'their-h' }, 'Holly\'s reply'), h('div', { class: 'text' }, str(r.body))]);
     if (str(r.notes)) add(c, h('div', { class: 'meta' }, 'Notes: ' + str(r.notes)));
+    add(c, whatToSay(r));
     add(c, h('div', { class: 'actions' },
       h('button', { class: 'btn primary', onclick: function () {
         if (window.confirm('Send this reply to ' + str(r.to) + ' as it stands?')) act('reply', r.reply_id, 'approve', null, 'Sent');
@@ -865,6 +866,20 @@ export const CLIENT_JS = String.raw`
     h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'submit' }, 'Send edited reply')));
   }
 
+  // What to say (1 Nov): an optional brief on every draft; Holly writes the reply afresh
+  // from it (a redraft whose instruction says so), and the new draft replaces this one.
+  function whatToSay(r) {
+    var id = 'wts-' + str(r.reply_id).replace(/[^A-Za-z0-9-]/g, '');
+    var box = h('textarea', { class: 'f', id: id, rows: 2, maxlength: 450, placeholder: 'Optional: what should the reply say? e.g. Thank her, say the hall is free on the 14th and ask her to confirm the time.' });
+    var btn = h('button', { class: 'btn', type: 'submit' }, 'Write it this way');
+    return h('form', { class: 'wts', onsubmit: function (e) {
+      e.preventDefault();
+      if (box.value.trim().length < 5) { toast('Say what the reply should say first', true); return; }
+      btn.disabled = true;
+      act('reply', r.reply_id, 'redraft', { reason: 'Write the reply afresh, saying: ' + box.value.trim() }, 'Holly is rewriting it');
+    } }, h('label', { class: 'f', for: id }, 'What to say'), box, h('div', { class: 'actions' }, btn));
+  }
+
   function redraftForm(r) {
     var text = h('textarea', { class: 'f', id: 'rr', rows: 5, maxlength: 500, required: true });
     return h('form', { onsubmit: function (e) {
@@ -873,7 +888,7 @@ export const CLIENT_JS = String.raw`
       act('reply', r.reply_id, 'redraft', { reason: text.value }, 'Redraft requested');
     } },
     h('label', { class: 'f', for: 'rr' }, 'What should Holly change? (required; kept in the Reply feedback tab, never sent)'), text,
-    h('p', { class: 'meta' }, 'Holly writes a new draft from their email, the old draft and this. The new draft appears here and in a fresh email card.'),
+    h('p', { class: 'meta' }, 'Holly writes a new draft from their email, the old draft and this. The new draft appears here in a minute or so.'),
     h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'submit' }, 'Redraft')));
   }
 
@@ -2269,7 +2284,7 @@ export const CLIENT_JS = String.raw`
         list.length ? list.map(function (e) { return orgRow(e, o); }) : h('p', { class: 'empty' }, 'None at the moment.'));
     };
     return [
-      h('p', { class: 'meta' }, 'Once a year Holly asks each organisation to check its entry on the site. The draft comes to you by email to Approve, Edit, Redraft or Reject, and never goes by itself. '
+      h('p', { class: 'meta' }, 'Once a year Holly asks each organisation to check its entry on the site. The draft appears under Replies for you to Approve, Edit, Redraft or Reject, and never goes by itself. '
         + o.count + ' of ' + o.cap + ' drafts used today. When someone replies, read it in Gmail, update the site if needed, then tap Done.'),
       o.count >= o.cap ? h('div', { class: 'note' }, 'Today\'s ' + o.cap + ' drafts are used: Draft check comes back tomorrow.') : null,
       section('Due a check', 'Not checked yet, or last checked a year ago.', L.due),
@@ -2353,7 +2368,7 @@ export const CLIENT_JS = String.raw`
         list.length ? list.map(function (e) { return outreachRow(e, o); }) : h('p', { class: 'empty' }, 'Nobody at the moment.'));
     };
     return [
-      h('p', { class: 'meta' }, 'Holly drafts the email; it comes to you by email to Approve, Edit, Redraft or Reject, and never goes by itself. '
+      h('p', { class: 'meta' }, 'Holly drafts the email; it appears under Replies for you to Approve, Edit, Redraft or Reject, and never goes by itself. '
         + o.week + ' of ' + o.cap + ' drafts used this week.'),
       o.week >= o.cap ? h('div', { class: 'note' }, 'This week\'s ' + o.cap + ' drafts are used: Draft nudge comes back as the week moves on.') : null,
       o.hasNextNudge ? null : h('div', { class: 'note bad' }, 'Snooze and Never nudge need a next_nudge column at the end of the Contacts tab (column P).'),
@@ -2508,7 +2523,7 @@ export const CLIENT_JS = String.raw`
       btn.disabled = false;
     } },
     h('h2', null, 'Email ' + who),
-    h('p', { class: 'meta' }, 'Holly drafts it from your brief, with the usual opt-out line. Nothing is sent until you Approve it (the card comes by email; it also shows under Replies). Add any link you want included.'),
+    h('p', { class: 'meta' }, 'Holly drafts it from your brief, with the usual opt-out line. Nothing is sent until you Approve it under Replies. Add any link you want included.'),
     h('label', { class: 'f', for: 'cmail-brief' }, 'Brief'), box,
     h('div', { class: 'actions' }, btn));
   }

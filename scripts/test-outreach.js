@@ -86,7 +86,7 @@ function reset() {
     ],
   };
   sent = [];
-  settings = { replies_mode: 'live', from_name: 'The Lenches Website and Newsletter Team' };
+  settings = { approval_emails: 'TRUE', replies_mode: 'live', from_name: 'The Lenches Website and Newsletter Team' };
   prompts.length = 0;
 }
 
@@ -198,8 +198,13 @@ async function main() {
   await assert.rejects(contactMail.draftContactEmail(await id('sophie@example.org'), BRIEF), /failed the checks/);
   ok(tables.Replies.length === 0, 'contact email: invented link refused');
   ok(await contactMail.draftContactEmail(await id('sophie@example.org'), 'hi') === null, 'contact email: short brief refused');
-  answer = JSON.stringify({ subject: 'x', draft: 'Owner here, thanks for your Zumba class, it is now listed on the site.' });
-  await assert.rejects(contactMail.draftContactEmail(await id('sophie@example.org'), BRIEF), /named the team/);
+  // Naming the team is fine since 1 Nov; their own address is not.
+  answer = JSON.stringify({ subject: 'From owner@thelenches.org.uk', draft: 'Thanks for your Zumba class, it is now listed on the site.' });
+  await assert.rejects(contactMail.draftContactEmail(await id('sophie@example.org'), BRIEF), /own address/);
+  // Approval emails off (the default): the card is not emailed.
+  reset();
+  tables.Replies.push(pick('Replies', { reply_id: 'card-1', type: 'outreach', to: 'p@example.org', status: 'awaiting', body: 'Hi P,\n\nHello.' }));
+  ok(await sendReplyCard('card-1', { replies_mode: 'live' }) === null && sent.length === 0, 'approval emails off: no card emailed');
 
   console.log(`All outreach tests passed (${checks} checks).`);
 }

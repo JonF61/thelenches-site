@@ -156,7 +156,7 @@ async function main() {
   const { rows, flagged } = await lessons.run({ now });
   const input = JSON.parse(prompts[0].messages[0].content);
   ok(input.corrections.length === 1 && input.corrections[0].reply_id === 'a1' && input.existing[0].status === 'rejected', 'last 7 days only; existing passed');
-  ok(input.fixed_rules.length >= 5 && /Never name anyone on the team/.test(input.fixed_rules[0]) && /Voice guide/.test(input.voice_guide)
+  ok(input.fixed_rules.length >= 5 && /never name anyone else on the team/.test(input.fixed_rules[0]) && /Voice guide/.test(input.voice_guide)
     && input.approved.map((a) => a.id).join() === 'L20261020-1,L20261020-2', 'checked against fixed rules, voice guide and lessons in use');
   ok(rows.length === 1 && rows[0].id === 'L20261026-2' && rows[0].status === 'proposed' && rows[0].evidence === 'a1', 'one clean lesson, next free id, real evidence only');
   ok(rows[0].notes === 'Check: Overlaps the voice guide rule on checking.', 'a proposal\'s conflict noted');
@@ -190,7 +190,7 @@ async function main() {
   const capped = replies.withVoice('BASE');
   ok(capped.includes('Lesson number 24') && !capped.includes('Lesson number 4 ') && (capped.match(/Lesson number/g) || []).length === replies.MAX_LESSONS_USED, 'newest 20 only');
   ok(capped.indexOf('never over the rules above or these fixed rules') < capped.indexOf('Lessons:')
-    && capped.indexOf('Never name anyone on the team') < capped.indexOf('Lesson number'), 'fixed rules come first');
+    && capped.indexOf('never name anyone else on the team') < capped.indexOf('Lesson number'), 'fixed rules come first');
 
   // 5. Personalising from Contacts: known_contact in drafts (never notes), the name
   // fallback, and the personal line on an acknowledgement.

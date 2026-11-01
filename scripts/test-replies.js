@@ -103,7 +103,7 @@ const { editFormLink } = require('./ingest/links');
 const welcome = require('./ingest/welcome');
 
 const fixtures = JSON.parse(fs.readFileSync(path.join(__dirname, 'replies', 'fixtures.json'), 'utf8')).cases;
-const LIVE = { replies_mode: 'live', reply_sources: 'website', reply_max_per_sender: '3', reply_max_per_run: '50' };
+const LIVE = { approval_emails: 'TRUE', replies_mode: 'live', reply_sources: 'website', reply_max_per_sender: '3', reply_max_per_run: '50' };
 const hoursAgo = (h) => {
   const d = new Date(Date.now() - h * 3600000);
   const f = (o) => new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', ...o }).format(d);
@@ -254,8 +254,9 @@ async function testSending() {
   ok(!(await replies.applyEdit(a4.reply_id, 'again')), 'Edit is single use');
 
   const held = byType('held')[0];
-  await assert.rejects(replies.applyEdit(held.reply_id, 'Hi there,\n\nBest wishes, Owner\n'), /failed to send/);
-  ok(held.status === 'failed' && /anonymity/.test(held.notes), 'never sends a reply naming the team');
+  // 1 Nov: naming Jon is fine; his own address is never sent.
+  await assert.rejects(replies.applyEdit(held.reply_id, 'Hi there,\n\nWrite to owner@thelenches.org.uk\n'), /failed to send/);
+  ok(held.status === 'failed' && /anonymity/.test(held.notes), 'never sends a reply giving the team address');
   checks += 1;
 
   // Sorry note when Jon rejects an acknowledged item.

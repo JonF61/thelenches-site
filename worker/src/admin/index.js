@@ -577,11 +577,11 @@ async function doNudge(env, body) {
   if (!(await decide(env, { a: 'nudge', i: await idFor(email) }))) {
     return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
   }
-  return json({ ok: true, message: 'Draft requested. Holly emails you the draft to approve in a minute or two.' });
+  return json({ ok: true, message: 'Draft requested. It appears under Replies in a minute or two.' });
 }
 
 // Draft email from a contact's page: { email, brief }. Holly drafts from the brief (scripts/
-// outreach/contactmail.js); the card comes by email and the draft waits in Replies.
+// outreach/contactmail.js); the draft waits in Replies.
 async function doContactMail(env, body) {
   const email = String(body.email ?? '');
   const brief = cleanBrief(body.brief);
@@ -592,7 +592,7 @@ async function doContactMail(env, body) {
   if (!(await decide(env, { a: 'contactmail', i: await idFor(email) }, brief))) {
     return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
   }
-  return json({ ok: true, message: 'Draft requested. Holly emails you the draft to approve in a minute or two; it also shows under Replies.' });
+  return json({ ok: true, message: 'Draft requested. It appears under Replies in a minute or two.' });
 }
 
 // Organisation outreach.
@@ -628,7 +628,7 @@ async function doOrgCheck(env, body) {
   if (!(await decide(env, { a: 'orgcheck', i: id }))) {
     return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
   }
-  return json({ ok: true, message: `${plan.kind === 'chase' ? 'Chaser' : 'Check'} requested. Holly emails you the draft to approve in a minute or two.` });
+  return json({ ok: true, message: `${plan.kind === 'chase' ? 'Chaser' : 'Check'} requested. It appears under Replies in a minute or two.` });
 }
 
 // One stale-checked Org outreach cell for organisation `id`. Makes the tab, its headers, a
