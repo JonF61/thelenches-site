@@ -37,8 +37,8 @@ jobs:
           GMAIL_USER: jon@thelenches.org.uk
           ITEM_ID: ${{ github.event.client_payload.id }}
           ACTION: ${{ github.event.client_payload.action }}
-          REASON: ${{ github.event.client_payload.reason }}
-          BODY: ${{ github.event.client_payload.body }}
+          # Jon's typed reason / edited text are read from the event file by the script, never
+          # passed as env: a step's env is printed in the public log (1 Nov).
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
           APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}

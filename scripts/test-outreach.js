@@ -173,6 +173,21 @@ async function main() {
   ok(cmIn.brief === BRIEF && cmIn.contact.organisation === 'Zumba with Sophie' && cmIn.links.includes('https://thelenches.org.uk/regulars/'), 'contact email: Claude sees brief, contact, links');
   ok(!JSON.stringify(cmIn).includes('PRIVATE NOTE'), 'contact email: never Jon\'s notes');
   ok(await contactMail.draftContactEmail(await id('sophie@example.org'), BRIEF) === null && tables.Replies.length === 1, 'contact email: one waiting draft per contact');
+  // Raw line breaks inside Claude's JSON strings are read; an unreadable answer is retried once.
+  reset();
+  tables.Contacts.push(contact('sophie@example.org', { name: 'Sophie', status: 'organiser' }));
+  let calls = 0;
+  answer = () => { calls += 1; return calls === 1 ? 'Sorry, here is my thinking first.' : '{"subject": "Zumba listed", "draft": "Your Zumba class is listed now.\n\nhttps://thelenches.org.uk/regulars/"}'; };
+  answer = ((f) => (req) => f(req).replace(/\\n/g, '\n'))(answer);
+  const loose = await contactMail.draftContactEmail(await id('sophie@example.org'), BRIEF);
+  ok(loose && calls === 2 && loose.body.includes('Your Zumba class is listed now.\n\nhttps://thelenches.org.uk/regulars/'), 'contact email: retry, then raw line breaks read');
+  reset();
+  tables.Contacts.push(contact('sophie@example.org', { name: 'Sophie', status: 'organiser' }));
+  answer = 'no json at all';
+  await assert.rejects(contactMail.draftContactEmail(await id('sophie@example.org'), BRIEF), /no usable draft \(stop end_turn, 14 characters\)/);
+  reset();
+  tables.Contacts.push(contact('sophie@example.org', { name: 'Sophie', organisation: 'Zumba with Sophie', status: 'organiser' }));
+  tables.Replies.push(cmRow);
   // It doesn't use up the nudge cap.
   const { weekCount } = await import('../worker/src/admin/outreach.mjs');
   ok(weekCount(tables.Replies, today) === 0, 'contact email: not in the nudge cap');
