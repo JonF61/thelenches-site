@@ -17,6 +17,7 @@
 //                                   for the Photos menu and the drop/Move to… targets
 //                                   feedback: Feedback rows still needing Jon (feedback.js)
 //   GET  /admin/api/mail-images?m=  every image in one email (for a Pending item)
+//   GET  /admin/api/contact-messages?email=  a contact's emails with us, newest first (messages.js)
 //   GET  /admin/api/mail-text?m=    one email's from, subject, date and text (Replies: their
 //                                   email beside Holly's draft; shown as plain text only)
 //   POST /admin/api/edit            { tab, key, field, expected, value }: one plain field
@@ -114,7 +115,7 @@ import { ACTIONS, decide, github, dispatch } from '../core.js';
 import { verifyAccess } from './access.js';
 import { makeCsrf, checkCsrf, sameOrigin } from './csrf.js';
 import {
-  getValues, sheetGids, gmailImage, gmailImageParts, gmailText, gmailAny, driveImage, serviceAccountEmail, appendValues, addTab, deleteRow, writeCells,
+  getValues, sheetGids, gmailImage, gmailImageParts, gmailText, gmailAny, gmailSearchTexts, driveImage, serviceAccountEmail, appendValues, addTab, deleteRow, writeCells,
 } from './google.js';
 import { readTable, readSettingsPairs, editCell, checkedWrite, colLetter } from './sheet.js';
 import {
@@ -129,8 +130,9 @@ import { photoPages, pagesFor, eventEnd } from './photopages.js';
 import { feedbackRows, planFeedback, planNote } from './feedback.js';
 import { FEEDBACK_TAB } from '../feedback.js';
 import {
-  CONTACTS_TAB, DELETED_TAB, DELETED_HEADERS, contactRows, planContact, planDelete, addressesOf,
+  CONTACTS_TAB, DELETED_TAB, DELETED_HEADERS, contactRows, planContact, planDelete, addressesOf, isIgnore,
 } from './contacts.js';
+import { history, historyQuery, MAX_MESSAGES } from './messages.js';
 import { outreachLists, planNudge, idFor, sentRows, planContactEmail, cleanBrief } from './outreach.mjs';
 import {
   ORG_TAB, ORG_HEADERS, orgEntries, orgLists, planOrgCheck, planNext, planOtherEmails, dueOrgs, recentQuery,
@@ -760,6 +762,18 @@ async function mailImages(env, url) {
   return json({ images: await gmailImageParts(env, m) });
 }
 
+// A contact's message history (messages.js): GET /admin/api/contact-messages?email=
+async function contactMessages(env, url) {
+  const email = String(url.searchParams.get('email') || '');
+  const [contacts, replies] = await Promise.all([readTable(env, CONTACTS_TAB), readTable(env, 'Replies')]);
+  const row = contacts.rows.find((r) => email && String(r.email ?? '') === email);
+  if (!row || isIgnore(row)) return json({ error: 'No such contact: reload the page' }, 404);
+  const addresses = addressesOf(row);
+  const hollyIds = new Set(replies.rows.filter((r) => String(r.status) === 'sent' && r.sent_gmail_id).map((r) => String(r.sent_gmail_id)));
+  const found = await gmailSearchTexts(env, historyQuery(addresses), MAX_MESSAGES);
+  return json({ messages: history(found, { addresses, hollyIds }), max: MAX_MESSAGES });
+}
+
 async function mailText(env, url) {
   const m = String(url.searchParams.get('m') || '');
   if (!/^[A-Za-z0-9]{6,40}$/.test(m)) return json({ error: 'Bad message id' }, 400);
@@ -827,6 +841,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/session') return json({ email: auth.email, csrf: await makeCsrf(env, auth.email) });
       if (path === '/admin/api/state') return json(await state(env, auth.email));
       if (path === '/admin/api/contacts') return json(contactRows(await readTable(env, CONTACTS_TAB)));
+      if (path === '/admin/api/contact-messages') return await contactMessages(env, url);
       if (path === '/admin/api/outreach') return json(await outreach(env));
       if (path === '/admin/api/orgs') return json(orgLists(ORGS, await orgContext(env)));
       if (path === '/admin/api/lessons') return json(lessonRows(await readLessons(env)));

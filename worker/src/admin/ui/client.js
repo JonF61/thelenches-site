@@ -28,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '47';
+export const UI_VERSION = '48';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -2575,6 +2575,37 @@ export const CLIENT_JS = String.raw`
     h('div', { class: 'crow-edit' }, pick, h('button', { class: 'btn', type: 'submit' }, 'Save')), own);
   }
 
+  // Messages (1 Nov): every email between us and this contact, newest first, from Gmail
+  // (/admin/api/contact-messages, admin/messages.js): date, who wrote it, just the words.
+  var MSG_WHO = { them: 'Them', holly: 'Holly', you: 'You' };
+  var msgDate = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  function cMessages(r) {
+    var box = h('div', { class: 'card msgs' }, h('h2', null, 'Messages'));
+    var key = lower(r.email);
+    S.msgs = S.msgs || {};
+    var fill = function (t) {
+      box.replaceChildren(h('h2', null, 'Messages'));
+      if (!t || t.error) { add(box, h('p', { class: 'meta' }, 'Could not load their emails' + (t && t.error ? ': ' + t.error : '') + '.')); return; }
+      if (!t.messages.length) { add(box, h('p', { class: 'empty' }, 'No emails with them yet (the newsletter is left out).')); return; }
+      add(box, [h('p', { class: 'meta' }, 'Newest first' + (t.messages.length >= t.max ? ', the latest ' + t.max : '') + '. The newsletter and automatic emails are left out.'),
+        t.messages.map(function (m) {
+          return h('div', { class: 'msg ' + m.who },
+            h('div', { class: 'msg-h' }, h('b', null, MSG_WHO[m.who] || m.who), ' · ', m.at ? msgDate.format(new Date(m.at)).replace(/^(\w+),/, '$1') : '', m.subject ? ' · ' + m.subject : ''),
+            h('div', { class: 'text' }, m.text || '(no text)'));
+        })]);
+    };
+    if (S.msgs[key]) fill(S.msgs[key]);
+    else {
+      add(box, h('p', { class: 'loading' }, 'Loading their emails…'));
+      api('/admin/api/contact-messages?email=' + encodeURIComponent(r.email)).then(function (res) {
+        S.msgs[key] = res.ok ? res.json : { error: res.json.error || ('HTTP ' + res.status) };
+        if (!res.ok) { var e = S.msgs[key]; delete S.msgs[key]; fill(e); return; }
+        fill(S.msgs[key]);
+      });
+    }
+    return box;
+  }
+
   // Draft email (1 Nov): Jon types a brief; Holly drafts the email (scripts/outreach/
   // contactmail.js) and it waits in Replies for Approve / Edit / Redraft / Reject.
   function cMailCard(r) {
@@ -2618,6 +2649,7 @@ export const CLIENT_JS = String.raw`
         h('div', { class: 'actions' }, sheetLink('Contacts', r._row),
           h('button', { class: 'btn', onclick: function () { cDelete(r); } }, 'Delete contact'))),
       cMailCard(r),
+      cMessages(r),
       h('div', { class: 'card' },
         h('h2', null, 'Contributions (' + (Number(r.contribution_count) || 0) + ')'),
         list.length ? h('ul', { class: 'clist-items' }, list.map(function (c) { return h('li', null, c); })) : h('p', { class: 'meta' }, 'Nothing in Pending from this address.'),

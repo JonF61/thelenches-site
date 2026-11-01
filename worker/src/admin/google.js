@@ -307,6 +307,22 @@ export async function gmailText(env, messageId) {
   return messageText(await (await google(env, SCOPES.gmail, url, {}, sub)).json());
 }
 
+// A contact's history (messages.js): up to `max` messages matching a Gmail search, each as
+// messageText plus { id, to, auto (Auto-Submitted), internalDate }. Fetched in parallel.
+export async function gmailSearchTexts(env, q, max = 25) {
+  const sub = String(env.GMAIL_USER || '').trim();
+  if (!sub) throw new Error('GMAIL_USER is not set');
+  const list = await (await google(env, SCOPES.gmail,
+    `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=${max}&q=${encodeURIComponent(q)}`, {}, sub)).json();
+  const ids = (list.messages || []).map((m) => m.id).slice(0, max);
+  return Promise.all(ids.map(async (id) => {
+    const msg = await (await google(env, SCOPES.gmail,
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(id)}?format=full`, {}, sub)).json();
+    const h = Object.fromEntries(((msg.payload && msg.payload.headers) || []).map((x) => [String(x.name).toLowerCase(), String(x.value)]));
+    return { ...messageText(msg), id, to: h.to || '', auto: h['auto-submitted'] || '', internalDate: msg.internalDate || '' };
+  }));
+}
+
 // True if a Gmail search (in GMAIL_USER's mailbox) finds any message.
 export async function gmailAny(env, q) {
   const sub = String(env.GMAIL_USER || '').trim();

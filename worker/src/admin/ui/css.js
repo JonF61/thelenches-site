@@ -137,6 +137,11 @@ textarea.f{min-height:120px;resize:vertical;line-height:1.4}
 .onsite a{overflow-wrap:anywhere}
 .toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);max-width:92vw;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:20;box-shadow:0 2px 10px rgba(0,0,0,.25)}
 .toast.bad{background:var(--bad);color:#fff}
+.msgs .msg{border-radius:8px;padding:8px 12px;margin:8px 0;border:1px solid var(--line)}
+.msgs .msg.them{background:var(--panel2);margin-right:12%}
+.msgs .msg.holly,.msgs .msg.you{margin-left:12%;border-left:4px solid var(--accent,#3F5233)}
+.msgs .msg.you{border-left-color:var(--muted)}
+.msgs .msg-h{font-size:.85em;color:var(--muted);margin-bottom:4px}
 .toast .btn.link{color:inherit;text-decoration:underline;margin-left:6px}
 .waitbar{position:fixed;left:50%;top:10px;transform:translateX(-50%);max-width:92vw;background:var(--panel);color:var(--ink);border:1px solid var(--line);padding:6px 14px;border-radius:999px;z-index:19;font-size:.9em;box-shadow:0 2px 8px rgba(0,0,0,.15)}
 .folders{display:flex;flex-direction:column;gap:2px;margin:2px 0 8px}
