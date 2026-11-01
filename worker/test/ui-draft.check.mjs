@@ -90,7 +90,7 @@ try {
     await page.clock.install();
     await page.goto(`${base}/admin`);
     const menu = (await page.locator('nav.side button').allInnerTexts()).map((t) => t.replace(/\s*\d+$/, '').trim());
-    assert.deepEqual(menu.slice(0, 4), ['Summary', 'Newsletter draft', 'Newsletter stats', 'Submissions']);
+    assert.deepEqual(menu.slice(0, 5), ['Summary', 'Newsletter draft', 'Newsletter stats', 'Site visitors', 'Submissions']);
     // The top bar: Newsletter chip with its Draft link; no Feedback chip.
     const chip = page.locator('.top .chip', { hasText: 'Newsletter' });
     assert.match(await chip.innerText(), /2026-10-22 · sent[\s\S]*Draft Thu 29 Oct/);

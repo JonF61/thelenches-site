@@ -175,7 +175,10 @@ async function testRouting() {
     }
     const answer = tables.Replies.find((r) => r.reply_id.endsWith('-answer') && r.body.includes('/bins/'));
     ok(answer && answer.body.startsWith('Hi Lee,'), 'factual answer keeps its page link, first-name greeting');
-    ok(tables.Subscribers.map((r) => r.email).join() === 'ali@example.com', 'subscribe: sender added to Subscribers');
+    // Since 31 Oct a submission's ack or clarify also adds its sender (source "contributor").
+    ok(tables.Subscribers.filter((r) => r.source !== 'contributor').map((r) => r.email).join() === 'ali@example.com', 'subscribe: sender added to Subscribers');
+    ok(tables.Subscribers.filter((r) => r.source === 'contributor').every((r) => tables.Replies.some((x) => x.to === r.email && ['ack', 'clarify'].includes(x.type))),
+      'contributors added only with an ack or clarify');
     ok(tables['Do Not Send'].map((r) => r.email).join() === 'blocked@example.com,kim@example.com', 'unsubscribe: sender added to Do Not Send');
     ok(tables.Replies.find((r) => r.type === 'list' && r.to === 'ali@example.com').body.includes("you're now on the list"), 'subscribe confirmed');
     const outside = tables.Replies.find((r) => r.notes.includes('Is there a bus'));
