@@ -45,6 +45,9 @@
 //                                   through decide() (action nudge, id = idFor(email)); Holly's
 //                                   draft then waits in Replies for the usual Approve / Edit
 //   (Snooze, Never nudge and Clear are /admin/api/contact writes of next_nudge.)
+//   POST /admin/api/contactmail     { email, brief }: Draft email from a contact's page, if
+//                                   planContactEmail allows it, through decide() (action
+//                                   contactmail, id = idFor(email), brief as reason).
 //   GET  /admin/api/orgs            organisation outreach (orgoutreach.mjs orgLists): each
 //                                   organisation in contacts.json `outreach` and its state, from
 //                                   Replies, Contacts and the Org outreach tab, plus a Gmail
@@ -128,7 +131,7 @@ import { FEEDBACK_TAB } from '../feedback.js';
 import {
   CONTACTS_TAB, DELETED_TAB, DELETED_HEADERS, contactRows, planContact, planDelete, addressesOf,
 } from './contacts.js';
-import { outreachLists, planNudge, idFor, sentRows } from './outreach.mjs';
+import { outreachLists, planNudge, idFor, sentRows, planContactEmail, cleanBrief } from './outreach.mjs';
 import {
   ORG_TAB, ORG_HEADERS, orgEntries, orgLists, planOrgCheck, planNext, planOtherEmails, dueOrgs, recentQuery,
 } from './orgoutreach.mjs';
@@ -577,6 +580,21 @@ async function doNudge(env, body) {
   return json({ ok: true, message: 'Draft requested. Holly emails you the draft to approve in a minute or two.' });
 }
 
+// Draft email from a contact's page: { email, brief }. Holly drafts from the brief (scripts/
+// outreach/contactmail.js); the card comes by email and the draft waits in Replies.
+async function doContactMail(env, body) {
+  const email = String(body.email ?? '');
+  const brief = cleanBrief(body.brief);
+  const [contacts, replies] = await Promise.all([readTable(env, CONTACTS_TAB), readTable(env, 'Replies')]);
+  const matches = contacts.rows.filter((r) => email && String(r.email ?? '') === email);
+  const plan = planContactEmail(matches.length === 1 ? matches[0] : null, replies.rows, brief, ukToday());
+  if (plan.error) return json({ ok: false, ...plan }, plan.status);
+  if (!(await decide(env, { a: 'contactmail', i: await idFor(email) }, brief))) {
+    return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
+  }
+  return json({ ok: true, message: 'Draft requested. Holly emails you the draft to approve in a minute or two; it also shows under Replies.' });
+}
+
 // Organisation outreach.
 const ORGS = orgEntries({ contacts: contactsData, council: councilData, schools: schoolsData, health: healthData, transport: transportData });
 
@@ -851,6 +869,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/contact') return await doContact(env, body);
       if (path === '/admin/api/contact-delete') return await doContactDelete(env, body);
       if (path === '/admin/api/nudge') return await doNudge(env, body);
+      if (path === '/admin/api/contactmail') return await doContactMail(env, body);
       if (path === '/admin/api/orgcheck') return await doOrgCheck(env, body);
       if (path === '/admin/api/orgnext') return await doOrgNext(env, body);
       if (path === '/admin/api/orgemails') return await doOrgEmails(env, body);

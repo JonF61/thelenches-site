@@ -9,9 +9,10 @@ import { createHash } from 'node:crypto';
 
 import {
   idFor, contributionList, dueFor, sentRows, heldBack, weekCount, outreachLists, planNudge, seasonalFor, WEEK_CAP,
+  planContactEmail, CONTACT_EMAIL_DAY_CAP,
 } from '../src/admin/outreach.mjs';
 import { planContact } from '../src/admin/contacts.js';
-import { dispatchFor, validPayload, ACTIONS } from '../src/core.js';
+import { dispatchFor, validPayload, ACTIONS, PANEL_ONLY } from '../src/core.js';
 
 const TODAY = '2026-10-26';
 const c = (extra) => ({
@@ -178,4 +179,26 @@ test('lesson links go to approval.yml', () => {
     assert.ok(validPayload({ a, i: 'L20261026-2' }));
     assert.deepEqual(dispatchFor({ a, i: 'L20261026-2' }), ['approval', { id: 'L20261026-2', action: a }]);
   }
+});
+
+test('Draft email: any contact with a brief; one waiting draft each; daily cap; not in the nudge cap', () => {
+  const row = c({ status: 'organiser', last_contact: '' });
+  const brief = 'Tell her she is listed on the Regular activities page.';
+  assert.deepEqual(planContactEmail(row, [], brief, TODAY), { ok: true }, 'not due a nudge, still fine');
+  assert.equal(planContactEmail(null, [], brief, TODAY).status, 404);
+  assert.equal(planContactEmail({ ...row, status: 'ignore' }, [], brief, TODAY).status, 409);
+  assert.equal(planContactEmail(row, [], 'hi', TODAY).status, 400);
+  assert.equal(planContactEmail(row, [], 'x'.repeat(601), TODAY).status, 400);
+  assert.equal(planContactEmail(row, [nudge('a@example.org', TODAY, 'awaiting')], brief, TODAY).status, 409, 'waiting draft');
+  assert.ok(planContactEmail(row, [nudge('a@example.org', TODAY, 'sent')], brief, TODAY).ok, 'a sent one is fine');
+  const mails = Array.from({ length: CONTACT_EMAIL_DAY_CAP }, (_, i) => ({ ...nudge(`p${i}@example.org`, TODAY, 'sent'), policy_codes: 'contact_email' }));
+  assert.equal(planContactEmail(row, mails, brief, TODAY).status, 429);
+  assert.equal(weekCount(mails, TODAY), 0, 'not counted as nudges');
+});
+
+test('contactmail: panel only, dispatched to approval with the brief as reason', () => {
+  assert.ok(ACTIONS.contactmail && PANEL_ONLY.includes('contactmail'));
+  assert.ok(validPayload({ a: 'contactmail', i: 'c0123456789abcdef' }));
+  assert.deepEqual(dispatchFor({ a: 'contactmail', i: 'c0123456789abcdef' }, 'the brief'),
+    ['approval', { id: 'c0123456789abcdef', action: 'contactmail', reason: 'the brief' }]);
 });
