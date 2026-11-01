@@ -2,10 +2,6 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD.",
   "tasks": [
     {
-      "task": "Fix two offline tests already failing on main: test-replies.js (subscribe: sender added to Subscribers) and ui-outreach.check.mjs (menu list)",
-      "added": "2026-11-01"
-    },
-    {
       "task": "Contacts on the newsletter: check the first contacts run's Newsletter line and that Thursday's send count rose by about that many",
       "added": "2026-10-31"
     },
