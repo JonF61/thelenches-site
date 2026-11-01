@@ -29,6 +29,10 @@
 //   nudge             Draft nudge (admin panel Outreach, 26 Oct): ID is "c" + a hash of a
 //                     contact's address. Holly drafts an outreach email (scripts/outreach) as
 //                     an awaiting Replies row and a card is emailed to Jon. Nothing is sent.
+//   contactmail       Draft email (admin panel, a contact's page, 1 Nov): ID as for nudge,
+//                     REASON is Jon's brief. Holly drafts an email from it (scripts/outreach/
+//                     contactmail.js) as an awaiting Replies row and a card is emailed to Jon.
+//                     Nothing is sent.
 //   orgcheck          Draft check / Draft chaser (admin panel Contacts > Organisations, 27 Oct):
 //                     ID is an organisation's slug in contacts.json `outreach`. Holly's fixed
 //                     check (or chaser) email is drafted (scripts/outreach/orgs.js) as an
@@ -45,6 +49,7 @@ const { sendReplyCard } = require('../ingest/urgent');
 const readerFeedback = require('../readerfeedback');
 const outreach = require('../outreach');
 const orgs = require('../outreach/orgs');
+const contactMail = require('../outreach/contactmail');
 const lessons = require('../lessons');
 
 const TZ = 'Europe/London';
@@ -123,7 +128,7 @@ async function main() {
       String(process.env.BODY || '').replace(/\r\n?/g, '\n').trim().slice(0, 3000));
   }
   const reason = String(process.env.REASON || '').replace(/[\u0000-\u001f]+/g, ' ').trim()
-    .slice(0, action === 'redraft' ? 500 : 300);
+    .slice(0, action === 'redraft' ? 500 : action === 'contactmail' ? 600 : 300);
   if (['send', 'skip'].includes(action)) return replies.decideReply(id, action, reason);
   if (action === 'redraft') {
     const fresh = await replies.redraftReply(id, reason);
@@ -141,11 +146,12 @@ async function main() {
   }
   if (action === 'close') return replies.closeOwed(id);
   if (action === 'lesson_ok' || action === 'lesson_no') return lessons.decide(id, action);
-  if (action === 'nudge' || action === 'orgcheck') {
-    const fresh = action === 'nudge' ? await outreach.draftNudge(id) : await orgs.draftOrgCheck(id);
+  if (action === 'nudge' || action === 'orgcheck' || action === 'contactmail') {
+    const fresh = action === 'nudge' ? await outreach.draftNudge(id)
+      : action === 'contactmail' ? await contactMail.draftContactEmail(id, reason) : await orgs.draftOrgCheck(id);
     if (!fresh || fresh.status !== 'awaiting') return undefined;
     const { settings } = await g.readSettings();
-    const title = action === 'nudge' ? 'Outreach draft' : 'Organisation check draft';
+    const title = action === 'nudge' ? 'Outreach draft' : action === 'contactmail' ? 'Email draft' : 'Organisation check draft';
     // The draft is saved either way; a failed card only fails the run (GitHub emails Jon)
     // and the next ingestion run's action email shows the draft.
     try {

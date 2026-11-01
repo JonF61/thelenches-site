@@ -15,6 +15,7 @@
 // Outreach (26 Oct): who is due a nudge (seasonal, gone quiet, leads; /admin/api/outreach),
 // with Draft nudge (Holly drafts; the card comes by email), Snooze 3 months, Never nudge,
 // and Clear for those held back (next_nudge writes through /admin/api/contact).
+// A contact's page has Draft email (1 Nov): a brief for Holly (/admin/api/contactmail).
 // Organisations (27 Oct): every organisation the site lists and where its yearly check is
 // (/admin/api/orgs), with Draft check / Draft chaser (/admin/api/orgcheck), and Done, Snooze
 // 3 months, Never and Clear (next_check writes through /admin/api/orgnext).
@@ -27,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '44';
+export const UI_VERSION = '45';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -2489,6 +2490,29 @@ export const CLIENT_JS = String.raw`
     h('div', { class: 'crow-edit' }, pick, h('button', { class: 'btn', type: 'submit' }, 'Save')), own);
   }
 
+  // Draft email (1 Nov): Jon types a brief; Holly drafts the email (scripts/outreach/
+  // contactmail.js) and it waits in Replies for Approve / Edit / Redraft / Reject.
+  function cMailCard(r) {
+    if (lower(r.status) === 'ignore' || !str(r.email)) return null;
+    var who = str(r.name) || str(r.email);
+    var box = h('textarea', { class: 'f', id: 'cmail-brief', rows: 3, maxlength: 600,
+      placeholder: 'What should the email say? e.g. Tell them their class is now on the Regular activities page and they\'ll get the weekly newsletter.' });
+    var btn = h('button', { class: 'btn primary', type: 'submit' }, 'Draft email');
+    return h('form', { class: 'card', onsubmit: async function (e) {
+      e.preventDefault();
+      if (box.value.trim().length < 10) { toast('Say what the email is for first (at least 10 characters)', true); return; }
+      btn.disabled = true;
+      var res = await api('/admin/api/contactmail', { email: r.email, brief: box.value });
+      toast(res.ok ? res.json.message : (res.json.error || ('HTTP ' + res.status)), !res.ok);
+      if (res.ok) box.value = '';
+      btn.disabled = false;
+    } },
+    h('h2', null, 'Email ' + who),
+    h('p', { class: 'meta' }, 'Holly drafts it from your brief, with the usual opt-out line. Nothing is sent until you Approve it (the card comes by email; it also shows under Replies). Add any link you want included.'),
+    h('label', { class: 'f', for: 'cmail-brief' }, 'Brief'), box,
+    h('div', { class: 'actions' }, btn));
+  }
+
   function contactPage(r) {
     var manual = lower(r.profile_source) !== 'auto';
     var list = str(r.contributions) ? str(r.contributions).split('; ') : [];
@@ -2508,6 +2532,7 @@ export const CLIENT_JS = String.raw`
         cField(r, 'notes', 'Notes', '(yours; never touched by code)'),
         h('div', { class: 'actions' }, sheetLink('Contacts', r._row),
           h('button', { class: 'btn', onclick: function () { cDelete(r); } }, 'Delete contact'))),
+      cMailCard(r),
       h('div', { class: 'card' },
         h('h2', null, 'Contributions (' + (Number(r.contribution_count) || 0) + ')'),
         list.length ? h('ul', { class: 'clist-items' }, list.map(function (c) { return h('li', null, c); })) : h('p', { class: 'meta' }, 'Nothing in Pending from this address.'),

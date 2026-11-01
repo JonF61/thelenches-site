@@ -156,6 +156,36 @@ async function main() {
   await assert.rejects(outreach.draftNudge(await id('quiet@example.org')), /failed the checks/);
   ok(tables.Replies.length === 0, 'unusable draft: nothing written');
 
+  // Draft email (contactmail): from Jon's brief, to any contact; not on the nudge lists.
+  const contactMail = require('./outreach/contactmail');
+  reset();
+  tables.Contacts.push(contact('sophie@example.org', { name: 'Sophie', organisation: 'Zumba with Sophie', status: 'organiser',
+    first_contact: '', last_contact: '', profile_source: 'manual' }));
+  const BRIEF = "Tell her Zumba is now on our Regular activities page https://thelenches.org.uk/regulars/ and she'll get the weekly newsletter.";
+  answer = JSON.stringify({ subject: 'Zumba is on the Lenches website',
+    draft: "Your Tuesday Zumba class is now on our Regular activities page:\n\nhttps://thelenches.org.uk/regulars/\n\nYou'll also get our weekly newsletter." });
+  const cm = await contactMail.draftContactEmail(await id('sophie@example.org'), BRIEF);
+  const cmRow = tables.Replies[0];
+  ok(cm && cmRow.type === 'outreach' && cmRow.status === 'awaiting' && cmRow.policy_codes === 'contact_email' && cmRow.to === 'sophie@example.org', 'contact email: awaiting outreach row');
+  ok(cmRow.body.startsWith('Hi Sophie,\n\n') && cmRow.body.includes("If you'd rather") && cmRow.body.endsWith('Lenches website assistant'), 'contact email: greeting, opt-out, sign-off');
+  ok(cmRow.notes.startsWith('Email you asked for in the panel: Tell her Zumba'), 'contact email: brief in notes');
+  const cmIn = JSON.parse(prompts[0].messages[0].content);
+  ok(cmIn.brief === BRIEF && cmIn.contact.organisation === 'Zumba with Sophie' && cmIn.links.includes('https://thelenches.org.uk/regulars/'), 'contact email: Claude sees brief, contact, links');
+  ok(!JSON.stringify(cmIn).includes('PRIVATE NOTE'), 'contact email: never Jon\'s notes');
+  ok(await contactMail.draftContactEmail(await id('sophie@example.org'), BRIEF) === null && tables.Replies.length === 1, 'contact email: one waiting draft per contact');
+  // It doesn't use up the nudge cap.
+  const { weekCount } = await import('../worker/src/admin/outreach.mjs');
+  ok(weekCount(tables.Replies, today) === 0, 'contact email: not in the nudge cap');
+  // A link Claude invents is refused; a short brief does nothing.
+  reset();
+  tables.Contacts.push(contact('sophie@example.org', { name: 'Sophie', status: 'organiser' }));
+  answer = JSON.stringify({ subject: 'x', draft: 'See https://thelenches.org.uk/made-up/ for your listing, thank you so much.' });
+  await assert.rejects(contactMail.draftContactEmail(await id('sophie@example.org'), BRIEF), /failed the checks/);
+  ok(tables.Replies.length === 0, 'contact email: invented link refused');
+  ok(await contactMail.draftContactEmail(await id('sophie@example.org'), 'hi') === null, 'contact email: short brief refused');
+  answer = JSON.stringify({ subject: 'x', draft: 'Owner here, thanks for your Zumba class, it is now listed on the site.' });
+  await assert.rejects(contactMail.draftContactEmail(await id('sophie@example.org'), BRIEF), /named the team/);
+
   console.log(`All outreach tests passed (${checks} checks).`);
 }
 

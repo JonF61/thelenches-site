@@ -40,13 +40,17 @@ export const ACTIONS = {
   // Organisation outreach (admin panel only): Holly's check or chaser to one organisation
   // (admin/orgoutreach.mjs). The id is its slug in contacts.json `outreach`.
   orgcheck: ['Draft check', 'Draft requested', 'approve'],
+  // Draft email (admin panel only, 1 Nov): Holly drafts an email to one contact from Jon's
+  // brief (admin/outreach.mjs planContactEmail). The id is a hash of their address; the
+  // brief rides in reason. The draft then waits for Jon's send / edit / skip.
+  contactmail: ['Draft email', 'Draft requested', 'approve'],
   // Holly's weekly lessons (scripts/lessons): Approve / Reject links in the lessons email.
   lesson_ok: ['Approve lesson', 'Lesson approved', 'approve'],
   lesson_no: ['Reject lesson', 'Lesson rejected', 'reject'],
 };
 
 // Never valid in a signed email link (index.js /a).
-export const PANEL_ONLY = ['nlquiet', 'nltest'];
+export const PANEL_ONLY = ['nlquiet', 'nltest', 'contactmail'];
 
 export const FEEDBACK_ACTIONS = ['fb_approve', 'fb_reject', 'fb_postpone', 'fb_done', 'fb_send', 'fb_edit', 'fb_skip'];
 
@@ -123,6 +127,7 @@ export function dispatchFor(p, reason = '', body = '') {
   if (p.a === 'nltest') return ['newsletter', { action: 'build', issue_date: p.i, step: 'preview' }];
   if ((p.a === 'skip' || p.a === 'redraft') && reason) return ['approval', { id: p.i, action: p.a, reason }];
   if (p.a === 'edit') return ['approval', { id: p.i, action: p.a, body, reason }];
+  if (p.a === 'contactmail') return ['approval', { id: p.i, action: p.a, reason }];
   // approval.yml passes only id, action, reason and body: the postpone date rides in reason.
   if (p.a === 'fb_postpone') return ['approval', { id: p.i, action: p.a, reason: p.d }];
   if (p.a === 'fb_edit') return ['approval', { id: p.i, action: p.a, body }];
@@ -131,7 +136,7 @@ export function dispatchFor(p, reason = '', body = '') {
 }
 
 // One decision (approve, reject, trust, send, skip, edit, redraft, close, nlsend, nlbuild, nlquiet, nltest,
-// the reader feedback fb_* actions, nudge, orgcheck, and lesson_ok / lesson_no) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
+// the reader feedback fb_* actions, nudge, orgcheck, contactmail, and lesson_ok / lesson_no) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
 export async function decide(env, p, reason = '', body = '') {
   const [eventType, payload] = dispatchFor(p, reason, body);
   return dispatch(env, eventType, payload, 2);

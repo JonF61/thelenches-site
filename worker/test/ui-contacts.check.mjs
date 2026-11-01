@@ -59,6 +59,7 @@ const server = http.createServer(async (req, res) => {
   for await (const ch of req) body += ch;
   const b = body ? JSON.parse(body) : {};
   posts.push({ path: url.pathname, ...b });
+  if (url.pathname === '/admin/api/contactmail') return send({ ok: true, message: 'Draft requested. Holly emails you the draft.' });
   if (url.pathname === '/admin/api/contact-delete') return send({ ok: true, message: 'Deleted from Contacts. Their newsletter subscription is unchanged.' });
   if (b.field === 'village') return send({ ok: false, error: 'Changed in the Sheet since you loaded the page', current: 'Atch Lench' }, 'application/json', 409);
   const profile = ['name', 'organisation', 'village', 'role', 'profile'].includes(b.field);
@@ -122,6 +123,17 @@ try {
     await page.fill('#c-notes', 'Call after 6');
     await page.locator('form.cfield', { has: page.locator('#c-notes') }).getByRole('button', { name: 'Save' }).click();
     await page.locator('.toast', { hasText: 'Notes saved' }).waitFor();
+    // Draft email: a short brief is refused in the page; a real one is posted, box cleared.
+    await page.fill('#cmail-brief', 'hi');
+    await page.getByRole('button', { name: 'Draft email' }).click();
+    await page.locator('.toast', { hasText: 'at least 10 characters' }).waitFor();
+    await page.fill('#cmail-brief', 'Tell her the quiz is listed on the site.');
+    await page.getByRole('button', { name: 'Draft email' }).click();
+    await page.locator('.toast', { hasText: 'Draft requested' }).waitFor();
+    assert.equal(await page.locator('#cmail-brief').inputValue(), '');
+    assert.deepEqual(posts.filter((p) => p.path === '/admin/api/contactmail').map((p) => [p.email, p.brief]),
+      [['jane@example.org', 'Tell her the quiz is listed on the site.']]);
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `contacts-mail-${name}.png`), fullPage: true });
     // Stale village: refused, the page shows the Sheet's value.
     await page.fill('#c-village', 'Rous Lench');
     await page.locator('form.cfield', { has: page.locator('#c-village') }).getByRole('button', { name: 'Save' }).click();

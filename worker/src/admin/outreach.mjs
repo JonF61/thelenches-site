@@ -60,9 +60,11 @@ export function nudgesFor(email, replies) {
 // Outreach drafts made in the 7 days to today (any status). Organisation checks
 // (orgoutreach.mjs, policy codes org_check_/org_chase_) have their own daily cap.
 const isOrgCheck = (r) => /(^|[\s,;|])org_(check|chase)_/.test(str(r.policy_codes));
+// Emails Jon asks for on a contact's page (Draft email, 1 Nov) don't use up the nudge cap.
+const isContactEmail = (r) => /(^|[\s,;|])contact_email($|[\s,;|])/.test(str(r.policy_codes));
 export function weekCount(replies, today) {
   const from = addDays(today, -6);
-  return (replies || []).filter((r) => r.type === NUDGE_TYPE && !isOrgCheck(r) && str(r.created_at).slice(0, 10) >= from).length;
+  return (replies || []).filter((r) => r.type === NUDGE_TYPE && !isOrgCheck(r) && !isContactEmail(r) && str(r.created_at).slice(0, 10) >= from).length;
 }
 
 // Why this contact is held back from outreach today, or ''.
@@ -165,4 +167,32 @@ export function sentRows(replies, { type = '', limit = 100 } = {}) {
     .sort((a, b) => str(b.sent_at).localeCompare(str(a.sent_at)))
     .slice(0, limit)
     .map((r) => ({ reply_id: str(r.reply_id), to: str(r.to), type: str(r.type), subject: str(r.subject), body: str(r.body), sent_at: str(r.sent_at) }));
+}
+
+// Draft email (1 Nov 2026): from a contact's page in the panel Jon types a short brief
+// ("tell her she's listed on the Regular activities page") and Holly drafts an outreach
+// email from it (scripts/outreach/contactmail.js), awaiting his Approve / Edit / Redraft /
+// Reject like a nudge. Replies policy code "contact_email"; not counted in the nudge cap,
+// but at most CONTACT_EMAIL_DAY_CAP a day, one waiting draft per contact.
+export const CONTACT_EMAIL_CODE = 'contact_email';
+export const BRIEF_MIN = 10;
+export const BRIEF_MAX = 600;
+export const CONTACT_EMAIL_DAY_CAP = 10;
+
+export const cleanBrief = (v) => String(v ?? '').replace(/[\u0000-\u001f\u007f]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+// { ok } or { error, status }. row: the Contacts row or null.
+export function planContactEmail(row, replies, brief, today) {
+  if (!row) return { error: 'No such contact: reload the page', status: 404 };
+  if (!str(row.email)) return { error: 'This contact has no email address', status: 400 };
+  if (low(row.status) === 'ignore') return { error: 'Not drafted: marked ignore', status: 409 };
+  const b = cleanBrief(brief);
+  if (b.length < BRIEF_MIN) return { error: `Say what the email is for (at least ${BRIEF_MIN} characters)`, status: 400 };
+  if (b.length > BRIEF_MAX) return { error: `Keep the brief under ${BRIEF_MAX} characters`, status: 400 };
+  if (nudgesFor(row.email, replies).some((r) => low(r.status) === 'awaiting')) {
+    return { error: 'Not drafted: a draft to them is already waiting for you (Replies)', status: 409 };
+  }
+  const todays = (replies || []).filter((r) => r.type === NUDGE_TYPE && isContactEmail(r) && str(r.created_at).slice(0, 10) === today).length;
+  if (todays >= CONTACT_EMAIL_DAY_CAP) return { error: `Not drafted: ${CONTACT_EMAIL_DAY_CAP} emails drafted today already`, status: 429 };
+  return { ok: true };
 }
