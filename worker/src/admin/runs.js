@@ -27,6 +27,7 @@ export const WORKFLOW_NAMES = {
   'eventimages.yml': 'Event images',
   'read-sheet-tab.yml': 'Read Sheet tab',
   'write-sheet.yml': 'Write Sheet cells',
+  'delete-run-logs.yml': 'Delete run logs',
   'library-candidates.yml': 'Library candidates',
   'watchdog-alert.yml': 'Watchdog alert',
   'dependabot-check.yml': 'Dependabot check',
