@@ -26,8 +26,9 @@ const Anthropic = require('@anthropic-ai/sdk');
 const { tidyText } = require('../../lib/wording');
 const { CLASSES, HOLD_REASONS, normaliseClass } = require('./classify');
 
-// Model name overridable via env, so a model change needs no code edit.
-const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5';
+// Inbound mail is read by Opus (Jon, 2 Nov 2026: real people's messages need its depth);
+// the INBOUND_MODEL repo variable overrides it without a code edit.
+const MODEL = process.env.INBOUND_MODEL || 'claude-opus-5-5';
 const MAX_TEXT_CHARS = 40000;
 const MAX_FEED_CHARS = 12000;
 const MAX_SIGNPOST_SENTENCES = 4;

@@ -62,6 +62,6 @@ jobs:
           GMAIL_USER: jon@thelenches.org.uk
           GMAIL_LABEL: "Lenches Website/2 Pipeline"
           START_DATE_OVERRIDE: ${{ github.event.inputs.start_date }}
-          CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
+          INBOUND_MODEL: ${{ vars.INBOUND_MODEL }}
           APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
           WORKER_URL: https://approvals.lenches.workers.dev

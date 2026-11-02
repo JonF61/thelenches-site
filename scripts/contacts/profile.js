@@ -6,7 +6,9 @@
 
 const Anthropic = require('@anthropic-ai/sdk');
 
-const MODEL = process.env.CLAUDE_MODEL || 'claude-sonnet-5';
+// Inbound mail is read by Opus (Jon, 2 Nov 2026: real people's messages need its depth);
+// the INBOUND_MODEL repo variable overrides it without a code edit.
+const MODEL = process.env.INBOUND_MODEL || 'claude-opus-5-5';
 const MAX_CHARS_PER_MESSAGE = 3000;
 const MAX_CHARS = 24000;
 
