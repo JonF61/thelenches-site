@@ -5,6 +5,7 @@
 'use strict';
 
 const Anthropic = require('@anthropic-ai/sdk');
+const { callTool } = require('../ingest/toolcall');
 
 // Inbound mail is read by Opus (Jon, 2 Nov 2026: real people's messages need its depth);
 // the INBOUND_MODEL repo variable overrides it without a code edit.
@@ -73,15 +74,13 @@ function buildText(sender, existing, contributions) {
 
 async function profileFor(sender, existing, contributions) {
   client = client || new Anthropic();
-  const res = await client.messages.create({
+  const { res, block } = await callTool(client, {
     model: MODEL,
-    max_tokens: 1500,
+    max_tokens: 8000, // Opus 5.5 always thinks: leave room before the tool call
     system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }],
     tools: [TOOL],
-    tool_choice: { type: 'tool', name: 'record_contact' },
     messages: [{ role: 'user', content: buildText(sender, existing, contributions) }],
-  });
-  const block = res.content.find((b) => b.type === 'tool_use');
+  }, 'record_contact');
   if (!block) throw new Error(`No structured output from Claude (stop_reason: ${res.stop_reason})`);
   return block.input;
 }
@@ -103,15 +102,13 @@ function classifyText(row) {
 
 async function classifyFor(row) {
   client = client || new Anthropic();
-  const res = await client.messages.create({
+  const { res, block } = await callTool(client, {
     model: MODEL,
-    max_tokens: 200,
+    max_tokens: 2000, // Opus 5.5 always thinks: leave room before the tool call
     system: [{ type: 'text', text: CLASSIFY_SYSTEM, cache_control: { type: 'ephemeral' } }],
     tools: [CLASSIFY_TOOL],
-    tool_choice: { type: 'tool', name: 'record_status' },
     messages: [{ role: 'user', content: classifyText(row) }],
-  });
-  const block = res.content.find((b) => b.type === 'tool_use');
+  }, 'record_status');
   if (!block || !STATUS_ENUM.includes(block.input.status)) throw new Error(`No status from Claude (stop_reason: ${res.stop_reason})`);
   return block.input.status;
 }
