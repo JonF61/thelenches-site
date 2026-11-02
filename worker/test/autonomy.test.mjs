@@ -22,6 +22,10 @@ test('counts per type: as written, changed, rejected; ignored and undecided left
   const ans = s.replies.find((t) => t.label === 'Answer · question');
   assert.deepEqual([ans.decided, ans.unchanged, ans.changed], [2, 1, 1]);
   assert.ok(s.replies.find((t) => t.label === 'Clarify'));
+  const withWhat = autonomyStats({ items: { rows: [item(1, 'edited', { draft: JSON.stringify({ title: 'Quiz — Hall' }), final: JSON.stringify({ title: 'Charity Quiz — Hall' }) })] },
+    replies: { rows: [reply(1, 'approved', { they_wrote: 'When is the next  bin collection after the bank holiday? '.repeat(4) })] } });
+  assert.equal(withWhat.items[0].recent[0].what, 'Charity Quiz — Hall', 'title as approved');
+  assert.ok(withWhat.replies[0].recent[0].what.startsWith('When is the next bin') && withWhat.replies[0].recent[0].what.length <= 90, 'their opening words, clipped');
   assert.equal(s.automatic.length, 0);
   assert.equal(s.shadow.qualifying.length, 0);
 });

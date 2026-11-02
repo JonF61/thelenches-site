@@ -2,7 +2,8 @@
 // The panel's Autonomy screen (stage 2 of graduated autonomy, Jon 2 Nov 2026): read-only
 // progress of each kind of item and reply towards Holly acting on her own. Nothing here
 // makes anything automatic: stage 3 (a veto window) needs Jon's tap, one type at a time.
-// Pure helpers; index.js does the Sheet calls.
+// Pure helpers; index.js does the Sheet calls. Each listed decision says briefly what it was
+// (a submission's title; the opening words of the email a reply answered), behind Access only.
 //   Item feedback tab (scripts/ingest/itemfeedback.js): Holly's write-ups and Jon's decision.
 //   Reply feedback tab (scripts/ingest/feedback.js): Holly's reply drafts and Jon's decision.
 // A decision counts as unchanged (approved as written), changed (edited, or a reply
@@ -24,6 +25,9 @@ const IGNORED = 'ignored:';
 const str = (v) => String(v ?? '').trim();
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 const NEVER_REPLY = new Set(['held', 'followup', 'outreach']);
+const WHAT = 90; // characters of "what it was" per decision
+const clip = (t, n = WHAT) => { const f = str(t).replace(/\s+/g, ' '); return f.length > n ? `${f.slice(0, n - 1)}…` : f; };
+const parse = (j) => { try { const o = JSON.parse(j); return o && typeof o === 'object' ? o : {}; } catch { return {}; } };
 
 function verdict(kind, outcome) {
   const o = str(outcome).toLowerCase();
@@ -46,6 +50,8 @@ function itemDecision(r) {
   return {
     kind: 'item', id: str(r.item_id), key: `item:${type}:${src}`, label, never, at: str(r.decided_at || r.created_at),
     verdict: ignored ? 'ignored' : v, outcome: str(r.outcome), changed: str(r.changed),
+    // What it was: the title as approved (Jon's version if he changed it), else Holly's.
+    what: clip(parse(r.final).title || parse(r.draft).title),
   };
 }
 
@@ -60,6 +66,8 @@ function replyDecision(r) {
     kind: 'reply', id: str(r.reply_id), key: `reply:${type}${type === 'answer' && cls ? `:${cls}` : ''}`, label,
     never: NEVER_REPLY.has(type), at: str(r.decided_at || r.created_at),
     verdict: ignored ? 'ignored' : v, outcome: str(r.outcome), changed: '',
+    // What it was: the opening words of their email (quoted text already removed), else of Holly's draft.
+    what: clip(r.they_wrote || r.draft),
   };
 }
 
@@ -107,7 +115,7 @@ export function autonomyStats({ items, replies }, now = Date.now()) {
     if (!ok.length) continue;
     types.push({
       key: gr.key, kind: gr.kind, label: gr.label, ...progress(ok),
-      recent: ok.slice(0, RECENT).map(({ kind, id, at, verdict: v, outcome, changed }) => ({ kind, id, at, verdict: v, outcome, changed })),
+      recent: ok.slice(0, RECENT).map(({ kind, id, at, verdict: v, outcome, changed, what }) => ({ kind, id, at, verdict: v, outcome, changed, what })),
     });
   }
   types.sort((a, b) => (a.kind === b.kind ? b.decided - a.decided || a.label.localeCompare(b.label) : a.kind === 'item' ? -1 : 1));
