@@ -56,7 +56,7 @@ function stateData() {
         { id: 'm1-1#2', source: 'organiser', rank: '2', caption: 'Image: Rous Lench Village Hall', credit: 'Rous Lench Village Hall', page: 'https://hall.example.org/quiz', licence: '', people: 'none', thumb: T.poster, alt: '', status: '' },
         { id: 'm1-1#3', source: 'library', rank: '3', caption: 'Photo by Ann Lee on Pexels', credit: 'Ann Lee / Pexels', page: 'https://www.pexels.com/photo/1/', licence: 'https://www.pexels.com/license/', people: 'unknown', thumb: T.pexels, alt: 'People at a quiz', status: '' },
       ] }),
-      { ...row('m2-1', 'Christmas fair — Atch Lench', { _suggest: [] }), _row: 3, village: 'Atch Lench' },
+      { ...row('m2-1', 'Christmas fair — Atch Lench', { _suggest: [] }), _row: 3, village: 'Atch Lench', message_id: 'm2', gmail_link: 'https://mail.google.com/mail/u/0/#search/rfc822msgid:x' },
     ] },
     replies: { headers: [], rows: [] }, owed: [], photos: { headers: [], rows: [] }, photoFolders: [], photosRoot: 'r', today: '2026-10-24', toDelete: [],
   };
@@ -103,6 +103,9 @@ async function check(viewport, tag) {
   const strip = page.locator('section.suggest').first();
   await strip.waitFor();
   await strip.scrollIntoViewIfNeeded();
+  // Where each item came from: badge on every card (feed vs email).
+  assert.ok(await page.locator('.badge', { hasText: 'Website feed' }).count() >= 1, `${tag}: feed badge`);
+  assert.ok(await page.locator('.badge', { hasText: /^Email$/ }).count() >= 1, `${tag}: email badge`);
   const labels = await strip.locator('.sg-src').allTextContents();
   assert.deepEqual(labels, ['Own photo', "Organiser's site", 'Library'], tag);
   assert.equal(await strip.locator('img').count(), 3);
