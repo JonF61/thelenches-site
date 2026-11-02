@@ -59,6 +59,12 @@ for the event, or a phone number or email in the sender's own signature, counts 
 contact. Notices without an
 attendable event need only "where" and "contact" where relevant.
 
+SECOND LINK: when an item tells readers to visit, report, book or apply somewhere online
+(e.g. "report it to West Mercia Police online") and that place is not already link_url,
+set link2_url to its address and link2_text to a short label (e.g. "Report to West Mercia
+Police"). Use ONLY an address written in the email or listed in <source_page_links>, copied
+exactly; never guess, build or recall one. If there is no such address, leave both empty.
+
 CLASSIFY THE EMAIL as a whole (email_class), even if you record no items:
 - submission: sends something for the website or newsletter (event, notice, news, photo).
 - question: asks us something (what's on, bin days, how to join or advertise, etc.).
@@ -86,7 +92,8 @@ never copy sentences or distinctive phrases from the feed. The summary is 3-4 se
 drawn only from the feed text given. If the feed gives less, write fewer, and never add
 background or details that are not there. Category is "notice" unless it is an attendable
 event ("event"). Leave cost, contact, link and image fields empty; the pipeline adds the
-link. "missing" is always empty and "anonymous" is false.`;
+link. The SECOND LINK rule still applies, using <source_page_links> when given. "missing" is
+always empty and "anonymous" is false.`;
 
 // Added after SIGNPOST for local-news feeds (rss.js LOCAL_FEEDS). Same cached prefix per feed type.
 const LOCAL = `LOCAL STORIES ONLY: this feed is a local newspaper. Record the item only if either:
@@ -122,6 +129,8 @@ const TOOL = {
             contact: { type: 'string' },
             link_text: { type: 'string', description: "Short link label, e.g. 'The Lenches Club' or 'Tickets: email Nadine'; empty if no link" },
             link_url: { type: 'string', description: 'Best link for details or booking: official event page, club site, or mailto: address. Prefer the real destination over tracking or redirect links. Empty if none' },
+            link2_text: { type: 'string', description: 'Label for the second link (SECOND LINK rule); empty if none' },
+            link2_url: { type: 'string', description: 'Second link (SECOND LINK rule): an address copied exactly from the email or <source_page_links>; empty if none' },
             confidence: { type: 'number', description: '0 to 1: how sure the extracted details are correct and complete' },
             urgent: { type: 'boolean' },
             political_commercial: { type: 'boolean' },
@@ -215,6 +224,9 @@ function buildFeedContent({ feedItem, sourceName, receivedIso, today }) {
       '',
       body || '(no text)',
       '</feed_item>',
+      ...(feedItem.pageLinks && feedItem.pageLinks.length
+        ? ['<source_page_links>', ...feedItem.pageLinks.map((l) => `${l.text || '(no text)'} | ${l.url}`), '</source_page_links>']
+        : []),
     ].join('\n'),
   }];
 }
@@ -248,6 +260,8 @@ function normalise(items, imageCount) {
       contact: str(it.contact),
       link_text: str(it.link_text),
       link_url: /^(https?:|mailto:)/i.test(str(it.link_url)) ? str(it.link_url) : '',
+      link2_text: str(it.link2_text),
+      link2_url: /^(https?:|mailto:)/i.test(str(it.link2_url)) ? str(it.link2_url) : '',
       confidence: Math.round(conf * 100) / 100,
       urgent: it.urgent === true,
       political_commercial: it.political_commercial === true,
@@ -295,6 +309,15 @@ function toSignpost(items, sourceName, link, local) {
   }));
 }
 
+// The second link is kept only if its address appears word for word in what Claude was given
+// (the email text, or the source page's links) and differs from the first: never invented.
+function keepLink2(it, source) {
+  const url = str(it.link2_url);
+  const addr = url.replace(/^mailto:/i, '').split('?')[0];
+  const ok = url && url !== it.link_url && addr.length > 4 && source.includes(/^mailto:/i.test(url) ? addr : url);
+  return ok ? { ...it, link2_text: str(it.link2_text) || 'More details' } : { ...it, link2_text: '', link2_url: '' };
+}
+
 // input (email):    { msg, sourceName, receivedIso, today, images: [{filename, mediaType, data}],
 //                     pdfs: [{filename, data}], context?: string written by the pipeline (trusted) }
 // input (signpost): { signpost: true, local?: true, feedItem: { title, published, text, link },
@@ -328,6 +351,9 @@ async function extract(input) {
   stats.cacheWrite += u.cache_creation_input_tokens || 0;
   let items = normalise(block.input.items, images.length);
   if (signpost) items = toSignpost(items, input.sourceName, str(input.feedItem.link), local);
+  items = items.map((it) => keepLink2(it, signpost
+    ? (input.feedItem.pageLinks || []).map((l) => l.url).join('\n')
+    : str(input.msg && input.msg.text)));
   return {
     items,
     anonymous: signpost ? false : block.input.anonymous === true,
@@ -340,4 +366,4 @@ async function extract(input) {
   };
 }
 
-module.exports = { extract, MISSING_CODES, stats };
+module.exports = { extract, keepLink2, MISSING_CODES, stats };

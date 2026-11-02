@@ -2,6 +2,19 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD.",
   "tasks": [
     {
+      "task": "Second link: check the next council feed items and emailed items for sensible second links (and none invented)",
+      "added": "2026-11-02"
+    },
+    {
+      "task": "Inbound on Opus 5.5: check the next Ingest and Contacts runs complete and note the cost change",
+      "added": "2026-11-02"
+    },
+    {
+      "task": "Graduated autonomy: scope per-type auto-act with a veto window, based on how often Jon approves each type unchanged",
+      "waiting": "Jon's go-ahead to scope",
+      "added": "2026-11-02"
+    },
+    {
       "task": "Contacts page: check the first Done already item reads (…, done) in its contact's Contributions after the next daily contacts run",
       "added": "2026-11-01"
     },

@@ -234,6 +234,9 @@ async function main() {
       if (source) item.source = source;
     }
     if (url) item.link = { text: str(row.link_text) || 'More details', url };
+    // Second link (2 Nov): e.g. a police reporting page named in the text; never a repeat of the first.
+    const url2 = safeUrl(row.link2_url);
+    if (url2 && url2 !== url) item.link2 = { text: str(row.link2_text) || 'More details', url: url2 };
     const img = await imageFor(row, failures, suggestions);
     if (img) {
       item.image = { url: img, alt: str(row.alt_text) };

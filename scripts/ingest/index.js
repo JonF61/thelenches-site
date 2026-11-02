@@ -251,6 +251,8 @@ async function processMessage(id, ctx) {
       contact: item.contact,
       link_text: item.link_text,
       link_url: item.link_url,
+      link2_text: item.link2_text,
+      link2_url: item.link2_url,
       confidence: item.confidence,
       urgent: item.urgent,
       people_in_image: item.people_in_image,
