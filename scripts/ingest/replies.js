@@ -36,8 +36,9 @@
 //   shadow    replies_mode=shadow: drafted and logged, shown to Jon, never sent
 //   queued    ready to send automatically on this or the next run
 //   awaiting  needs Jon's Approve (send) / Edit / Reject (skip). Only ack and clarify rows
-//             fall back: after 24h with no decision (or at once in holiday mode) a
-//             clarification is sent without the question. Other types never send without Jon.
+//             fall back, in holiday mode only (at once, as drafted): the 24h fallback that
+//             sent a clarification without the question is off since 2 Nov 2026
+//             (TIMEOUT_SEND, stage 1). Other types never send without Jon.
 //   sending   written just before the send; a row stuck here is flagged and never resent
 //   sent / skipped / failed
 //
@@ -104,6 +105,7 @@ const path = require('path');
 const g = require('./google');
 const cls = require('./classify');
 const feedback = require('./feedback');
+const itemFeedback = require('./itemfeedback');
 const { siteFacts } = require('./sitefacts');
 const { applyListRequest } = require('./subscriptions');
 const welcome = require('./welcome');
@@ -138,6 +140,9 @@ const OWED_REMIND_HOURS = 24;    // an owed email on its own triggers an action 
 const CLOSED_CODE = 'closed';    // on a holding row: Jon tapped "Close, no reply needed"
 // Awaiting types that fall back to sending after 24h (or at once in holiday mode).
 const FALLBACK_TYPES = ['ack', 'clarify'];
+// Stage 1 of graduated autonomy (Jon, 2 Nov 2026): outside holiday mode nothing Holly drafts
+// goes without Jon's tap, so the 24h fallback is off; holiday mode still sends at once.
+const TIMEOUT_SEND = false;
 
 // Statuses that count as "we have replied / will reply".
 const ACTIVE = ['shadow', 'queued', 'awaiting', 'sending', 'sent'];
@@ -499,6 +504,7 @@ const FIXED_RULES = [
   'No greeting or sign-off in the draft: both are added separately, and the sign-off is always Holly\'s.',
 ];
 const CORRECTION_CHARS = 500;
+const LISTING_LESSON = /^\s*when writing up (a |the )?listings?\b/i;
 let learning = { lessons: [], corrections: [], contacts: new Map() };
 
 const clipTo = (t, n) => { const f = String(t || '').replace(/\s+/g, ' ').trim(); return f.length > n ? `${f.slice(0, n)}…` : f; };
@@ -520,12 +526,15 @@ function correctionsFrom(rows, n = RECENT_CORRECTIONS) {
 }
 
 async function primeLearning() {
-  const next = { lessons: [], corrections: [], contacts: new Map() };
+  const next = { lessons: [], writeup: [], corrections: [], contacts: new Map() };
   try {
     const approved = (await g.readTable(LESSONS_TAB)).filter((r) => String(r.status).trim().toLowerCase() === 'approved' && String(r.lesson || '').trim())
       .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
     if (approved.length > MAX_LESSONS_USED) console.warn(`Holly learning: ${approved.length} lessons in use; only the newest ${MAX_LESSONS_USED} are used. Tidy the Holly lessons tab.`);
-    next.lessons = approved.slice(0, MAX_LESSONS_USED).map((r) => clipTo(r.lesson, 400));
+    const used = approved.slice(0, MAX_LESSONS_USED).map((r) => clipTo(r.lesson, 400));
+    // Lessons about writing up listings (scripts/lessons, 2 Nov) go to Holly's write-ups only.
+    next.writeup = used;
+    next.lessons = used.filter((l) => !LISTING_LESSON.test(l));
   } catch { /* no lessons tab yet */ }
   try {
     next.corrections = correctionsFrom(await g.readTable(feedback.TAB));
@@ -1385,6 +1394,7 @@ async function applyAnswer({ msg, reply, result, ctx, received }) {
       }
     }
     added.push(...Object.keys(fields));
+    const filled = Object.keys(fields).length > 0;
     const stillMissing = missing.filter((c) => !fields[FIELD_FOR[c]]);
     const note = Object.keys(fields).length
       ? `Details added from submitter's reply ${received} (${Object.keys(fields).join(', ')})`
@@ -1395,6 +1405,7 @@ async function applyAnswer({ msg, reply, result, ctx, received }) {
     });
     await g.updateRow('Pending', orig._row, fields);
     Object.assign(orig, fields);
+    if (filled) await itemFeedback.updateDraft(orig); // their details, not Jon's edit
     updated += 1;
   }
   return { updated, added: unique(added) };
@@ -1838,7 +1849,7 @@ async function sendDueReplies(settings, holiday) {
   const cutoff = londonDateTime(Date.now() - AWAIT_HOURS * 3600000);
   const due = rows.filter((r) => r.reply_id && r.type !== 'followup' && (r.status === 'queued'
     || (r.status === 'awaiting' && FALLBACK_TYPES.includes(r.type || 'ack') && !heldBySenderLimit(r)
-      && (holiday || String(r.created_at) <= cutoff))));
+      && (holiday || (TIMEOUT_SEND && String(r.created_at) <= cutoff)))));
   if (!due.length) return 0;
 
   await assertSendAs();
@@ -2183,6 +2194,7 @@ module.exports = {
   OWED_HOURS,
   rowsForAlert,
   FALLBACK_TYPES,
+  TIMEOUT_SEND,
   REPLY_FROM,
   AWAIT_HOURS,
   // For reader feedback replies (scripts/readerfeedback): same voice, sign-off and checks.

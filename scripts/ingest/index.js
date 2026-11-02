@@ -7,8 +7,10 @@
 // Nothing is committed to the repo. Email sent from here: the per-run alert to jon@
 // (urgent.js) and submitter replies (replies.js, per Settings replies_mode).
 // Nothing ever goes to subscribers from here.
-// Trusted senders and feeds (Trusted tab, trusted.js) go straight to "auto" unless the
-// item needs a human anyway; such rows carry "trusted" in notes.
+// Stage 1 of graduated autonomy (2 Nov 2026, trusted.js PANEL_FIRST): outside holiday mode
+// every item waits as "pending" for Jon's tap in the panel, including "auto" feeds and
+// trusted senders (noted "trusted source"). Holly writes each one up (extract.js), and the
+// draft is logged in the Item feedback tab (itemfeedback.js) so Jon's edits teach her.
 'use strict';
 
 const g = require('./google');
@@ -25,6 +27,8 @@ const { extractLinks } = require('../suggest/organiser');
 const readerFeedback = require('../readerfeedback');
 const { LOW_CLASS_CONFIDENCE } = require('./classify');
 const { loadOffList } = require('./subscriptions');
+const itemFeedback = require('./itemfeedback');
+const { primeWriteups } = require('./extract');
 
 const MAX_RETRIES = 3;            // after this, a failing message is left for the diagnostic
 const MAX_MESSAGES_PER_RUN = 25;  // caps run time and spend; the rest wait for the next run
@@ -134,6 +138,7 @@ function decideStatus(item, mode, holiday) {
   if (holiday) return 'auto';
   // Official notices: Jon picks their wording or our rewrite (digest / action email).
   if (item.official && item.own_text) return 'pending';
+  if (trust.PANEL_FIRST) return 'pending'; // stage 1: everything waits for Jon's tap
   if (mode === 'auto' && item.confidence >= LOW_CONFIDENCE) return 'auto';
   return 'pending';
 }
@@ -234,6 +239,8 @@ async function processMessage(id, ctx) {
       : trust.applyTrust(decideStatus(item, source.mode, ctx.holiday), item,
         msg.fromAddress, ctx.trusted, { anonymous: result.anonymous, outOfScope: result.outOfScope });
     if (decided.byTrust) noteParts.push('trusted');
+    else if (decided.trustedSource) noteParts.push('trusted source');
+    if (item.holly_note) noteParts.push(`Holly: ${item.holly_note}`);
     if (spam) noteParts.push(`Possible spam (confidence ${result.classConfidence})`);
     const row = {
       id: `${msg.id}-${n + 1}`,
@@ -293,6 +300,7 @@ async function processMessage(id, ctx) {
 
   if (rows.length) await g.appendRows('Pending', rows);
   rows.forEach((r) => ctx.existing.push(r)); // later emails in this run can match these
+  await itemFeedback.record(rows); // Holly's drafts, for Jon's edits to teach her
 
   // Never fails the message: a retry would duplicate the Pending rows. A missed reply
   // beats a duplicate; the run still fails so GitHub emails Jon.
@@ -321,7 +329,8 @@ async function processMessage(id, ctx) {
 
 async function main() {
   const { sources, settings } = await g.readSettings();
-  await replies.primeLearning(); // Holly's lessons and recent corrections for this run's drafts
+  const learnt = await replies.primeLearning(); // Holly's lessons and recent corrections for this run's drafts
+  await primeWriteups((learnt && learnt.writeup) || []); // the same lessons, and Jon's recent edits, for her write-ups
   // Run workflow's start date box: "2026-10-08" overrides Gmail and feeds;
   // "rss:2026-10-08" overrides feeds only (Gmail keeps Settings start_date).
   const rawOverride = String(process.env.START_DATE_OVERRIDE || '').trim();

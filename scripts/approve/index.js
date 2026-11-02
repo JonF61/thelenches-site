@@ -38,6 +38,8 @@
 //                     ID is an organisation's slug in contacts.json `outreach`. Holly's fixed
 //                     check (or chaser) email is drafted (scripts/outreach/orgs.js) as an
 //                     awaiting Replies row and a card is emailed to Jon. Nothing is sent.
+// Every item decision also completes its Item feedback row (ingest/itemfeedback.js): what Jon
+// changed in Holly's write-up before approving, for her lessons and the stage 2 stats.
 // Rejecting an item whose acknowledgement said it was on its way drafts a "sorry, we
 // couldn't use it after all" reply for Jon's Approve/Edit/Reject (replies.planSorry).
 // Replayed or duplicate clicks therefore do nothing.
@@ -46,6 +48,7 @@
 const g = require('../ingest/google');
 const replies = require('../ingest/replies');
 const trust = require('../ingest/trusted');
+const itemFeedback = require('../ingest/itemfeedback');
 const { sendReplyCard } = require('../ingest/urgent');
 const readerFeedback = require('../readerfeedback');
 const outreach = require('../outreach');
@@ -92,6 +95,8 @@ async function decideItem(id, action) {
     }
   }
   await g.updateRow('Pending', row._row, fields);
+  // Item feedback (stage 1): approved as written, edited first, rejected or done. Never fails the decision.
+  await itemFeedback.resolve(row, action, { wording: fields.wording || '', decidedAt: fields.decided_at });
   console.log(`Item ${id} marked ${status}${fields.wording ? ` (${fields.wording} wording)` : ''}.`);
   if (status === 'rejected') {
     // The rejection is recorded either way; a failed draft only fails the run (GitHub emails Jon).

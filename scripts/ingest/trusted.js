@@ -1,6 +1,9 @@
 // scripts/ingest/trusted.js
-// Trusted sources: items from these publish automatically (status "auto") unless they
-// need a human decision anyway (trustBlocked). The "Trusted" tab is created here if it
+// Trusted sources: items from these would publish automatically (status "auto") unless they
+// need a human decision anyway (trustBlocked). Stage 1 of graduated autonomy (Jon, 2 Nov
+// 2026): PANEL_FIRST holds every item for Jon's tap in the panel outside holiday mode, so a
+// trusted source's item only gets the note "trusted source" (Item feedback counts it) until
+// Jon approves autonomy for it. The "Trusted" tab is created here if it
 // is missing; removing a row there removes the trust.
 //   source_key       lower-cased sender address (Gmail) or the feed URL as in Settings
 //   type             email | feed
@@ -16,6 +19,9 @@ const g = require('./google');
 const TAB = 'Trusted';
 const HEADERS = ['source_key', 'type', 'label', 'added_at', 'added_from_item'];
 const LOW_CONFIDENCE = 0.5;
+// Stage 1 (Jon, 2 Nov 2026): outside holiday mode nothing publishes without Jon's tap in the
+// panel: no trusted-source or "auto" feed publishing. Only Jon turns this off, type by type.
+const PANEL_FIRST = true;
 const OWN_DOMAIN = 'thelenches.org.uk';
 // Facebook notification mail is never a source in its own right.
 const NOT_TRUSTABLE = /@(.+\.)?(facebook\.com|facebookmail\.com)$/i;
@@ -60,11 +66,14 @@ function trustBlocked(item, emailFlags = {}) {
 }
 
 // Status after trust: "auto" (with byTrust) when a pending item from a trusted source
-// has no blocker; otherwise the status as decided before.
+// has no blocker; otherwise the status as decided before. With PANEL_FIRST it stays
+// pending and trustedSource marks it (note "trusted source").
 function applyTrust(status, item, key, trusted, emailFlags) {
-  if (status !== 'pending' || !key || !trusted || !trusted.has(norm(key))) return { status, byTrust: false };
-  if (trustBlocked(item, emailFlags)) return { status, byTrust: false };
-  return { status: 'auto', byTrust: true };
+  const isTrusted = Boolean(key && trusted && trusted.has(norm(key)));
+  if (status !== 'pending' || !isTrusted) return { status, byTrust: false, trustedSource: isTrusted };
+  if (trustBlocked(item, emailFlags)) return { status, byTrust: false, trustedSource: true };
+  if (PANEL_FIRST) return { status, byTrust: false, trustedSource: true };
+  return { status: 'auto', byTrust: true, trustedSource: true };
 }
 
 // Adds a Trusted row unless the key is already there. Returns true if added.
@@ -78,5 +87,5 @@ async function addTrusted({ key, type, label }, itemId, stamp) {
 }
 
 module.exports = {
-  TAB, HEADERS, loadTrusted, sourceKeyFor, trustBlocked, applyTrust, addTrusted,
+  TAB, HEADERS, PANEL_FIRST, loadTrusted, sourceKeyFor, trustBlocked, applyTrust, addTrusted,
 };

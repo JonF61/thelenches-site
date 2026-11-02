@@ -15,6 +15,7 @@ const g = require('./google');
 const { extract } = require('./extract');
 const replies = require('./replies');
 const trust = require('./trusted');
+const itemFeedback = require('./itemfeedback');
 const { LOCAL_FEED, keepLocalStory } = require('../../lib/sources');
 const { pageLinks } = require('./pagelinks');
 
@@ -144,6 +145,8 @@ async function processItem(entry, ctx, h) {
     const decided = trust.applyTrust(h.decideStatus(it, feed.mode, ctx.holiday), it,
       feed.match, ctx.trusted, { anonymous: false, outOfScope: result.outOfScope });
     if (decided.byTrust) noteParts.push('trusted');
+    else if (decided.trustedSource) noteParts.push('trusted source');
+    if (it.holly_note) noteParts.push(`Holly: ${it.holly_note}`);
     const row = {
       id: `${id}-${n + 1}`,
       received,
@@ -187,6 +190,7 @@ async function processItem(entry, ctx, h) {
 
   if (rows.length) await g.appendRows('Pending', rows);
   rows.forEach((r) => ctx.existing.push(r));
+  await itemFeedback.record(rows); // Holly's drafts, for Jon's edits to teach her
 
   return {
     status: 'ok',

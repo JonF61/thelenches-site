@@ -10,8 +10,12 @@
       "added": "2026-11-02"
     },
     {
-      "task": "Graduated autonomy: scope per-type auto-act with a veto window, based on how often Jon approves each type unchanged",
-      "waiting": "Jon's go-ahead to scope",
+      "task": "Graduated autonomy stage 1: check the next ingest run fills the Item feedback tab, nothing goes to auto, and Holly notes read well",
+      "added": "2026-11-02"
+    },
+    {
+      "task": "Graduated autonomy stage 2 (per-type stats screen and shadow comparison): propose after a few weeks of Item feedback",
+      "waiting": "Jon's go-ahead",
       "added": "2026-11-02"
     },
     {
