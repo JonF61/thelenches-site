@@ -28,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '51';
+export const UI_VERSION = '52';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -934,6 +934,12 @@ export const CLIENT_JS = String.raw`
       h('button', { class: 'btn', onclick: function () { overlay('Edit reply', replyEditForm(r)); } }, 'Edit'),
       h('button', { class: 'btn', onclick: function () { overlay('Redraft reply', redraftForm(r)); } }, 'Redraft'),
       h('button', { class: 'btn danger', onclick: function () { overlay('Reject reply', rejectForm(r)); } }, 'Reject'),
+      // You answered them yourself in Gmail (2 Nov): closes the draft, not counted as a rejection.
+      h('button', { class: 'btn', onclick: function () {
+        if (window.confirm('Mark this as replied in Gmail? Holly\'s draft is closed and nothing is sent. It is not counted as a rejection or learned from.')) {
+          act('reply', r.reply_id, 'reject', { reason: 'Replied in Gmail' }, 'Marked replied in Gmail');
+        }
+      } }, 'Replied in Gmail'),
       h('button', { class: 'btn', onclick: function () {
         if (window.confirm('Close this email, no reply needed? Nothing is sent to them.')) act('reply', r.reply_id, 'close', null, 'Closed');
       } }, 'Close'),
@@ -2746,6 +2752,7 @@ export const CLIENT_JS = String.raw`
     if (ign) what += ' (was ' + d.outcome.replace(/^ignored:/, '') + ')';
     return h('li', { class: 'au-dec' },
       d.what ? h('div', { class: 'au-what' }, d.what) : null,
+      d.why ? h('div', { class: 'meta au-why' }, (d.kind === 'item' ? 'Your change: ' : 'Your reason: ') + d.why) : null,
       h('span', { class: 'badge ' + (AU_BADGE[d.verdict] || '') }, ign ? 'Ignored' : (d.verdict === 'unchanged' ? 'As written' : d.verdict === 'changed' ? 'Changed' : 'Rejected')),
       h('span', { class: 'meta' }, ' ' + [when(d.at), what].filter(Boolean).join(' · ') + ' '),
       h('button', { class: 'btn link', onclick: function () {
@@ -2786,7 +2793,8 @@ export const CLIENT_JS = String.raw`
     var sh = t.shadow;
     return [
       h('div', { class: 'note info' }, 'Nothing is automatic yet, apart from roadworks alerts and holiday mode. A kind qualifies after ' + th.needed +
-        ' decisions with at least ' + th.rate + '% approved as written and no rejection in the last ' + th.cleanLast + '. Then it is your call.'),
+        ' decisions with at least ' + th.rate + '% approved as written and no rejection in the last ' + th.cleanLast + '. Then it is your call. ' +
+        'Counting from ' + when(t.countFrom) + ': earlier decisions are set aside. "Replied in Gmail" is never counted.'),
       section('Submissions', t.items, 'No decisions yet. They are counted from 2 November.'),
       section('Replies', t.replies, 'No reply decisions yet.'),
       h('h2', { class: 'section' }, 'If it had been on (last ' + th.shadowDays + ' days)'),

@@ -6,16 +6,16 @@ import assert from 'node:assert/strict';
 import { autonomyStats, planIgnore, NEEDED } from '../src/admin/autonomy.js';
 
 const item = (n, outcome, extra = {}) => ({ item_id: `m${n}-1`, created_at: `2026-11-02 09:${String(n).padStart(2, '0')}`,
-  decided_at: `2026-11-02 10:${String(n % 60).padStart(2, '0')}`, type: 'event', source_kind: 'email', flags: '', outcome, changed: '', ...extra });
-const reply = (n, outcome, extra = {}) => ({ reply_id: `r${n}`, created_at: `2026-10-${String(10 + (n % 20)).padStart(2, '0')} 09:00`,
-  decided_at: `2026-10-${String(10 + (n % 20)).padStart(2, '0')} 10:${String(n % 60).padStart(2, '0')}`, type: 'answer', class: 'question', outcome, ...extra });
+  decided_at: `2026-11-03 10:${String(n % 60).padStart(2, '0')}`, type: 'event', source_kind: 'email', flags: '', outcome, changed: '', ...extra });
+const reply = (n, outcome, extra = {}) => ({ reply_id: `r${n}`, created_at: `2026-11-${String(10 + (n % 20)).padStart(2, '0')} 09:00`,
+  decided_at: `2026-11-${String(10 + (n % 20)).padStart(2, '0')} 10:${String(n % 60).padStart(2, '0')}`, type: 'answer', class: 'question', outcome, ...extra });
 
 test('counts per type: as written, changed, rejected; ignored and undecided left out', () => {
   const s = autonomyStats({ items: { rows: [
     item(1, 'approved'), item(2, 'edited', { changed: 'title' }), item(3, 'rejected'), item(4, ''), item(5, 'done'), item(6, 'auto'),
     item(7, 'ignored:edited'),
   ] }, replies: { rows: [reply(1, 'approved'), reply(2, 'redrafted'), reply(3, 'shadow'), reply(4, 'timed_out'), reply(5, 'approved', { type: 'clarify', class: '' })] } },
-  Date.parse('2026-11-02T12:00:00Z'));
+  Date.parse('2026-11-25T12:00:00Z'));
   const ev = s.items.find((t) => t.label === 'Event · email');
   assert.deepEqual([ev.decided, ev.unchanged, ev.changed, ev.rejected, ev.rate, ev.qualifies], [3, 1, 1, 1, 33, false]);
   assert.ok(ev.recent.some((d) => d.verdict === 'ignored' && d.outcome === 'ignored:edited'), 'ignored still listed, so it can be counted again');
@@ -45,7 +45,7 @@ test('qualifies at 30 decisions, 95% as written, no rejection in the last 20; sh
   const ev = s.items[0];
   assert.equal(ev.qualifies, true);
   assert.deepEqual(s.shadow, { qualifying: [ev.key], wouldHave: NEEDED, wrong: 1 });
-  const withReject = autonomyStats({ items: { rows: [...rows.slice(1), item(99, 'rejected', { decided_at: '2026-11-02 23:59' })] }, replies: { rows: [] } });
+  const withReject = autonomyStats({ items: { rows: [...rows.slice(1), item(99, 'rejected', { decided_at: '2026-11-03 23:59' })] }, replies: { rows: [] } });
   assert.equal(withReject.items[0].qualifies, false);
   assert.equal(withReject.items[0].rejectedRecently, true);
   const short = autonomyStats({ items: { rows: rows.slice(0, NEEDED - 1) }, replies: { rows: [] } });
@@ -60,4 +60,16 @@ test('planIgnore: stale-checked, ignore keeps the old outcome, count again resto
   assert.equal(planIgnore({ outcome: '' }, { op: 'ignore', expected: '' }).status, 400);
   assert.equal(planIgnore(undefined, { op: 'ignore', expected: '' }).status, 404);
   assert.equal(planIgnore({ outcome: 'ignored:edited' }, { op: 'ignore', expected: 'ignored:edited' }).status, 409);
+});
+
+test('clear-down: decisions before COUNT_FROM are left out; reasons and changes shown', () => {
+  const s = autonomyStats({ items: { rows: [
+    item(1, 'rejected', { decided_at: '2026-11-01 10:00' }),
+    item(2, 'edited', { draft: JSON.stringify({ title: 'Quiz', contact: 'a' }), final: JSON.stringify({ title: 'Charity Quiz', contact: 'b' }) }),
+  ] }, replies: { rows: [reply(1, 'rejected', { decided_at: '2026-10-30 10:00' }), reply(2, 'redrafted', { reason: 'friendlier please' }), reply(3, 'handled')] } });
+  assert.equal(s.items[0].decided, 1);
+  assert.equal(s.items[0].recent[0].why, 'title: Quiz → Charity Quiz', 'item change shown, never a contact');
+  assert.equal(s.replies[0].decided, 1, 'old rejection and handled not counted');
+  assert.equal(s.replies[0].recent[0].why, 'friendlier please');
+  assert.ok(s.countFrom);
 });

@@ -19,12 +19,12 @@ try { ({ chromium } = require('playwright')); } catch {
 const SHOTS = process.env.SHOTS || '';
 
 import { autonomyStats } from '../src/admin/autonomy.js';
-const it = (n, outcome, extra = {}) => ({ item_id: 'm' + n + '-1', created_at: '2026-11-02 09:00', decided_at: '2026-11-02 1' + (n % 10) + ':00', type: 'event', source_kind: 'email', flags: '', outcome, changed: '', ...extra });
-const rp = (n, outcome, extra = {}) => ({ reply_id: 'r' + n, created_at: '2026-10-2' + (n % 9) + ' 09:00', decided_at: '2026-10-2' + (n % 9) + ' 10:0' + (n % 10), type: 'answer', class: 'question', outcome, ...extra });
+const it = (n, outcome, extra = {}) => ({ item_id: 'm' + n + '-1', created_at: '2026-11-02 09:00', decided_at: '2026-11-03 1' + (n % 10) + ':00', type: 'event', source_kind: 'email', flags: '', outcome, changed: '', ...extra });
+const rp = (n, outcome, extra = {}) => ({ reply_id: 'r' + n, created_at: '2026-10-2' + (n % 9) + ' 09:00', decided_at: '2026-11-2' + (n % 9) + ' 10:0' + (n % 10), type: 'answer', class: 'question', outcome, ...extra });
 const data = () => autonomyStats({
   items: { rows: [it(1, 'ignored:edited', { changed: 'title' }), it(2, 'approved'), it(3, 'edited', { changed: 'title,summary', draft: JSON.stringify({ title: 'Quiz Night — Village Hall' }), final: JSON.stringify({ title: 'Charity Quiz Night — Church Lench Village Hall' }) }), it(4, 'approved', { type: 'notice', source_kind: 'feed' })] },
   replies: { rows: [...Array.from({ length: 18 }, (_, i) => rp(i, i % 6 === 0 ? 'edited' : 'approved')), rp(30, 'rejected'), ...Array.from({ length: 9 }, (_, i) => rp(40 + i, i ? 'approved' : 'redrafted', { type: 'clarify', class: '' }))] },
-}, Date.parse('2026-11-02T19:00:00Z'));
+}, Date.parse('2026-11-30T19:00:00Z'));
 const stateData = () => ({
   email: 'admin@example.org', sheetId: 'sheet', gids: {}, holiday: { value: 'FALSE', on: false }, newsletter: null,
   health: [], watchdog: { open: false }, googleAccount: 'sa@example.iam.gserviceaccount.com',

@@ -11,6 +11,7 @@
 const assert = require('assert');
 
 process.env.ANTHROPIC_API_KEY = 'test';
+process.env.LEARN_FROM_TEST = '2026-01-01 00:00'; // fixtures predate the 2 Nov clear-down
 process.env.GMAIL_USER = 'owner@thelenches.org.uk';
 
 const prompts = [];
@@ -75,6 +76,7 @@ function testPanelFirst() {
   ok(!trust.panelFirst(road) && trust.applyTrust('pending', road, 'club@example.org', trusted, {}).status === 'auto', 'roadworks (one.network) keep their old behaviour');
   ok(trust.applyTrust('auto', plain, 'club@example.org', trusted, {}).status === 'auto', 'holiday mode auto is left alone');
   ok(replies.TIMEOUT_SEND === false, 'clarify 24h fallback is off');
+  ok(fb.LEARN_FROM === '2026-01-01 00:00', 'clear-down point (test override)');
 }
 
 async function testFeedback() {
@@ -113,7 +115,10 @@ async function testFeedback() {
   // A contact change is recorded but never given to Claude.
   tables[fb.TAB].push({ item_id: 'm2-1', type: 'event', outcome: 'edited', decided_at: '2026-11-02 11:00',
     draft: JSON.stringify({ contact: 'a' }), final: JSON.stringify({ contact: 'b' }) });
+  tables[fb.TAB].push({ item_id: 'old-9', type: 'event', outcome: 'edited', decided_at: '2025-12-31 23:00',
+    draft: JSON.stringify({ title: 'a' }), final: JSON.stringify({ title: 'b' }) });
   const corr = fb.correctionsFrom(tables[fb.TAB]);
+  ok(!corr.some((c) => c.item_id === 'old-9'), 'decisions before the clear-down are not learned from');
   ok(corr.length === 1 && corr[0].item_id === 'm1-1' && corr[0].team_changed_to.title && !('contact' in corr[0].team_changed_to), 'corrections: changed fields only, never a contact');
 }
 

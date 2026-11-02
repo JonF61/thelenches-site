@@ -504,6 +504,7 @@ const FIXED_RULES = [
   'No greeting or sign-off in the draft: both are added separately, and the sign-off is always Holly\'s.',
 ];
 const CORRECTION_CHARS = 500;
+const HANDLED = /^\s*replied in gmail\b/i;
 const LISTING_LESSON = /^\s*when writing up (a |the )?listings?\b/i;
 let learning = { lessons: [], corrections: [], contacts: new Map() };
 
@@ -513,6 +514,9 @@ const clipTo = (t, n) => { const f = String(t || '').replace(/\s+/g, ' ').trim()
 // (what Jon asked), rejected with a reason. Greeting and sign-off dropped.
 function correctionsFrom(rows, n = RECENT_CORRECTIONS) {
   return (rows || [])
+    // Decisions before LEARN_FROM are set aside (Jon, 2 Nov: rejections there often meant
+    // "already replied in Gmail", which would teach the wrong thing).
+    .filter((r) => String(r.decided_at || '') >= itemFeedback.LEARN_FROM)
     .filter((r) => ['edited', 'redrafted'].includes(r.outcome) || (r.outcome === 'rejected' && String(r.reason || '').trim()))
     .sort((a, b) => String(b.decided_at || b.created_at).localeCompare(String(a.decided_at || a.created_at)))
     .slice(0, n)
@@ -1908,9 +1912,12 @@ async function decideReply(replyId, action, reason = '') {
   }
   const decidedAt = londonDateTime(Date.now());
   if (action === 'skip') {
+    // "Replied in Gmail" (panel button, 2 Nov): Jon dealt with it himself, so it closes like a
+    // rejection but is recorded as "handled": not counted as a rejection, never learned from.
+    const handled = HANDLED.test(reason);
     await g.updateRow('Replies', row._row, { status: 'skipped', decided_at: decidedAt });
-    await feedback.resolve(replyId, { outcome: 'rejected', reason, decidedAt });
-    console.log(`Reply ${replyId} rejected.`);
+    await feedback.resolve(replyId, { outcome: handled ? 'handled' : 'rejected', reason, decidedAt });
+    console.log(`Reply ${replyId} ${handled ? 'closed (replied in Gmail)' : 'rejected'}.`);
     return;
   }
   if (row.type === 'own') {

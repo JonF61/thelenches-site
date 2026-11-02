@@ -9,6 +9,7 @@
 //   approved     Jon pressed Approve and the draft went as written
 //   edited       Jon changed it (Edit email, or the Replies body cell) before it went
 //   rejected     Jon pressed Reject (reason from the confirm page, if given)
+//   handled      Jon pressed "Replied in Gmail" (2 Nov): closed, not a rejection, never learned from
 //   auto_sent    sent by Holly in holiday mode
 //   timed_out    no decision in 24h: the acknowledgement went without the question
 //   redrafted    Jon pressed Redraft: reason is what he asked to change (the new draft

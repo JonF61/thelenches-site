@@ -32,6 +32,10 @@ const FIELDS = ['title', 'summary', 'category', 'village', 'event_date', 'event_
 // Never given to Claude as a correction: personal data, or only meaningful with the email.
 const PRIVATE = ['contact'];
 const RECENT = 8;
+// Clear-down (Jon, 2 Nov 2026): decisions before this (UK time) are set aside, in Holly's
+// learning (here and replies.js correctionsFrom, so the Monday lessons too) and on the panel's
+// Autonomy screen (worker/src/admin/autonomy.js COUNT_FROM, the same value).
+const LEARN_FROM = process.env.LEARN_FROM_TEST || '2026-11-02 18:50'; // the env is for offline tests only
 const CLIP = 500;
 
 const str = (v) => (v === undefined || v === null ? '' : String(v).replace(/\r\n?/g, '\n').trim());
@@ -136,7 +140,7 @@ async function updateDraft(row) {
 // fields Jon changed, before and after; never a contact.
 function correctionsFrom(rows, n = RECENT, since = '') {
   return (rows || [])
-    .filter((r) => r.outcome === 'edited' && (!since || str(r.decided_at) >= since))
+    .filter((r) => r.outcome === 'edited' && str(r.decided_at) >= LEARN_FROM && (!since || str(r.decided_at) >= since))
     .sort((a, b) => str(b.decided_at).localeCompare(str(a.decided_at)))
     .map((r) => {
       const draft = parse(r.draft) || {};
@@ -156,5 +160,5 @@ function correctionsFrom(rows, n = RECENT, since = '') {
 }
 
 module.exports = {
-  TAB, HEADERS, FIELDS, record, resolve, updateDraft, rowFor, diff, outcomeFor, correctionsFrom, typeOf, sourceKindOf,
+  TAB, HEADERS, FIELDS, LEARN_FROM, record, resolve, updateDraft, rowFor, diff, outcomeFor, correctionsFrom, typeOf, sourceKindOf,
 };
