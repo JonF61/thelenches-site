@@ -25,7 +25,7 @@ class FakeAnthropic {
           return {
             stop_reason: 'tool_use',
             usage: {},
-            content: [{ type: 'tool_use', input: {
+            content: [{ type: 'tool_use', name: 'record_items', input: {
               items: [{ title: 'Quiz Night — Church Lench Village Hall', village: 'Church Lench', category: 'event', summary: 'A quiz from 7.30pm.',
                 confidence: 0.9, urgent: false, political_commercial: false, classified: false, missing: [], image_index: -1,
                 people_in_image: false, holly_note: 'Led with the cause, as the poster does.' }],
@@ -130,6 +130,8 @@ async function testWriteupPrompt() {
   ok(sys.startsWith('You are Holly') && sys.includes('FIXED RULES') && sys.includes('guidance, not a cage'), 'Holly writes up, fixed rules then guidance');
   ok(sys.includes('name the charity') && sys.includes('<recent_corrections>') && sys.includes('Charity Quiz Night'), 'lessons and recent edits in the write-up prompt');
   ok(!sys.includes('01386'), 'no contact details in the prompt');
+  const req = prompts[prompts.length - 1];
+  ok(req.tool_choice.type === 'auto' && JSON.stringify(req.messages).includes('Call the record_items tool now'), 'no forced tool_choice (Opus 5.5), told to call the tool');
   ok(res.items[0].holly_note === 'Led with the cause, as the poster does.', 'holly_note returned');
 }
 

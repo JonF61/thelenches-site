@@ -28,6 +28,7 @@ const path = require('path');
 const Anthropic = require('@anthropic-ai/sdk');
 const { tidyText } = require('../../lib/wording');
 const { CLASSES, HOLD_REASONS, normaliseClass } = require('./classify');
+const { callTool } = require('./toolcall');
 
 // Inbound mail is read by Opus (Jon, 2 Nov 2026: real people's messages need its depth);
 // the INBOUND_MODEL repo variable overrides it without a code edit.
@@ -385,7 +386,7 @@ async function extract(input) {
   const signpost = input.signpost === true;
   const local = signpost && input.local === true;
   const images = signpost ? [] : input.images || [];
-  const res = await client.messages.create({
+  const { res, block } = await callTool(client, {
     model: MODEL,
     max_tokens: 16000, // own_text has no length cap
     system: [{
@@ -394,16 +395,14 @@ async function extract(input) {
       cache_control: { type: 'ephemeral' }, // caches tools + system for 5 minutes
     }],
     tools: [TOOL],
-    tool_choice: { type: 'tool', name: 'record_items' },
     messages: [{
       role: 'user',
       content: signpost
         ? buildFeedContent(input)
         : buildContent({ ...input, images, pdfs: input.pdfs || [] }),
     }],
-  });
+  }, 'record_items');
   if (res.stop_reason === 'max_tokens') throw new Error('Claude output truncated (max_tokens)');
-  const block = res.content.find((b) => b.type === 'tool_use');
   if (!block) throw new Error(`No structured output from Claude (stop_reason: ${res.stop_reason})`);
   const u = res.usage || {};
   stats.cacheRead += u.cache_read_input_tokens || 0;

@@ -51,7 +51,7 @@ async function testSdk() {
     assert.ok(seen, 'SDK made no request');
     assert.ok(seen.url.startsWith('/v1/messages'), `unexpected path ${seen.url}`);
     assert.deepStrictEqual(seen.body.system[0].cache_control, { type: 'ephemeral' }, 'cache_control not sent');
-    assert.strictEqual(seen.body.tool_choice.name, 'record_items', 'tool_choice not sent');
+    assert.strictEqual(seen.body.tool_choice.type, 'auto', 'tool_choice not auto (Opus 5.5 refuses forced tool use)');
     assert.ok(out && typeof out === 'object', 'extract() returned nothing');
     assert.strictEqual(stats.cacheRead, 7, 'cache_read_input_tokens not read');
     console.log('SDK OK (extract round trip, prompt caching fields)');
