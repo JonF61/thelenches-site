@@ -541,9 +541,21 @@ export const CLIENT_JS = String.raw`
     return { els: els, selected: sel ? function () { return itemCard(sel, true); } : null };
   }
 
+  // How an item reached Pending: a website news feed (rss.js: message_id "rss:…", link to the
+  // article) or an email (gmail_link opens it in Gmail). '' when neither is known.
+  function itemOrigin(r) {
+    if (/^rss:/i.test(str(r.message_id))) return 'feed';
+    var link = str(r.gmail_link);
+    if (/^https:\/\/mail\.google\.com\//i.test(link)) return 'email';
+    if (/^https?:\/\//i.test(link)) return 'feed';
+    return str(r.message_id) ? 'email' : '';
+  }
+
   function itemBadges(r) {
     var b = [];
     if (truthy(r.urgent)) b.push(h('span', { class: 'badge bad' }, 'Urgent'));
+    var origin = itemOrigin(r);
+    if (origin) b.push(h('span', { class: 'badge info' }, origin === 'feed' ? 'Website feed' : 'Email'));
     b.push(h('span', { class: 'badge' }, lower(r.category) === 'event' ? 'Event' : 'Notice'));
     if (str(r.road)) b.push(h('span', { class: 'badge' }, 'Road'));
     if (r._official) b.push(h('span', { class: 'badge info' }, 'Official, own words'));
@@ -748,7 +760,7 @@ export const CLIENT_JS = String.raw`
         }
       } }, 'Trust this source'));
     }
-    if (str(r.gmail_link)) a.push(h('a', { class: 'btn link', href: str(r.gmail_link), target: '_blank', rel: 'noopener' }, 'Original email'));
+    if (str(r.gmail_link)) a.push(h('a', { class: 'btn link', href: str(r.gmail_link), target: '_blank', rel: 'noopener' }, itemOrigin(r) === 'feed' ? 'Open source page' : 'Open in Gmail'));
     a.push(sheetLink('Pending', r._row));
     return h('div', { class: 'actions' }, a);
   }
