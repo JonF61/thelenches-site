@@ -127,6 +127,22 @@
   ],
   "notices": [
     {
+      "id": "rss-df636fba7526f898-1",
+      "title": "Home Security Advice for Darker Evenings",
+      "body": "Harvington Parish Council passes on Neighbourhood Watch advice to keep homes secure as evenings darken, including locking doors and windows, hiding keys and valuables, and using timer lights. Residents are encouraged to report suspicious activity to West Mercia Police online, or call 999 in an emergency.",
+      "village": "Harvington",
+      "expires": "2026-11-23",
+      "added": "2026-11-02",
+      "link": {
+        "text": "Read more at Harvington PC",
+        "url": "https://harvington-pc.gov.uk/news/neighbourhood-watch-keep-your-home-safe-during-darker-nights"
+      },
+      "link2": {
+        "text": "Report to West Mercia Police",
+        "url": "https://www.westmercia.police.uk/ro/report/"
+      }
+    },
+    {
       "id": "rss-8788c72fe9d78161-1",
       "title": "MP backs climate petition after Harvington wildfire",
       "body": "Local MP Chris Bloor has supported a National Trust petition calling for climate action to be made a national mission, following a wildfire near Harvington, close to Evesham.",
