@@ -49,6 +49,9 @@ nav.side button[aria-current="page"] .n{background:rgba(255,255,255,.25);color:i
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 .spacer{flex:1}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.list .au-card,.au-card{margin-bottom:10px;cursor:default}.au-head{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:4px}
+.au-bar{height:10px;border-radius:5px;background:var(--panel2);border:1px solid var(--line);overflow:hidden;margin:8px 0 4px}.au-bar span{display:block;height:100%;background:var(--accent)}
+.au-more summary{cursor:pointer;margin-top:8px;color:var(--accent)}.au-list{list-style:none;padding:0;margin:6px 0 0}.au-dec{padding:4px 0;border-top:1px solid var(--line);overflow-wrap:anywhere}
 .card h2{font-size:1.05rem;margin:0 0 4px}
 .card h3{font-size:.95rem;margin:12px 0 4px}
 .card.sel{outline:2px solid var(--accent)}

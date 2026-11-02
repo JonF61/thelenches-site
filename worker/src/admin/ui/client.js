@@ -28,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '49';
+export const UI_VERSION = '50';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -38,7 +38,7 @@ export const CLIENT_JS = String.raw`
     picked: {}, ff: '', openF: {}, drag: null, busy: false, order: {}, shown: '' };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
-  var VIEWS = [['summary', 'Summary'], ['draft', 'Newsletter draft'], ['stats', 'Newsletter stats'], ['visitors', 'Site visitors'], ['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
+  var VIEWS = [['summary', 'Summary'], ['autonomy', 'Autonomy'], ['draft', 'Newsletter draft'], ['stats', 'Newsletter stats'], ['visitors', 'Site visitors'], ['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
   // Health has no menu entry (28 Oct): the top bar's Diagnostic and Watchdog open it, as does Summary's Site health.
   // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
   var INTROS = {
@@ -46,6 +46,7 @@ export const CLIENT_JS = String.raw`
     visitors: 'How many people use the website: page views and visits by day and by month, and the most viewed pages. Counts only: nobody can be identified.',
     stats: 'How each newsletter did: how many it went to, bounces, and anonymous opens and link clicks. Counts are totals only: nobody can see who opened or clicked.',
     summary: 'What needs you now, and what is coming up, in one place. Tap a heading to open its page.',
+    autonomy: 'Progress towards Holly acting on her own, kind by kind. Nothing here is automatic: each step up needs your tap. Ignore a decision (a test or a slip) to leave it out of the counts and of Holly\'s learning.',
     queue: 'Events and notices sent in by email or picked up from feeds, waiting for you to approve or reject. Approved items go on the website and into Thursday\'s newsletter.',
     replies: 'Holly\'s draft emails waiting for you to Approve, Edit, Redraft or Reject. Below them: emails still owed a reply, and everything already sent.',
     owed: 'Emails that got an automatic holding reply over 2 days ago but no real answer yet. Redraft one, reply yourself, or close it.',
@@ -404,7 +405,7 @@ export const CLIENT_JS = String.raw`
       owed: Array.isArray(d.owed) ? d.owed.filter(function (o) { return !S.done['reply:' + o.holding.reply_id]; }).length : '!',
       photos: d.photos && !d.photos.error ? d.photos.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length : '!',
       feedback: d.feedback && !d.feedback.error ? fbRows(d, 'waiting').length + fbRows(d, 'reply').length : '!',
-      summary: null, draft: null, stats: null, visitors: null, contacts: null, lessons: null, health: null, activity: null
+      summary: null, autonomy: null, draft: null, stats: null, visitors: null, contacts: null, lessons: null, health: null, activity: null
     };
   }
 
@@ -431,6 +432,7 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'feedback') return [h('div', { class: 'list wide' }, top, feedbackView(d))];
     if (S.view === 'contacts') return [h('div', { class: 'list wide' }, top, contactsView())];
     if (S.view === 'lessons') return [h('div', { class: 'list wide' }, top, lessonsView())];
+    if (S.view === 'autonomy') return [h('div', { class: 'list wide' }, top, autonomyView())];
     if (S.view === 'activity') return [h('div', { class: 'list wide' }, top, activityView())];
     if (S.view === 'stats') return [h('div', { class: 'list wide' }, top, statsView())];
     if (S.view === 'visitors') return [h('div', { class: 'list wide' }, top, visitorsView())];
@@ -2712,6 +2714,87 @@ export const CLIENT_JS = String.raw`
         h('h2', null, 'Contributions (' + (Number(r.contribution_count) || 0) + ')'),
         list.length ? h('ul', { class: 'clist-items' }, list.map(function (c) { return h('li', null, c); })) : h('p', { class: 'meta' }, 'Nothing in Pending from this address.'),
         more > 0 ? h('p', { class: 'meta' }, 'and ' + more + ' older.') : null)
+    ];
+  }
+
+  /* ------------------------------------------------------------ autonomy -- */
+
+  // Autonomy screen (admin/autonomy.js, stage 2): read-only progress per kind of item and reply.
+  async function loadAutonomy() {
+    S.auLoading = true;
+    var r = await api('/admin/api/autonomy');
+    S.auLoading = false;
+    S.autonomy = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'autonomy') render();
+  }
+
+  async function autonomyIgnore(d, op) {
+    var res = await api('/admin/api/autonomy-ignore', { kind: d.kind, id: d.id, op: op, expected: d.outcome });
+    toast(res.ok ? (res.json.message || 'Saved') : (res.status === 409 && res.json.current !== undefined
+      ? 'Changed in the Sheet since you loaded the page. Not saved; reloaded.' : (res.json.error || ('HTTP ' + res.status))), !res.ok);
+    S.autonomy = null;
+    render();
+  }
+
+  var AU_WORDS = { unchanged: 'Approved as written', changed: 'Changed by you', rejected: 'Rejected', ignored: 'Ignored' };
+  var AU_BADGE = { unchanged: 'ok', changed: 'warn', rejected: 'bad', ignored: '' };
+
+  function auDecision(d) {
+    var ign = d.verdict === 'ignored';
+    var what = AU_WORDS[d.verdict] || d.outcome;
+    if (d.verdict === 'changed' && d.changed) what += ' (' + d.changed.replace(/,/g, ', ').replace(/_/g, ' ') + ')';
+    if (ign) what += ' (was ' + d.outcome.replace(/^ignored:/, '') + ')';
+    return h('li', { class: 'au-dec' },
+      h('span', { class: 'badge ' + (AU_BADGE[d.verdict] || '') }, ign ? 'Ignored' : (d.verdict === 'unchanged' ? 'As written' : d.verdict === 'changed' ? 'Changed' : 'Rejected')),
+      h('span', { class: 'meta' }, ' ' + [when(d.at), what].filter(Boolean).join(' · ') + ' '),
+      h('button', { class: 'btn link', onclick: function () {
+        if (ign || window.confirm('Ignore this decision?\n\nIt is left out of the counts and out of Holly\'s learning (use it for a test or a slip). You can count it again later.')) autonomyIgnore(d, ign ? 'restore' : 'ignore');
+      } }, ign ? 'Count again' : 'Ignore'));
+  }
+
+  function auCard(t, th) {
+    var pct = Math.min(100, Math.round(t.decided / th.needed * 100));
+    var status = t.qualifies ? 'Ready for your decision on stage 3'
+      : t.decided < th.needed ? (th.needed - t.decided) + ' more decision' + (th.needed - t.decided === 1 ? '' : 's') + ' needed'
+      : t.rate < th.rate ? 'Approved as written ' + t.rate + '% of the time (needs ' + th.rate + '%)'
+      : 'A rejection in the last ' + th.cleanLast + ' decisions';
+    return h('div', { class: 'card au-card' },
+      h('div', { class: 'au-head' }, h('b', null, t.label),
+        t.qualifies ? h('span', { class: 'badge ok' }, 'Qualifies') : null),
+      h('div', { class: 'meta' }, t.decided + ' decided · ' + t.unchanged + ' as written' + (t.decided ? ' (' + t.rate + '% of the latest ' + Math.min(t.decided, th.needed) + ')' : '') +
+        ' · ' + t.changed + ' changed · ' + t.rejected + ' rejected'),
+      h('div', { class: 'au-bar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(th.needed), 'aria-valuenow': String(Math.min(t.decided, th.needed)),
+        'aria-label': t.label + ': ' + Math.min(t.decided, th.needed) + ' of ' + th.needed + ' decisions' },
+        h('span', { style: 'width:' + pct + '%' })),
+      h('div', { class: 'meta' }, status),
+      t.recent && t.recent.length ? h('details', { class: 'au-more' }, h('summary', null, 'Latest decisions'),
+        h('ul', { class: 'au-list' }, t.recent.map(auDecision))) : null);
+  }
+
+  function autonomyView() {
+    var t = S.autonomy;
+    if (!t) {
+      if (!S.auLoading) loadAutonomy();
+      return [h('p', { class: 'loading' }, 'Loading progress…')];
+    }
+    if (t.error) return [errorNote(t, 'Autonomy'), h('button', { class: 'btn', onclick: function () { S.autonomy = null; render(); } }, 'Try again')];
+    var th = t.thresholds;
+    var section = function (title, rows, empty) {
+      return [h('h2', { class: 'section' }, title), rows.length ? rows.map(function (r) { return auCard(r, th); }) : h('p', { class: 'empty' }, empty)];
+    };
+    var sh = t.shadow;
+    return [
+      h('div', { class: 'note info' }, 'Nothing is automatic yet, apart from roadworks alerts and holiday mode. A kind qualifies after ' + th.needed +
+        ' decisions with at least ' + th.rate + '% approved as written and no rejection in the last ' + th.cleanLast + '. Then it is your call.'),
+      section('Submissions', t.items, 'No decisions yet. They are counted from 2 November.'),
+      section('Replies', t.replies, 'No reply decisions yet.'),
+      h('h2', { class: 'section' }, 'If it had been on (last ' + th.shadowDays + ' days)'),
+      h('div', { class: 'card' }, sh.qualifying.length
+        ? h('p', null, sh.wouldHave + ' would have gone out by itself; you changed or rejected ' + sh.wrong + ' of them.')
+        : h('p', { class: 'meta' }, 'No kind has qualified yet. Once one does, this shows what would have gone out by itself, and how many of those you changed or rejected.')),
+      h('h2', { class: 'section' }, 'Never automatic'),
+      h('div', { class: 'card' }, h('p', { class: 'meta' }, 'Official notices, people in images, political or commercial items, held mail, follow-ups and outreach always wait for you. ' +
+        (t.never.decided ? t.never.decided + ' such decision' + (t.never.decided === 1 ? '' : 's') + ' so far.' : '')))
     ];
   }
 
