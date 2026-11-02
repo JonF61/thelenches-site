@@ -61,6 +61,9 @@
 //   POST /admin/api/orgemails       { id, expected, value }: the organisation's other addresses
 //                                   (Org outreach other_emails, comma separated; same rules)
 //   GET  /admin/api/lessons         the Holly lessons tab, newest first (lessons.js)
+//   GET  /admin/api/autonomy        per-type progress towards autonomy (autonomy.js; read-only)
+//   POST /admin/api/autonomy-ignore { kind: item|reply, id, op: ignore|restore, expected }: one
+//                                   stale-checked write of that decision's outcome cell
 //   POST /admin/api/lesson          { op: add, value } (a new approved lesson; the tab is made
 //                                   if missing) | { op: edit, id, expected, value } (stale-
 //                                   checked) | { op: delete, id, expected } (row removed if its
@@ -146,6 +149,7 @@ import transportData from '../../../src/_data/transport.json' with { type: 'json
 import {
   LESSONS_TAB, LESSON_HEADERS, lessonRows, cleanLesson, newLessonRow, planLessonDecision,
 } from './lessons.js';
+import { ITEM_TAB, REPLY_TAB, autonomyStats, planIgnore } from './autonomy.js';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 import { PAGEEDIT_JS, PAGEEDIT_CSS, PAGEEDIT_VERSION } from './ui/pageedit.js';
@@ -689,6 +693,39 @@ const ukNow = () => {
   return `${ukToday()} ${t}`;
 };
 
+// Autonomy screen (stage 2, 2 Nov): a tab not made yet reads as empty.
+async function readOptional(env, tab) {
+  try {
+    return await readTable(env, tab);
+  } catch (e) {
+    if (e.status === 400 && /Unable to parse range/i.test(e.message)) return { headers: [], rows: [] };
+    throw e;
+  }
+}
+
+async function autonomy(env) {
+  const [items, replies] = await Promise.all([readOptional(env, ITEM_TAB), readOptional(env, REPLY_TAB)]);
+  return autonomyStats({ items, replies });
+}
+
+// Ignore / Count again on one decision: one stale-checked write of its outcome cell.
+async function doAutonomyIgnore(env, body) {
+  const kind = String(body.kind || '');
+  const tab = kind === 'item' ? ITEM_TAB : kind === 'reply' ? REPLY_TAB : '';
+  if (!tab) return json({ ok: false, error: 'Unknown kind' }, 400);
+  const keyCol = kind === 'item' ? 'item_id' : 'reply_id';
+  const id = String(body.id ?? '');
+  const { rows } = await readOptional(env, tab);
+  const matches = rows.filter((r) => id && String(r[keyCol] ?? '') === id);
+  if (matches.length > 1) return json({ ok: false, error: `More than one ${tab} row for this id` }, 409);
+  const plan = planIgnore(matches[0], { op: String(body.op || ''), expected: body.expected });
+  if (plan.error) return json({ ok: false, ...plan }, plan.status);
+  const r = await checkedWrite(env, { tab, keyCol, key: id, field: plan.field, expected: plan.expected, value: plan.value });
+  return r.ok
+    ? json({ ok: true, value: r.value, message: body.op === 'ignore' ? 'Ignored: left out of the counts and of Holly\'s learning.' : 'Counted again.' })
+    : json(r, r.status);
+}
+
 async function doLesson(env, body) {
   const op = String(body.op || '');
   const id = String(body.id ?? '');
@@ -845,6 +882,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/outreach') return json(await outreach(env));
       if (path === '/admin/api/orgs') return json(orgLists(ORGS, await orgContext(env)));
       if (path === '/admin/api/lessons') return json(lessonRows(await readLessons(env)));
+      if (path === '/admin/api/autonomy') return json(await autonomy(env));
       if (path === '/admin/api/summary') return json(await summary(env));
       if (path === '/admin/api/site-visitors') return json(await visitorHistory(env));
       if (path === '/admin/api/nlstats') {
@@ -889,6 +927,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/orgnext') return await doOrgNext(env, body);
       if (path === '/admin/api/orgemails') return await doOrgEmails(env, body);
       if (path === '/admin/api/lesson') return await doLesson(env, body);
+      if (path === '/admin/api/autonomy-ignore') return await doAutonomyIgnore(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(env, body);
       if (path === '/admin/api/draft-refresh') {
         if (!(await dispatch(env, 'newsletter-draft', {}, 2))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);

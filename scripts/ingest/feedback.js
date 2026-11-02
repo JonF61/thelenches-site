@@ -15,6 +15,8 @@
 //                has its own row)
 //   closed       Jon pressed "Close, no reply needed" on an email still owed a reply
 //   shadow       shadow mode: never sent
+//   ignored:<was> Jon's Ignore on the panel's Autonomy screen (a test or a slip): left out of
+//                the autonomy counts and of Holly's learning; Count again restores it
 // Jon can type a reason in the tab by hand at any time.
 // The tab is created (at the end, after every other tab) the first time it is needed.
 // Writes here never stop a reply: failures only warn.

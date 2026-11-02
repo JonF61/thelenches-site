@@ -10,7 +10,8 @@
 //   flags        policy_flags plus urgent, people_in_image, political_commercial, official
 //   draft        JSON of Holly's write-up (FIELDS)
 //   outcome      approved (as written) | edited (changed in the panel or Sheet, then approved)
-//                | rejected | done | auto (holiday mode published it)
+//                | rejected | done | auto (holiday mode published it) | ignored:<was> (Jon's Ignore
+//                on the panel's Autonomy screen: a test or a slip, left out of stats and learning)
 //   changed      fields Jon changed, comma separated (and "wording:own" / "wording:rewrite")
 //   final        JSON of the changed fields as approved
 //   decided_at   YYYY-MM-DD HH:MM UK
