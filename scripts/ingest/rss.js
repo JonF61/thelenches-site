@@ -1,7 +1,7 @@
 // scripts/ingest/rss.js
 // RSS feeds -> Claude (signpost mode) -> Pending tab. Called by index.js after the Gmail loop.
 // Feeds are Settings source rows whose "match" is a URL; "mode" ignore disables a feed.
-// Never fetches articles or images: only the feed text is used. No submitter replies.
+// Never uses article wording: only the feed text. For non-newspaper feeds it reads the links on the item's own page (pagelinks.js) so a second link can be picked. No submitter replies.
 // Each feed item is logged once in the Log tab as "rss:<hash of guid>".
 // Local-news feeds (Evesham Journal): only stories that pass lib/sources.js keepLocalStory
 // (naming our villages or nearby places, or a county-wide topic such as scams, burglaries,
@@ -16,6 +16,7 @@ const { extract } = require('./extract');
 const replies = require('./replies');
 const trust = require('./trusted');
 const { LOCAL_FEED, keepLocalStory } = require('../../lib/sources');
+const { pageLinks } = require('./pagelinks');
 
 const MAX_FEED_ITEMS_PER_RUN = 10; // across all feeds; the rest wait for the next run
 const MAX_RETRIES = 3;
@@ -121,10 +122,12 @@ async function processItem(entry, ctx, h) {
   const link = cleanLink(item.link);
   if (!link) throw new Error(`No usable link for "${item.title}"`);
 
+  // Council and other non-newspaper feeds: the article's own links, for a second link (pagelinks.js).
+  const pageLinksFound = isLocalFeed(feed) ? [] : await pageLinks(link);
   const result = await extract({
     signpost: true,
     local: isLocalFeed(feed),
-    feedItem: { title: item.title, published: received, text: item.text, link },
+    feedItem: { title: item.title, published: received, text: item.text, link, pageLinks: pageLinksFound },
     sourceName: feed.source,
     receivedIso: received,
     today: ctx.today,
@@ -157,6 +160,8 @@ async function processItem(entry, ctx, h) {
       contact: '',
       link_text: it.link_text,
       link_url: it.link_url,
+      link2_text: it.link2_text,
+      link2_url: it.link2_url,
       confidence: it.confidence,
       urgent: it.urgent,
       people_in_image: false,

@@ -602,6 +602,7 @@ export const CLIENT_JS = String.raw`
     if (str(r.cost)) extra.push('Cost: ' + str(r.cost));
     if (str(r.contact)) extra.push('Contact: ' + str(r.contact));
     if (str(r.link_url)) extra.push('Link: ' + (str(r.link_text) ? str(r.link_text) + ' – ' : '') + str(r.link_url));
+    if (str(r.link2_url)) extra.push('Second link: ' + (str(r.link2_text) ? str(r.link2_text) + ' – ' : '') + str(r.link2_url));
     if (extra.length) add(c, h('div', { class: 'meta' }, extra.join(' · ')));
     add(c, images(r));
     if (truthy(r.people_in_image)) add(c, peopleTick('Pending', r.id, r, 'The photo may show children. Tick only if their parents are happy for it to appear.'));
@@ -785,6 +786,8 @@ export const CLIENT_JS = String.raw`
     add(form, f('event_date', 'Date', 'date'));
     add(form, f('end_date', 'End date (several days)', 'date'));
     add(form, f('village', 'Village'));
+    add(form, f('link2_text', 'Second link: label (e.g. Report to West Mercia Police)'));
+    add(form, f('link2_url', 'Second link: address (https://… or mailto:…)'));
     var msg = h('div', { 'aria-live': 'polite' });
     add(form, msg);
     add(form, h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'submit' }, 'Save edits')));

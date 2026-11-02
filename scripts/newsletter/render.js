@@ -132,14 +132,16 @@ function titleWithBadge(titleHtml, style) {
     + `</tr></table></td></tr></table>`;
 }
 
-function linkLine(link) {
-  return link ? `<div style="margin-top:6px;font-family:${SANS};font-size:13px;">${a(link.url, link.text, C.accentText)}</div>` : '';
+// The item's link and its optional second link (link2) on one line.
+function linkLine(link, link2) {
+  const parts = [link, link2].filter(Boolean).map((l) => a(l.url, l.text, C.accentText));
+  return parts.length ? `<div style="margin-top:6px;font-family:${SANS};font-size:13px;">${parts.join(' &nbsp;&middot;&nbsp; ')}</div>` : '';
 }
 
 // The event's own link (if any) and "Add to calendar" on one line, as on the Events page.
 function eventLinks(ev) {
   const cal = calendarUrl(ev);
-  const parts = [ev.link ? a(ev.link.url, ev.link.text, C.accentText) : '', cal ? a(cal, 'Add to calendar', C.accentText) : ''].filter(Boolean);
+  const parts = [ev.link ? a(ev.link.url, ev.link.text, C.accentText) : '', ev.link2 ? a(ev.link2.url, ev.link2.text, C.accentText) : '', cal ? a(cal, 'Add to calendar', C.accentText) : ''].filter(Boolean);
   return parts.length ? `<div style="margin-top:6px;font-family:${SANS};font-size:13px;">${parts.join(' &nbsp;&middot;&nbsp; ')}</div>` : '';
 }
 
@@ -173,7 +175,7 @@ function storyBlock(it, titleSize, kind) {
   return `<tr><td class="px" style="padding:12px 24px 0;font-family:${SERIF};font-size:14px;line-height:1.55;color:${C.ink};">`
     + `<div style="font-weight:bold;font-size:${titleSize}px;">${esc(it.title)}</div>${meta}`
     + (it.body ? `<div style="margin-top:4px;">${para(it.body)}</div>` : '')
-    + `${linkLine(it.link)}${img}</td></tr>`;
+    + `${linkLine(it.link, it.link2)}${img}</td></tr>`;
 }
 
 // Bins first, in a box of their own (Jon, 28 Oct): one line per collection day, date in bold.
@@ -298,11 +300,12 @@ function renderText(m) {
   const p = dateParts(m.issueDate);
   const out = [];
   const head = (t) => { out.push('', t.toUpperCase(), '-'.repeat(t.length), ''); };
-  const item = (title, meta, body, link) => {
+  const item = (title, meta, body, link, link2) => {
     out.push(title);
     if (meta) out.push(meta);
     if (body) out.push(paras(body).join('\n\n'));
     if (link) out.push(`${link.text}: ${link.url.replace(/^mailto:/i, '')}`);
+    if (link2) out.push(`${link2.text}: ${link2.url.replace(/^mailto:/i, '')}`);
     out.push('');
   };
 
@@ -314,7 +317,7 @@ function renderText(m) {
   if (m.events.length || oldRegs) {
     head('Coming up');
     for (const ev of m.events) {
-      item(`${dateParts(ev.date).short} · ${ev.title}${ev.lenches ? ' [Lenches]' : ''}`, ev.meta, ev.body, ev.link);
+      item(`${dateParts(ev.date).short} · ${ev.title}${ev.lenches ? ' [Lenches]' : ''}`, ev.meta, ev.body, ev.link, ev.link2);
       const cal = calendarUrl(ev);
       if (cal) out.splice(out.length - 1, 0, `Add to calendar: ${cal}`);
     }
@@ -338,7 +341,7 @@ function renderText(m) {
   }
   if (m.notices.length) {
     head('Notices');
-    for (const it of m.notices) item(it.title, it.meta, it.body, it.link);
+    for (const it of m.notices) item(it.title, it.meta, it.body, it.link, it.link2);
   }
   head(m.roads.length ? 'Bins and roads' : 'Bins');
   const bl = binLines(m.bins);

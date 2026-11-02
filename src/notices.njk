@@ -73,7 +73,7 @@ seoTitle: "News and notices from the Lenches — Church Lench, Rous Lench and ne
         <summary>Read the full statement</summary>
         {% for p in ps %}{% if loop.index > lead %}<p>{{ p | escape }}</p>{% endif %}{% endfor %}
       </details>{% endif %}
-      {% if n.link or n.image %}<p class="np-link">{% if n.link %}<a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ ((n.image.alt or n.title) + (' — ' + n.image.credit if n.image.credit else '')) | escape }}">(image)</a>{% endif %}</p>{% endif %}
+      {% if n.link or n.link2 or n.image %}<p class="np-link">{% if n.link %}<a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.link2 %} <a href="{{ n.link2.url | escape }}" target="_blank" rel="noopener">{{ n.link2.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ ((n.image.alt or n.title) + (' — ' + n.image.credit if n.image.credit else '')) | escape }}">(image)</a>{% endif %}</p>{% endif %}
     </article>
     {% endfor %}
   </section>
@@ -93,7 +93,7 @@ seoTitle: "News and notices from the Lenches — Church Lench, Rous Lench and ne
         <summary>More</summary>
         {% for p in ps %}{% if not loop.first %}<p>{{ p | escape }}</p>{% endif %}{% endfor %}
       </details>{% endif %}
-      {% if n.link and n.source %}<p class="np-link"><a href="{{ n.link.url | escape }}" target="_blank" rel="noopener external">{{ n.link.text | escape }} &#8599;<span class="sr-only"> (opens the {{ n.source | escape }} website)</span></a></p>{% elif n.link %}<p class="np-link"><a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a></p>{% endif %}
+      {% if n.link and n.source %}<p class="np-link"><a href="{{ n.link.url | escape }}" target="_blank" rel="noopener external">{{ n.link.text | escape }} &#8599;<span class="sr-only"> (opens the {{ n.source | escape }} website)</span></a></p>{% elif n.link %}<p class="np-link"><a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a></p>{% endif %}{% if n.link2 %}<p class="np-link"><a href="{{ n.link2.url | escape }}" target="_blank" rel="noopener">{{ n.link2.text | escape }} &rarr;</a></p>{% endif %}
     </article>
     {% endfor %}
     </div>

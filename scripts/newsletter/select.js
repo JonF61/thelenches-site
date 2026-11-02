@@ -112,6 +112,12 @@ function linkOf(text, url) {
   return u ? { text: str(text) || 'More details', url: u } : null;
 }
 
+// An item's optional second link as { link2 } (spread in), or nothing, so snapshots without one are unchanged.
+function link2Of(it) {
+  const l = linkOf(it.link2 && it.link2.text, it.link2 && it.link2.url);
+  return l && !(it.link && safeUrl(it.link.url) === l.url) ? { link2: l } : {};
+}
+
 function binsFor(bins, issueDate) {
   const lookup = WYCHAVON_LOOKUP;
   const collections = ((bins && bins.collections) || [])
@@ -269,6 +275,8 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
       key, title: str(row.title), body: bodyOf(row), meta,
       link: linkOf(row.link_text, row.link_url), date, sortStart: start,
     };
+    const link2 = linkOf(row.link2_text, row.link2_url);
+    if (link2 && (!base.link || link2.url !== base.link.url)) base.link2 = link2;
 
     const local = localSource(row);
     if (local) {
@@ -304,7 +312,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     if (pendingEvents.has(`${normTitle(ev.title)}|${date}`)) continue;
     const key = whatsonKey('events', ev);
     if ((shown.get(key) || 0) >= MAX_APPEARANCES) continue;
-    events.push({ key, title: str(ev.title), body: str(ev.body), meta: '', link: linkOf(ev.link && ev.link.text, ev.link && ev.link.url), date, sortStart: '', lenches: inLenches(ev), image: whatsonImage(ev, key, true) });
+    events.push({ key, title: str(ev.title), body: str(ev.body), meta: '', link: linkOf(ev.link && ev.link.text, ev.link && ev.link.url), ...link2Of(ev), date, sortStart: '', lenches: inLenches(ev), image: whatsonImage(ev, key, true) });
   }
   for (const it of [...(w.notices || []), ...(w.news || [])]) {
     if (!str(it.title)) continue;
@@ -313,7 +321,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     // Converted from news (shown once under its old key): not repeated.
     if (shown.get(whatsonKey('news', it))) continue;
     if (notices.some((x) => x.key === key)) continue;
-    notices.push({ key, title: str(it.title), body: str(it.body), meta: '', link: linkOf(it.link && it.link.text, it.link && it.link.url), date: '', sortStart: '', image: whatsonImage(it, key) });
+    notices.push({ key, title: str(it.title), body: str(it.body), meta: '', link: linkOf(it.link && it.link.text, it.link && it.link.url), ...link2Of(it), date: '', sortStart: '', image: whatsonImage(it, key) });
   }
 
   // ---- Deterministic order.
