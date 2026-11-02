@@ -71,6 +71,8 @@ function testPanelFirst() {
   ok(r.status === 'pending' && !r.byTrust && r.trustedSource, 'trusted source waits for Jon, marked trusted source');
   const n = trust.applyTrust('pending', plain, 'someone@example.org', trusted, {});
   ok(n.status === 'pending' && !n.trustedSource, 'untrusted source waits, unmarked');
+  const road = { confidence: 0.9, link_url: 'https://one.network/?tm=123' };
+  ok(!trust.panelFirst(road) && trust.applyTrust('pending', road, 'club@example.org', trusted, {}).status === 'auto', 'roadworks (one.network) keep their old behaviour');
   ok(trust.applyTrust('auto', plain, 'club@example.org', trusted, {}).status === 'auto', 'holiday mode auto is left alone');
   ok(replies.TIMEOUT_SEND === false, 'clarify 24h fallback is off');
 }

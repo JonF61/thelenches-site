@@ -22,6 +22,10 @@ const LOW_CONFIDENCE = 0.5;
 // Stage 1 (Jon, 2 Nov 2026): outside holiday mode nothing publishes without Jon's tap in the
 // panel: no trusted-source or "auto" feed publishing. Only Jon turns this off, type by type.
 const PANEL_FIRST = true;
+// Except roadworks alerts (one.network links, as lib/roads.js isRoad): Jon doesn't need to
+// approve those (2 Nov), so they keep their source's old behaviour.
+const ROADWORKS = /one\.network/i;
+const panelFirst = (item) => PANEL_FIRST && !ROADWORKS.test(String((item && item.link_url) || ''));
 const OWN_DOMAIN = 'thelenches.org.uk';
 // Facebook notification mail is never a source in its own right.
 const NOT_TRUSTABLE = /@(.+\.)?(facebook\.com|facebookmail\.com)$/i;
@@ -72,7 +76,7 @@ function applyTrust(status, item, key, trusted, emailFlags) {
   const isTrusted = Boolean(key && trusted && trusted.has(norm(key)));
   if (status !== 'pending' || !isTrusted) return { status, byTrust: false, trustedSource: isTrusted };
   if (trustBlocked(item, emailFlags)) return { status, byTrust: false, trustedSource: true };
-  if (PANEL_FIRST) return { status, byTrust: false, trustedSource: true };
+  if (panelFirst(item)) return { status, byTrust: false, trustedSource: true };
   return { status: 'auto', byTrust: true, trustedSource: true };
 }
 
@@ -87,5 +91,5 @@ async function addTrusted({ key, type, label }, itemId, stamp) {
 }
 
 module.exports = {
-  TAB, HEADERS, PANEL_FIRST, loadTrusted, sourceKeyFor, trustBlocked, applyTrust, addTrusted,
+  TAB, HEADERS, PANEL_FIRST, panelFirst, loadTrusted, sourceKeyFor, trustBlocked, applyTrust, addTrusted,
 };
