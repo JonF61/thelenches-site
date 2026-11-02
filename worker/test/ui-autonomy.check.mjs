@@ -22,7 +22,7 @@ import { autonomyStats } from '../src/admin/autonomy.js';
 const it = (n, outcome, extra = {}) => ({ item_id: 'm' + n + '-1', created_at: '2026-11-02 09:00', decided_at: '2026-11-02 1' + (n % 10) + ':00', type: 'event', source_kind: 'email', flags: '', outcome, changed: '', ...extra });
 const rp = (n, outcome, extra = {}) => ({ reply_id: 'r' + n, created_at: '2026-10-2' + (n % 9) + ' 09:00', decided_at: '2026-10-2' + (n % 9) + ' 10:0' + (n % 10), type: 'answer', class: 'question', outcome, ...extra });
 const data = () => autonomyStats({
-  items: { rows: [it(1, 'ignored:edited', { changed: 'title' }), it(2, 'approved'), it(3, 'edited', { changed: 'title,summary' }), it(4, 'approved', { type: 'notice', source_kind: 'feed' })] },
+  items: { rows: [it(1, 'ignored:edited', { changed: 'title' }), it(2, 'approved'), it(3, 'edited', { changed: 'title,summary', draft: JSON.stringify({ title: 'Quiz Night — Village Hall' }), final: JSON.stringify({ title: 'Charity Quiz Night — Church Lench Village Hall' }) }), it(4, 'approved', { type: 'notice', source_kind: 'feed' })] },
   replies: { rows: [...Array.from({ length: 18 }, (_, i) => rp(i, i % 6 === 0 ? 'edited' : 'approved')), rp(30, 'rejected'), ...Array.from({ length: 9 }, (_, i) => rp(40 + i, i ? 'approved' : 'redrafted', { type: 'clarify', class: '' }))] },
 }, Date.parse('2026-11-02T19:00:00Z'));
 const stateData = () => ({
@@ -70,6 +70,7 @@ try {
     const card = page.locator('.au-card', { hasText: 'Event · email' });
     await card.locator('summary').click();
     assert.ok(await card.getByText('Ignored').count(), `${name}: ignored decision shown`);
+    assert.ok(await card.locator('.au-what', { hasText: 'Charity Quiz Night' }).count(), `${name}: what each decision was`);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `autonomy-${name}.png`), fullPage: true });
     await card.locator('.au-dec', { hasText: 'Changed' }).getByRole('button', { name: 'Ignore' }).click();
     await page.waitForTimeout(200);

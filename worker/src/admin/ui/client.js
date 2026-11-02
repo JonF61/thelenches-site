@@ -28,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '50';
+export const UI_VERSION = '51';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -2745,6 +2745,7 @@ export const CLIENT_JS = String.raw`
     if (d.verdict === 'changed' && d.changed) what += ' (' + d.changed.replace(/,/g, ', ').replace(/_/g, ' ') + ')';
     if (ign) what += ' (was ' + d.outcome.replace(/^ignored:/, '') + ')';
     return h('li', { class: 'au-dec' },
+      d.what ? h('div', { class: 'au-what' }, d.what) : null,
       h('span', { class: 'badge ' + (AU_BADGE[d.verdict] || '') }, ign ? 'Ignored' : (d.verdict === 'unchanged' ? 'As written' : d.verdict === 'changed' ? 'Changed' : 'Rejected')),
       h('span', { class: 'meta' }, ' ' + [when(d.at), what].filter(Boolean).join(' · ') + ' '),
       h('button', { class: 'btn link', onclick: function () {
