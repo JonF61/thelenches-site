@@ -138,7 +138,7 @@ function decideStatus(item, mode, holiday) {
   if (holiday) return 'auto';
   // Official notices: Jon picks their wording or our rewrite (digest / action email).
   if (item.official && item.own_text) return 'pending';
-  if (trust.PANEL_FIRST) return 'pending'; // stage 1: everything waits for Jon's tap
+  if (trust.panelFirst(item)) return 'pending'; // stage 1: everything but roadworks waits for Jon's tap
   if (mode === 'auto' && item.confidence >= LOW_CONFIDENCE) return 'auto';
   return 'pending';
 }
