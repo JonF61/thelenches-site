@@ -2,12 +2,14 @@ name: Newsletter draft
 
 # The admin panel's Newsletter draft (scripts/newsletter/draft.js): the next issue as it
 # would be built now, or its frozen copy once built. Sends nothing; writes only the
-# "Newsletter draft" tab. Runs after approvals, publishing, site builds and newsletter runs,
-# every 3 hours, and from the panel's Refresh button (repository_dispatch newsletter-draft).
+# "Newsletter draft" tab. Runs after site builds and newsletter runs, every 3 hours, and from
+# the panel's Refresh button (repository_dispatch newsletter-draft). Not after approvals or
+# publishing (2 Nov, Jon: too many runs): an approval leads to Publish, and a Publish that
+# changes anything starts a site build, so the build's run covers both.
 # One shared group, cancel-in-progress: only the newest run matters (each rebuilds it all).
 on:
   workflow_run:
-    workflows: ["Apply approval", "Publish to site", "Build and deploy to GitHub Pages", "Newsletter build and send"]
+    workflows: ["Build and deploy to GitHub Pages", "Newsletter build and send"]
     types: [completed]
   schedule:
     - cron: "23 */3 * * *"
