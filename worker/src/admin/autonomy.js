@@ -7,7 +7,8 @@
 //   Item feedback tab (scripts/ingest/itemfeedback.js): Holly's write-ups and Jon's decision.
 //   Reply feedback tab (scripts/ingest/feedback.js): Holly's reply drafts and Jon's decision.
 // A decision counts as unchanged (approved as written), changed (edited, or a reply
-// redrafted) or rejected. Not counted: done, holiday/roadworks auto, shadow, timed out,
+// redrafted) or rejected. Not counted: decisions before COUNT_FROM (the clear-down), handled
+// ("Replied in Gmail"), done, holiday/roadworks auto, shadow, timed out,
 // closed, undecided, and anything Jon marked Ignore (outcome "ignored:<was>", e.g. a test
 // or a silly edit; also left out of Holly's learning). Count again restores the outcome.
 // Never automatic, whatever the numbers: official notices, people in images, political or
@@ -20,6 +21,9 @@ export const RATE = 0.95;       // share approved unchanged, over the latest NEE
 export const CLEAN_LAST = 20;   // no rejection among the latest this many
 export const SHADOW_DAYS = 30;  // "If it had been on" window
 const RECENT = 10;
+// Clear-down (Jon, 2 Nov 2026): decisions before this (UK time) are set aside here and in
+// Holly's learning (scripts/ingest/itemfeedback.js LEARN_FROM, the same value).
+export const COUNT_FROM = '2026-11-02 18:50';
 const IGNORED = 'ignored:';
 
 const str = (v) => String(v ?? '').trim();
@@ -37,6 +41,14 @@ function verdict(kind, outcome) {
   return '';
 }
 
+// What Jon changed in a write-up: "title: Holly's → yours; …" (never a contact).
+function itemChanges(r) {
+  const draft = parse(r.draft);
+  const fin = parse(r.final);
+  return clip(Object.keys(fin).filter((f) => f !== 'contact')
+    .map((f) => `${f.replace(/_/g, ' ')}: ${clip(draft[f], 50) || '(blank)'} → ${clip(fin[f], 50) || '(blank)'}`).join('; '), 240);
+}
+
 // One decided row -> { kind, id, key, label, never, at, verdict, outcome, changed } or null.
 function itemDecision(r) {
   const v = verdict('item', r.outcome);
@@ -52,6 +64,7 @@ function itemDecision(r) {
     verdict: ignored ? 'ignored' : v, outcome: str(r.outcome), changed: str(r.changed),
     // What it was: the title as approved (Jon's version if he changed it), else Holly's.
     what: clip(parse(r.final).title || parse(r.draft).title),
+    why: itemChanges(r),
   };
 }
 
@@ -68,6 +81,7 @@ function replyDecision(r) {
     verdict: ignored ? 'ignored' : v, outcome: str(r.outcome), changed: '',
     // What it was: the opening words of their email (quoted text already removed), else of Holly's draft.
     what: clip(r.they_wrote || r.draft),
+    why: clip(r.reason, 160),
   };
 }
 
@@ -96,7 +110,7 @@ export function autonomyStats({ items, replies }, now = Date.now()) {
   const all = [
     ...((items && items.rows) || []).map(itemDecision),
     ...((replies && replies.rows) || []).map(replyDecision),
-  ].filter((d) => d && d.id).sort((a, b) => b.at.localeCompare(a.at));
+  ].filter((d) => d && d.id && d.at >= COUNT_FROM).sort((a, b) => b.at.localeCompare(a.at));
   const groups = new Map();
   for (const d of all) {
     if (!groups.has(d.key)) groups.set(d.key, { key: d.key, kind: d.kind, label: d.label, never: d.never, list: [] });
@@ -115,7 +129,7 @@ export function autonomyStats({ items, replies }, now = Date.now()) {
     if (!ok.length) continue;
     types.push({
       key: gr.key, kind: gr.kind, label: gr.label, ...progress(ok),
-      recent: ok.slice(0, RECENT).map(({ kind, id, at, verdict: v, outcome, changed, what }) => ({ kind, id, at, verdict: v, outcome, changed, what })),
+      recent: ok.slice(0, RECENT).map(({ kind, id, at, verdict: v, outcome, changed, what, why }) => ({ kind, id, at, verdict: v, outcome, changed, what, why })),
     });
   }
   types.sort((a, b) => (a.kind === b.kind ? b.decided - a.decided || a.label.localeCompare(b.label) : a.kind === 'item' ? -1 : 1));
@@ -123,6 +137,7 @@ export function autonomyStats({ items, replies }, now = Date.now()) {
   const qualifying = new Set(types.filter((t) => t.qualifies).map((t) => t.key));
   const window = all.filter((d) => !d.never && d.verdict !== 'ignored' && qualifying.has(d.key) && d.at.slice(0, 10) >= since);
   return {
+    countFrom: COUNT_FROM,
     thresholds: { needed: NEEDED, rate: Math.round(RATE * 100), cleanLast: CLEAN_LAST, shadowDays: SHADOW_DAYS },
     automatic: [], // stage 3 not started: no type acts on its own (roadworks alerts and holiday mode aside)
     items: types.filter((t) => t.kind === 'item'),

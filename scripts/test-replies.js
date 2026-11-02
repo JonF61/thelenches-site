@@ -255,6 +255,10 @@ async function testSending() {
   ok(!(await replies.applyEdit(a4.reply_id, 'again')), 'Edit is single use');
 
   const held = byType('held')[0];
+  // "Replied in Gmail" (2 Nov): closed like a rejection, recorded as handled, never learned from.
+  await replies.decideReply(held.reply_id, 'skip', 'Replied in Gmail');
+  ok(held.status === 'skipped' && fb().find((r) => r.reply_id === held.reply_id).outcome === 'handled', 'Replied in Gmail: handled, not rejected');
+  held.status = 'awaiting';
   // 1 Nov: naming Jon is fine; his own address is never sent.
   await assert.rejects(replies.applyEdit(held.reply_id, 'Hi there,\n\nWrite to owner@thelenches.org.uk\n'), /failed to send/);
   ok(held.status === 'failed' && /anonymity/.test(held.notes), 'never sends a reply giving the team address');
