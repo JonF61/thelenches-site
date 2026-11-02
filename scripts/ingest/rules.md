@@ -1,6 +1,9 @@
-# Extraction rules — The Lenches
+# Write-up guidance — The Lenches
 
-Edit this file freely; it is read on every run. No code changes needed.
+Holly's guidance for writing up listings (scripts/ingest/extract.js). Since 2 Nov 2026 it
+guides rather than binds: Holly follows it unless an item is better served another way, and
+then says why in a "Holly:" note on the item. The rules that always bind are the FIXED RULES
+in extract.js. Edit this file freely; it is read on every run. No code changes needed.
 Scope must match the Submission Guidelines (src/_includes/guidelines.md).
 
 ## Scope

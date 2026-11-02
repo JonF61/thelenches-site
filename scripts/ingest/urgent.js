@@ -129,7 +129,7 @@ function replyLine(r, liveButtons) {
     return 'They have had a holding reply. This draft never goes unless you approve or edit it, even in '
       + `holiday mode; Reject if you'd rather reply yourself (from website@). ${how}${noButtons}`;
   }
-  const when = r.status === 'awaiting' && replies.FALLBACK_TYPES.includes(r.type || 'ack')
+  const when = replies.TIMEOUT_SEND && r.status === 'awaiting' && replies.FALLBACK_TYPES.includes(r.type || 'ack')
     && !String(r.policy_codes || '').includes('sender_limit')
     ? ` If you do nothing, it goes without the question ${replies.AWAIT_HOURS}h after ${r.created_at}.`
     : ' Never sent unless you approve or edit it.';

@@ -12,12 +12,17 @@
 // each other. A clash is written to the lesson's notes as "Check: …" (cleared once it's gone),
 // shown on the panel and listed in the email for Jon to settle. Fixed rules always win in the
 // prompt anyway. The run reviews approved lessons even in a week with no corrections.
+// Write-ups (stage 1, 2 Nov 2026): the run also reads the week's edited listings in the Item
+// feedback tab (Holly's write-up vs what Jon approved; ingest/itemfeedback.js), so lessons can
+// cover how she writes up submissions. Those lessons start "When writing up a listing" and go
+// into her write-up prompt (extract.js primeWriteups) as well as her replies.
 // Logs print counts and ids only (lessons quote no one, but the repo's logs are public).
 'use strict';
 
 const g = require('../ingest/google');
 const replies = require('../ingest/replies');
 const { signedLink, linksEnabled } = require('../ingest/links');
+const itemFeedback = require('../ingest/itemfeedback');
 
 const TZ = 'Europe/London';
 const DAYS = 7;
@@ -32,16 +37,19 @@ function londonDateTime(ms) {
   return `${londonDate(ms)} ${time}`;
 }
 
-const SYSTEM = `You help train Holly, the automated email assistant of a volunteer-run village
-website and newsletter (The Lenches, Worcestershire). The input is JSON: corrections (this
-week's drafts the team edited, asked to be redrafted, or rejected with a reason: draft,
-sent_instead, team_said), existing (lessons already approved, proposed or rejected),
+const SYSTEM = `You help train Holly, the automated assistant of a volunteer-run village website
+and newsletter (The Lenches, Worcestershire), who drafts replies to people and writes up the
+listings they send in. The input is JSON: corrections (this week's reply drafts the team
+edited, asked to be redrafted, or rejected with a reason: draft, sent_instead, team_said),
+listing_corrections (this week's listing write-ups the team changed before approving:
+holly_wrote and team_changed_to, the changed fields only), existing (lessons already approved, proposed or rejected),
 approved (the lessons in use, with ids), fixed_rules (Holly's rules that no lesson may bend)
 and voice_guide (her style guide).
 
 Propose at most ${MAX_LESSONS} lessons: short, general rules that would have made Holly's drafts
 right first time. Rules:
-- One sentence each, an instruction to Holly in British English, under 40 words.
+- One sentence each, an instruction to Holly in British English, under 40 words. A lesson from
+  listing_corrections starts "When writing up a listing," so it is never applied to replies.
 - General: never a person's name, email address, phone number, organisation-specific detail
   or a one-off fact. Say "a council clerk", not who.
 - Only what the corrections show the team wants; never invent preferences.
@@ -60,7 +68,7 @@ Then check for conflicts, so the rules never pull against each other:
   clashes; leave out lessons that are fine.
 
 Output only JSON, nothing else:
-{"lessons": [{"lesson": "...", "evidence": ["reply_id"], "conflicts": ""}], "review": [{"id": "L...", "conflict": "..."}]}`;
+{"lessons": [{"lesson": "...", "evidence": ["reply_id or item_id"], "conflicts": ""}], "review": [{"id": "L...", "conflict": "..."}]}`;
 
 // Reply feedback rows decided in the last DAYS days that teach something, with their reply ids.
 function withIds(rows, now = Date.now()) {
@@ -85,13 +93,13 @@ const clip = (t, n) => { const f = String(t || '').replace(/\s+/g, ' ').trim(); 
 
 // Claude's proposals and conflict review. approved: [{ id, lesson }].
 // Returns { lessons: [{ lesson, evidence, conflicts }], review: Map id -> note }.
-async function propose(corrections, existing, approved = []) {
+async function propose(corrections, existing, approved = [], listings = []) {
   const res = await replies.claude().messages.create({
     model: replies.MODEL(),
     max_tokens: 1800,
     system: SYSTEM,
     messages: [{ role: 'user', content: JSON.stringify({
-      corrections, existing, approved, fixed_rules: replies.FIXED_RULES, voice_guide: replies.voiceGuide(),
+      corrections, listing_corrections: listings, existing, approved, fixed_rules: replies.FIXED_RULES, voice_guide: replies.voiceGuide(),
     }) }],
   });
   const raw = replies.textOf(res);
@@ -101,9 +109,9 @@ async function propose(corrections, existing, approved = []) {
   } catch {
     throw new Error('Claude gave no usable lessons');
   }
-  const known = new Set(corrections.map((c) => c.reply_id));
+  const known = new Set([...corrections.map((c) => c.reply_id), ...listings.map((c) => c.item_id)]);
   const ids = new Set(approved.map((a) => a.id));
-  const lessons = (corrections.length && Array.isArray(out.lessons) ? out.lessons : []).slice(0, MAX_LESSONS)
+  const lessons = ((corrections.length || listings.length) && Array.isArray(out.lessons) ? out.lessons : []).slice(0, MAX_LESSONS)
     .map((l) => ({
       lesson: cleanLesson(l && l.lesson),
       evidence: (Array.isArray(l && l.evidence) ? l.evidence : []).filter((x) => known.has(x)),
@@ -125,7 +133,7 @@ function emailFor(rows, flagged = []) {
   const buttons = linksEnabled();
   const btn = (href, label, bg) => `<a href="${esc(href)}" style="display:inline-block;background:${bg};color:#ffffff;text-decoration:none;font-weight:bold;padding:8px 16px;border-radius:6px;margin:4px 6px 4px 0;font-size:14px;">${esc(label)}</a>`;
   const text = [rows.length ? 'Holly lessons to approve' : 'Holly lessons to check', '',
-    'From this week\'s edits, redrafts and rejections. Approved lessons go into every Holly draft from the next run. You can change the wording in the Holly lessons tab before approving.', ''];
+    'From this week\'s edits to replies and listings, redrafts and rejections. Approved lessons go into every Holly draft from the next run. You can change the wording in the Holly lessons tab before approving.', ''];
   const html = [];
   for (const r of rows) {
     const item = { id: r.id, title: r.lesson.slice(0, 80) };
@@ -147,7 +155,7 @@ function emailFor(rows, flagged = []) {
     text: text.join('\n'),
     html: `<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="font-family:Arial,Helvetica,sans-serif;background:${C.cream};">
       <tr><td style="padding:16px;"><div style="font-size:20px;font-weight:bold;color:${C.green};">${rows.length ? 'Holly lessons to approve' : 'Holly lessons to check'}</div>
-      <div style="color:${C.grey};font-size:13px;margin-top:4px;">From this week's edits, redrafts and rejections. Approved lessons go into every Holly draft from the next run. You can change the wording in the Holly lessons tab before approving.</div></td></tr>
+      <div style="color:${C.grey};font-size:13px;margin-top:4px;">From this week's edits to replies and listings, redrafts and rejections. Approved lessons go into every Holly draft from the next run. You can change the wording in the Holly lessons tab before approving.</div></td></tr>
       ${html.join('')}</table>`,
   };
 }
@@ -163,15 +171,21 @@ async function run({ now = Date.now() } = {}) {
     console.log('No Reply feedback tab yet.');
   }
   const corrections = withIds(fb, now);
+  let listings = [];
+  try {
+    listings = itemFeedback.correctionsFrom(await g.readTable(itemFeedback.TAB), 20, londonDateTime(now - DAYS * 86400000));
+  } catch {
+    console.log('No Item feedback tab yet.');
+  }
   const tab = await readLessons();
   const approved = tab.filter((r) => String(r.status).trim().toLowerCase() === 'approved' && String(r.lesson || '').trim())
     .map((r) => ({ id: r.id, lesson: String(r.lesson).trim(), notes: String(r.notes || ''), _row: r._row }));
-  if (!corrections.length && !approved.length) {
+  if (!corrections.length && !listings.length && !approved.length) {
     console.log(`Holly lessons: no corrections in the last ${DAYS} days and no lessons in use; nothing to do.`);
     return { rows: [], flagged: [] };
   }
   const existing = tab.map((r) => ({ lesson: r.lesson, status: r.status })).filter((r) => String(r.lesson || '').trim());
-  const { lessons: found, review } = await propose(corrections, existing, approved.map(({ id, lesson }) => ({ id, lesson })));
+  const { lessons: found, review } = await propose(corrections, existing, approved.map(({ id, lesson }) => ({ id, lesson })), listings);
 
   // Conflict notes on the lessons in use: written when found, cleared once gone.
   const flagged = [];
@@ -193,7 +207,7 @@ async function run({ now = Date.now() } = {}) {
     };
   });
   if (rows.length) await g.appendRows(replies.LESSONS_TAB, rows);
-  const summary = `Holly lessons: ${corrections.length} correction(s), ${rows.length} proposed${rows.length ? ` (${rows.map((r) => r.id).join(', ')})` : ''}, ${flagged.length} in use flagged${flagged.length ? ` (${flagged.map((f) => f.id).join(', ')})` : ''}`;
+  const summary = `Holly lessons: ${corrections.length} reply correction(s), ${listings.length} listing edit(s), ${rows.length} proposed${rows.length ? ` (${rows.map((r) => r.id).join(', ')})` : ''}, ${flagged.length} in use flagged${flagged.length ? ` (${flagged.map((f) => f.id).join(', ')})` : ''}`;
   if (!rows.length && !flagged.length) {
     console.log(`${summary}; no email.`);
     return { rows, flagged };

@@ -229,12 +229,13 @@ async function testSending() {
   const byType = (t) => tables.Replies.filter((r) => r.type === t);
   ok(byType('ack').every((r) => r.status === 'sent'), 'acks sent');
   ok(byType('holding').every((r) => r.status === 'sent'), 'holding replies sent');
-  ok(clarify.status === 'sent' && !sent.find((m) => m.to === clarify.to).text.includes('Could you let us know'), 'clarification sent without the question after 24h');
+  // Stage 1 (2 Nov 2026, TIMEOUT_SEND off): a clarification waits for Jon however long it takes.
+  ok(clarify.status === 'awaiting' && !sent.some((m) => m.to === clarify.to && m.text.includes('Could you let us know')), 'clarification still waits for Jon after 24h');
   ok(byType('answer').every((r) => r.status === 'awaiting') && byType('held').every((r) => r.status === 'awaiting'),
     'normal mode: answers and held drafts wait for Jon');
   ok(sent.every((m) => m.from === 'website@thelenches.org.uk'), 'all replies from website@');
   const fb = () => tables['Reply feedback'];
-  ok(fb().find((r) => r.reply_id === clarify.reply_id).outcome === 'timed_out', 'feedback: timed_out');
+  ok(!fb().find((r) => r.reply_id === clarify.reply_id).outcome, 'feedback: no outcome until Jon decides');
 
   const [a1, a2, a3, a4] = byType('answer');
   await replies.decideReply(a1.reply_id, 'send');
