@@ -30,6 +30,13 @@ export const ACTIONS = {
   signup: ['Confirm sign-up', 'Confirmed', 'approve'],
   // Recommend button confirmation link (/r only; /a refuses it). The id is a Recommendations row id.
   rec: ['Confirm recommendation', 'Confirmed', 'approve'],
+  // Suggest a tradesperson / somewhere to eat confirmation link (/sg only; /a refuses it). The id
+  // is a Listing suggestions row id.
+  sug: ['Send suggestion', 'Sent', 'approve'],
+  // Jon's decision on a confirmed suggestion (admin panel only): sug_ok adds the entry (as
+  // suggested, or as edited: JSON in b) to trades.json / eat.json; sug_no rejects it.
+  sug_ok: ['Approve suggestion', 'Suggestion approved', 'approve'],
+  sug_no: ['Reject suggestion', 'Suggestion rejected', 'reject'],
   // Reader feedback (Feedback tab), admin panel only: no signed email links carry these.
   fb_approve: ['Approve', 'Approved', 'approve'],
   fb_reject: ['Reject', 'Rejected', 'reject'],
@@ -54,7 +61,7 @@ export const ACTIONS = {
 };
 
 // Never valid in a signed email link (index.js /a).
-export const PANEL_ONLY = ['nlquiet', 'nltest', 'contactmail', 'done'];
+export const PANEL_ONLY = ['nlquiet', 'nltest', 'contactmail', 'done', 'sug_ok', 'sug_no'];
 
 export const FEEDBACK_ACTIONS = ['fb_approve', 'fb_reject', 'fb_postpone', 'fb_done', 'fb_send', 'fb_edit', 'fb_skip'];
 
@@ -70,6 +77,7 @@ export function validPayload(p) {
   // Redraft links may carry the draft to show (links.js redraftLink); it is never dispatched.
   if (p.a === 'redraft' && p.b !== undefined && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
   if (p.a === 'fb_postpone' && !/^\d{4}-\d{2}-\d{2}$/.test(String(p.d || ''))) return false;
+  if (p.a === 'sug_ok' && p.b !== undefined && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
   if (p.a === 'rec' && !(['trades', 'eat'].includes(p.k) && /^[a-z0-9-]{1,80}$/.test(String(p.n || '')))) return false;
   if (p.a === 'trust') {
     const k = String(p.k || '');
@@ -127,6 +135,10 @@ export function dispatchFor(p, reason = '', body = '') {
       action: 'send', issue_date: p.i, confirm_count: String(p.n), expect_hash: p.h, expect_mode: p.m,
     }];
   }
+  // Listing suggestions go to listing-suggest.yml (it commits trades.json / eat.json); Jon's edited
+  // entry and reject reason ride in the payload, read from the event file, never env.
+  if (p.a === 'sug_ok') return ['listing-suggest', { action: 'approve', id: p.i, body: body || p.b || '' }];
+  if (p.a === 'sug_no') return ['listing-suggest', { action: 'reject', id: p.i, reason }];
   if (p.a === 'nlbuild') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true }];
   if (p.a === 'nlquiet') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true, step: 'build' }];
   if (p.a === 'nltest') return ['newsletter', { action: 'build', issue_date: p.i, step: 'preview' }];
@@ -142,7 +154,7 @@ export function dispatchFor(p, reason = '', body = '') {
 }
 
 // One decision (approve, reject, trust, send, skip, edit, redraft, close, nlsend, nlbuild, nlquiet, nltest,
-// the reader feedback fb_* actions, nudge, orgcheck, contactmail, and lesson_ok / lesson_no) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
+// the reader feedback fb_* actions, nudge, orgcheck, contactmail, lesson_ok / lesson_no, and sug_ok / sug_no) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
 export async function decide(env, p, reason = '', body = '') {
   const [eventType, payload] = dispatchFor(p, reason, body);
   return dispatch(env, eventType, payload, 2);

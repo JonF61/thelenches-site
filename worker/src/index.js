@@ -14,6 +14,10 @@
 //   POST /r          Recommend button on Local trades / Where to eat (recommend.js): as /s,
 //                    a Recommendations row and repository_dispatch "recommend" (send)
 //   GET  /r?t=TOKEN  recommendation confirm page (a button); POST fires "recommend" (confirm)
+//   POST /sg         Suggest a tradesperson / somewhere to eat form (listingsuggest.js): as /r, a
+//                    Listing suggestions row and repository_dispatch "listing-suggest" (send)
+//   GET  /sg?t=TOKEN suggestion confirm page (a button); POST fires "listing-suggest" (confirm), and
+//                    the suggestion then waits on the panel's Suggestions screen
 //   GET  /c?t=TOKEN  a link in a sent newsletter: one anonymous click counted, then 302 on
 //   GET  /o?i=DATE   the newsletter's 1x1 image: one anonymous open counted (track.js)
 //                    Public: Cloudflare Access must never cover /a, /u, /f, /s, /c or /o
@@ -54,6 +58,7 @@ import { handleAdmin } from './admin/index.js';
 import { handleFeedback } from './feedback.js';
 import { handleSignup } from './signup.js';
 import { handleRecommend, listedEntry } from './recommend.js';
+import { handleSuggest, handleSuggestConfirm } from './listingsuggest.js';
 import { logVisitors } from './admin/sitestats.js';
 
 const enc = new TextEncoder();
@@ -191,7 +196,7 @@ async function handleApproval(request, env) {
   if (request.method === 'GET') {
     const token = url.searchParams.get('t');
     const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
-    if (!p || p.a === 'unsub' || p.a === 'signup' || p.a === 'rec' || PANEL_ONLY.includes(p.a)) return invalidPage();
+    if (!p || p.a === 'unsub' || p.a === 'signup' || p.a === 'rec' || p.a === 'sug' || PANEL_ONLY.includes(p.a)) return invalidPage();
     if (p.expired) return expiredPage();
     const [verb, , cls] = ACTIONS[p.a];
     return page(verb, `
@@ -224,7 +229,7 @@ ${confirmExtra(p)}
       return invalidPage();
     }
     const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
-    if (!p || p.a === 'unsub' || p.a === 'signup' || p.a === 'rec' || PANEL_ONLY.includes(p.a)) return invalidPage();
+    if (!p || p.a === 'unsub' || p.a === 'signup' || p.a === 'rec' || p.a === 'sug' || PANEL_ONLY.includes(p.a)) return invalidPage();
     if (p.expired) return expiredPage();
     reason = cleanReason(reason, p.a === 'redraft' ? 500 : 300);
     if (p.a === 'redraft' && reason.length < 3) return page('Nothing to change', '<h1>Say what to change</h1><p>The box was empty. Go back and type what Holly should change.</p>', 400);
@@ -607,6 +612,11 @@ export default {
     }
     if (url.pathname === '/r') {
       return url.searchParams.has('t') ? handleRecommendConfirm(request, env) : handleRecommend(request, env);
+    }
+    if (url.pathname === '/sg') {
+      return url.searchParams.has('t')
+        ? handleSuggestConfirm(request, env, { verifyToken, page, esc, invalidPage, failedPage })
+        : handleSuggest(request, env);
     }
     if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) return handleAdmin(request, env);
     return new Response('Lenches approvals', { headers: { 'content-type': 'text/plain' } });

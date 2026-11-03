@@ -76,11 +76,7 @@
       "added": "2026-11-03"
     },
     {
-      "task": "Suggest forms for Local trades and Where to eat, with panel Approve/Edit/Reject (part 2; Recommend buttons are built)",
-      "added": "2026-11-03"
-    },
-    {
-      "task": "Recommend buttons: check the first real recommendation end to end (email, confirm, count shows on the page)",
+      "task": "Suggest forms: check the first real suggestion end to end (email, confirm, panel card, Approve adds it to the page)",
       "added": "2026-11-03"
     }
   ]

@@ -127,6 +127,8 @@ label.f{display:block;margin:10px 0 4px;font-weight:600;font-size:.9rem}
 input.f,select.f,textarea.f{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:16px}
 textarea.f{min-height:120px;resize:vertical;line-height:1.4}
 .note{font-size:.88rem;padding:8px 10px;border-radius:8px;background:var(--info-bg);color:var(--info);margin:8px 0}
+.sg-said{display:grid;grid-template-columns:max-content 1fr;gap:2px 10px;margin:6px 0}.sg-said dt{font-weight:600;color:var(--muted, #666)}.sg-said dd{margin:0;overflow-wrap:anywhere}
+.sg-tags .chk{display:block;margin:4px 0}
 .note.warn{background:var(--warn-bg);color:var(--warn)}
 .note.bad{background:var(--bad-bg);color:var(--bad)}
 .empty{color:var(--muted);padding:24px 8px;text-align:center}

@@ -20,7 +20,7 @@ const { parseRange, colIndex, colLetters, maskEmails } = require('../sheettab');
 const SCOPE = 'https://www.googleapis.com/auth/spreadsheets';
 const LOG_TAB = 'Kryten log';
 const LOG_HEADERS = ['id', 'at', 'action', 'tab', 'range', 'old', 'new', 'status', 'run'];
-const REFUSED_TABS = ['subscribers', 'do not send', 'sends', 'deleted contacts', 'sign-ups', 'recommendations', LOG_TAB.toLowerCase()];
+const REFUSED_TABS = ['subscribers', 'do not send', 'sends', 'deleted contacts', 'sign-ups', 'recommendations', 'listing suggestions', LOG_TAB.toLowerCase()];
 const MAX_CELLS = 50;
 
 const norm = (s) => String(s == null ? '' : s).trim().toLowerCase();
