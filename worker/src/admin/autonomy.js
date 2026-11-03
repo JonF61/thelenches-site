@@ -42,7 +42,7 @@ function verdict(kind, outcome) {
 }
 
 // What Jon changed in a write-up: "title: Holly's → yours; …" (never a contact).
-function itemChanges(r) {
+export function itemChanges(r) {
   const draft = parse(r.draft);
   const fin = parse(r.final);
   return clip(Object.keys(fin).filter((f) => f !== 'contact')

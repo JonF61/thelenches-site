@@ -440,6 +440,7 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'draft' && S.shown.split('|')[0] !== 'draft') S.draftAuth = null;
     if (S.view === 'draft') return [h('div', { class: 'list wide' }, top, draftView(d))];
     if (S.view === 'summary') return [h('div', { class: 'list wide' }, top, summaryView(d))];
+    if (S.filter === 'previous') return [h('div', { class: 'list wide' }, top, queueBar(), historyView())];
     return split(withIntro(queueList(d)), 'pending');
   }
 
@@ -522,14 +523,21 @@ export const CLIENT_JS = String.raw`
 
   function isFlagged(r) { return Boolean(str(r.policy_flags)) || truthy(r.people_in_image) || truthy(r.political_commercial); }
 
+  // All / Urgent / Flagged filter the queue; Previous submissions shows decided items (historyView).
+  function queueBar() {
+    return h('div', { class: 'toolbar' },
+      h('div', { class: 'seg', role: 'group', 'aria-label': 'Filter' }, [['all', 'All'], ['urgent', 'Urgent'], ['flagged', 'Flagged'], ['previous', 'Previous submissions']].map(function (f) {
+        return h('button', { 'aria-pressed': S.filter === f[0] ? 'true' : 'false', onclick: function () {
+          if (f[0] === 'previous') { S.history = null; S.hiShown = 25; }
+          S.filter = f[0]; render();
+        } }, f[1]);
+      })));
+  }
+
   function queueList(d) {
     var t = d.pending;
     var els = [];
-    var bar = h('div', { class: 'toolbar' },
-      h('div', { class: 'seg', role: 'group', 'aria-label': 'Filter' }, [['all', 'All'], ['urgent', 'Urgent'], ['flagged', 'Flagged']].map(function (f) {
-        return h('button', { 'aria-pressed': S.filter === f[0] ? 'true' : 'false', onclick: function () { S.filter = f[0]; render(); } }, f[1]);
-      })));
-    els.push(bar);
+    els.push(queueBar());
     if (t.error) { els.push(errorNote(t, 'Pending')); return { els: els }; }
     if (t.headers.indexOf('people_ok') < 0) els.push(h('div', { class: 'note warn' }, 'Pending has no people_ok column: items whose image shows people cannot be approved here.'));
     var rows = t.rows.filter(function (r) { return !S.done['pending:' + r.id]; })
@@ -737,6 +745,16 @@ export const CLIENT_JS = String.raw`
     }));
   }
 
+  // Reject a submission (3 Nov): optional reason, kept in Pending reject_reason and shown in
+  // Previous submissions. Never sent: the sender's sorry note (if any) is drafted as before.
+  function itemRejectForm(r) {
+    var why = h('input', { class: 'f', id: 'irj', maxlength: 300 });
+    return h('form', { onsubmit: function (e) { e.preventDefault(); act('pending', r.id, 'reject', { reason: why.value }, 'Rejected'); } },
+      h('p', null, 'Reject "' + str(r.title) + '"? Nothing is published.'),
+      h('label', { class: 'f', for: 'irj' }, 'Why? (optional; kept in the Pending tab for Previous submissions, never sent)'), why,
+      h('div', { class: 'actions' }, h('button', { class: 'btn danger', type: 'submit' }, 'Reject')));
+  }
+
   function itemActions(r, inDetail) {
     var blocked = needsTick(r);
     var why = blocked ? 'Tick "People OK" first' : null;
@@ -749,9 +767,7 @@ export const CLIENT_JS = String.raw`
     if (r._offers) { a.push(approve('approve_own', 'Approve their wording', true)); a.push(approve('approve_rewrite', 'Approve rewrite', false)); }
     else a.push(approve('approve', 'Approve', true));
     if (!inDetail) a.push(h('button', { class: 'btn', onclick: function () { overlay('Edit item', itemForm(r)); } }, 'Edit'));
-    a.push(h('button', { class: 'btn danger', onclick: function () {
-      if (window.confirm('Reject "' + str(r.title) + '"?')) act('pending', r.id, 'reject', null, 'Rejected');
-    } }, 'Reject'));
+    a.push(h('button', { class: 'btn danger', onclick: function () { overlay('Reject item', itemRejectForm(r)); } }, 'Reject'));
     // Done already (1 Nov): dealt with another way; nothing publishes, no sorry note.
     a.push(h('button', { class: 'btn', title: 'Already on the site or dealt with another way: nothing is published and no note is sent', onclick: function () {
       if (window.confirm('Mark "' + str(r.title) + '" as done already?\n\nNothing is published and no note goes to the sender. Their Contributions list shows it as done.')) act('pending', r.id, 'done', null, 'Done already');
@@ -2777,6 +2793,74 @@ export const CLIENT_JS = String.raw`
       h('div', { class: 'meta' }, status),
       t.recent && t.recent.length ? h('details', { class: 'au-more' }, h('summary', null, 'Latest decisions'),
         h('ul', { class: 'au-list' }, t.recent.map(auDecision))) : null);
+  }
+
+  /* ---------------------------------------------------- previous submissions -- */
+  // Decided items, newest first (worker/src/admin/history.js): outcome, website dates (as the
+  // publish run works them out), the newsletter issues that carried them, your edits, and the
+  // reason for a rejection. Read-only.
+  async function loadHistory() {
+    S.hiLoading = true;
+    var r = await api('/admin/api/history');
+    S.hiLoading = false;
+    S.history = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'queue' && S.filter === 'previous') render();
+  }
+
+  var HI_STATUS = { approved: ['Approved', 'ok'], auto: ['Automatic', 'info'], rejected: ['Rejected', 'bad'], done: ['Done already', 'info'] };
+  var HI_FILTERS = [['all', 'All'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['done', 'Done already']];
+
+  function hiCard(r, today) {
+    var st = HI_STATUS[r.status] || [r.status.charAt(0).toUpperCase() + r.status.slice(1), 'info'];
+    var lines = [];
+    lines.push(h('div', { class: 'meta' }, [
+      r.category === 'event' ? 'Event' + (r.eventDate ? ' on ' + day(r.eventDate) : '') : 'Notice',
+      r.village, (r.origin === 'feed' ? 'Feed: ' : 'From ') + (r.from || 'unknown'),
+      r.received ? 'Arrived ' + when(r.received) : '', r.decidedAt ? 'Decided ' + when(r.decidedAt) : '',
+    ].filter(Boolean).join(' · ')));
+    if (r.status === 'approved' || r.status === 'auto') {
+      var s = r.site;
+      lines.push(h('div', null, h('b', null, 'Website: '), s
+        ? s.page + ' page, ' + day(s.from) + ' to ' + day(s.until) + (s.now ? ' (showing now)' : s.until < today ? ' (now off)' : '')
+        : 'not shown'));
+      lines.push(h('div', null, h('b', null, 'Newsletter: '), r.newsletter.length
+        ? r.newsletter.map(day).join(', ') : (s && s.until >= today ? 'not yet' : 'not included')));
+      if (r.edited) lines.push(h('div', { class: 'meta' }, 'Your changes: ' + (r.changed || 'edited before approval')));
+      if (r.wording === 'own') lines.push(h('div', { class: 'meta' }, 'Published in their own wording'));
+    }
+    if (r.status === 'rejected') lines.push(h('div', null, h('b', null, 'Reason: '), r.reason || h('span', { class: 'meta' }, 'none given')));
+    if (r.notes) lines.push(h('details', null, h('summary', null, 'Notes'), h('p', { class: 'meta' }, r.notes)));
+    var links = [];
+    if (r.gmail) links.push(h('a', { class: 'btn link', href: r.gmail, target: '_blank', rel: 'noopener' }, 'Open email'));
+    if (r.link) links.push(h('a', { class: 'btn link', href: r.link, target: '_blank', rel: 'noopener' }, 'Original article'));
+    var sl = sheetLink('Pending', r.row);
+    if (sl) links.push(sl);
+    return h('div', { class: 'card hi-card' },
+      h('div', { class: 'au-head' }, h('b', null, r.title), h('span', null, r.edited ? h('span', { class: 'badge warn' }, 'Edited') : null,
+        r.edited ? ' ' : null, h('span', { class: 'badge ' + st[1] }, st[0]))),
+      lines, links.length ? h('div', { class: 'actions' }, links) : null);
+  }
+
+  function historyView() {
+    var t = S.history;
+    if (!t) {
+      if (!S.hiLoading) loadHistory();
+      return [h('p', { class: 'loading' }, 'Loading previous submissions…')];
+    }
+    if (t.error) return [errorNote(t, 'Pending'), h('button', { class: 'btn', onclick: function () { S.history = null; render(); } }, 'Try again')];
+    var f = S.hiFilter || 'all';
+    var rows = t.rows.filter(function (r) { return f === 'all' || (f === 'approved' ? (r.status === 'approved' || r.status === 'auto') : r.status === f); });
+    var shown = S.hiShown || 25;
+    var els = [
+      h('div', { class: 'toolbar' }, h('div', { class: 'seg', role: 'group', 'aria-label': 'Outcome' }, HI_FILTERS.map(function (x) {
+        return h('button', { 'aria-pressed': f === x[0] ? 'true' : 'false', onclick: function () { S.hiFilter = x[0]; S.hiShown = 25; render(); } }, x[1]);
+      }))),
+    ];
+    if (!t.hasReasonColumn) els.push(h('div', { class: 'note warn' }, 'Pending has no reject_reason column yet, so reasons for rejecting are not saved.'));
+    if (!rows.length) els.push(h('p', { class: 'empty' }, 'Nothing here yet.'));
+    rows.slice(0, shown).forEach(function (r) { els.push(hiCard(r, t.today)); });
+    if (rows.length > shown) els.push(h('button', { class: 'btn', onclick: function () { S.hiShown = shown + 25; render(); } }, 'Show older (' + (rows.length - shown) + ' more)'));
+    return els;
   }
 
   function autonomyView() {

@@ -51,7 +51,7 @@ const refuse = (status, error) => ({ error, status });
 // Pending decision. row: the Pending row (null if not found); hasPeopleOk: whether the
 // tab has a people_ok column; choicePeople: the people value of the suggested image chosen
 // for it (image_choice), if any. Returns { p } for decide(), or { error, status }.
-export function planPending({ action, id }, row, { hasPeopleOk = false, sources = [], choicePeople = '' } = {}) {
+export function planPending({ action, id, reason = '' }, row, { hasPeopleOk = false, sources = [], choicePeople = '' } = {}) {
   if (!PENDING_ACTIONS.includes(action)) return refuse(400, `Unknown action "${action}"`);
   if (!row) return refuse(404, `No Pending item ${id}`);
   if (row.status !== 'pending') return refuse(409, `This item is already "${row.status}"`);
@@ -69,7 +69,8 @@ export function planPending({ action, id }, row, { hasPeopleOk = false, sources 
     if (!p.k) return refuse(409, 'This item has no source that can be trusted');
   }
   if (!validPayload(p)) return refuse(400, 'Invalid item id');
-  return { p };
+  // Reject's optional reason (3 Nov): kept in Pending reject_reason for Previous submissions.
+  return { p, reason: action === 'reject' ? cleanReason(reason) : '' };
 }
 
 // Reply decision. Returns { p, reason, body } for decide(), or { error, status }.

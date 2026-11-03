@@ -61,6 +61,8 @@
 //   POST /admin/api/orgemails       { id, expected, value }: the organisation's other addresses
 //                                   (Org outreach other_emails, comma separated; same rules)
 //   GET  /admin/api/lessons         the Holly lessons tab, newest first (lessons.js)
+//   GET  /admin/api/history         Previous submissions: decided Pending rows, newest first, with
+//                                   site window, newsletter issues, edits, reject reason (history.js)
 //   GET  /admin/api/autonomy        per-type progress towards autonomy (autonomy.js; read-only)
 //   POST /admin/api/autonomy-ignore { kind: item|reply, id, op: ignore|restore, expected }: one
 //                                   stale-checked write of that decision's outcome cell
@@ -150,6 +152,7 @@ import {
   LESSONS_TAB, LESSON_HEADERS, lessonRows, cleanLesson, newLessonRow, planLessonDecision,
 } from './lessons.js';
 import { ITEM_TAB, REPLY_TAB, autonomyStats, planIgnore } from './autonomy.js';
+import { submissionHistory } from './history.js';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 import { PAGEEDIT_JS, PAGEEDIT_CSS, PAGEEDIT_VERSION } from './ui/pageedit.js';
@@ -415,7 +418,7 @@ async function doAction(env, body) {
       const s = (await readTable(env, SUGGEST_TAB)).rows.filter((x) => String(x.id) === choice && String(x.item) === id);
       choicePeople = s.length === 1 ? String(s[0].people || '') : '';
     }
-    plan = planPending({ action, id }, row, { hasPeopleOk: headers.includes('people_ok'), sources, choicePeople });
+    plan = planPending({ action, id, reason: body.reason }, row, { hasPeopleOk: headers.includes('people_ok'), sources, choicePeople });
   } else if (kind === 'reply') {
     plan = planReply({ action, id, reason: body.reason, body: body.body });
   } else if (kind === 'feedback') {
@@ -703,6 +706,12 @@ async function readOptional(env, tab) {
   }
 }
 
+// Previous submissions (history.js): decided Pending rows with their site and newsletter dates.
+async function submissionsHistory(env) {
+  const [pending, issues, feedback] = await Promise.all([readTable(env, 'Pending'), readOptional(env, 'Issues'), readOptional(env, ITEM_TAB)]);
+  return submissionHistory({ pending, issues, feedback, today: ukToday() });
+}
+
 async function autonomy(env) {
   const [items, replies] = await Promise.all([readOptional(env, ITEM_TAB), readOptional(env, REPLY_TAB)]);
   return autonomyStats({ items, replies });
@@ -883,6 +892,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/orgs') return json(orgLists(ORGS, await orgContext(env)));
       if (path === '/admin/api/lessons') return json(lessonRows(await readLessons(env)));
       if (path === '/admin/api/autonomy') return json(await autonomy(env));
+      if (path === '/admin/api/history') return json(await submissionsHistory(env));
       if (path === '/admin/api/summary') return json(await summary(env));
       if (path === '/admin/api/site-visitors') return json(await visitorHistory(env));
       if (path === '/admin/api/nlstats') {

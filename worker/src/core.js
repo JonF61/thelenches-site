@@ -127,7 +127,8 @@ export function dispatchFor(p, reason = '', body = '') {
   if (p.a === 'nlbuild') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true }];
   if (p.a === 'nlquiet') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true, step: 'build' }];
   if (p.a === 'nltest') return ['newsletter', { action: 'build', issue_date: p.i, step: 'preview' }];
-  if ((p.a === 'skip' || p.a === 'redraft') && reason) return ['approval', { id: p.i, action: p.a, reason }];
+  // Pending reject (3 Nov): Jon's optional reason, saved in Pending reject_reason, never sent.
+  if ((p.a === 'skip' || p.a === 'redraft' || p.a === 'reject') && reason) return ['approval', { id: p.i, action: p.a, reason }];
   if (p.a === 'edit') return ['approval', { id: p.i, action: p.a, body, reason }];
   if (p.a === 'contactmail') return ['approval', { id: p.i, action: p.a, reason }];
   // approval.yml passes only id, action, reason and body: the postpone date rides in reason.

@@ -70,6 +70,11 @@
       "task": "Site visitors: check the first nightly save (Visitors tab should hold 28–30 Oct after 00:10 UK on 31 Oct) and that the panel screen shows them",
       "waiting": "the first nightly run",
       "added": "2026-10-30"
+    },
+    {
+      "task": "Previous submissions: add the reject_reason header to Pending, then check a real Reject with a reason shows on the panel",
+      "waiting": "Jon (Sheet header)",
+      "added": "2026-11-03"
     }
   ]
 }
