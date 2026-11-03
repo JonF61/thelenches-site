@@ -6,7 +6,7 @@
 // (GET/POST /sg?t=, below); then it shows on the panel's Suggestions screen for Jon.
 //   POST /sg  public, never behind Cloudflare Access (same rule as /a, /u, /f, /s and /r).
 //             Order: same-site check, per-IP rate limit (SUGGEST_LIMITER), honeypot,
-//             validation, Turnstile, daily cap, one request per address per day, one row.
+//             validation, Turnstile, daily cap, at most PER_EMAIL_DAY a day per address, one row.
 // Every accepted request gets the same answer. Never logs the address, name or why: the
 // dispatch carries the row id only.
 
@@ -19,7 +19,8 @@ import { emailKey } from './recommend.js';
 import { SUGGEST_TAB, SUGGEST_HEADERS, KINDS, LIMITS } from './admin/suggestions.mjs';
 
 const MAX_POST = 8000;
-const DAILY_CAP = 50;   // suggestions a day in all
+const DAILY_CAP = 100;  // suggestions a day in all
+export const PER_EMAIL_DAY = 10;   // suggestions a day from one address (the form says so)
 
 export const SUGGEST_THANKS = 'Nearly done: check your inbox for an email from us and click the link to confirm your suggestion. If it isn\'t there in a few minutes, look in your spam folder.';
 
@@ -68,7 +69,8 @@ const colLetter = (i) => {
 };
 
 // Appends one row and dispatches the confirmation email.
-// Returns { id } | { full: true } | { repeat: true } (nothing written or sent) | { failed: true }.
+// Returns { id } | { full: true } | { mine: true } (that address's PER_EMAIL_DAY used; nothing
+// written or sent) | { failed: true }.
 export async function saveSuggestion(env, value, ms = Date.now()) {
   await ensureTab(env);
   const { headers, rows } = tableFrom(await getValues(env, `'${SUGGEST_TAB}'!A1:Z`));
@@ -77,7 +79,7 @@ export async function saveSuggestion(env, value, ms = Date.now()) {
   const key = await emailKey(value.email);
   const today = londonStamp(ms).slice(0, 10);
   const todays = rows.filter((r) => String(r.requested || '').startsWith(today) && lc(r.status) !== 'failed');
-  if (todays.some((r) => r.key === key)) return { repeat: true };
+  if (todays.filter((r) => r.key === key).length >= PER_EMAIL_DAY) return { mine: true };
   if (todays.length >= DAILY_CAP) return { full: true };
   const id = newId(ms);
   const row = { ...value, id, requested: londonStamp(ms), key, status: 'new' };
@@ -147,8 +149,9 @@ export async function handleSuggest(request, env, { fetchImpl = fetch, now = Dat
   try {
     const saved = await saveSuggestion(env, v.value, now());
     if (saved.full) return fail(503, 'We\'re receiving a lot of suggestions today. Please try again tomorrow.');
+    if (saved.mine) return fail(429, `You've sent ${PER_EMAIL_DAY} suggestions today, the most we take from one address in a day. Please try again tomorrow.`);
     if (saved.failed) return fail(502, 'Sorry, something went wrong. Please try again in a few minutes.');
-    console.log(saved.repeat ? 'Suggestion repeated today: no second email.' : `Suggestion ${saved.id} saved; confirmation dispatched.`);
+    console.log(`Suggestion ${saved.id} saved; confirmation dispatched.`);
   } catch (e) {
     console.error(`Suggestion not saved: ${e.message}`);
     return fail(502, 'Sorry, something went wrong. Please try again later.');

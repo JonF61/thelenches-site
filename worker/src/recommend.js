@@ -6,7 +6,7 @@
 //   POST /r   public, never behind Cloudflare Access (same rule as /a, /u, /f and /s).
 //             Order: same-site check, per-IP rate limit, honeypot, validation (the entry
 //             must be listed), Turnstile, daily cap, one request per address per entry per
-//             day and at most PER_EMAIL_DAY a day in all, then one row.
+//             day and at most PER_EMAIL_DAY (25) a day in all, then one row.
 // Every accepted request gets the same answer, so the page never says whether an address
 // has recommended before (scripts/recommend sends an "already counted" email instead).
 // `key` is a SHA-256 of the address, kept after the address itself is wiped so each address
@@ -30,7 +30,7 @@ export const LISTINGS = {
 
 const MAX_POST = 5000;
 const DAILY_CAP = 200;      // recommendations a day in all
-const PER_EMAIL_DAY = 10;   // requests a day from one address
+const PER_EMAIL_DAY = 25;   // requests a day from one address
 
 export const RECOMMEND_THANKS = 'Nearly done: check your inbox for an email from us and click the link to confirm your recommendation. If it isn\'t there in a few minutes, look in your spam folder.';
 
