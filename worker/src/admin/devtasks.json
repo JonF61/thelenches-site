@@ -76,7 +76,11 @@
       "added": "2026-11-03"
     },
     {
-      "task": "Suggest / Recommend forms for Local trades and Where to eat (design agreed; build in a fresh session)",
+      "task": "Suggest forms for Local trades and Where to eat, with panel Approve/Edit/Reject (part 2; Recommend buttons are built)",
+      "added": "2026-11-03"
+    },
+    {
+      "task": "Recommend buttons: check the first real recommendation end to end (email, confirm, count shows on the page)",
       "added": "2026-11-03"
     }
   ]

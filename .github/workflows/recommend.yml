@@ -1,0 +1,81 @@
+name: Recommendation (Local trades / Where to eat)
+
+# Fired by the Cloudflare Worker's /r endpoint (repository_dispatch "recommend"):
+#   action "send"     the Recommend button saved a Recommendations row: email the confirm link
+#   action "confirm"  the reader pressed the link's button: count it, then rewrite
+#                     src/_data/recommends.json, commit it and start the site build
+# The payload is a Recommendations row id, never an address: this repo's Actions logs are public.
+on:
+  repository_dispatch:
+    types: [recommend]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+# One queue per recommendation: a shared group would let a newer run cancel a waiting one.
+concurrency:
+  group: recommend-${{ github.event.client_payload.id || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  row:
+    if: ${{ github.event_name == 'repository_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Send confirmation or count
+        run: node scripts/recommend/index.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: jon@thelenches.org.uk
+          APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
+          WORKER_URL: https://approvals.lenches.workers.dev
+          ACTION: ${{ github.event.client_payload.action }}
+          RECOMMEND_ID: ${{ github.event.client_payload.id }}
+
+  # Counts are rebuilt from the whole tab, so a shared group is safe here: a newer waiting
+  # run replacing an older one still counts everything. Manual runs just recount.
+  counts:
+    needs: row
+    if: ${{ !cancelled() && (github.event_name == 'workflow_dispatch' || (needs.row.result == 'success' && github.event.client_payload.action == 'confirm')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: recommend-counts
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Rewrite counts
+        run: node scripts/recommend/index.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          ACTION: counts
+      - name: Commit and build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add src/_data/recommends.json
+          if git diff --cached --quiet; then echo "No changes."; exit 0; fi
+          git config user.name "Lenches Pipeline"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Recommendation counts"
+          git pull --rebase
+          git push
+          gh workflow run build.yml --ref main

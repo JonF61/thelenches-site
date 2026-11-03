@@ -12,6 +12,11 @@ seoTitle: "Local trades in and around the Lenches — plumbers, builders, electr
 .tr-grid h3{margin:0 0 .15rem}
 .tr-facts{margin:.2rem 0 0}.tr-facts dt{font-weight:700;float:left;clear:left;margin-right:.35rem}.tr-facts dd{margin:0 0 .2rem}
 .tr-note{background:#fff8e8;border-left:4px solid #e0a43a;padding:.6rem .8rem;border-radius:6px}
+.rec-count{margin:.45rem 0 0;font-weight:600;color:#7a4a06}
+.rec-btn{margin-top:.5rem;padding:.3rem .8rem;border:1px solid #c8b48a;border-radius:999px;background:#fff;color:#3F5233;font-weight:600;cursor:pointer}
+.rec-btn[aria-expanded="true"]{background:#eef3ea}
+.rec-form{margin-top:.5rem}.rec-row{display:flex;gap:.4rem}.rec-row input{flex:1;min-width:0;padding:.35rem .5rem}
+.rec-help{margin:.3rem 0 0;color:#555}.rec-status{margin:.3rem 0 0}.rec-status.bad{color:#a12a1f}.rec-status.ok{color:#2f4a22}
 </style>
 <main class="container">
   <div class="page-head">
@@ -37,6 +42,8 @@ seoTitle: "Local trades in and around the Lenches — plumbers, builders, electr
           {% if t.other %}<dt>Contact</dt><dd>{{ t.other }}</dd>{% endif %}
           {% if t.website %}<dt>Website</dt><dd><a href="{{ t.website.url }}">{{ t.website.text }}</a></dd>{% endif %}
         </dl>
+        {% set n = recommends.trades[t.id] %}{% if n %}<p class="rec-count">&#9733; Recommended by {{ n }} {{ "person" if n == 1 else "people" }}</p>{% endif %}
+        {% if site.recommendUrl and site.turnstileSiteKey %}<button type="button" class="rec-btn" data-kind="trades" data-entry="{{ t.id }}" aria-expanded="false" hidden>Recommend</button>{% endif %}
       </div>
     {% endif %}{% endfor %}
     </div>
@@ -44,3 +51,4 @@ seoTitle: "Local trades in and around the Lenches — plumbers, builders, electr
   {% endfor %}
   <p class="tr-note small">Know a good local tradesperson we should list? <a href="mailto:{{ site.email }}?subject=Local%20trades">Tell us</a> their name, trade and how to contact them.</p>
 </main>
+{% include "recommend.njk" %}

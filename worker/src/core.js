@@ -28,6 +28,8 @@ export const ACTIONS = {
   unsub: ['Unsubscribe', 'Unsubscribed', 'reject'],
   // Newsletter sign-up confirmation link (/s only; /a refuses it). The id is a Sign-ups row id.
   signup: ['Confirm sign-up', 'Confirmed', 'approve'],
+  // Recommend button confirmation link (/r only; /a refuses it). The id is a Recommendations row id.
+  rec: ['Confirm recommendation', 'Confirmed', 'approve'],
   // Reader feedback (Feedback tab), admin panel only: no signed email links carry these.
   fb_approve: ['Approve', 'Approved', 'approve'],
   fb_reject: ['Reject', 'Rejected', 'reject'],
@@ -68,6 +70,7 @@ export function validPayload(p) {
   // Redraft links may carry the draft to show (links.js redraftLink); it is never dispatched.
   if (p.a === 'redraft' && p.b !== undefined && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
   if (p.a === 'fb_postpone' && !/^\d{4}-\d{2}-\d{2}$/.test(String(p.d || ''))) return false;
+  if (p.a === 'rec' && !(['trades', 'eat'].includes(p.k) && /^[a-z0-9-]{1,80}$/.test(String(p.n || '')))) return false;
   if (p.a === 'trust') {
     const k = String(p.k || '');
     if (k.length > 300 || !(/^[^\s@<>]+@[^\s@<>]+$/.test(k) || /^https?:\/\/\S+$/i.test(k))) return false;

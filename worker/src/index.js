@@ -11,6 +11,9 @@
 //                    repository_dispatch "signup" (send), which emails a confirmation link
 //   GET  /s?t=TOKEN  sign-up confirm page (a button: link scanners only GET)
 //   POST /s?t=TOKEN  the button; fires repository_dispatch "signup" (confirm)
+//   POST /r          Recommend button on Local trades / Where to eat (recommend.js): as /s,
+//                    a Recommendations row and repository_dispatch "recommend" (send)
+//   GET  /r?t=TOKEN  recommendation confirm page (a button); POST fires "recommend" (confirm)
 //   GET  /c?t=TOKEN  a link in a sent newsletter: one anonymous click counted, then 302 on
 //   GET  /o?i=DATE   the newsletter's 1x1 image: one anonymous open counted (track.js)
 //                    Public: Cloudflare Access must never cover /a, /u, /f, /s, /c or /o
@@ -50,6 +53,7 @@ import {
 import { handleAdmin } from './admin/index.js';
 import { handleFeedback } from './feedback.js';
 import { handleSignup } from './signup.js';
+import { handleRecommend, listedEntry } from './recommend.js';
 import { logVisitors } from './admin/sitestats.js';
 
 const enc = new TextEncoder();
@@ -187,7 +191,7 @@ async function handleApproval(request, env) {
   if (request.method === 'GET') {
     const token = url.searchParams.get('t');
     const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
-    if (!p || p.a === 'unsub' || p.a === 'signup' || PANEL_ONLY.includes(p.a)) return invalidPage();
+    if (!p || p.a === 'unsub' || p.a === 'signup' || p.a === 'rec' || PANEL_ONLY.includes(p.a)) return invalidPage();
     if (p.expired) return expiredPage();
     const [verb, , cls] = ACTIONS[p.a];
     return page(verb, `
@@ -220,7 +224,7 @@ ${confirmExtra(p)}
       return invalidPage();
     }
     const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
-    if (!p || p.a === 'unsub' || p.a === 'signup' || PANEL_ONLY.includes(p.a)) return invalidPage();
+    if (!p || p.a === 'unsub' || p.a === 'signup' || p.a === 'rec' || PANEL_ONLY.includes(p.a)) return invalidPage();
     if (p.expired) return expiredPage();
     reason = cleanReason(reason, p.a === 'redraft' ? 500 : 300);
     if (p.a === 'redraft' && reason.length < 3) return page('Nothing to change', '<h1>Say what to change</h1><p>The box was empty. Go back and type what Holly should change.</p>', 400);
@@ -306,6 +310,47 @@ async function handleSignupConfirm(request, env) {
 <h1>You're on the list</h1>
 <p>The next newsletter will arrive on Thursday morning. There's an unsubscribe link at the bottom of every issue.</p>
 <p><a href="${site}">Back to the website</a></p>`);
+  }
+  return new Response('Method not allowed', { status: 405 });
+}
+
+/* ------------------------------------------- recommendation confirmation -- */
+
+// The link in the recommendation email (scripts/recommend). As the sign-up link: GET shows
+// a button, so a mail scanner opening the link counts nothing.
+async function handleRecommendConfirm(request, env) {
+  const url = new URL(request.url);
+  const site = String(env.SITE_URL || 'https://thelenches.org.uk/').replace(/\/+$/, '');
+  let token = url.searchParams.get('t');
+  if (request.method === 'POST' && !token) {
+    try { token = (await request.formData()).get('t'); } catch { token = ''; }
+  }
+  const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
+  if (!p || (!p.expired && p.a !== 'rec')) return invalidPage();
+  const entry = listedEntry(p.k, p.n);
+  const pageUrl = esc(`${site}${entry ? entry.page : '/'}`);
+  if (p.expired) {
+    return page('Link expired',
+      `<h1>Link expired</h1><p>This link has expired. You can press Recommend again on <a href="${pageUrl}">the website</a>.</p>`, 410);
+  }
+  if (!entry) {
+    return page('No longer listed', `<h1>No longer listed</h1><p>That entry is no longer on the website, so there is nothing to recommend.</p><p><a href="${esc(site)}/">Back to the website</a></p>`, 410);
+  }
+
+  if (request.method === 'GET') {
+    return page('Confirm your recommendation', `
+<h1>Recommend ${esc(entry.name)}?</h1>
+<p>On the ${esc(entry.label)} page of thelenches.org.uk. We never show who recommended anyone.</p>
+<form method="post" action="/r?t=${esc(token)}">
+  <button class="approve" type="submit">Yes, count my recommendation</button>
+</form>`);
+  }
+  if (request.method === 'POST') {
+    if (!(await dispatch(env, 'recommend', { action: 'confirm', id: p.i }, 2))) return failedPage();
+    return page('Thank you', `
+<h1>Thank you</h1>
+<p>Your recommendation is counted. It shows on the page within a few minutes.</p>
+<p><a href="${pageUrl}">Back to ${esc(entry.label)}</a></p>`);
   }
   return new Response('Method not allowed', { status: 405 });
 }
@@ -559,6 +604,9 @@ export default {
     if (url.pathname === '/o') return handleOpen(request, env);
     if (url.pathname === '/s') {
       return url.searchParams.has('t') ? handleSignupConfirm(request, env) : handleSignup(request, env);
+    }
+    if (url.pathname === '/r') {
+      return url.searchParams.has('t') ? handleRecommendConfirm(request, env) : handleRecommend(request, env);
     }
     if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) return handleAdmin(request, env);
     return new Response('Lenches approvals', { headers: { 'content-type': 'text/plain' } });
