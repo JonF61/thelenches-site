@@ -180,6 +180,7 @@ export const CLIENT_JS = String.raw`
       S.outreach = null;
       S.orgs = null;
       S.summary = null;
+      S.checker = null;
       render();
       if (!quiet) toast('Up to date');
     } catch (e) {
@@ -3408,10 +3409,85 @@ export const CLIENT_JS = String.raw`
         m ? h('button', { class: 'btn', disabled: S.draftBusy ? true : null, title: 'Build this issue again now; sends nothing', onclick: function () { nlConfirm('rebuild', m); } }, 'Rebuild') : null,
         m && m.mode === 'frozen' ? h('button', { class: 'btn', disabled: S.draftBusy ? true : null, title: 'Email the preview, with its Send button, to you only', onclick: function () { nlConfirm('test', m); } }, 'Test send') : null,
         h('a', { class: 'btn link', href: '/admin/draft', target: '_blank', rel: 'noopener' }, 'Open in new tab'))));
+    els.push(checkerCard('Checker', ['newsletter'], [['newsletter', 'Check']],
+      'A second Claude reads the issue as a villager would and lists anything wrong. It runs on Wednesday evening after the deadline; Check runs it now.'));
     els.push(S.draftAuth === 'ok'
       ? h('iframe', { class: 'draft-frame', src: '/admin/draft?v=' + encodeURIComponent(m ? str(m.as_of) : '0'), title: 'Newsletter draft' })
       : h('p', { class: 'loading' }, 'Loading the draft…'));
     return els;
+  }
+
+  /* ------------------------------------------------------------- checker -- */
+
+  // The Checker (3 Nov; admin/checker.js, scripts/checker): a second Claude's findings on the
+  // next newsletter, the listings pages and the whole site. Dismiss closes one; Check runs one now.
+  var CHECK_LABELS = { newsletter: 'Newsletter', listings: 'Listings pages', site: 'Whole site' };
+  async function loadChecker() {
+    S.ckLoading = true;
+    var r = await api('/admin/api/checker');
+    S.ckLoading = false;
+    S.checker = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'summary' || S.view === 'draft' || S.view === 'health') render();
+  }
+  function checkerData() {
+    if (!S.checker && !S.ckLoading) loadChecker();
+    return S.checker;
+  }
+  async function runCheck(scope) {
+    if (S.ckBusy) return;
+    S.ckBusy = scope; render();
+    var r = await api('/admin/api/checker-run', { scope: scope });
+    if (!r.ok) { S.ckBusy = ''; render(); toast(r.json.error || ('HTTP ' + r.status), true); return; }
+    toast(r.json.message || 'Checking');
+    // Watch for this scope's new run (up to 10 minutes), then show its findings.
+    var before = str(((S.checker || {}).last || {})[scope]);
+    var tries = 0;
+    var poll = async function () {
+      tries += 1;
+      var c = await api('/admin/api/checker');
+      if (c.ok && str((c.json.last || {})[scope]) !== before) {
+        S.checker = c.json; S.ckBusy = '';
+        var n = c.json.open.filter(function (f) { return f.scope === scope; }).length;
+        toast(CHECK_LABELS[scope] + ' checked: ' + (n ? plural(n, 'finding') : 'nothing found'));
+        render(); return;
+      }
+      if (tries >= 40) { S.ckBusy = ''; render(); toast('The check is taking a while: look again later (Activity shows the Checker run).', true); return; }
+      setTimeout(poll, 15000);
+    };
+    setTimeout(poll, 20000);
+  }
+  async function dismissFinding(f) {
+    var r = await api('/admin/api/checker-dismiss', { id: f.id });
+    if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); return; }
+    S.checker.open = S.checker.open.filter(function (x) { return x.id !== f.id; });
+    toast(r.json.message || 'Dismissed');
+    render();
+  }
+  function findingEl(f) {
+    return h('div', { class: 'finding' },
+      h('div', null, h('span', { class: 'badge ' + (f.severity === 'problem' ? 'bad' : 'warn') }, f.severity === 'problem' ? 'Problem' : 'Check'), ' ',
+        h('b', null, [f.scope === 'newsletter' ? '' : f.page, f.where].filter(Boolean).join(' · '))),
+      h('div', null, f.problem),
+      f.quote ? h('div', { class: 'meta' }, '"' + f.quote + '"') : null,
+      f.suggestion ? h('div', { class: 'meta' }, 'Suggested fix: ' + f.suggestion) : null,
+      h('div', { class: 'actions' }, h('button', { class: 'btn link', title: 'Close this finding; the Checker won\'t raise it again', onclick: function () { dismissFinding(f); } }, 'Dismiss')));
+  }
+  function checkButton(scope, label) {
+    return h('button', { class: 'btn', disabled: S.ckBusy ? true : null, title: 'A second Claude reads it now and lists any problems here; changes nothing',
+      onclick: function () { runCheck(scope); } }, S.ckBusy === scope ? 'Checking…' : label);
+  }
+  // A card of findings for the given scopes, with Check buttons.
+  function checkerCard(title, scopes, buttons, intro) {
+    var c = checkerData();
+    var lastRun = c && c.last ? scopes.map(function (sc) { return c.last[sc] ? CHECK_LABELS[sc] + ' last checked ' + when(c.last[sc]) : ''; }).filter(Boolean).join(' · ') : '';
+    var list = c && Array.isArray(c.open) ? c.open.filter(function (f) { return scopes.indexOf(f.scope) >= 0; }) : [];
+    return h('div', { class: 'card checker' },
+      h('div', { class: 'intro-row' }, h('h2', null, title + (c && !c.error ? ' (' + list.length + ')' : '')),
+        h('div', { class: 'actions' }, buttons.map(function (b) { return checkButton(b[0], b[1]); }))),
+      intro ? h('p', { class: 'meta' }, intro) : null,
+      !c ? h('p', { class: 'meta' }, 'Loading…') : c.error ? errorNote(c, 'The Checker tab')
+        : list.length ? list.map(findingEl) : h('p', { class: 'meta' }, lastRun ? 'Nothing found.' : 'Not checked yet.'),
+      lastRun ? h('p', { class: 'meta' }, lastRun) : null);
   }
 
   /* ------------------------------------------------------------- summary -- */
@@ -3584,6 +3660,10 @@ export const CLIENT_JS = String.raw`
     var ls = all && Array.isArray(all.lessons) ? all.lessons : [];
     if (all) action('Holly lessons', ls.length, !all.lessons.error, sumCard('Holly lessons awaiting approval (' + ls.length + ')', go('lessons'), ls.map(function (l) { return line(str(l.lesson), '', []); }),
       { max: 5, top: all.lessons && all.lessons.error ? errorNote(all.lessons, 'Holly lessons') : null }));
+    // The Checker's open findings (newsletter, listings, whole site).
+    var ck = checkerData();
+    var ckOpen = ck && Array.isArray(ck.open) ? ck.open : [];
+    action('Checker', ckOpen.length, !!(ck && !ck.error), checkerCard('Checker', ['newsletter', 'listings', 'site'], [['listings', 'Check listings'], ['site', 'Check whole site']]));
     if (clear.length) els.push(h('div', { class: 'card sum' }, h('p', { class: 'sum-clear' }, h('b', null, 'No action needed on: '), clear.join(' / '))));
 
     if (!all) {
@@ -3681,6 +3761,9 @@ export const CLIENT_JS = String.raw`
           h('td', null, str(r.summary), str(r.problems) ? h('div', { class: 'meta' }, str(r.problems).split(' | ').join('; ')) : null));
       })));
     els.push(h('div', { class: 'card' }, h('h2', null, 'Daily diagnostic (latest 7)'), t, h('div', { class: 'actions' }, sheetLink('Health', 1))));
+    // The Checker: always here with its buttons (on Summary it folds away when nothing is open).
+    els.push(checkerCard('Checker', ['newsletter', 'listings', 'site'], [['newsletter', 'Check newsletter'], ['listings', 'Check listings'], ['site', 'Check whole site']],
+      'A second Claude reads what readers see and lists problems: the newsletter on Wednesday evenings, the listings pages on Sundays and the whole site on the 1st of each month.'));
     return els;
   }
 

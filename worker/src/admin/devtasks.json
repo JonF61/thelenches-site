@@ -2,6 +2,10 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD.",
   "tasks": [
     {
+      "task": "Checker: check its first newsletter, listings and whole-site runs give useful findings (few false alarms) and note the cost per run",
+      "added": "2026-11-03"
+    },
+    {
       "task": "Holly lessons: check the Monday 9 Nov run sends its email (the 2 Nov run failed at the email with Google unauthorized_client); if it fails again, check the Gmail send permission for that job",
       "added": "2026-11-03"
     },
