@@ -2,8 +2,7 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD.",
   "tasks": [
     {
-      "task": "Already listed: Jon to add Pending columns duplicate and live_notified_at at the end; then check the next duplicate submission's banner, ack wording and Add details",
-      "waiting": "Jon adding the two Pending columns",
+      "task": "Already listed: check the next duplicate submission's banner, ack wording and Add details (file commit and build)",
       "added": "2026-11-03"
     },
     {
