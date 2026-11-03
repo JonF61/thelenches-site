@@ -17,7 +17,7 @@
     { "title": "Around the villages", "links": [
       { "title": "Home", "url": "/" },
       { "title": "Events", "url": "/events/" },
-      { "title": "Regular activities", "url": "/regulars/" },
+      { "title": "Regulars", "url": "/regulars/" },
       { "title": "News", "url": "/notices/" },
       { "title": "Roads", "url": "/living-here/roads/" },
       { "title": "Bins", "url": "/bins/" }
@@ -42,7 +42,7 @@
   "nav": [
     { "title": "Home", "url": "/" },
     { "title": "Events", "url": "/events/" },
-    { "title": "Regular activities", "url": "/regulars/" },
+    { "title": "Regulars", "url": "/regulars/" },
     { "title": "News", "url": "/notices/", "match": ["notices"] },
     { "title": "Living here", "url": "/living-here/", "match": ["living-here", "groups", "halls", "churches"] },
     { "title": "Bins", "url": "/bins/" },
