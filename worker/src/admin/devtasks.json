@@ -72,12 +72,12 @@
       "added": "2026-10-30"
     },
     {
-      "task": "Local trades page: build from the Facebook screenshots (mock-up ready; trades listed without asking first, removed on request)",
-      "waiting": "Jon (screenshots)",
+      "task": "Where to eat: add the places to the yearly organisation check (contacts.json outreach) and fill missing phones/websites",
       "added": "2026-11-03"
     },
     {
-      "task": "Where to eat: add the places to the yearly organisation check (contacts.json outreach) and fill missing phones/websites",
+      "task": "Local trades: plan the recommend / suggest-a-trader system Jon has in mind",
+      "waiting": "Jon",
       "added": "2026-11-03"
     }
   ]

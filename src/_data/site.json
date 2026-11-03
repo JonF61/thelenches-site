@@ -32,6 +32,7 @@
       { "title": "Schools", "url": "/living-here/schools/" },
       { "title": "Walks & footpaths", "url": "/living-here/walks/" },
       { "title": "Where to eat", "url": "/living-here/eat/" },
+      { "title": "Local trades", "url": "/living-here/trades/" },
       { "title": "What to do if…", "url": "/living-here/what-to-do/" }
     ] },
     { "title": "About", "links": [
