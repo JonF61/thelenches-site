@@ -74,7 +74,15 @@ assert.equal(c.htmlToText('<table><tr><td>The Club</td><td></td><td>Lenches</td>
     appendRows: async (tab, objs) => { appended = objs; },
   };
   let sent;
+  let hollyCalls = 0;
   const client = { messages: { create: async (r) => {
+    if (r.tools[0].name === 'propose_fix') {
+      // Holly drafts the fix in the same run: one change to the first candidate's first field.
+      hollyCalls += 1;
+      const c0 = JSON.parse(r.messages[0].content[0].text.split('\n\nCalendar:')[0]).candidates[0];
+      const [field, text] = Object.entries(c0.fields)[0];
+      return { stop_reason: 'tool_use', usage: { input_tokens: 7, output_tokens: 3 }, content: [{ type: 'tool_use', name: 'propose_fix', input: { source: c0.key, field, new_value: `${text} (fixed)`, reason: 'Test.' } }] };
+    }
     sent = r;
     return { stop_reason: 'tool_use', usage: { input_tokens: 10, output_tokens: 5 }, content: [{ type: 'tool_use', name: 'report_findings', input: { findings: [
       { severity: 'problem', page: '/events/', where: 'An event', quote: 'q', problem: 'Wrong', suggestion: 'Fix' },
@@ -86,6 +94,23 @@ assert.equal(c.htmlToText('<table><tr><td>The Club</td><td></td><td>Lenches</td>
   assert.deepEqual(updates, [[2, { status: 'replaced' }]]);
   assert.equal(appended.length, 1);
   assert.equal(out[0].target, 'listings pages');
+  assert.equal(hollyCalls, 1);
+  assert.equal(appended[0].fix_status, 'offered');
+  assert.match(appended[0].fix_new, / \(fixed\)$/);
+  assert.equal(appended[0].status, 'open');
+  // Turned off: no Holly call, the finding waits for Fix….
+  process.env.RIMMER_AUTOFIX = 'off';
+  updates.length = 0;
+  await c.run('listings', { g, client, nowMs: now });
+  delete process.env.RIMMER_AUTOFIX;
+  assert.equal(hollyCalls, 1);
+  assert.equal(appended[0].fix_status, undefined);
+  // A fix Holly drafted in an earlier run is replaced by the next run; one Jon asked for is kept.
+  sheet.push({ _row: 4, id: 'K1-l2', scope: 'listings', status: 'open', fix_status: 'offered' }, { _row: 5, id: 'K1-l3', scope: 'listings', status: 'open', fix_status: 'proposed' });
+  updates.length = 0;
+  await c.run('listings', { g, client, nowMs: now });
+  assert.deepEqual(updates.map((u) => u[0]), [2, 4]);
+  sheet.splice(3, 2);
   await assert.rejects(c.run('bogus', { g, client }), /Unknown scope/);
   // A cut-off answer (max_tokens) fails and replaces nothing (3 Nov: 0 findings at 4000 tokens).
   updates.length = 0; appended = null;

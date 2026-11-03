@@ -4,8 +4,11 @@
 // ones on Summary, the Newsletter draft screen and Health, each with:
 //   Fix…            Jon's optional instruction saved in fix_note, fix_status -> asked, then
 //                   decide() rfix: Holly proposes one change (scripts/rimmer/fix.js)
-//   Apply           a proposed fix: fix_status -> applying, then decide() rfix_ok writes it
+//   Apply           a proposed fix (Jon's Fix…, "proposed", or drafted in Rimmer's own run,
+//                   "offered"): fix_status -> applying, then decide() rfix_ok writes it
 //   Discard         a proposal Jon doesn't want: fix_status -> discarded
+// A fix changes one text field, an event's date / endDate (its file renamed), a notice's
+// expires, a link or second link, or removes a whole entry (scripts/rimmer/fix.js).
 //   Send to Kryten  status -> kryten (with Jon's note): Kryten picks these up each session
 //   Dismiss         status -> dismissed; dismissed findings are passed back to the next run
 // Each is one stale-checked write; Check now sends repository_dispatch "rimmer".
@@ -13,6 +16,8 @@
 export const RIMMER_TAB = 'Rimmer';
 export const CHECK_SCOPES = ['newsletter', 'listings', 'site'];
 const SCOPE_ORDER = { newsletter: 0, listings: 1, site: 2 };
+// A fix ready for Apply: one Jon asked for, or one Holly drafted with Rimmer's run.
+const READY = ['proposed', 'offered'];
 const FIX_FIELDS = ['fix_status', 'fix_note', 'fix_label', 'fix_field', 'fix_old', 'fix_new', 'fix_reason'];
 
 const s = (v) => String(v ?? '').trim();
@@ -64,9 +69,9 @@ export function planKryten(row, note) {
 }
 
 // Fix… / Apply / Discard on one open finding. expected = the fix_status the panel showed.
-//   propose: fix_status '', cannot, failed, discarded or proposed -> asked (+ Jon's note); then decide() rfix
-//   apply:   proposed -> applying; then decide() rfix_ok
-//   discard: proposed, cannot or failed -> discarded
+//   propose: fix_status '', cannot, failed, discarded, proposed or offered -> asked (+ Jon's note); then decide() rfix
+//   apply:   proposed or offered -> applying; then decide() rfix_ok
+//   discard: proposed, offered, cannot or failed -> discarded
 export function planFix(row, { op, note, expected }) {
   if (!row) return notFound;
   if (s(row.status) !== 'open') return closed(row);
@@ -77,11 +82,11 @@ export function planFix(row, { op, note, expected }) {
     return { field: 'fix_status', expected: now, value: 'asked', also: { fix_note: clean(note, 600) }, action: 'rfix' };
   }
   if (op === 'apply') {
-    if (now !== 'proposed') return { error: 'There is no proposed fix to apply', status: 409 };
+    if (!READY.includes(now)) return { error: 'There is no proposed fix to apply', status: 409 };
     return { field: 'fix_status', expected: now, value: 'applying', action: 'rfix_ok' };
   }
   if (op === 'discard') {
-    if (!['proposed', 'cannot', 'failed'].includes(now)) return { error: 'Nothing to discard', status: 409 };
+    if (![...READY, 'cannot', 'failed'].includes(now)) return { error: 'Nothing to discard', status: 409 };
     return { field: 'fix_status', expected: now, value: 'discarded' };
   }
   return { error: `Unknown operation "${op}"`, status: 400 };

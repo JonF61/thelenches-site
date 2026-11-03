@@ -45,7 +45,8 @@ assert.equal(ok.ok, true);
 assert.equal(ok.old, 'Teams of up to six, 7.30pm. Tickets from Fran.');
 assert.match(fix.checkProposal({ cannot: 'Needs a contact number for Fran.' }, cands, '').reason, /Needs a contact number/);
 assert.match(fix.checkProposal({ source: 'h:events/other.json', field: 'body', new_value: 'x' }, cands, '').reason, /did not pick/);
-assert.match(fix.checkProposal({ source: q, field: 'date', new_value: 'x' }, cands, '').reason, /no "date" text/);
+assert.match(fix.checkProposal({ source: q, field: 'expires', new_value: '2026-12-01' }, cands, '').reason, /no "expires" to change/);
+assert.match(fix.checkProposal({ source: q, field: 'date', new_value: 'x' }, cands, '').reason, /no proper date/);
 const official = all.filter((s) => s.key === 'h:notices/council-statement.json');
 assert.equal(fix.checkProposal({ source: official[0].key, field: 'body', new_value: 'The council has agreed the budget for next year.' }, official, '').ok, true);
 assert.match(fix.checkProposal({ source: official[0].key, field: 'body', new_value: 'The council has now agreed next year\'s budget after a long debate.' }, official, '').reason, /official statement/);
@@ -73,10 +74,116 @@ const answers = {
 };
 let current = '';
 const client = { messages: { create: async (req) => {
-  const sent = JSON.parse(req.messages[0].content[0].text);
+  const sent = JSON.parse(req.messages[0].content[0].text.split('\n\nCalendar:')[0]);
   assert.ok(sent.instruction);
   return { stop_reason: 'tool_use', content: [{ type: 'tool_use', name: 'propose_fix', input: answers[current] }] };
 } } };
+
+// Wider fixes (4 Nov): event dates (file renamed), notice expires, links, removing an entry.
+async function wider() {
+  const today = '2026-11-04';
+  put('src/items/events/2026-11-29-handbell-concert.json', { date: '2026-11-29', title: 'Handbell concert — St Peter\'s, Church Lench', body: 'Handbells for Advent on Sunday 6 December, 3pm.', link: { text: 'Email the ringers', url: 'mailto:ring@example.org' } });
+  put('src/items/notices/severn-trent-works.json', { title: 'Severn Trent works — Main Street', body: 'Pipe works on Main Street until Friday 13 November.', expires: '2026-12-31' });
+  put('src/items/notices/council-closed.json', { title: 'Council office closed', body: 'Closed on 20 November. See www.council.example.gov.uk for more.', official: true, expires: '2026-11-21' });
+  put('src/items/regulars.json', null, '{"_help": "x",\n  "regulars": [\n    { "day": "Monday", "what": "Yoga" },\n    { "day": "Tuesday", "what": "Lenches Ladies" }\n  ]\n}\n');
+  const pend = [{ _row: 9, id: 'p9', title: 'Fireworks', summary: 'Fireworks at the Club. Tickets at www.lenchesclub.example.org/fireworks', link_text: 'Email the club', link_url: 'mailto:club@example.org', link2_text: '', link2_url: '' }];
+  put('src/_data/pipeline.json', { events: [{ id: 'p9', title: 'Fireworks' }], notices: [] });
+  const all = fix.sources({ root, pending: pend });
+  const by = (k) => all.filter((s) => s.key === k);
+  const hb = 'h:events/2026-11-29-handbell-concert.json';
+  const st = 'h:notices/severn-trent-works.json';
+
+  // Event date: only a date the entry (or Jon) gives; never past; file renamed on Apply.
+  const d = fix.checkProposal({ source: hb, field: 'date', new_value: '2026-12-06', reason: 'The body says 6 December.' }, by(hb), '', { today });
+  assert.equal(d.ok, true);
+  assert.equal(d.old, '2026-11-29');
+  assert.match(fix.checkProposal({ source: hb, field: 'date', new_value: '2026-12-13' }, by(hb), '', { today }).reason, /date nobody gave her \(2026-12-13\)/);
+  assert.equal(fix.checkProposal({ source: hb, field: 'date', new_value: '2026-12-13' }, by(hb), 'It is now on 13th Dec', { today }).ok, true);
+  assert.match(fix.checkProposal({ source: hb, field: 'date', new_value: '2026-11-01' }, by(hb), '1 November', { today }).reason, /passed/);
+  assert.match(fix.checkProposal({ source: hb, field: 'endDate', new_value: '2026-11-20' }, by(hb), '20 Nov', { today }).reason, /before the first day/);
+  // Notice expires: the first day hidden, so the day after a date in the text is fine; today hides it now.
+  assert.equal(fix.checkProposal({ source: st, field: 'expires', new_value: '2026-11-14' }, by(st), '', { today }).ok, true);
+  assert.equal(fix.checkProposal({ source: st, field: 'expires', new_value: today }, by(st), '', { today }).ok, true);
+  assert.equal(fix.checkProposal({ source: st, field: 'expires', new_value: '2026-11-20' }, by(st), '', { today }).ok, false);
+  assert.ok(fix.dateMentioned('2026-12-06', 'Sunday 6th Dec at 3pm'));
+  assert.ok(fix.dateMentioned('2026-12-06', 'December 6'));
+  assert.ok(fix.dateMentioned('2026-12-06', 'on 06/12/2026'));
+  assert.ok(!fix.dateMentioned('2026-12-06', '16 December'));
+  assert.ok(!fix.dateMentioned('2026-12-06', '6 decorations'));
+  // Links: the address must be written in the entry or Jon's note; words checked for new figures.
+  const pf = 'p:p9';
+  const l = fix.checkProposal({ source: pf, field: 'link', link_text: 'Tickets on the club\'s website', link_url: 'https://www.lenchesclub.example.org/fireworks' }, by(pf), '', { today });
+  assert.equal(l.ok, true);
+  assert.deepEqual(JSON.parse(l.old), { text: 'Email the club', url: 'mailto:club@example.org' });
+  assert.match(fix.checkProposal({ source: pf, field: 'link', link_text: 'Tickets', link_url: 'https://tickets.example.com/' }, by(pf), '', { today }).reason, /link nobody gave her/);
+  assert.match(fix.checkProposal({ source: pf, field: 'link', link_text: 'Tickets', link_url: 'javascript:alert(1)' }, by(pf), '', { today }).reason, /no usable link/);
+  assert.match(fix.checkProposal({ source: pf, field: 'link', link_text: '', link_url: 'https://www.lenchesclub.example.org/' }, by(pf), '', { today }).reason, /both its words/);
+  assert.equal(fix.checkProposal({ source: hb, field: 'link', link_text: '', link_url: '' }, by(hb), '', { today }).new, '');
+  // Official: words typos only, but a broken link may be fixed and an expired one removed.
+  const oc = 'h:notices/council-closed.json';
+  assert.equal(fix.checkProposal({ source: oc, field: 'link', link_text: 'Council website', link_url: 'https://www.council.example.gov.uk' }, by(oc), '', { today }).ok, true);
+  // Remove: whole entries only where allowed, with a reason; never a submission or a website update.
+  assert.equal(fix.checkProposal({ source: 'r:1', field: 'remove', reason: 'No longer meets.' }, by('r:1'), '', { today }).ok, true);
+  assert.match(fix.checkProposal({ source: 'r:1', field: 'remove' }, by('r:1'), '', { today }).reason, /no reason/);
+  assert.match(fix.checkProposal({ source: pf, field: 'remove', reason: 'x' }, by(pf), '', { today }).reason, /can be removed here/);
+  assert.match(fix.checkProposal({ source: 's:a-2026-11', field: 'remove', reason: 'x' }, by('s:a-2026-11'), '', { today }).reason, /can be removed here/);
+
+  // Apply each, through the Sheet row as the panel leaves it.
+  const rows = [];
+  let n = 0;
+  const g2 = {
+    readTable: async (tab) => (tab === 'Pending' ? pend : rows),
+    updateRow: async (tab, r, f) => Object.assign((tab === 'Pending' ? pend : rows).find((x) => x._row === r), f),
+  };
+  const applyRow = async (res) => {
+    n += 1;
+    rows.push({ _row: 100 + n, id: `W${n}`, status: 'open', ...fix.fixFields(res), fix_status: 'applying' });
+    const out = await fix.apply(`W${n}`, { g: g2, root });
+    return [out, rows[rows.length - 1]];
+  };
+  let [out] = await applyRow(d);
+  assert.equal(out.ok, true);
+  assert.ok(!fs.existsSync(path.join(root, 'src/items/events/2026-11-29-handbell-concert.json')));
+  const moved = JSON.parse(fs.readFileSync(path.join(root, 'src/items/events/2026-12-06-handbell-concert.json'), 'utf8'));
+  assert.equal(moved.date, '2026-12-06');
+  assert.equal(moved.link.url, 'mailto:ring@example.org');
+  [out] = await applyRow(fix.checkProposal({ source: st, field: 'expires', new_value: '2026-11-14' }, by(st), '', { today }));
+  assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'src/items/notices/severn-trent-works.json'), 'utf8')).expires, '2026-11-14');
+  [out] = await applyRow(l);
+  assert.equal(out.ok, true);
+  assert.equal(pend[0].link_url, 'https://www.lenchesclub.example.org/fireworks');
+  assert.equal(pend[0].link_text, 'Tickets on the club\'s website');
+  // Stale: applying the same link change again finds the cells changed.
+  let row;
+  [out, row] = await applyRow(l);
+  assert.equal(out.ok, false);
+  assert.equal(row.fix_status, 'failed');
+  // Remove a regular activity: only its line goes, the rest of the layout stays.
+  [out] = await applyRow(fix.checkProposal({ source: 'r:1', field: 'remove', reason: 'No longer meets.' }, by('r:1'), '', { today }));
+  assert.equal(out.ok, true);
+  assert.equal(fs.readFileSync(path.join(root, 'src/items/regulars.json'), 'utf8'), '{"_help": "x",\n  "regulars": [\n    { "day": "Monday", "what": "Yoga" }\n  ]\n}\n');
+  // Remove a notice: the file goes. A changed entry is never removed.
+  const rmOc = fix.checkProposal({ source: oc, field: 'remove', reason: 'It has passed.' }, by(oc), '', { today });
+  put('src/items/notices/council-closed.json', { title: 'Council office closed', body: 'Changed.', official: true });
+  [out] = await applyRow(rmOc);
+  assert.equal(out.ok, false);
+  assert.ok(fs.existsSync(path.join(root, 'src/items/notices/council-closed.json')));
+  [out] = await applyRow(fix.checkProposal({ source: st, field: 'remove', reason: 'Works over.' }, fix.sources({ root }).filter((s) => s.key === st), '', { today }));
+  assert.equal(out.ok, true);
+  assert.ok(!fs.existsSync(path.join(root, 'src/items/notices/severn-trent-works.json')));
+  // Remove a trade: the Worker is redeployed too.
+  put('src/_data/trades.json', { trades: [{ id: 'a-plumber', name: 'A Plumber', trade: 'Plumbers' }, { id: 'b-builder', name: 'B Builder', trade: 'Builders' }] });
+  fs.writeFileSync(process.env.GITHUB_OUTPUT, '');
+  const tr = fix.sources({ root }).filter((s) => s.key === 't:a-plumber');
+  [out] = await applyRow(fix.checkProposal({ source: 't:a-plumber', field: 'remove', reason: 'Retired.' }, tr, '', { today }));
+  assert.equal(out.ok, true);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, 'src/_data/trades.json'), 'utf8')).trades.map((t) => t.id), ['b-builder']);
+  assert.match(fs.readFileSync(process.env.GITHUB_OUTPUT, 'utf8'), /worker=true/);
+  // Holly is told about dates, links and removing, with a calendar.
+  const req = fix.fixRequest({ where: 'w', problem: 'p' }, '', by(hb.replace('2026-11-29', '2026-12-06')), today);
+  assert.match(req.messages[0].content, /Calendar:\n/);
+  assert.match(fix.SYSTEM, /"remove"/);
+}
 
 (async () => {
   current = 'K1-n2';
@@ -99,6 +206,18 @@ const client = { messages: { create: async (req) => {
   assert.equal(sheet[1].fix_status, 'cannot');
   current = 'K1-p1';
   assert.equal((await fix.propose('K1-p1', { g, client, root })).ok, true);
+
+  // Rimmer's own run drafts fixes ("offered"); a finding with no entry costs no Claude call.
+  const all2 = fix.sources({ root, pending });
+  let calls = 0;
+  const counting = { messages: { create: async (req) => { calls += 1; return client.messages.create(req); } } };
+  current = 'K1-n2';
+  const d1 = await fix.draftFix({ ...quiz }, { all: all2, client: counting, note: "Fran's number is 01386 123456" });
+  assert.equal(d1.result.ok, true);
+  assert.equal(fix.fixFields(d1.result, 'offered').fix_status, 'offered');
+  const d2 = await fix.draftFix({ where: 'Footer', quote: 'zzqx wwvy', problem: 'Layout' }, { all: all2, client: counting });
+  assert.equal(d2.result.ok, false);
+  assert.equal(calls, 1);
 
   // Apply: repo file, layout kept elsewhere
   sheet[0].fix_status = 'applying';
@@ -125,6 +244,8 @@ const client = { messages: { create: async (req) => {
   fix.writeRepoField(regs, 'time', '7.15pm', '7.30pm', root);
   assert.equal(fs.readFileSync(path.join(root, 'src/items/regulars.json'), 'utf8'), '{"_help": "x",\n  "regulars": [ {"day": "Tuesday", "time": "7.30pm", "what": "Lenches Ladies"} ]\n}\n');
   assert.throws(() => fix.writeRepoField(regs, 'time', '7.15pm', '8pm', root), /changed since/);
+
+  await wider();
   fs.rmSync(root, { recursive: true, force: true });
   console.log('rimmer fix: all tests passed');
 })().catch((e) => { console.error(e); process.exit(1); });
