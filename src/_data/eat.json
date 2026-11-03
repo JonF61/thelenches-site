@@ -14,8 +14,12 @@
       "where": "Wyre Piddle",
       "type": "Pub",
       "food": "Sunday lunches",
-      "garden": true,
-      "note": "Terraced garden above the River Avon"
+      "website": {
+        "text": "Facebook page",
+        "url": "https://www.facebook.com/p/The-Anchor-Inn-61574418183415/"
+      },
+      "note": "Terraced garden above the River Avon",
+      "garden": true
     },
     {
       "id": "bishampton-village-store-cafe",
@@ -23,8 +27,12 @@
       "area": "Nearby villages",
       "where": "Bishampton",
       "type": "Village shop café",
-      "phone": "01386 462873",
       "food": "Coffee and cake",
+      "phone": "01386 462873",
+      "website": {
+        "text": "Facebook page",
+        "url": "https://www.facebook.com/bishamptonvillagestore"
+      },
       "note": "Village shop and post office"
     },
     {
@@ -34,7 +42,11 @@
       "where": "Flyford Flavell",
       "type": "Pub and restaurant",
       "food": "Restaurant; also has rooms",
-      "phone": "01386 462658"
+      "phone": "01386 462658",
+      "website": {
+        "text": "thebootinn.com",
+        "url": "https://www.thebootinn.com/"
+      }
     },
     {
       "id": "bulls-head",
@@ -43,7 +55,11 @@
       "where": "Inkberrow",
       "type": "Pub",
       "food": "Home-cooked food; also has rooms",
-      "phone": "01386 792233"
+      "phone": "01386 792233",
+      "website": {
+        "text": "bullsheadinkberrow.com",
+        "url": "https://bullsheadinkberrow.com/"
+      }
     },
     {
       "id": "chequers-inn",
@@ -65,7 +81,11 @@
       "where": "Cropthorne",
       "type": "Farm shop and café",
       "food": "Breakfast and lunch, Tuesday to Sunday",
-      "phone": "01386 860439"
+      "phone": "01386 860439",
+      "website": {
+        "text": "clivesofcropthorne.co.uk",
+        "url": "https://clivesofcropthorne.co.uk/"
+      }
     },
     {
       "id": "mysuru",
@@ -87,8 +107,12 @@
       "where": "Inkberrow",
       "type": "Pub",
       "food": "Food every day",
-      "note": "16th-century pub on the village green",
       "phone": "01386 792428",
+      "website": {
+        "text": "oldbullinkberrow.co.uk",
+        "url": "https://www.oldbullinkberrow.co.uk/"
+      },
+      "note": "16th-century pub on the village green",
       "dogs": true
     },
     {
@@ -97,7 +121,11 @@
       "area": "Nearby villages",
       "where": "Manor Road, Lower Moor",
       "type": "Pub",
-      "phone": "01386 860380"
+      "phone": "01386 860380",
+      "website": {
+        "text": "theoldchestnuttreeinn.com",
+        "url": "https://theoldchestnuttreeinn.com/"
+      }
     },
     {
       "id": "the-ounce-at-the-dolphin",
@@ -115,7 +143,11 @@
       "area": "Nearby villages",
       "where": "Stockwood Business Park, Inkberrow",
       "type": "Farm shop café",
-      "food": "Café and farm shop"
+      "food": "Café and farm shop",
+      "website": {
+        "text": "rush.farm",
+        "url": "https://www.rush.farm/the-pantry"
+      }
     },
     {
       "id": "chadbury-farm-shop-cafe",
@@ -124,7 +156,11 @@
       "where": "Chadbury, between Norton and Evesham",
       "type": "Farm shop café",
       "food": "Breakfast and lunch; booking advised",
-      "phone": "01386 446705"
+      "phone": "01386 446705",
+      "website": {
+        "text": "chadburyfarmshopandcafe.co.uk",
+        "url": "https://www.chadburyfarmshopandcafe.co.uk/"
+      }
     },
     {
       "id": "coach-and-horses",
@@ -132,8 +168,12 @@
       "area": "Harvington and Norton",
       "where": "Harvington",
       "type": "Pub",
-      "phone": "01386 870249",
       "food": "Pub food and Sunday lunch",
+      "phone": "01386 870249",
+      "website": {
+        "text": "coachandhorsesharvington.co.uk",
+        "url": "https://coachandhorsesharvington.co.uk/"
+      },
       "garden": true
     },
     {
@@ -143,9 +183,13 @@
       "where": "Village Street, Harvington",
       "type": "Pub",
       "food": "Evening meals",
+      "phone": "01386 304505",
+      "website": {
+        "text": "Facebook page",
+        "url": "https://www.facebook.com/p/The-golden-cross-inn-61581420455473/"
+      },
       "garden": true,
-      "children": true,
-      "phone": "01386 304505"
+      "children": true
     },
     {
       "id": "hillers-garden-cafe",
@@ -154,7 +198,11 @@
       "where": "Dunnington, near Salford Priors",
       "type": "Farm shop café",
       "food": "Lunches, cakes and coffee",
-      "phone": "01789 772771"
+      "phone": "01789 772771",
+      "website": {
+        "text": "hillers.co.uk",
+        "url": "https://hillers.co.uk/"
+      }
     },
     {
       "id": "karma-salford-hall",
@@ -163,7 +211,11 @@
       "where": "Abbots Salford",
       "type": "Hotel restaurant",
       "food": "Breakfast, lunch, dinner and afternoon tea; booking needed",
-      "phone": "01386 871300"
+      "phone": "01386 871300",
+      "website": {
+        "text": "karmagroup.com",
+        "url": "https://karmagroup.com/find-destination/karma-resorts/karma-salford-hall/"
+      }
     },
     {
       "id": "norton-grange",
@@ -194,6 +246,10 @@
       "where": "Evesham Garden Centre",
       "type": "Garden centre café",
       "phone": "01386 761333",
+      "website": {
+        "text": "bluediamond.gg",
+        "url": "https://www.bluediamond.gg/restaurant/apple-barn-restaurant-evesham"
+      },
       "note": "No dogs"
     },
     {
@@ -235,8 +291,12 @@
       "area": "Evesham",
       "where": "Port Street",
       "type": "Café and wine bar",
+      "food": "Coffee shop by day, wine bar in the evening",
       "phone": "01386 421007",
-      "food": "Coffee shop by day, wine bar in the evening"
+      "website": {
+        "text": "theregal.ac",
+        "url": "https://theregal.ac/"
+      }
     },
     {
       "id": "thai-emerald",
@@ -244,7 +304,11 @@
       "area": "Evesham",
       "where": "High Street, Evesham",
       "type": "Thai restaurant",
-      "phone": "01386 49788"
+      "phone": "01386 49788",
+      "website": {
+        "text": "thai-emerald.co.uk",
+        "url": "https://www.thai-emerald.co.uk/evesham"
+      }
     },
     {
       "id": "wayside-farm-shop-tearoom",
