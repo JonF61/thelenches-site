@@ -2,7 +2,7 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD.",
   "tasks": [
     {
-      "task": "Rimmer: check the first newsletter, listings and whole-site runs give useful findings (few false alarms), try Fix… on a real finding end to end, and note the cost per run",
+      "task": "Rimmer: check the first newsletter and whole-site runs give useful findings (few false alarms; the first listings run gave 15, mostly useful) and note the cost per run",
       "added": "2026-11-03"
     },
     {
