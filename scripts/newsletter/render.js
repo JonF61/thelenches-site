@@ -19,7 +19,8 @@ const LINKS = {
   submit: 'website@thelenches.org.uk',
 };
 // The Website update paragraph: each entry's text, joined with spaces.
-const siteParagraph = (site) => site.map((u) => String(u.text || '').trim()).filter(Boolean).join(' ');
+// Website update texts, one per entry (each its own paragraph; Jon, 3 Nov: the joined block was too dense).
+const siteTexts = (site) => site.map((u) => String(u.text || '').trim()).filter(Boolean);
 
 // Regular activities, grouped by day since 30 Oct (Jon): [{ day, items }] in list order (lib/whatson.js
 // sorts Monday first, then by time), each line "What · 7pm (1st of the month) · where"; site-relative
@@ -221,13 +222,14 @@ function renderHtml(m, subject) {
       + `<div style="font-family:${SERIF};font-size:14px;font-style:italic;line-height:1.5;color:${C.ink};">${esc(m.onThisDay.text)}</div>`
       + `</td></tr>`);
   }
-  // "Website update" (select.js siteUpdates): one paragraph, the due entries' text joined,
-  // then one link to the site (Jon, 28 Oct); no row at all when there are none.
+  // "Website update" (select.js siteUpdates): each due entry as its own short paragraph, the
+  // last ending with one link to the site (Jon, 28 Oct; separate paragraphs 3 Nov); no row when none.
   const site = m.siteUpdates || [];
   if (site.length) {
     rows.push(`<tr><td class="px" style="background:${C.cream};padding:10px 24px;border-bottom:1px solid ${C.line};">`
       + `<div style="font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1px;color:${C.accentText};">WEBSITE UPDATE</div>`
-      + `<div style="font-family:${SANS};font-size:13px;line-height:1.5;color:${C.ink};">${esc(siteParagraph(site))} Have a look at ${a(LINKS.site, 'thelenches.org.uk', C.accentText)}.</div>`
+      + siteTexts(site).map((t, i, all) => `<div style="font-family:${SANS};font-size:13px;line-height:1.5;color:${C.ink};padding-top:${i ? 8 : 2}px;">${esc(t)}`
+        + (i === all.length - 1 ? ` Have a look at ${a(LINKS.site, 'thelenches.org.uk', C.accentText)}.` : '') + `</div>`).join('')
       + `</td></tr>`);
   }
   rows.push(`<tr><td class="px" style="padding:16px 24px 0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${C.ink};">${esc(summaryLine(m))}</td></tr>`);
@@ -311,7 +313,7 @@ function renderText(m) {
 
   out.push('THE LENCHES NEWSLETTER', 'Church · Rous · Ab · Atch · Sheriffs', `${p.long} · ${LINKS.site}`, '');
   if (m.onThisDay) out.push(`On this day: ${m.onThisDay.text}`, '');
-  if ((m.siteUpdates || []).length) out.push(`Website update: ${siteParagraph(m.siteUpdates)} Have a look at ${LINKS.site}`, '');
+  if ((m.siteUpdates || []).length) out.push('Website update:', ...siteTexts(m.siteUpdates).flatMap((t) => [t, '']), `Have a look at ${LINKS.site}`, '');
   out.push(summaryLine(m));
   const oldRegs = typeof m.regulars === 'string' ? m.regulars : '';
   if (m.events.length || oldRegs) {
