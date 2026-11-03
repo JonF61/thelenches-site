@@ -10,6 +10,9 @@
 # set, every submission is refused.
 # Summary page visitors (admin/visitors.js): secrets CF_ANALYTICS_TOKEN (custom API token,
 # Account Analytics: Read only) and CF_ACCOUNT_ID, added by hand the same way.
+# Kryten's quick Sheet access (POST /k, src/kryten.js): secret KRYTEN_TOKEN (40+ random
+# letters and digits), added by hand the same way; the same value is in Kryten's cloud
+# environment. Until it is set, /k answers 404.
 name = "approvals"
 main = "src/index.js"
 compatibility_date = "2026-09-01"
