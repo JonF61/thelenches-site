@@ -58,6 +58,7 @@ nav.side button[aria-current="page"] .n{background:rgba(255,255,255,.25);color:i
 .card.done{opacity:.55}
 .meta{color:var(--muted);font-size:.88rem}
 .intro{margin:2px 2px 12px;line-height:1.4}
+.finding{border-top:1px solid var(--line,#ddd);padding:8px 0}.finding .actions{margin-top:2px}.checker .intro-row h2{flex:1;margin:0}
 .intro-row{display:flex;align-items:flex-start;gap:12px}.intro-row .intro{flex:1}.intro-row .btn{flex:none}
 .card.sum{margin-bottom:10px}
 .sum-h{font:inherit;font-weight:700;background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:none;text-align:left}

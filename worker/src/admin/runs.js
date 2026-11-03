@@ -20,6 +20,7 @@ export const WORKFLOW_NAMES = {
   'diagnostic.yml': 'Diagnostic',
   'contacts.yml': 'Contacts',
   'lessons.yml': 'Holly lessons',
+  'checker.yml': 'Checker',
   'photos.yml': 'Photos',
   'signup.yml': 'Sign-up',
   'recommend.yml': 'Recommendation',

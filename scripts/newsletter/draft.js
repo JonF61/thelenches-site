@@ -81,8 +81,8 @@ function draftRows(meta, html, asOf) {
   return rows;
 }
 
-async function main() {
-  const g = require('../ingest/google');
+// Everything buildDraft needs, read from the Sheet and the repo (shared with scripts/checker).
+async function loadInputs(g) {
   const { loadWhatson } = require('../../lib/whatson');
   const readJson = (rel) => JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
   const jpegFor = (webpUrl) => {
@@ -91,11 +91,16 @@ async function main() {
   };
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(Date.now());
   const [{ sources, settings }, pending, issues] = await Promise.all([g.readSettings(), g.readTable('Pending'), g.readTable('Issues')]);
-  const { meta, html } = buildDraft({
+  return {
     today, pending, issues, settings, sources, jpegFor, whatson: loadWhatson(),
     bins: readJson('src/_data/bins.json'), siteupdates: readJson('src/_data/siteupdates.json'), onthisday: readJson('src/_data/onthisday.json'),
     photos: readJson('src/_data/photos.json'),
-  });
+  };
+}
+
+async function main() {
+  const g = require('../ingest/google');
+  const { meta, html } = buildDraft(await loadInputs(g));
   await g.replaceTab(TAB, draftRows(meta, html, new Date().toISOString()));
   console.log(`Draft for ${meta.issue_date} (${meta.mode}${meta.status ? `, Issues ${meta.status}` : ''}): ${meta.items} items `
     + `(${meta.events} events, ${meta.notices} notices, ${meta.roads} roads, ${meta.elsewhere} elsewhere), ${meta.held} held as late.`);
@@ -108,4 +113,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { buildDraft, draftRows, issueDateFor, TAB, CHUNK };
+module.exports = { buildDraft, draftRows, issueDateFor, loadInputs, TAB, CHUNK };
