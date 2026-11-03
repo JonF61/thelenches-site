@@ -77,9 +77,15 @@ try {
     assert.match(text, /told it is already on the website/, `${name}: says what the sender was told`);
     assert.equal(await page.locator('.badge', { hasText: 'Already listed' }).count() > 0, true, `${name}: badge`);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `listed-${name}.png`), fullPage: false });
-    await page.getByRole('button', { name: 'Approve', exact: true }).first().click();
-    assert.match(dialogs[0] || '', /Publish it as a new item anyway/, `${name}: Approve asks first`);
-    assert.equal(posts.length, 0, `${name}: dismissed Approve posts nothing`);
+    // 4 Nov: no Approve (or Trust) button on an already listed item; a small link asks first.
+    const card = page.locator('section[aria-label="Already listed"]').first().locator('xpath=..');
+    assert.equal(await card.getByRole('button', { name: 'Approve', exact: true }).count(), 0, `${name}: no Approve button`);
+    assert.equal(await card.getByRole('button', { name: 'Trust this source' }).count(), 0, `${name}: no Trust button`);
+    const anyway = page.getByRole('button', { name: 'Publish as a new item…' }).first();
+    if (SHOTS) { await anyway.scrollIntoViewIfNeeded(); await page.screenshot({ path: path.join(SHOTS, `listed-actions-${name}.png`), fullPage: false }); }
+    await anyway.click();
+    assert.match(dialogs[0] || '', /Publish it as a new item anyway/, `${name}: the link asks first`);
+    assert.equal(posts.length, 0, `${name}: dismissed link posts nothing`);
     await page.getByRole('button', { name: 'Add details' }).first().click();
     const body = page.locator('#mg-body');
     assert.match(await body.inputValue(), /Entry £3, including cake/, `${name}: Holly's proposal prefilled`);
