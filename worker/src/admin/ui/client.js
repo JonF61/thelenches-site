@@ -58,7 +58,112 @@ export const CLIENT_JS = String.raw`
     health: 'The daily diagnostic, the watchdog and the Google account the panel uses. Look here if something seems wrong.',
     activity: 'What the website\'s automatic jobs on GitHub are doing: checking email, publishing, building the site, sending. Newest first; tap a name to open it on GitHub.'
   };
-  function intro(view) { return h('p', { class: 'meta intro' }, INTROS[view]); }
+  // How this works (Jon, 4 Nov: every screen says how to use it and what its words mean): a folded
+  // guide under each screen's intro. [term, meaning] pairs; a plain string is a sentence on its own.
+  var HELP = {
+    summary: [
+      'Each box is one screen in short. Tap its heading to open that screen.',
+      ['No action needed on…', 'the screens with nothing waiting for you.'],
+      ['Red numbers and badges', 'something needs you, e.g. a failed job or an urgent item.']],
+    autonomy: [
+      'Each kind of submission or reply counts your decisions on Holly\'s work.',
+      ['As written / changed / rejected', 'approved unchanged, approved after your edits, or turned down.'],
+      ['Qualifies', '30 decisions, 95% as written over the latest 30 and no rejection in the last 20. Even then nothing goes automatic until you agree a next step.'],
+      ['If it had been on', 'what would have gone out without you over the last 30 days.'],
+      ['Ignore / Count again', 'leave a test or a slip out of the counts and of Holly\'s learning, or put it back.']],
+    draft: [
+      ['Live draft', 'changes as items are approved; Refresh rebuilds this preview now.'],
+      ['Built', 'Thursday\'s issue is made and frozen exactly as it will go out.'],
+      ['Rebuild', 're-makes a built issue with anything approved since. It sends nothing.'],
+      ['Test send', 'emails the preview of the built issue to you only. The real Send is in the preview email.'],
+      ['Rimmer', 'his notes on the issue sit above the draft (open How this works on his card).']],
+    stats: [
+      ['Sent', 'how many addresses the issue went to.'],
+      ['Bounces', 'addresses that failed for good in the week after; they are taken off the list.'],
+      ['Opens', 'an undercount: many email apps block the tiny image that counts them.'],
+      ['Clicks', 'more reliable: each link click is counted once as it passes through.'],
+      'Counts are totals only and are kept for about 3 months.'],
+    visitors: [
+      ['Page views', 'pages opened.'],
+      ['Visits', 'one person\'s session, however many pages they look at.'],
+      ['Today', 'live; earlier days are saved each night, so the history keeps after Cloudflare drops its detail.']],
+    queue: [
+      ['Approve', 'puts it on the website and into Thursday\'s newsletter; Edit changes the wording first.'],
+      ['Reject', 'turns it down; the reason you type is for you only.'],
+      ['Done already', 'you have dealt with it another way: nothing publishes and no note is sent.'],
+      ['Trust this source', 'approves this item and marks the sender trusted. For now their items still wait here, marked "trusted source".'],
+      ['Already listed', 'the site has this already; Add details puts any new facts into the existing entry.'],
+      ['Possible repeat', 'it may be something already sent in: check before approving.'],
+      ['Official, own words', 'from a council or other official body: only typos may be corrected.'],
+      ['Urgent', 'needs a decision soon (e.g. happening before the next newsletter).'],
+      ['Road', 'a road works or closure item, shown on the Roads page and map.'],
+      ['Check email now', 'fetches new mail straight away instead of waiting for the next run.'],
+      ['Previous submissions', 'everything already decided, with where and when it appeared.']],
+    suggestions: [
+      ['Approve', 'adds the entry to Local trades or Where to eat as shown.'],
+      ['Edit', 'change any field, then Save and approve.'],
+      ['Reject', 'turns it down; the reason is for you only.'],
+      ['Already listed?', 'names on the page that look similar: check it isn\'t there already.'],
+      'Nothing is ever sent back to the person who suggested it.'],
+    replies: [
+      ['Approve', 'sends Holly\'s draft as it is; Edit lets you change it, then send.'],
+      ['Redraft', 'Holly writes it again; What to say tells her the gist ("Write the reply afresh, saying: …").'],
+      ['Reject', 'drops the draft; Replied in Gmail closes it when you answered yourself (not counted or learned from).'],
+      ['They replied', 'the sender has written again since.'],
+      ['Own thread', 'you wrote by hand earlier in this conversation, so Holly drafts nothing: Reply in Gmail, then Done.'],
+      'Your edits and reasons teach Holly (see Holly lessons).'],
+    owed: [
+      'These people got the automatic holding reply over 2 days ago and nothing since.',
+      ['Redraft', 'Holly writes a proper answer for you to check in Replies.'],
+      ['Reply in Gmail', 'answer it yourself, then close it here.']],
+    feedback: [
+      ['Suggested update / Correction / Other feedback', 'what the reader sent through the website\'s form.'],
+      ['Rating', 'Holly\'s score of how useful it is, 1 to 5.'],
+      ['Approve', 'you agree; make the change, add a note saying what you did, then Mark implemented.'],
+      ['Mark implemented', 'if they gave an email, Holly drafts a thank-you saying what changed, from your notes, for you to Send, Edit or Skip.'],
+      ['Postpone', 'hides it until a date you choose.'],
+      ['Reject', 'turns it down.']],
+    lessons: [
+      'Holly reads the approved lessons before every draft (the newest 20).',
+      ['Proposed', 'Monday\'s suggestions from the week\'s corrections: Approve or Reject.'],
+      ['Check: …', 'this lesson may clash with her fixed rules, her voice guide or another lesson.'],
+      ['Add', 'your own lesson, approved straight away; Edit and Delete work on any lesson.'],
+      'Lessons never name anyone, and her fixed rules always win.'],
+    contacts: [
+      ['Contacts', 'one row per person or group who sends in, or could send in, news; tap a name for their page, messages and Draft email.'],
+      ['Status', 'how they relate to the site (contributor, lead, official, organiser…). Ignore blocks them for good.'],
+      ['Quiet a year', 'Holly sends them nothing for 365 days.'],
+      ['Other addresses', 'one person\'s extra email addresses, so they count as one contact.'],
+      ['Outreach', 'who is due a friendly nudge; Draft nudge has Holly write one.'],
+      ['Organisations', 'the yearly check of each organisation\'s entry on the site; Draft check / Draft chaser.'],
+      'Every draft waits in Replies for your Approve; nothing is sent by itself.',
+      ['Delete', 'removes the row; only new mail from them can bring them back.']],
+    photos: [
+      ['Approve', 'publishes the photo; its folder sets its village and subject on the site.'],
+      ['May show people', 'check consent before approving.'],
+      ['Possible duplicate', 'looks like a photo already there.'],
+      ['Rename', 'always safe. Move changes where the photo shows on the site.'],
+      ['Reject / In To delete', 'the photo goes to the To delete folder, which you empty yourself in Drive.']],
+    health: [
+      ['Diagnostic', 'the daily end-to-end check of email, the Sheet, Claude and the site.'],
+      ['Watchdog', 'warns when a scheduled job hasn\'t run when it should.'],
+      ['Google account', 'the service account the panel and jobs use for the Sheet and Drive.'],
+      'Rimmer\'s card has its own How this works.'],
+    activity: [
+      'The latest 20 automatic jobs on GitHub, refreshed every 15 seconds while open.',
+      ['Green tick / red cross / spinner', 'finished fine / failed / still running.'],
+      'A failed run usually also emails you; tap its name to see why on GitHub.']
+  };
+  function helpBox(items) {
+    return h('details', { class: 'help' }, h('summary', null, 'How this works'),
+      h('ul', null, items.map(function (it) {
+        return Array.isArray(it) ? h('li', null, h('b', null, it[0]), ' ' + it[1]) : h('li', { class: 'plain' }, it);
+      })));
+  }
+  function intro(view) {
+    var p = h('p', { class: 'meta intro' }, INTROS[view]);
+    return HELP[view] ? h('div', { class: 'intro-wrap' }, p, helpBox(HELP[view])) : p;
+  }
   var FLAG_LABELS = {
     own_wording: 'Asked for own wording', too_early: 'Too early', after_deadline: 'After deadline',
     flyer_limit: 'Flyer limit', newsletter_limit: 'Newsletter limit', people_in_image: 'Children in photo',
