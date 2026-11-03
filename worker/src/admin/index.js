@@ -111,6 +111,10 @@
 //   GET  /admin/api/nlstats?i=DATE  Newsletter stats (nlstats.js): sent issues with sent, bounced,
 //                                   and anonymous opens and clicks; for one issue, opens by day and
 //                                   hour and the most-clicked links (totals only, never per person)
+//   POST /admin/api/ingest-now      Submissions' Check email now (3 Nov): fires the usual ingest run
+//                                   (repository_dispatch "ingest", as the Worker's cron does); feeds
+//                                   are read only at their usual hours. Publishes or sends nothing
+//                                   beyond what any ingest run does (acknowledgements).
 //   GET  /admin/api/runs            Activity: the latest 20 GitHub Actions runs (runs.js; read-only)
 //   GET  /admin/api/build-status?sha=&at=&p=&text=  whether an Edit page commit is live: its
 //                                   site build succeeded AND the page (fresh copy) shows text
@@ -962,6 +966,10 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/lesson') return await doLesson(env, body);
       if (path === '/admin/api/autonomy-ignore') return await doAutonomyIgnore(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(env, body);
+      if (path === '/admin/api/ingest-now') {
+        if (!(await dispatch(env, 'ingest', { by: 'panel' }, 2))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);
+        return json({ ok: true, message: 'Checking email: new items show here in a few minutes.' });
+      }
       if (path === '/admin/api/draft-refresh') {
         if (!(await dispatch(env, 'newsletter-draft', {}, 2))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);
         return json({ ok: true, message: 'Refreshing: the new draft shows in a minute or two.' });
