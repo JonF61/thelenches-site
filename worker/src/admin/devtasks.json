@@ -78,6 +78,10 @@
     {
       "task": "Suggest forms: check the first real suggestion end to end (email, confirm, panel card, Approve adds it to the page)",
       "added": "2026-11-03"
+    },
+    {
+      "task": "Newsletter 5 Nov: check the WEBSITE UPDATE paragraph carries the Where to eat / Local trades line and then the Suggest forms line",
+      "added": "2026-11-03"
     }
   ]
 }
