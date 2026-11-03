@@ -119,6 +119,10 @@
     {
       "task": "Fix the Outreach browser check (worker/test/ui-outreach.check.mjs), which fails on main as well",
       "added": "2026-11-04"
+    },
+    {
+      "task": "Newsletter roads section: check it can't list the same roadworks twice (select.js picks road rows separately from the Roads page's de-duplication)",
+      "added": "2026-11-04"
     }
   ]
 }

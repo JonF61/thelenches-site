@@ -91,23 +91,25 @@ module.exports = async function (eleventyConfig) {
     const current = (i) => i && i.title && roads.isRoad(i);
     const p = pipeline || {};
     const w = whatson || {};
-    const works = [
+    const works = roads.dedupeRoads([
       ...[...(p.notices || []), ...(p.news || [])]
         .filter((i) => current(i) && (!i.expires || i.expires >= now))
         .map((i) => roads.mapEntry(i, roadgeo, true)),
       ...[...(w.notices || []), ...(w.news || [])]
         .filter(current)
         .map((i) => roads.mapEntry(i, roadgeo, false)),
-    ];
+    ]);
     return { home: roads.HOME_BOUNDS, centre: roads.HOME_CENTRE, works };
   });
 
   // Split road items by start date ("start", else "date"): { now: started or undated,
-  // soon: starting after today }
+  // soon: starting after today }. Works whose last day (roads.endOf: "end", else a date in the
+  // text) has passed are left out, and the same works reported twice are shown once (3 Nov).
   eleventyConfig.addFilter("roadSplit", (items) => {
     const now = today();
     const from = (i) => i.start || i.date || "";
-    const list = (items || []).slice().sort((a, b) => from(a).localeCompare(from(b)));
+    const list = roads.dedupeRoads(items).filter((i) => { const e = roads.endOf(i); return !e || e >= now; })
+      .sort((a, b) => from(a).localeCompare(from(b)));
     return {
       now: list.filter((i) => !from(i) || from(i) <= now),
       soon: list.filter((i) => from(i) && from(i) > now),
