@@ -438,7 +438,9 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'autonomy') return [h('div', { class: 'list wide' }, top, autonomyView())];
     if (S.view === 'activity') return [h('div', { class: 'list wide' }, top, activityView())];
     if (S.view === 'stats') return [h('div', { class: 'list wide' }, top, statsView())];
-    if (S.view === 'visitors') return [h('div', { class: 'list wide' }, top, visitorsView())];
+    // Site visitors: Refresh at the top right, beside the intro (Jon, 3 Nov).
+    if (S.view === 'visitors') return [h('div', { class: 'list wide' }, h('div', { class: 'intro-row' }, top,
+      h('button', { class: 'btn', disabled: S.svLoading ? true : null, onclick: function () { S.sv = null; render(); } }, 'Refresh')), visitorsView())];
     // Each time the draft screen opens, check the Cloudflare sign-in is still valid (draftView).
     if (S.view === 'draft' && S.shown.split('|')[0] !== 'draft') S.draftAuth = null;
     if (S.view === 'draft') return [h('div', { class: 'list wide' }, top, draftView(d))];
@@ -3255,13 +3257,12 @@ export const CLIENT_JS = String.raw`
       if (!S.svLoading) loadVisitors();
       return [h('p', { class: 'loading' }, 'Loading site visitors…')];
     }
-    var again = h('button', { class: 'btn', onclick: function () { S.sv = null; render(); } }, 'Refresh');
-    if (t.error) return [errorNote(t, 'Site visitors'), again];
+    if (t.error) return [errorNote(t, 'Site visitors')];
     if (t.off) return [h('div', { class: 'note warn' }, 'Not set up: the Worker needs CF_ANALYTICS_TOKEN and CF_ACCOUNT_ID.')];
     var els = [];
     if (t.todayError) els.push(h('div', { class: 'note bad' }, 'Today so far could not be read: ' + t.todayError));
     var days = t.days || [];
-    if (!days.length) { els.push(h('p', { class: 'empty' }, 'No days saved yet. Each night just after midnight the day before is saved.')); els.push(again); return els; }
+    if (!days.length) { els.push(h('p', { class: 'empty' }, 'No days saved yet. Each night just after midnight the day before is saved.')); return els; }
 
     // Last 30 days as bars (oldest left; hover for numbers), then the last 14 in a table, newest first.
     var last = days.slice(0, 30);
@@ -3301,7 +3302,6 @@ export const CLIENT_JS = String.raw`
         }))) : h('p', { class: 'meta' }, 'No page views counted.')));
     }
     els.push(h('p', { class: 'meta' }, 'Days run midnight to midnight UK time. A visit is one person’s session; page views count every page they open. Counted by Cloudflare without cookies, so some visitors who block it are missed. Each day is saved to the Visitors tab of the Sheet just after midnight.'));
-    els.push(again);
     return els;
   }
 

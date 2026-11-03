@@ -1,5 +1,5 @@
 {
-  "_help": "Short paragraph under the newsletter header, labelled WEBSITE UPDATE: the due entries' text joined in order of from date, then key, then one 'Have a look at thelenches.org.uk.' link (render.js). So write each text as one or two plain sentences that read well joined to others: no 'New on the website:' and no 'Have a look'. Each entry: key (unique, letters/numbers/hyphens, never reused), from (first issue date it can appear, YYYY-MM-DD), optional until (last date), text, link (kept for the record; not shown). Shown in one issue that is sent live, then retired automatically.",
+  "_help": "Short paragraph under the newsletter header, labelled WEBSITE UPDATE: the due entries' text each as its own short paragraph in order of from date, then key, the last followed by one 'Have a look at thelenches.org.uk.' link (render.js). So write each text as one or two plain sentences that read well beside the others (check the other due entries so none repeats another): no 'New on the website:' and no 'Have a look'. Each entry: key (unique, letters/numbers/hyphens, never reused), from (first issue date it can appear, YYYY-MM-DD), optional until (last date), text, link (kept for the record; not shown). Shown in one issue that is sent live, then retired automatically.",
   "entries": [
     {
       "key": "add-to-contacts-2026-10",
@@ -61,12 +61,6 @@
       "from": "2026-11-05",
       "link": "https://thelenches.org.uk/regulars/",
       "text": "There is now a Regular activities page listing the weekly classes, clubs and groups across the villages, with who runs them, costs and contact details as we gather them."
-    },
-    {
-      "key": "where-to-eat-2026-11",
-      "from": "2026-11-05",
-      "link": "https://thelenches.org.uk/living-here/eat/",
-      "text": "There are two new pages: Where to eat, listing pubs, cafés, restaurants and farm-shop tearooms in and around the Lenches, and Local trades, with plumbers, chimney sweeps, cleaners and other local tradespeople. Both are works in progress."
     },
     {
       "key": "suggest-forms-2026-11",
