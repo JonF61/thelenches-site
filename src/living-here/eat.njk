@@ -23,6 +23,7 @@ seoTitle: "Where to eat in and around the Lenches — pubs, cafés and restauran
   <div class="page-head">
     <h1>Where to eat</h1>
     <p class="page-intro">{{ eat.intro }}</p>
+    {% if site.suggestUrl and site.turnstileSiteKey %}<p class="small">Know somewhere we&rsquo;ve missed? You can suggest it using the <a href="#suggest">form at the bottom of this page</a>.</p>{% endif %}
   </div>
   <ul class="ea-jump" aria-label="Jump to an area">{% for a in eat.areas %}<li><a href="#{{ a | slugify }}">{{ a }}</a></li>{% endfor %}</ul>
   {% for a in eat.areas %}

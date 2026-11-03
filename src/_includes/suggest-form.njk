@@ -6,7 +6,7 @@
     and turnstileSiteKey; otherwise the page keeps its "Tell us" email line. Wording approved
     by Jon 3 Nov. -#}
 {% set sgEat = suggestKind == "eat" %}
-<section class="sg card" aria-labelledby="sg-h">
+<section class="sg card" id="suggest" aria-labelledby="sg-h">
   <h2 id="sg-h">{{ "Suggest somewhere to eat" if sgEat else "Suggest a tradesperson" }}</h2>
   <form class="sg-form" method="post" action="{{ site.suggestUrl }}" data-sitekey="{{ site.turnstileSiteKey }}">
     <input type="hidden" name="kind" value="{{ suggestKind }}">
