@@ -2,16 +2,15 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD.",
   "tasks": [
     {
+      "task": "Already listed for feeds: check the next feed runs flag real repeats only (not, e.g., different events at the same hall) and note any extra Opus cost",
+      "added": "2026-11-03"
+    },
+    {
       "task": "Already listed: check the next duplicate submission's banner, ack wording and Add details (file commit and build)",
       "added": "2026-11-03"
     },
     {
       "task": "Now live emails: check the first one sends after a build, on the ack thread, with the right link, and only once",
-      "added": "2026-11-03"
-    },
-    {
-      "task": "Already listed for feed items (rss.js): consider the same check for feed signposts of events we already have",
-      "waiting": "Jon's go-ahead",
       "added": "2026-11-03"
     },
     {

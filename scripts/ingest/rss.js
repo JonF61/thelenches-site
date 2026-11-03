@@ -8,6 +8,9 @@
 // flooding, power cuts or the landline switchover) go to Claude (local mode: one-line notice);
 // the rest are logged as "skipped" without a Claude call, so the daily diagnostic still sees
 // them as handled.
+// Already listed (3 Nov, duplicates.js): each feed item is checked as emailed ones are; a match
+// stays pending with the banner and Add details. Roadworks alerts (one.network, published
+// without Jon) aren't checked: repeats of those are caught by findRepeat.
 'use strict';
 
 const crypto = require('crypto');
@@ -18,6 +21,7 @@ const trust = require('./trusted');
 const itemFeedback = require('./itemfeedback');
 const { LOCAL_FEED, keepLocalStory } = require('../../lib/sources');
 const { pageLinks } = require('./pagelinks');
+const dupes = require('./duplicates');
 
 const MAX_FEED_ITEMS_PER_RUN = 10; // across all feeds; the rest wait for the next run
 const MAX_RETRIES = 3;
@@ -137,15 +141,26 @@ async function processItem(entry, ctx, h) {
   ctx.tokensOut += (result.usage && result.usage.output_tokens) || 0;
 
   const id = key.replace(':', '-');
+  // Links Holly may add: only ones in the feed text, the article link or the article's own links.
+  const given = [item.text, link, ...pageLinksFound.map((l) => l.url)].join('\n');
+  const listed = result.items.length ? dupes.listings(ctx.existing) : [];
+  const found = [];
+  const roadworks = (it) => /one\.network/i.test(String(it.link_url || ''));
+  for (const it of result.items) found.push(roadworks(it) ? null : await dupes.check(it, listed, { messageId: key, text: given }));
   const rows = result.items.map((it, n) => {
     const repeat = h.findRepeat(it, '', ctx.existing);
     const noteParts = [it.notes];
     if (repeat) noteParts.push(`Possible repeat of ${repeat.row.id} (same title/date)`);
     // Trusted feed (Settings URL): published without approval unless a human is needed.
-    const decided = trust.applyTrust(h.decideStatus(it, feed.mode, ctx.holiday), it,
+    let decided = trust.applyTrust(h.decideStatus(it, feed.mode, ctx.holiday), it,
       feed.match, ctx.trusted, { anonymous: false, outOfScope: result.outOfScope });
     if (decided.byTrust) noteParts.push('trusted');
     else if (decided.trustedSource) noteParts.push('trusted source');
+    const dup = found[n];
+    if (dup) {
+      noteParts.push(dupes.noteFor(dup));
+      decided = { ...decided, status: 'pending' }; // never published as a new item, in any mode
+    }
     if (it.holly_note) noteParts.push(`Holly: ${it.holly_note}`);
     const row = {
       id: `${id}-${n + 1}`,
@@ -183,6 +198,7 @@ async function processItem(entry, ctx, h) {
       notes: noteParts.filter(Boolean).join(' | '),
       thread_id: '', // no thread: replies.js never answers feed items
       missing: '',
+      duplicate: dup ? JSON.stringify(dup) : '',
     };
     row.policy_flags = replies.itemPolicy({ ...row, classified: it.classified }, item.publishedMs).join(',');
     return row;
@@ -295,4 +311,4 @@ async function run(ctx, logById, startMs, h) {
   return out;
 }
 
-module.exports = { run, parseFeed, cleanLink, htmlToText, isLocalFeed, aboutPlaces };
+module.exports = { run, parseFeed, cleanLink, htmlToText, isLocalFeed, aboutPlaces, processItem };

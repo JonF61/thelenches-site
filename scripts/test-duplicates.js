@@ -17,12 +17,17 @@ process.env.LIVE_CHECKS = '2';
 process.env.LIVE_WAIT_MS = '1';
 
 let answer = null;
+let feedItemOut = null;
 const prompts = [];
 const sdkPath = require.resolve('@anthropic-ai/sdk');
 class FakeAnthropic {
   constructor() {
     this.messages = { create: async (req) => {
       prompts.push(req);
+      if (req.tools && req.tools[0].name === 'record_items') {
+        return { stop_reason: 'tool_use', usage: {}, content: [{ type: 'tool_use', name: 'record_items', input: {
+          items: [feedItemOut], anonymous: false, out_of_scope: false } }] };
+      }
       return { stop_reason: 'tool_use', usage: {}, content: [{ type: 'tool_use', name: 'record_match', input: answer }] };
     } };
   }
@@ -195,7 +200,33 @@ async function testLive() {
   }
 }
 
+// Feed items (rss.js processItem) get the same check; roadworks alerts don't.
+async function testFeed() {
+  const rss = require('./ingest/rss');
+  const today = new Date().toISOString().slice(0, 10);
+  const existing = [{ id: 'e1-1', status: 'approved', received: `${today} 09:00`, category: 'event', title: 'Village quiz night — Rous Lench', event_date: '2099-01-10', message_id: 'e1', summary: 'Quiz at 7.30pm.' }];
+  const h = { londonDateTime: () => `${today} 10:00`, findRepeat: () => null, decideStatus: () => 'auto' };
+  const entry = (title, link = 'https://www.eveshamjournal.co.uk/news/1.quiz/') => ({ feed: { source: 'Evesham Journal', match: 'https://www.eveshamjournal.co.uk/news/rss/', mode: 'auto' },
+    item: { title, text: 'A quiz night in Rous Lench.', link, publishedMs: Date.now() }, key: `rss:${title.length}abc` });
+  tables = { Pending: [] };
+  const ctx = { existing, holiday: true, trusted: new Set(), today, tokensIn: 0, tokensOut: 0 };
+  feedItemOut = { title: 'Quiz night in Rous Lench', event_date: '2099-01-10', village: 'Rous Lench', category: 'event', summary: 'A quiz night in Rous Lench.',
+    confidence: 0.9, urgent: false, political_commercial: false, classified: false, missing: [], image_index: -1, people_in_image: false };
+  answer = { match: 1, confidence: 0.9, details: '' };
+  const before = prompts.length;
+  await rss.processItem(entry('Quiz night in Rous Lench'), ctx, h);
+  const row = tables.Pending[0];
+  ok(row && row.status === 'pending' && dupes.parse(row.duplicate), 'feed duplicate flagged and held, even in holiday mode (signposts are matched against the real site here)');
+  ok(/Already listed/.test(row.notes), 'feed duplicate noted');
+  ok(prompts.slice(before).some((p) => p.tools[0].name === 'record_match'), 'feed item checked');
+  feedItemOut = { ...feedItemOut, title: 'Road closure', link_url: 'https://one.network/?tm=1', category: 'notice', event_date: '2099-01-10' };
+  const n = prompts.length;
+  await rss.processItem(entry('Road closure', 'https://one.network/?tm=1'), ctx, h);
+  ok(!prompts.slice(n).some((p) => p.tools[0].name === 'record_match') && !tables.Pending[1].duplicate, 'roadworks alerts not checked');
+}
+
 (async () => {
+  await testFeed();
   const d = await testCandidatesAndMatch();
   testAck(d);
   testFeedback(d);
