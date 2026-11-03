@@ -1,6 +1,18 @@
 {
   "events": [
     {
+      "id": "1a1a22b6da2a820a-4",
+      "title": "Rugby Drinks Offer — The Lenches Club",
+      "body": "While Round 4 rugby fixtures are showing at The Lenches Club on Friday 6 to Sunday 8 November, there's a 4 for 3 offer on Stella, Cruzcampo, Inch's Riversider and Inch's.",
+      "date": "2026-11-06",
+      "village": "Lenches",
+      "expires": "2026-11-06",
+      "image": {
+        "url": "/images/items/1a1a22b6da2a820a-4.webp",
+        "alt": "Blue poster announcing 4 for 3 on Stella, Cruzcampo, Inch's Riversider and Inch's during Round 4 fixtures"
+      }
+    },
+    {
       "id": "rss-4b3e37ba34618472-1",
       "title": "Christmas Market — Spetchley Park Gardens",
       "body": "Spetchley Park Gardens will host a free Christmas market on 14 and 15 November, with a mix of indoor and outdoor stalls.",
@@ -207,15 +219,19 @@
       }
     },
     {
-      "id": "1a1a1f4b9a374792-1",
+      "id": "1a1a22b6da2a820a-1",
       "title": "Wales v Japan Ticket Auction — The Lenches Club",
-      "body": "The Lenches Club is holding a members-only closed-bid silent auction for four pitch-side tickets together (block L32, next to the halfway line) for Wales v Japan at the Principality Stadium, Cardiff, on Saturday 7 November. \n\nEmail your full name, your bid for all four tickets and a phone number, with the subject ‘Wales v Japan – Auction Bid’, by 10pm on Thursday 5 November. \n\nBids are confidential and the highest valid bid wins. All proceeds support the club.",
-      "village": "Church Lench",
+      "body": "The Lenches Club is holding a members-only closed-bid silent auction for four pitch-side tickets together (block L32, next to the halfway line) for Wales v Japan at the Principality Stadium, Cardiff, on Saturday 7 November. Email your full name, your bid for all four tickets and a phone number, with the subject ‘Wales v Japan – Auction Bid’, by 10pm on Thursday 5 November. Bids are confidential and the highest valid bid wins. All proceeds support the club.",
+      "village": "Lenches",
       "expires": "2026-11-24",
       "added": "2026-11-03",
       "link": {
         "text": "Bid: email The Lenches Club",
-        "url": "mailto:lenchesclubmail@gmail.com?subject=Wales%20v%20Japan%20%E2%80%93%20Auction%20Bid"
+        "url": "mailto:lenchesclubmail@gmail.com"
+      },
+      "image": {
+        "url": "/images/items/1a1a22b6da2a820a-1.webp",
+        "alt": "Poster for the Lenches Club closed-bid silent auction for four Wales v Japan tickets at the Principality Stadium"
       }
     },
     {
