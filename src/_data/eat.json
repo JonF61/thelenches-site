@@ -1,25 +1,147 @@
 {
   "intro": "Pubs, cafés, restaurants and farm-shop tearooms in and around the Lenches. Opening times change, so check the place's own website or ring before you go.",
-  "areas": ["In the Lenches", "Nearby villages", "Harvington and Norton", "Evesham", "Pershore"],
+  "areas": [
+    "Nearby villages",
+    "Harvington and Norton",
+    "Evesham",
+    "Pershore"
+  ],
   "places": [
-    { "name": "Lenches Club", "area": "In the Lenches", "where": "Church Lench", "type": "Social club", "food": "Bar; food at some events", "note": "Members' club; visitors welcome at events" },
-    { "name": "Old Bull Inn", "area": "Nearby villages", "where": "Inkberrow", "type": "Pub", "food": "Food every day", "note": "16th-century pub on the village green" },
-    { "name": "Bulls Head", "area": "Nearby villages", "where": "Inkberrow", "type": "Pub", "food": "Restaurant", "garden": true },
-    { "name": "The Pantry at Rush Farm", "area": "Nearby villages", "where": "near Inkberrow", "type": "Farm shop café" },
-    { "name": "The Ounce at the Dolphin", "area": "Nearby villages", "where": "Bishampton", "type": "Pub", "note": "Community owned" },
-    { "name": "Bishampton Shop & Café", "area": "Nearby villages", "where": "Bishampton", "type": "Village shop café" },
-    { "name": "Boot Inn", "area": "Nearby villages", "where": "Flyford Flavell", "type": "Pub and restaurant", "food": "Separate restaurant" },
-    { "name": "Wheelbarrow Castle", "area": "Nearby villages", "where": "Radford", "type": "Pub and restaurant", "food": "Pub meals, grill, Sunday lunch" },
-    { "name": "Chequers Inn", "area": "Nearby villages", "where": "Fladbury", "type": "Pub", "food": "Restaurant at the rear" },
-    { "name": "Clive's of Cropthorne", "area": "Nearby villages", "where": "Cropthorne", "type": "Café", "food": "Breakfast and lunch, Tuesday to Sunday" },
-    { "name": "The Anchor Inn", "area": "Nearby villages", "where": "Wyre Piddle", "type": "Pub", "food": "Sunday lunches", "garden": true },
-    { "name": "Coach and Horses", "area": "Harvington and Norton", "where": "Harvington", "type": "Pub" },
-    { "name": "Golden Cross", "area": "Harvington and Norton", "where": "Harvington", "type": "Pub", "food": "Evening meals", "garden": true, "children": true },
-    { "name": "Norton Grange", "area": "Harvington and Norton", "where": "Norton", "type": "Pub", "food": "Lunch and evening meals", "garden": true },
-    { "name": "Chadbury Farm Shop & Café", "area": "Harvington and Norton", "where": "Chadbury, between Norton and Evesham", "type": "Farm shop café", "food": "Breakfast and lunch" },
-    { "name": "Wayside Farm Shop & Tearoom", "area": "Evesham", "where": "Wickhamford", "type": "Farm shop tearoom" },
-    { "name": "Apple Barn Restaurant", "area": "Evesham", "where": "Evesham Garden Centre", "type": "Garden centre café" },
-    { "name": "Regal Cinema", "area": "Evesham", "where": "Port Street", "type": "Cinema café-bar" },
-    { "name": "Angel Inn", "area": "Pershore", "where": "High Street", "type": "Hotel bar and dining room" }
+    {
+      "name": "Old Bull Inn",
+      "area": "Nearby villages",
+      "where": "Inkberrow",
+      "type": "Pub",
+      "food": "Food every day",
+      "note": "16th-century pub on the village green"
+    },
+    {
+      "name": "Bulls Head",
+      "area": "Nearby villages",
+      "where": "Inkberrow",
+      "type": "Pub",
+      "food": "Restaurant",
+      "garden": true
+    },
+    {
+      "name": "The Pantry at Rush Farm",
+      "area": "Nearby villages",
+      "where": "near Inkberrow",
+      "type": "Farm shop café"
+    },
+    {
+      "name": "The Ounce at the Dolphin",
+      "area": "Nearby villages",
+      "where": "Bishampton",
+      "type": "Pub",
+      "note": "Community owned"
+    },
+    {
+      "name": "Bishampton Shop & Café",
+      "area": "Nearby villages",
+      "where": "Bishampton",
+      "type": "Village shop café"
+    },
+    {
+      "name": "Boot Inn",
+      "area": "Nearby villages",
+      "where": "Flyford Flavell",
+      "type": "Pub and restaurant",
+      "food": "Separate restaurant"
+    },
+    {
+      "name": "Mysuru",
+      "area": "Nearby villages",
+      "where": "Cockshot Lane, Kington",
+      "type": "Restaurant",
+      "phone": "01905 349912",
+      "website": {
+        "text": "mysuru.co.uk",
+        "url": "https://www.mysuru.co.uk"
+      }
+    },
+    {
+      "name": "Wheelbarrow Castle",
+      "area": "Nearby villages",
+      "where": "Radford",
+      "type": "Pub and restaurant",
+      "food": "Pub meals, grill, Sunday lunch"
+    },
+    {
+      "name": "Chequers Inn",
+      "area": "Nearby villages",
+      "where": "Fladbury",
+      "type": "Pub",
+      "food": "Restaurant at the rear"
+    },
+    {
+      "name": "Clive's of Cropthorne",
+      "area": "Nearby villages",
+      "where": "Cropthorne",
+      "type": "Café",
+      "food": "Breakfast and lunch, Tuesday to Sunday"
+    },
+    {
+      "name": "The Anchor Inn",
+      "area": "Nearby villages",
+      "where": "Wyre Piddle",
+      "type": "Pub",
+      "food": "Sunday lunches",
+      "garden": true
+    },
+    {
+      "name": "Coach and Horses",
+      "area": "Harvington and Norton",
+      "where": "Harvington",
+      "type": "Pub"
+    },
+    {
+      "name": "Golden Cross",
+      "area": "Harvington and Norton",
+      "where": "Harvington",
+      "type": "Pub",
+      "food": "Evening meals",
+      "garden": true,
+      "children": true
+    },
+    {
+      "name": "Norton Grange",
+      "area": "Harvington and Norton",
+      "where": "Norton",
+      "type": "Pub",
+      "food": "Lunch and evening meals",
+      "garden": true
+    },
+    {
+      "name": "Chadbury Farm Shop & Café",
+      "area": "Harvington and Norton",
+      "where": "Chadbury, between Norton and Evesham",
+      "type": "Farm shop café",
+      "food": "Breakfast and lunch"
+    },
+    {
+      "name": "Wayside Farm Shop & Tearoom",
+      "area": "Evesham",
+      "where": "Wickhamford",
+      "type": "Farm shop tearoom"
+    },
+    {
+      "name": "Apple Barn Restaurant",
+      "area": "Evesham",
+      "where": "Evesham Garden Centre",
+      "type": "Garden centre café"
+    },
+    {
+      "name": "Regal Cinema",
+      "area": "Evesham",
+      "where": "Port Street",
+      "type": "Cinema café-bar"
+    },
+    {
+      "name": "Angel Inn",
+      "area": "Pershore",
+      "where": "High Street",
+      "type": "Hotel bar and dining room"
+    }
   ]
 }
