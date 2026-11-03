@@ -1,5 +1,5 @@
 {
-  "intro": "Local tradespeople recommended by people in and around the Lenches. We don't check or guarantee anyone's work, so please get quotes and ask questions as you would with anyone. If you're listed and would rather not be, tell us and we'll take you off.",
+  "intro": "Local tradespeople in and around the Lenches. We don't check or guarantee anyone's work, so please get quotes and ask questions as you would with anyone. If you're listed and would rather not be, tell us and we'll take you off.",
   "trades": [
     {
       "name": "B Tomes & Son",
@@ -8,8 +8,7 @@
       "covers": "Evesham area",
       "phone": "07956 077775",
       "email": "b.tomesandson@gmail.com",
-      "base": "Norton, Evesham",
-      "recommended": "2026-11"
+      "base": "Norton, Evesham"
     }
   ]
 }
