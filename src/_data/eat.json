@@ -129,12 +129,16 @@
     },
     {
       "id": "the-ounce-at-the-dolphin",
-      "name": "The Ounce at the Dolphin",
+      "name": "The Dolphin Steakhouse",
       "area": "Nearby villages",
       "where": "Bishampton",
       "type": "Pub",
       "note": "Community owned",
       "phone": "01386 462927",
+      "website": {
+        "text": "thedolphinsteakhouse.co.uk",
+        "url": "https://thedolphinsteakhouse.co.uk/"
+      },
       "food": "Steak restaurant"
     },
     {
@@ -232,14 +236,6 @@
       }
     },
     {
-      "id": "vineyard-inn",
-      "name": "Vineyard Inn",
-      "area": "Harvington and Norton",
-      "where": "Abbots Salford",
-      "type": "Pub and restaurant",
-      "phone": "01386 870217"
-    },
-    {
       "id": "apple-barn-restaurant",
       "name": "Apple Barn Restaurant",
       "area": "Evesham",
@@ -276,14 +272,6 @@
         "text": "theivyinn.co.uk",
         "url": "https://www.theivyinn.co.uk"
       }
-    },
-    {
-      "id": "orchard-beefeater",
-      "name": "Orchard Beefeater",
-      "area": "Evesham",
-      "where": "Twyford roundabout, Evesham",
-      "type": "Pub restaurant",
-      "phone": "01386 444300"
     },
     {
       "id": "regal-cinema",
