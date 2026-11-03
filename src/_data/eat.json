@@ -53,12 +53,13 @@
       "name": "Mysuru",
       "area": "Nearby villages",
       "where": "Cockshot Lane, Kington",
-      "type": "Restaurant",
+      "type": "Indian restaurant",
       "phone": "01905 349912",
       "website": {
         "text": "mysuru.co.uk",
         "url": "https://www.mysuru.co.uk"
-      }
+      },
+      "food": "Eat in or takeaway"
     },
     {
       "name": "Wheelbarrow Castle",
