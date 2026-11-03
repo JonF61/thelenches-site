@@ -85,6 +85,13 @@ try {
     await page.goto(`${base}/admin`);
     const main = page.locator('.main');
     await main.locator('.card.sum', { hasText: 'Subscribers' }).waitFor();
+    // How this works (4 Nov): every screen has a folded guide under its intro; Summary's opens.
+    const help = main.locator('.intro-wrap details.help');
+    assert.equal(await help.count(), 1);
+    assert.equal(await help.evaluate((d) => d.open), false);
+    await help.locator('summary').click();
+    assert.match(await help.innerText(), /How this works[\s\S]*No action needed on…/);
+    await help.locator('summary').click();
     const menu = (await page.locator('nav.side button').allInnerTexts()).map((t) => t.replace(/\s*\d+$/, '').trim());
     assert.equal(menu[0], 'Summary');
     assert.equal(await page.locator('nav.side button[aria-current="page"]').innerText(), 'Summary');
