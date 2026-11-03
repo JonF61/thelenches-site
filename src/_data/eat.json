@@ -134,6 +134,14 @@
       "phone": "01386 304505"
     },
     {
+      "name": "Hillers Garden Café",
+      "area": "Harvington and Norton",
+      "where": "Dunnington, near Salford Priors",
+      "type": "Farm shop café",
+      "food": "Lunches, cakes and coffee",
+      "phone": "01789 772771"
+    },
+    {
       "name": "Karma Salford Hall",
       "area": "Harvington and Norton",
       "where": "Abbots Salford",
@@ -193,12 +201,26 @@
       }
     },
     {
+      "name": "Orchard Beefeater",
+      "area": "Evesham",
+      "where": "Twyford roundabout, Evesham",
+      "type": "Pub restaurant",
+      "phone": "01386 444300"
+    },
+    {
       "name": "Regal Cinema",
       "area": "Evesham",
       "where": "Port Street",
       "type": "Café and wine bar",
       "phone": "01386 421007",
       "food": "Coffee shop by day, wine bar in the evening"
+    },
+    {
+      "name": "Thai Emerald",
+      "area": "Evesham",
+      "where": "High Street, Evesham",
+      "type": "Thai restaurant",
+      "phone": "01386 49788"
     },
     {
       "name": "Wayside Farm Shop & Tearoom",
@@ -210,6 +232,18 @@
         "url": "https://www.waysidefarmshop.co.uk"
       },
       "food": "Breakfast and snacks"
+    },
+    {
+      "name": "The Wood Norton",
+      "area": "Evesham",
+      "where": "Wood Norton, between Evesham and Fladbury",
+      "type": "Hotel restaurant and bar",
+      "food": "Restaurant and afternoon tea, open to non-residents",
+      "phone": "01386 765611",
+      "website": {
+        "text": "thewoodnorton.com",
+        "url": "https://www.thewoodnorton.com"
+      }
     },
     {
       "name": "Angel Inn",

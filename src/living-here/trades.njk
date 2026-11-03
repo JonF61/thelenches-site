@@ -1,0 +1,46 @@
+---
+layout: base.njk
+title: Local trades
+description: Plumbers, electricians, builders, gardeners and other local tradespeople in and around the Lenches.
+seoTitle: "Local trades in and around the Lenches — plumbers, builders, electricians"
+---
+<style>
+.tr-jump{display:flex;flex-wrap:wrap;gap:.4rem;list-style:none;padding:0;margin:.5rem 0 1rem}
+.tr-jump a{display:inline-block;padding:.35rem .7rem;border-radius:999px;background:#fdf0dc;color:#7a4a06;text-decoration:none;font-weight:600}
+.tr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.75rem}
+.tr-grid .card{margin:0}
+.tr-grid h3{margin:0 0 .15rem}
+.tr-facts{margin:.2rem 0 0}.tr-facts dt{font-weight:700;float:left;clear:left;margin-right:.35rem}.tr-facts dd{margin:0 0 .2rem}
+.tr-note{background:#fff8e8;border-left:4px solid #e0a43a;padding:.6rem .8rem;border-radius:6px}
+</style>
+<main class="container">
+  <div class="page-head">
+    <h1>Local trades</h1>
+    <p class="page-intro">{{ trades.intro }}</p>
+  </div>
+  {% set groups = [] %}{% for t in trades.trades %}{% if t.trade not in groups %}{% set groups = (groups.push(t.trade), groups) %}{% endif %}{% endfor %}
+  <ul class="tr-jump" aria-label="Jump to a trade">{% for g in groups | sort %}<li><a href="#{{ g | slugify }}">{{ g }}</a></li>{% endfor %}</ul>
+  {% for g in groups | sort %}
+  <section id="{{ g | slugify }}">
+    <h2>{{ g }}</h2>
+    <div class="tr-grid">
+    {% for t in trades.trades %}{% if t.trade == g %}
+      <div class="card">
+        <h3>{{ t.name }}</h3>
+        <dl class="tr-facts small">
+          {% if t.what %}<dt>Does</dt><dd>{{ t.what }}</dd>{% endif %}
+          {% if t.covers %}<dt>Covers</dt><dd>{{ t.covers }}</dd>{% endif %}
+          {% if t.base %}<dt>Based</dt><dd>{{ t.base }}</dd>{% endif %}
+          {% if t.contact %}<dt>Contact</dt><dd>{{ t.contact }}</dd>{% endif %}
+          {% if t.phone %}<dt>Phone</dt><dd><a href="tel:{{ t.phone | replace(' ', '') }}">{{ t.phone }}</a>{% if t.phone2 %} or <a href="tel:{{ t.phone2 | replace(' ', '') }}">{{ t.phone2 }}</a>{% endif %}</dd>{% endif %}
+          {% if t.email %}<dt>Email</dt><dd><a href="mailto:{{ t.email }}">{{ t.email }}</a></dd>{% endif %}
+          {% if t.other %}<dt>Contact</dt><dd>{{ t.other }}</dd>{% endif %}
+          {% if t.website %}<dt>Website</dt><dd><a href="{{ t.website.url }}">{{ t.website.text }}</a></dd>{% endif %}
+        </dl>
+      </div>
+    {% endif %}{% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+  <p class="tr-note small">Know a good local tradesperson we should list? <a href="mailto:{{ site.email }}?subject=Local%20trades">Tell us</a> their name, trade and how to contact them.</p>
+</main>
