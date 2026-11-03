@@ -50,6 +50,7 @@
 // The Rebuild button's build carries rebuild: true, which lifts the Wednesday 18:00
 // deadline cutoff (the scheduled 06:30 build keeps it).
 
+import { handleKryten } from './kryten.js';
 import { handleClick, handleOpen } from './track.js';
 import {
   ACTIONS, PANEL_ONLY, validPayload, github, dispatch, decide, cleanReason, cleanBody,
@@ -619,6 +620,8 @@ export default {
         : handleSuggest(request, env);
     }
     if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) return handleAdmin(request, env);
+    // Kryten's quick Sheet access (kryten.js): its own bearer secret, never behind Access.
+    if (url.pathname === '/k') return handleKryten(request, env);
     return new Response('Lenches approvals', { headers: { 'content-type': 'text/plain' } });
   },
 
