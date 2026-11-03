@@ -3444,6 +3444,45 @@ export const CLIENT_JS = String.raw`
   // change, then Apply / Discard), Send to Kryten, Dismiss. Check runs a check now.
   var CHECK_LABELS = { newsletter: 'Newsletter', listings: 'Listings pages', site: 'Whole site' };
   var FIX_BUSY = ['asked', 'applying'];
+  // A fix ready for Apply: one Jon asked for ("proposed") or one Holly drafted with Rimmer's run ("offered", 4 Nov).
+  var FIX_READY = ['proposed', 'offered'];
+  var FIX_WORDS = { title: 'title', body: 'text', date: 'date', endDate: 'end date', expires: 'hidden from', link: 'link', link2: 'second link', remove: 'take it off the website' };
+  var DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fixDate(v) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(str(v));
+    if (!m) return '';
+    var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], 12));
+    return DAY_NAMES[d.getUTCDay()] + ' ' + (+m[3]) + ' ' + MONTH_NAMES[+m[2] - 1] + ' ' + m[1];
+  }
+  function fixJson(v) { try { return JSON.parse(v); } catch (e) { return null; } }
+  // One side (Now / After) of a fix, in words: dates as "Sun 6 Dec 2026", links as "words" → address,
+  // a removal as the entry and "Taken off the website".
+  function fixSide(f, side) {
+    var v = side === 'old' ? f.fix_old : f.fix_new;
+    var fld = f.fix_field;
+    if (fld === 'remove') {
+      if (side === 'new') return h('b', { class: 'bad-text' }, 'Taken off the website');
+      var o = fixJson(v) || {};
+      var more = str(o.body || o.about || o.what || o.note || o.where);
+      return [f.fix_label, more ? h('div', { class: 'meta' }, more.length > 160 ? more.slice(0, 159) + '…' : more) : null];
+    }
+    if (fld === 'date' || fld === 'endDate' || fld === 'expires') {
+      if (!str(v)) return fld === 'endDate' ? 'None (a one-day event)' : 'None';
+      return (fld === 'expires' ? 'Hidden from ' : '') + fixDate(v);
+    }
+    if (fld === 'link' || fld === 'link2') {
+      var l = str(v) ? fixJson(v) : null;
+      if (!l) return 'No link';
+      return ['"' + str(l.text) + '"', h('div', { class: 'meta' }, '→ ' + str(l.url))];
+    }
+    return v;
+  }
+  function fixConfirm(f) {
+    if (f.fix_field === 'remove') return 'Take this entry off the website?\n\n' + f.fix_label + '\n\nThe site rebuilds in a few minutes. If this week\'s newsletter is already built, Rebuild it afterwards.';
+    var extra = f.fix_field === 'date' && /^Event/.test(f.fix_label) ? '\n\nThe event moves to its new date (its page link changes, so the newsletter may show it again).' : '';
+    return 'Apply Holly\'s fix?\n\n' + f.fix_label + extra + '\n\nThe site rebuilds in a few minutes. If this week\'s newsletter is already built, Rebuild it afterwards.';
+  }
   S.fixForm = S.fixForm || {};
   S.fixNote = S.fixNote || {};
   async function loadRimmer() {
@@ -3529,7 +3568,7 @@ export const CLIENT_JS = String.raw`
     render();
   }
   async function fixOp(f, op) {
-    if (op === 'apply' && !window.confirm('Apply Holly\'s fix?\n\n' + f.fix_label + '\n\nThe site rebuilds in a few minutes. If this week\'s newsletter is already built, Rebuild it afterwards.')) return;
+    if (op === 'apply' && !window.confirm(fixConfirm(f))) return;
     var note = op === 'propose' ? str(S.fixNote[f.id]) : '';
     var r = await api('/admin/api/rimmer-fix', { id: f.id, op: op, note: note, expected: f.fix_status });
     if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); if (r.status === 409) { S.rimmer = null; render(); } return; }
@@ -3552,17 +3591,20 @@ export const CLIENT_JS = String.raw`
     var st = f.fix_status;
     if (st === 'asked') return h('div', { class: 'note info' }, 'Holly is finding the entry and drafting a fix…');
     if (st === 'applying') return h('div', { class: 'note info' }, 'Applying the fix… the site rebuilds in a few minutes.');
-    if (st === 'proposed') {
+    if (FIX_READY.indexOf(st) >= 0) {
       return h('div', { class: 'fix-proposal' },
-        h('div', null, h('b', null, 'Holly\'s fix: '), f.fix_label + (f.fix_field ? ' (' + f.fix_field + ')' : '')),
+        h('div', null, h('b', null, st === 'offered' ? 'Holly\'s fix (drafted with Rimmer\'s check): ' : 'Holly\'s fix: '),
+          f.fix_label + (f.fix_field ? ' (' + (FIX_WORDS[f.fix_field] || f.fix_field) + ')' : '')),
         h('div', { class: 'fix-diff' },
-          h('div', { class: 'fix-old' }, h('span', { class: 'meta' }, 'Now'), h('div', null, f.fix_old)),
-          h('div', { class: 'fix-new' }, h('span', { class: 'meta' }, 'After'), h('div', null, f.fix_new))),
-        f.fix_reason ? h('div', { class: 'meta' }, f.fix_reason) : null,
+          h('div', { class: 'fix-old' }, h('span', { class: 'meta' }, 'Now'), h('div', null, fixSide(f, 'old'))),
+          h('div', { class: 'fix-new' + (f.fix_field === 'remove' ? ' fix-remove' : '') }, h('span', { class: 'meta' }, 'After'), h('div', null, fixSide(f, 'new')))),
+        f.fix_reason ? h('div', { class: 'meta' }, f.fix_reason + (f.fix_field === 'date' && /^Event/.test(f.fix_label) ? ' (The file is renamed to match.)' : '')) : null,
         h('div', { class: 'actions' },
-          h('button', { class: 'btn primary', onclick: function () { fixOp(f, 'apply'); } }, 'Apply'),
-          h('button', { class: 'btn', onclick: function () { fixOp(f, 'discard'); } }, 'Discard'),
-          h('button', { class: 'btn link', onclick: function () { S.fixForm[f.id] = true; render(); } }, 'Ask again')),
+          h('button', { class: 'btn primary', onclick: function () { fixOp(f, 'apply'); } }, f.fix_field === 'remove' ? 'Apply (remove it)' : 'Apply'),
+          h('button', { class: 'btn', title: 'Throw this fix away; the finding stays open', onclick: function () { fixOp(f, 'discard'); } }, 'Discard fix'),
+          h('button', { class: 'btn link', title: 'Tell Holly what it should say and she drafts again', onclick: function () { S.fixForm[f.id] = true; render(); } }, 'Ask again…'),
+          h('button', { class: 'btn link', title: 'For anything needing judgement or code', onclick: function () { krytenFinding(f); } }, 'Send to Kryten'),
+          h('button', { class: 'btn link', title: 'Close this finding; Rimmer won\'t raise it again', onclick: function () { dismissFinding(f); } }, 'Dismiss')),
         S.fixForm[f.id] ? fixForm(f) : null);
     }
     var why = (st === 'cannot' || st === 'failed') && f.fix_reason
@@ -3578,7 +3620,7 @@ export const CLIENT_JS = String.raw`
       f.quote ? h('div', { class: 'meta' }, '"' + f.quote + '"') : null,
       f.suggestion ? h('div', { class: 'meta' }, 'Suggested fix: ' + f.suggestion) : null,
       fixPanel(f),
-      busy || f.fix_status === 'proposed' || S.fixForm[f.id] ? null : h('div', { class: 'actions' },
+      busy || FIX_READY.indexOf(f.fix_status) >= 0 || S.fixForm[f.id] ? null : h('div', { class: 'actions' },
         h('button', { class: 'btn', title: 'Holly finds the entry and proposes a change for you to check', onclick: function () { S.fixForm[f.id] = true; render(); } }, 'Fix…'),
         h('button', { class: 'btn link', title: 'For anything needing judgement or code', onclick: function () { krytenFinding(f); } }, 'Send to Kryten'),
         h('button', { class: 'btn link', title: 'Close this finding; Rimmer won\'t raise it again', onclick: function () { dismissFinding(f); } }, 'Dismiss')));
@@ -3586,6 +3628,23 @@ export const CLIENT_JS = String.raw`
   function checkButton(scope, label) {
     return h('button', { class: 'btn', disabled: S.ckBusy ? true : null, title: 'Rimmer reads it now and lists any problems here; he changes nothing',
       onclick: function () { runCheck(scope); } }, S.ckBusy === scope ? 'Checking…' : label);
+  }
+  // How to use the card and what its words mean (Jon, 4 Nov: every screen explains itself).
+  function rimmerHelp() {
+    var li = function (b, t) { return h('li', null, h('b', null, b), ' ' + t); };
+    return h('details', { class: 'help' }, h('summary', null, 'How this works'),
+      h('p', null, 'Rimmer reads what readers see and lists anything that looks wrong. He changes nothing himself. Where the words are in a listing Holly can change, she drafts a fix in the same run, so most findings arrive with one ready for you to check.'),
+      h('ul', null,
+        li('Problem', 'Rimmer is sure it is wrong.'),
+        li('Check', 'it may be wrong: have a look.'),
+        li('Now / After', 'the entry as it is, and as it would be with Holly\'s fix. A fix changes one thing: some wording, an event\'s date or end date, the date a notice is hidden from, a link, or takes a whole entry off the website.'),
+        li('Apply', 'makes the change (after you confirm); the website rebuilds in a few minutes. If this week\'s newsletter is already built, tap Rebuild on the draft afterwards.'),
+        li('Discard fix', 'throws Holly\'s fix away but keeps the finding open.'),
+        li('Fix… / Ask again…', 'type what it should say (a phone number, the right date, the web address) and Holly drafts again. She never adds details nobody gave her, and official statements only get typos corrected.'),
+        li('Holly couldn\'t fix it', 'says why; usually she needs a detail from you, or it is something only Kryten can change.'),
+        li('Send to Kryten', 'for anything needing judgement or code; your note goes with it.'),
+        li('Dismiss', 'closes the finding; Rimmer won\'t raise it again.')),
+      h('p', { class: 'meta' }, 'Rimmer checks the newsletter on Wednesday evenings, the listings pages on Sundays and the whole site on the 1st of each month; the Check buttons run him now. A newer check replaces findings you haven\'t acted on.'));
   }
   // A card of findings for the given scopes, with Check buttons (and, when asked, the list sent to Kryten).
   function rimmerCard(title, scopes, buttons, intro, showKryten) {
@@ -3597,6 +3656,7 @@ export const CLIENT_JS = String.raw`
       h('div', { class: 'intro-row' }, h('h2', null, title + (c && !c.error ? ' (' + list.length + ')' : '')),
         h('div', { class: 'actions' }, buttons.map(function (b) { return checkButton(b[0], b[1]); }))),
       intro ? h('p', { class: 'meta' }, intro) : null,
+      rimmerHelp(),
       !c ? h('p', { class: 'meta' }, 'Loading…') : c.error ? errorNote(c, 'The Rimmer tab')
         : list.length ? list.map(findingEl) : h('p', { class: 'meta' }, lastRun ? 'Nothing found.' : 'Not checked yet.'),
       lastRun ? h('p', { class: 'meta' }, lastRun) : null,

@@ -1,7 +1,8 @@
 // worker/test/ui-rimmer.check.mjs
 // Browser check of Rimmer (ui/client.js rimmerCard) against a mock API, on desktop and phone
 // sizes: Summary lists the open findings; Fix… with an instruction asks Holly (propose), her
-// proposal shows Now/After with Apply (confirm) and the finding goes once applied; Send to Kryten
+// proposal shows Now/After with Apply (confirm) and the finding goes once applied; fixes Holly
+// drafted with Rimmer's run (date, removal) show ready with Apply / Discard fix; How this works; Send to Kryten
 // moves one to the Kryten list; Dismiss; Health's three Check buttons and Check showing new findings.
 // Saves screenshots (SHOTS=dir). Run: node worker/test/ui-rimmer.check.mjs
 import http from 'node:http';
@@ -43,6 +44,11 @@ const reset = () => {
     open: [
       F('K1-n1', 'newsletter', 'problem', 'newsletter', 'Website update', 'The same two pages are announced twice.', { quote: 'There are two new pages', suggestion: 'Remove one of the two.' }),
       F('K1-l1', 'listings', 'check', '/events/', 'Quiz night', 'Saturday 7 November is a Saturday but the body says Friday.', { quote: 'Friday 7 November' }),
+      // Drafted with Rimmer's own run (4 Nov): a date fix and a removal, ready for Apply.
+      F('K1-l2', 'listings', 'problem', '/events/', 'Handbell concert', 'Listed on 29 November but the body says 6 December.', {
+        fix_status: 'offered', fix_label: 'Event: Handbell concert', fix_field: 'date', fix_old: '2026-11-29', fix_new: '2026-12-06', fix_reason: 'The body says 6 December.' }),
+      F('K1-l3', 'listings', 'check', '/notices/', 'Severn Trent works', 'The works ended last week.', {
+        fix_status: 'offered', fix_label: 'Notice: Severn Trent works', fix_field: 'remove', fix_old: JSON.stringify({ title: 'Severn Trent works', body: 'Pipe works until 30 October.' }), fix_new: '', fix_reason: 'The works are over.' }),
     ],
   };
 };
@@ -70,6 +76,10 @@ const server = http.createServer(async (req, res) => {
         f.fix_status = 'asked';
         setTimeout(() => Object.assign(f, { fix_status: 'proposed', fix_label: 'Event: Quiz night', fix_field: 'body', fix_old: 'Tickets from Fran.', fix_new: 'Tickets from Fran on 01386 123456.', fix_reason: 'Added the number you gave.' }), 50);
         return send({ ok: true, value: 'asked', message: 'Holly is drafting' });
+      }
+      if (body.op === 'discard') {
+        f.fix_status = 'discarded';
+        return send({ ok: true, value: 'discarded', message: 'Discarded' });
       }
       if (body.op === 'apply') {
         f.fix_status = 'applying';
@@ -113,7 +123,19 @@ try {
     const card = main.locator('.card.rimmer');
     await card.locator('.finding').first().waitFor();
     let text = await card.innerText();
-    assert.match(text, /Rimmer \(2\)/);
+    assert.match(text, /Rimmer \(4\)/);
+    // How this works: folded until opened.
+    assert.doesNotMatch(text, /Discard fix throws/);
+    await card.locator('details.help summary').click();
+    assert.match(await card.locator('details.help').innerText(), /Now \/ After[\s\S]*Apply makes the change[\s\S]*Discard fix throws Holly's fix away[\s\S]*Dismiss closes the finding/);
+    await card.locator('details.help summary').click();
+    // Fixes Holly drafted with Rimmer's run: shown ready, in words.
+    const hb = card.locator('.finding', { hasText: 'Handbell' });
+    assert.match(await hb.innerText(), /Holly's fix \(drafted with Rimmer's check\): Event: Handbell concert \(date\)\s+Now\s+Sun 29 Nov 2026\s+After\s+Sun 6 Dec 2026\s+The body says 6 December\. \(The file is renamed to match\.\)/);
+    assert.equal(await hb.locator('button', { hasText: 'Fix…' }).count(), 0);
+    const st = card.locator('.finding', { hasText: 'Severn Trent' });
+    assert.match(await st.innerText(), /\(take it off the website\)\s+Now\s+Notice: Severn Trent works\s+Pipe works until 30 October\.\s+After\s+Taken off the website/);
+    for (const b of ['Apply (remove it)', 'Discard fix', 'Ask again…', 'Send to Kryten', 'Dismiss']) assert.equal(await st.locator('button', { hasText: b }).count(), 1, b);
     assert.match(text, /Problem\s+Website update\s+The same two pages are announced twice\.\s+"There are two new pages"\s+Suggested fix: Remove one of the two\./);
     assert.match(text, /Check\s+\/events\/ · Quiz night/);
     assert.match(text, /Newsletter last checked/);
@@ -128,11 +150,21 @@ try {
     await quiz.locator('button', { hasText: 'Ask Holly for a fix' }).click();
     assert.deepEqual(posts.at(-1), ['/admin/api/rimmer-fix', { id: 'K1-l1', op: 'propose', note: "Fran's number is 01386 123456", expected: '' }]);
     await quiz.locator('.fix-proposal').waitFor();
-    assert.match(await quiz.innerText(), /Holly's fix: Event: Quiz night \(body\)\s+Now\s+Tickets from Fran\.\s+After\s+Tickets from Fran on 01386 123456\./);
+    assert.match(await quiz.innerText(), /Holly's fix: Event: Quiz night \(text\)\s+Now\s+Tickets from Fran\.\s+After\s+Tickets from Fran on 01386 123456\./);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `rimmer-fix-${name}.png`), fullPage: true });
     await quiz.locator('button', { hasText: 'Apply' }).click();
     assert.deepEqual(posts.at(-1), ['/admin/api/rimmer-fix', { id: 'K1-l1', op: 'apply', note: '', expected: 'proposed' }]);
     await card.locator('.finding', { hasText: 'Quiz night' }).waitFor({ state: 'detached' });
+    assert.match(await card.innerText(), /Rimmer \(3\)/);
+    // Apply a drafted date fix; discard then dismiss the drafted removal.
+    await hb.locator('button', { hasText: 'Apply' }).click();
+    assert.deepEqual(posts.at(-1), ['/admin/api/rimmer-fix', { id: 'K1-l2', op: 'apply', note: '', expected: 'offered' }]);
+    await hb.waitFor({ state: 'detached' });
+    await st.locator('button', { hasText: 'Discard fix' }).click();
+    assert.deepEqual(posts.at(-1), ['/admin/api/rimmer-fix', { id: 'K1-l3', op: 'discard', note: '', expected: 'offered' }]);
+    await st.locator('button', { hasText: 'Fix…' }).waitFor();
+    await st.locator('button', { hasText: 'Dismiss' }).click();
+    await st.waitFor({ state: 'detached' });
     assert.match(await card.innerText(), /Rimmer \(1\)/);
     // Send to Kryten
     await card.locator('.finding', { hasText: 'Website update' }).locator('button', { hasText: 'Send to Kryten' }).click();
