@@ -105,7 +105,7 @@ try {
       for (const want of ['Their name *', tradeLabel, 'Phone or website *', 'Area or village', 'Why you’d recommend them (optional, only we see this)', 'Your email *']) {
         assert.ok(labels.includes(want), `${url}: label ${want}`);
       }
-      assert.equal(await form.locator('.sg-note').innerText(), 'We’ll email you a link to confirm. We check every suggestion before it goes on the page.');
+      assert.equal(await form.locator('.sg-note').innerText(), 'We’ll email you a link to confirm. You can send up to 10 suggestions a day. We check every suggestion before it goes on the page.');
       assert.equal(await form.locator('.sg-send').innerText(), 'Send suggestion');
       await page.fill('#sg-name', 'Smith Electrical');
       await page.fill('#sg-trade', kind === 'eat' ? 'pub' : 'electricians');

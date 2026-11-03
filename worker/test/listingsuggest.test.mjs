@@ -12,7 +12,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 
-import { handleSuggest, validateSuggestion, SUGGEST_THANKS } from '../src/listingsuggest.js';
+import { handleSuggest, validateSuggestion, SUGGEST_THANKS, PER_EMAIL_DAY } from '../src/listingsuggest.js';
 import {
   SUGGEST_HEADERS, SUGGEST_TAB, draftEntry, cleanEntry, contactFields, areaFor, similarNames, insertEntry, planSuggestion, panelRows, slug,
 } from '../src/admin/suggestions.mjs';
@@ -135,16 +135,24 @@ test('a good suggestion creates the tab, appends one row and dispatches the id o
   assert.ok(!JSON.stringify(calls.dispatches).includes('example.org'));
 });
 
-test('one request per address per day: same answer, nothing more', async () => {
+test('up to 10 a day per address, then a "try again tomorrow" message', async () => {
   const tabs = {};
   const calls = fakeWorld(tabs);
-  await handleSuggest(post(good()), env());
-  const again = await handleSuggest(post(good({ name: 'Another One', email: 'READER@example.org' }), { ip: '198.51.100.1' }), env());
-  assert.equal((await again.json()).message, SUGGEST_THANKS);
-  assert.equal(tabs[SUGGEST_TAB].length, 2);
-  await handleSuggest(post(good({ email: 'other@example.org', kind: 'eat', trade: 'pub' }), { ip: '198.51.100.2' }), env());
-  assert.equal(tabs[SUGGEST_TAB].length, 3);
-  assert.equal(calls.dispatches.length, 2);
+  for (let n = 1; n <= 10; n += 1) {
+    resetMemoryLimit();
+    const r = await handleSuggest(post(good({ name: `Place ${n}`, email: n % 2 ? 'reader@example.org' : 'READER@example.org' })), env());
+    assert.equal((await r.json()).message, SUGGEST_THANKS);
+  }
+  assert.equal(tabs[SUGGEST_TAB].length, 11);
+  resetMemoryLimit();
+  const over = await handleSuggest(post(good({ name: 'Place 11' })), env());
+  assert.equal(over.status, 429);
+  assert.match((await over.json()).message, /You've sent 10 suggestions today.*try again tomorrow/);
+  assert.equal(tabs[SUGGEST_TAB].length, 11);
+  await handleSuggest(post(good({ email: 'other@example.org', kind: 'eat', trade: 'pub' })), env());
+  assert.equal(tabs[SUGGEST_TAB].length, 12, 'another address is fine');
+  assert.equal(calls.dispatches.length, 11);
+  assert.equal(PER_EMAIL_DAY, 10);
 });
 
 test('missing fields, honeypot, bad Turnstile and other origin write nothing', async () => {

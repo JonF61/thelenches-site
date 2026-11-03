@@ -194,3 +194,16 @@ test('expired and foreign tokens are refused; /a and /s refuse recommendation to
   assert.doesNotMatch(await (await worker.fetch(new Request(`https://w.example/s?t=${rec}`), e)).text(), /add me/);
   assert.equal(calls.dispatches.length, 0);
 });
+
+test('one address can recommend up to 25 entries a day; the 26th is quietly not saved', async () => {
+  const tabs = {};
+  fakeWorld(tabs);
+  const { LISTINGS } = await import('../src/recommend.js');
+  const all = [...LISTINGS.trades.entries.map((e) => ['trades', e.id]), ...LISTINGS.eat.entries.map((e) => ['eat', e.id])];
+  assert.ok(all.length > 26);
+  for (const [kind, entry] of all.slice(0, 26)) {
+    resetMemoryLimit();
+    await handleRecommend(post(good({ kind, entry })), env());
+  }
+  assert.equal(tabs.Recommendations.length, 26, 'header + 25 rows');
+});
