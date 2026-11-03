@@ -58,7 +58,8 @@ nav.side button[aria-current="page"] .n{background:rgba(255,255,255,.25);color:i
 .card.done{opacity:.55}
 .meta{color:var(--muted);font-size:.88rem}
 .intro{margin:2px 2px 12px;line-height:1.4}
-.finding{border-top:1px solid var(--line,#ddd);padding:8px 0}.finding .actions{margin-top:2px}.checker .intro-row h2{flex:1;margin:0}
+.fix-form,.fix-proposal{margin-top:6px}.fix-form textarea{width:100%;box-sizing:border-box}.fix-diff{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:6px 0}.fix-diff>div{border:1px solid var(--line);border-radius:8px;padding:6px 8px;white-space:pre-wrap;overflow-wrap:anywhere}.fix-old{background:var(--panel2)}.fix-new{border-color:var(--accent)!important}@media(max-width:640px){.fix-diff{grid-template-columns:1fr}}.kryten-list h3{font-size:1rem;margin:10px 0 4px}.rimmer .note{margin-top:6px}
+.finding{border-top:1px solid var(--line,#ddd);padding:8px 0}.finding .actions{margin-top:2px}.rimmer .intro-row h2{flex:1;margin:0}
 .intro-row{display:flex;align-items:flex-start;gap:12px}.intro-row .intro{flex:1}.intro-row .btn{flex:none}
 .card.sum{margin-bottom:10px}
 .sum-h{font:inherit;font-weight:700;background:none;border:0;padding:0;color:var(--accent);cursor:pointer;text-decoration:none;text-align:left}
@@ -75,7 +76,7 @@ span.sum-h{color:inherit;cursor:default}
 .nlstats tr.sel td{background:var(--panel2);font-weight:600}
 .draft-bar{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
 .draft-bar .actions{margin:0}
-.draft-frame{display:block;width:100%;height:78vh;border:1px solid var(--line);border-radius:10px;background:#fff}
+.draft-frame{display:block;flex:none;width:100%;height:78vh;border:1px solid var(--line);border-radius:10px;background:#fff}
 .sum-hol{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .their-h{font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:10px 0 4px}
 .their-fold summary,.their-more summary{cursor:pointer;color:var(--muted);margin:8px 0}

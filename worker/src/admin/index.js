@@ -115,11 +115,15 @@
 //                                   (repository_dispatch "ingest", as the Worker's cron does); feeds
 //                                   are read only at their usual hours. Publishes or sends nothing
 //                                   beyond what any ingest run does (acknowledgements).
-//   GET  /admin/api/checker         the Checker's open findings and each scope's last run (checker.js)
-//   POST /admin/api/checker-dismiss { id }: one stale-checked write of that finding's status
+//   GET  /admin/api/rimmer         Rimmer's open findings and each scope's last run (rimmer.js)
+//   POST /admin/api/rimmer-dismiss { id }: one stale-checked write of that finding's status
 //                                   (open -> dismissed); the next check is told not to raise it again
-//   POST /admin/api/checker-run     { scope: newsletter|listings|site }: Check now
-//                                   (repository_dispatch "checker"); reads and reports, changes nothing
+//   POST /admin/api/rimmer-kryten { id, note }: open -> kryten (Send to Kryten), one stale-checked write
+//   POST /admin/api/rimmer-fix     { id, op: propose|apply|discard, note, expected }: Fix… (Holly
+//                                   proposes one change; decide() rfix), Apply (decide() rfix_ok),
+//                                   Discard; each one stale-checked write of fix_status first
+//   POST /admin/api/rimmer-run     { scope: newsletter|listings|site }: Check now
+//                                   (repository_dispatch "rimmer"); reads and reports, changes nothing
 //   GET  /admin/api/runs            Activity: the latest 20 GitHub Actions runs (runs.js; read-only)
 //   GET  /admin/api/build-status?sha=&at=&p=&text=  whether an Edit page commit is live: its
 //                                   site build succeeded AND the page (fresh copy) shows text
@@ -129,8 +133,8 @@
 // wording edits to page templates (src/*.njk, pageedit.js). Otherwise the only GitHub call
 // is decide(), for the item and reply actions listed in actions.js, the Feedback
 // actions in feedback.js, outreach's nudge (a draft only; it never sends) and approving or
-// rejecting a proposed Holly lesson, plus the read-only runs it starts by repository_dispatch
-// (Check email now, Refresh draft, Check now for the Checker).
+// rejecting a proposed Holly lesson, Fix… and Apply on Rimmer's findings (rfix / rfix_ok), plus the read-only runs it starts by repository_dispatch
+// (Check email now, Refresh draft, Check now for Rimmer).
 
 import { ACTIONS, decide, github, dispatch } from '../core.js';
 import { verifyAccess } from './access.js';
@@ -172,7 +176,7 @@ import {
 } from './lessons.js';
 import { ITEM_TAB, REPLY_TAB, autonomyStats, planIgnore } from './autonomy.js';
 import { submissionHistory } from './history.js';
-import { CHECKER_TAB, CHECK_SCOPES, checkerRows, planDismiss } from './checker.js';
+import { RIMMER_TAB, CHECK_SCOPES, rimmerRows, planDismiss, planKryten, planFix } from './rimmer.js';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 import { PAGEEDIT_JS, PAGEEDIT_CSS, PAGEEDIT_VERSION } from './ui/pageedit.js';
@@ -769,16 +773,32 @@ async function doAutonomyIgnore(env, body) {
     : json(r, r.status);
 }
 
-// The Checker: Dismiss one open finding.
-async function doCheckerDismiss(env, body) {
+// Rimmer: Dismiss, Send to Kryten, or Fix… / Apply / Discard on one finding (rimmer.js plans
+// each as one stale-checked write; Fix… and Apply then go through decide()).
+async function doRimmer(env, body, what) {
   const id = String(body.id ?? '');
-  const { rows } = await readOptional(env, CHECKER_TAB);
+  const { rows } = await readOptional(env, RIMMER_TAB);
   const matches = rows.filter((r) => id && String(r.id ?? '') === id);
-  if (matches.length > 1) return json({ ok: false, error: 'More than one Checker row for this id' }, 409);
-  const plan = planDismiss(matches[0]);
+  if (matches.length > 1) return json({ ok: false, error: 'More than one Rimmer row for this id' }, 409);
+  const row = matches[0];
+  const plan = what === 'dismiss' ? planDismiss(row)
+    : what === 'kryten' ? planKryten(row, body.note)
+      : planFix(row, { op: String(body.op || ''), note: body.note, expected: body.expected });
   if (plan.error) return json({ ok: false, ...plan }, plan.status);
-  const r = await checkedWrite(env, { tab: CHECKER_TAB, keyCol: 'id', key: id, field: plan.field, expected: plan.expected, value: plan.value });
-  return r.ok ? json({ ok: true, message: 'Dismissed: the Checker won\'t raise it again.' }) : json(r, r.status);
+  const r = await checkedWrite(env, { tab: RIMMER_TAB, keyCol: 'id', key: id, field: plan.field, expected: plan.expected, value: plan.value, also: plan.also || null });
+  if (!r.ok) return json(r, r.status);
+  if (plan.action && !(await decide(env, { a: plan.action, i: id }))) {
+    // Put it back, so the panel doesn't wait for a run that never starts.
+    await checkedWrite(env, { tab: RIMMER_TAB, keyCol: 'id', key: id, field: plan.field, expected: plan.value, value: plan.expected }).catch(() => {});
+    return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
+  }
+  const msg = {
+    dismiss: 'Dismissed: Rimmer won\'t raise it again.',
+    kryten: 'Sent to Kryten: he picks these up at the start of each session.',
+    rfix: 'Holly is looking for the entry and drafting a fix…',
+    rfix_ok: 'Applying the fix: the site rebuilds in a few minutes.',
+  }[plan.action || what] || 'Fix discarded.';
+  return json({ ok: true, value: plan.value, message: msg });
 }
 
 async function doLesson(env, body) {
@@ -945,7 +965,7 @@ export async function handleAdmin(request, env) {
         const [issues, sends, dns] = await Promise.all([readTable(env, 'Issues'), readTable(env, 'Sends'), readTable(env, 'Do Not Send')]);
         return json(await nlStats(env, { issues: issues.rows, sends: sends.rows, dns: dns.rows }, String(url.searchParams.get('i') || '')));
       }
-      if (path === '/admin/api/checker') return json(checkerRows(await readOptional(env, CHECKER_TAB)));
+      if (path === '/admin/api/rimmer') return json(rimmerRows(await readOptional(env, RIMMER_TAB)));
       if (path === '/admin/api/runs') return json({ runs: await recentRuns(env, 20) });
       if (path === '/admin/api/build-status') {
         const st = await buildStatus(env, url.searchParams.get('sha'), url.searchParams.get('at'));
@@ -990,11 +1010,13 @@ export async function handleAdmin(request, env) {
         if (!(await dispatch(env, 'ingest', { by: 'panel' }, 2))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);
         return json({ ok: true, message: 'Checking email: new items show here in a few minutes.' });
       }
-      if (path === '/admin/api/checker-dismiss') return await doCheckerDismiss(env, body);
-      if (path === '/admin/api/checker-run') {
+      if (path === '/admin/api/rimmer-dismiss') return await doRimmer(env, body, 'dismiss');
+      if (path === '/admin/api/rimmer-kryten') return await doRimmer(env, body, 'kryten');
+      if (path === '/admin/api/rimmer-fix') return await doRimmer(env, body, 'fix');
+      if (path === '/admin/api/rimmer-run') {
         const scope = String(body.scope || '');
         if (!CHECK_SCOPES.includes(scope)) return json({ ok: false, error: 'Unknown check' }, 400);
-        if (!(await dispatch(env, 'checker', { scope }, 2))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);
+        if (!(await dispatch(env, 'rimmer', { scope }, 2))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);
         return json({ ok: true, message: scope === 'newsletter' ? 'Checking the newsletter: findings show here in a few minutes.' : 'Checking the website: findings show on Summary in a few minutes.' });
       }
       if (path === '/admin/api/draft-refresh') {

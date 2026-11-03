@@ -33,7 +33,7 @@ export async function draftHtml(rows) {
 
 const DRAFT_CSP = [
   "default-src 'none'", 'img-src https://thelenches.org.uk data:', "style-src 'unsafe-inline'",
-  "form-action 'none'", "frame-ancestors 'self'", 'sandbox allow-popups allow-popups-to-escape-sandbox',
+  "form-action 'none'", "frame-ancestors 'self'", 'sandbox allow-same-origin allow-popups allow-popups-to-escape-sandbox',
 ].join('; ');
 
 const EMPTY = '<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><title>Newsletter draft</title></head>'

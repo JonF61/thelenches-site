@@ -1,14 +1,15 @@
-// scripts/checker/index.js
-// The Checker (3 Nov, Jon): an independent second Claude that reads what readers will see and
+// scripts/rimmer/index.js
+// Rimmer (3 Nov, Jon; named after the Red Dwarf character): an independent second Claude that reads what readers will see and
 // reports problems to Jon on the admin panel. It never changes anything: it only writes rows
-// to the "Checker" tab, which the panel lists (Summary, and the Newsletter draft bar) with Dismiss.
+// to the "Rimmer" tab, which the panel lists (Summary, Newsletter draft, Health) with Fix…, Send to
+// Kryten and Dismiss (fixes: scripts/rimmer/fix.js). Rimmer is "he" (Jon, 3 Nov).
 //   newsletter  the next issue exactly as draft.js builds it (Wednesday evening, and the
 //               draft bar's Check button)
 //   listings    the built site's listings pages (weekly)
 //   site        every page of the built site (monthly)
 // Each run marks the same scope's earlier open findings "replaced" and adds its own. Findings
 // Jon dismissed (last 120 days) are passed back so they are not raised again.
-// Logs print counts only (logs are public). checker.yml runs it; listings/site need _site built.
+// Logs print counts only (logs are public). rimmer.yml runs it; listings/site need _site built.
 'use strict';
 
 const fs = require('fs');
@@ -17,15 +18,18 @@ const { callTool } = require('../ingest/toolcall');
 
 const ROOT = path.join(__dirname, '..', '..');
 const SITE_DIR = path.join(ROOT, '_site');
-const TAB = 'Checker';
-const HEADERS = ['id', 'created_at', 'scope', 'target', 'page', 'where', 'severity', 'problem', 'quote', 'suggestion', 'status'];
+const TAB = 'Rimmer';
+// status: open, dismissed, replaced, fixed, kryten (sent to Kryten). fix_*: Fix… (scripts/rimmer/fix.js).
+const HEADERS = ['id', 'created_at', 'scope', 'target', 'page', 'where', 'severity', 'problem', 'quote', 'suggestion', 'status',
+  'fix_status', 'fix_note', 'fix_source', 'fix_label', 'fix_field', 'fix_old', 'fix_new', 'fix_reason', 'fixed_at'];
 const SCOPES = ['newsletter', 'listings', 'site'];
 const LISTING_PAGES = ['/events/', '/notices/', '/living-here/roads/', '/regulars/', '/living-here/eat/', '/living-here/trades/'];
 const SKIP_PAGES = new Set(['/search/']);
 const MAX_FINDINGS = 15;
+const BUSY_FIX = ['asked', 'proposed', 'applying'];
 const DISMISSED_DAYS = 120;
 const TZ = 'Europe/London';
-const MODEL = () => process.env.CHECKER_MODEL || 'claude-opus-5-5';
+const MODEL = () => process.env.RIMMER_MODEL || 'claude-opus-5-5';
 
 const str = (v) => String(v ?? '').trim();
 const clip = (t, n) => { const f = str(t).replace(/\s+/g, ' '); return f.length > n ? `${f.slice(0, n - 1)}…` : f; };
@@ -59,13 +63,15 @@ function htmlToText(html) {
       const words = inner.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
       const url = decode(href);
       if (!words) return ` (${url}) `;
-      return /^(mailto:|tel:)/i.test(url) || words.includes(url.replace(/^https?:\/\//, '').replace(/\/$/, '')) ? ` ${words} ` : ` ${words} (${url}) `;
+      // mailto:/tel: shown as the address or number itself, so the reader-visible target is never hidden.
+      const shown = url.replace(/^(mailto:|tel:)/i, '').replace(/\?.*$/, '');
+      return words.includes(shown.replace(/^https?:\/\//, '').replace(/\/$/, '')) ? ` ${words} ` : ` ${words} (${shown}) `;
     })
     .replace(/<h([1-6])\b[^>]*>/gi, (m, n) => `\n\n${'#'.repeat(Number(n))} `)
     .replace(/<li\b[^>]*>/gi, '\n- ')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/(p|div|h[1-6]|tr|table|section|article|header|ul|ol|dl|dt|dd|figure|figcaption|blockquote)>/gi, '\n')
-    .replace(/<(td|th)\b[^>]*>/gi, ' | ')
+    .replace(/<\/(td|th)>/gi, ' ')
     .replace(/<[^>]+>/g, ' ');
   t = decode(t);
   return t.split('\n').map((l) => l.replace(/[ \t ]+/g, ' ').trim().replace(/^(\|\s*)+/, '').replace(/(\s*\|)+$/, '').trim()).filter((l, i, a) => l || (a[i - 1] && a[i - 1].trim()))
@@ -118,7 +124,7 @@ function calendar(today, days = 70, back = 7) {
 
 /* ---------------------------------------------------------- prompt -- */
 
-const SYSTEM = `You are the Checker: an independent reviewer for a small community website and weekly
+const SYSTEM = `You are Rimmer: an independent reviewer for a small community website and weekly
 email newsletter covering the Lenches villages in Worcestershire (Church, Rous, Ab, Atch and
 Sheriffs Lench). Other software (and another Claude) wrote what you are given; you read it the way
 a careful local reader would, and report the problems a reader would notice or be misled by, so
@@ -219,11 +225,12 @@ async function docsFor(scope, g) {
   return { target: scope === 'listings' ? 'listings pages' : 'whole site', docs };
 }
 
-// Dismissed findings of this scope (for the site, listings ones too) from the last 120 days.
+// Dismissed findings, and those sent to Kryten, of this scope (for the site, listings ones too)
+// from the last 120 days.
 function dismissedFor(rows, scope, nowMs) {
   const from = ukDate(nowMs - DISMISSED_DAYS * 86400000);
   const scopes = scope === 'site' ? ['site', 'listings'] : [scope];
-  return rows.filter((r) => str(r.status) === 'dismissed' && scopes.includes(str(r.scope)) && str(r.created_at).slice(0, 10) >= from)
+  return rows.filter((r) => ['dismissed', 'kryten'].includes(str(r.status)) && scopes.includes(str(r.scope)) && str(r.created_at).slice(0, 10) >= from)
     .slice(-40).map((r) => clip(`${r.page} · ${r.where}: ${r.problem}${r.quote ? ` ("${r.quote}")` : ''}`, 300));
 }
 
@@ -242,12 +249,13 @@ async function run(scope, { g, client, nowMs = Date.now() } = {}) {
   const { res, block } = await callTool(client, req, TOOL.name);
   if (!block) throw new Error(`Claude gave no findings (stop: ${res && res.stop_reason})`);
   const findings = cleanFindings(block.input, scope, docs);
-  const old = rows.filter((r) => str(r.scope) === scope && str(r.status) === 'open');
+  // A finding with a fix on the way (asked, proposed, applying) is left for Jon to finish.
+  const old = rows.filter((r) => str(r.scope) === scope && str(r.status) === 'open' && !BUSY_FIX.includes(str(r.fix_status)));
   for (const r of old) await g.updateRow(TAB, r._row, { status: 'replaced' });
   const add = newRows(findings, { scope, target, nowMs });
   if (add.length) await g.appendRows(TAB, add);
   const u = res.usage || {};
-  console.log(`Checker ${scope} (${target}): ${docs.length} page(s), ${docs.reduce((n, d) => n + d.text.length, 0)} characters read; `
+  console.log(`Rimmer ${scope} (${target}): ${docs.length} page(s), ${docs.reduce((n, d) => n + d.text.length, 0)} characters read; `
     + `${add.filter((f) => f.severity === 'problem').length} problem(s), ${add.filter((f) => f.severity === 'check').length} to check; `
     + `${old.length} earlier finding(s) replaced; tokens in ${u.input_tokens || 0}, out ${u.output_tokens || 0}.`);
   return add;
@@ -269,5 +277,5 @@ if (require.main === module) {
 
 module.exports = {
   run, htmlToText, pageContent, sitePages, readPages, calendar, buildRequest, cleanFindings, dismissedFor, newRows,
-  TAB, HEADERS, SCOPES, LISTING_PAGES, SYSTEM, TOOL,
+  TAB, HEADERS, SCOPES, LISTING_PAGES, SYSTEM, TOOL, BUSY_FIX, ukStamp, str, clip,
 };

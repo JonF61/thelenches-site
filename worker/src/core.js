@@ -60,10 +60,14 @@ export const ACTIONS = {
   // Holly's weekly lessons (scripts/lessons): Approve / Reject links in the lessons email.
   lesson_ok: ['Approve lesson', 'Lesson approved', 'approve'],
   lesson_no: ['Reject lesson', 'Lesson rejected', 'reject'],
+  // Rimmer's findings (admin panel only, 3 Nov): Fix… asks Holly to propose one change (Jon's
+  // instruction is in the Rimmer tab row); Apply writes it. Both run rimmer-fix.yml.
+  rfix: ['Ask Holly for a fix', 'Fix requested', 'approve'],
+  rfix_ok: ['Apply fix', 'Fix being applied', 'approve'],
 };
 
 // Never valid in a signed email link (index.js /a).
-export const PANEL_ONLY = ['nlquiet', 'nltest', 'contactmail', 'done', 'merge', 'sug_ok', 'sug_no'];
+export const PANEL_ONLY = ['nlquiet', 'nltest', 'contactmail', 'done', 'merge', 'sug_ok', 'sug_no', 'rfix', 'rfix_ok'];
 
 export const FEEDBACK_ACTIONS = ['fb_approve', 'fb_reject', 'fb_postpone', 'fb_done', 'fb_send', 'fb_edit', 'fb_skip'];
 
@@ -142,6 +146,8 @@ export function dispatchFor(p, reason = '', body = '') {
   // entry and reject reason ride in the payload, read from the event file, never env.
   if (p.a === 'sug_ok') return ['listing-suggest', { action: 'approve', id: p.i, body: body || p.b || '' }];
   if (p.a === 'sug_no') return ['listing-suggest', { action: 'reject', id: p.i, reason }];
+  if (p.a === 'rfix') return ['rimmer-fix', { action: 'propose', id: p.i }];
+  if (p.a === 'rfix_ok') return ['rimmer-fix', { action: 'apply', id: p.i }];
   if (p.a === 'nlbuild') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true }];
   if (p.a === 'nlquiet') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true, step: 'build' }];
   if (p.a === 'nltest') return ['newsletter', { action: 'build', issue_date: p.i, step: 'preview' }];
@@ -159,7 +165,7 @@ export function dispatchFor(p, reason = '', body = '') {
 }
 
 // One decision (approve, reject, trust, send, skip, edit, redraft, close, nlsend, nlbuild, nlquiet, nltest,
-// the reader feedback fb_* actions, nudge, orgcheck, contactmail, lesson_ok / lesson_no, and sug_ok / sug_no) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
+// the reader feedback fb_* actions, nudge, orgcheck, contactmail, lesson_ok / lesson_no, sug_ok / sug_no, and rfix / rfix_ok) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
 export async function decide(env, p, reason = '', body = '') {
   const [eventType, payload] = dispatchFor(p, reason, body);
   return dispatch(env, eventType, payload, 2);

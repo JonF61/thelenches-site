@@ -180,7 +180,7 @@ export const CLIENT_JS = String.raw`
       S.outreach = null;
       S.orgs = null;
       S.summary = null;
-      S.checker = null;
+      S.rimmer = null;
       render();
       if (!quiet) toast('Up to date');
     } catch (e) {
@@ -3409,85 +3409,193 @@ export const CLIENT_JS = String.raw`
         m ? h('button', { class: 'btn', disabled: S.draftBusy ? true : null, title: 'Build this issue again now; sends nothing', onclick: function () { nlConfirm('rebuild', m); } }, 'Rebuild') : null,
         m && m.mode === 'frozen' ? h('button', { class: 'btn', disabled: S.draftBusy ? true : null, title: 'Email the preview, with its Send button, to you only', onclick: function () { nlConfirm('test', m); } }, 'Test send') : null,
         h('a', { class: 'btn link', href: '/admin/draft', target: '_blank', rel: 'noopener' }, 'Open in new tab'))));
-    els.push(checkerCard('Checker', ['newsletter'], [['newsletter', 'Check']],
-      'A second Claude reads the issue as a villager would and lists anything wrong. It runs on Wednesday evening after the deadline; Check runs it now.'));
+    els.push(rimmerCard('Rimmer', ['newsletter'], [['newsletter', 'Check']],
+      'Rimmer reads the issue as a villager would and lists anything wrong. He runs on Wednesday evening after the deadline; Check runs him now.'));
+    // The draft at its full height (3 Nov, Jon): the page scrolls as one, Rimmer's notes above it.
     els.push(S.draftAuth === 'ok'
-      ? h('iframe', { class: 'draft-frame', src: '/admin/draft?v=' + encodeURIComponent(m ? str(m.as_of) : '0'), title: 'Newsletter draft' })
+      ? h('iframe', { class: 'draft-frame', src: '/admin/draft?v=' + encodeURIComponent(m ? str(m.as_of) : '0'), title: 'Newsletter draft', scrolling: 'no', onload: fitFrame })
       : h('p', { class: 'loading' }, 'Loading the draft…'));
     return els;
   }
 
-  /* ------------------------------------------------------------- checker -- */
-
-  // The Checker (3 Nov; admin/checker.js, scripts/checker): a second Claude's findings on the
-  // next newsletter, the listings pages and the whole site. Dismiss closes one; Check runs one now.
-  var CHECK_LABELS = { newsletter: 'Newsletter', listings: 'Listings pages', site: 'Whole site' };
-  async function loadChecker() {
-    S.ckLoading = true;
-    var r = await api('/admin/api/checker');
-    S.ckLoading = false;
-    S.checker = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
-    if (S.view === 'summary' || S.view === 'draft' || S.view === 'health') render();
+  // Sizes the draft frame to its content (the frame has no scripts; the panel reads its height,
+  // allowed because /admin/draft is same-origin with allow-same-origin and no allow-scripts).
+  function fitFrame(e) {
+    var f = e && e.target;
+    try {
+      var fit = function () { var d = f.contentDocument; if (d && d.documentElement) f.style.height = (d.documentElement.scrollHeight + 4) + 'px'; };
+      fit(); setTimeout(fit, 400); setTimeout(fit, 1500);
+    } catch (err) { /* left at its default height */ }
   }
-  function checkerData() {
-    if (!S.checker && !S.ckLoading) loadChecker();
-    return S.checker;
+
+  /* ------------------------------------------------------------- rimmer -- */
+
+  // Rimmer (3 Nov; admin/rimmer.js, scripts/rimmer): a second Claude's findings on the next
+  // newsletter, the listings pages and the whole site. Each finding: Fix… (Holly proposes one
+  // change, then Apply / Discard), Send to Kryten, Dismiss. Check runs a check now.
+  var CHECK_LABELS = { newsletter: 'Newsletter', listings: 'Listings pages', site: 'Whole site' };
+  var FIX_BUSY = ['asked', 'applying'];
+  S.fixForm = S.fixForm || {};
+  S.fixNote = S.fixNote || {};
+  async function loadRimmer() {
+    S.ckLoading = true;
+    var r = await api('/admin/api/rimmer');
+    S.ckLoading = false;
+    S.rimmer = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'summary' || S.view === 'draft' || S.view === 'health') render();
+    watchFixes();
+  }
+  function rimmerData() {
+    if (!S.rimmer && !S.ckLoading) loadRimmer();
+    return S.rimmer;
+  }
+  // While Holly is drafting or applying a fix, look again every 10 seconds (up to 6 minutes);
+  // re-draw only when something changed, so a half-typed instruction isn't lost.
+  function watchFixes() {
+    var busy = S.rimmer && Array.isArray(S.rimmer.open) && S.rimmer.open.some(function (f) { return FIX_BUSY.indexOf(f.fix_status) >= 0; });
+    if (!busy || S.fixTimer) return;
+    var tries = 0;
+    var tick = async function () {
+      tries += 1;
+      var c = await api('/admin/api/rimmer');
+      if (c.ok && JSON.stringify(c.json) !== JSON.stringify(S.rimmer)) {
+        var was = S.rimmer;
+        S.rimmer = c.json;
+        (was.open || []).forEach(function (o) {
+          var now = c.json.open.filter(function (x) { return x.id === o.id; })[0];
+          if (o.fix_status === 'asked' && now && now.fix_status !== 'asked') toast(now.fix_status === 'proposed' ? 'Holly has a fix ready to check' : 'Holly couldn\'t fix that one: see why', now.fix_status !== 'proposed');
+          if (o.fix_status === 'applying' && !now) toast('Fix applied: the site and draft update in a few minutes');
+          if (o.fix_status === 'applying' && now && now.fix_status === 'failed') toast('The fix wasn\'t applied: see why', true);
+        });
+        render();
+      }
+      var still = S.rimmer && Array.isArray(S.rimmer.open) && S.rimmer.open.some(function (f) { return FIX_BUSY.indexOf(f.fix_status) >= 0; });
+      if (still && tries < 36) { S.fixTimer = setTimeout(tick, 10000); return; }
+      S.fixTimer = null;
+      if (still) toast('Holly is taking a while: look again later (Activity shows the Rimmer fix run).', true);
+    };
+    S.fixTimer = setTimeout(tick, 10000);
   }
   async function runCheck(scope) {
     if (S.ckBusy) return;
     S.ckBusy = scope; render();
-    var r = await api('/admin/api/checker-run', { scope: scope });
+    var r = await api('/admin/api/rimmer-run', { scope: scope });
     if (!r.ok) { S.ckBusy = ''; render(); toast(r.json.error || ('HTTP ' + r.status), true); return; }
     toast(r.json.message || 'Checking');
     // Watch for this scope's new run (up to 10 minutes), then show its findings.
-    var before = str(((S.checker || {}).last || {})[scope]);
+    var before = str(((S.rimmer || {}).last || {})[scope]);
     var tries = 0;
     var poll = async function () {
       tries += 1;
-      var c = await api('/admin/api/checker');
+      var c = await api('/admin/api/rimmer');
       if (c.ok && str((c.json.last || {})[scope]) !== before) {
-        S.checker = c.json; S.ckBusy = '';
+        S.rimmer = c.json; S.ckBusy = '';
         var n = c.json.open.filter(function (f) { return f.scope === scope; }).length;
         toast(CHECK_LABELS[scope] + ' checked: ' + (n ? plural(n, 'finding') : 'nothing found'));
         render(); return;
       }
-      if (tries >= 40) { S.ckBusy = ''; render(); toast('The check is taking a while: look again later (Activity shows the Checker run).', true); return; }
+      if (tries >= 40) { S.ckBusy = ''; render(); toast('The check is taking a while: look again later (Activity shows the Rimmer run).', true); return; }
       setTimeout(poll, 15000);
     };
     setTimeout(poll, 20000);
   }
+  function replaceFinding(id, fields) {
+    S.rimmer.open = S.rimmer.open.map(function (x) { return x.id === id ? Object.assign({}, x, fields) : x; });
+  }
   async function dismissFinding(f) {
-    var r = await api('/admin/api/checker-dismiss', { id: f.id });
+    var r = await api('/admin/api/rimmer-dismiss', { id: f.id });
     if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); return; }
-    S.checker.open = S.checker.open.filter(function (x) { return x.id !== f.id; });
+    S.rimmer.open = S.rimmer.open.filter(function (x) { return x.id !== f.id; });
     toast(r.json.message || 'Dismissed');
     render();
   }
+  async function krytenFinding(f) {
+    var note = str(S.fixNote[f.id]);
+    var r = await api('/admin/api/rimmer-kryten', { id: f.id, note: note });
+    if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); return; }
+    S.rimmer.open = S.rimmer.open.filter(function (x) { return x.id !== f.id; });
+    S.rimmer.kryten = [Object.assign({}, f, { fix_note: note })].concat(S.rimmer.kryten || []);
+    delete S.fixForm[f.id]; delete S.fixNote[f.id];
+    toast(r.json.message || 'Sent to Kryten');
+    render();
+  }
+  async function fixOp(f, op) {
+    if (op === 'apply' && !window.confirm('Apply Holly\'s fix?\n\n' + f.fix_label + '\n\nThe site rebuilds in a few minutes. If this week\'s newsletter is already built, Rebuild it afterwards.')) return;
+    var note = op === 'propose' ? str(S.fixNote[f.id]) : '';
+    var r = await api('/admin/api/rimmer-fix', { id: f.id, op: op, note: note, expected: f.fix_status });
+    if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); if (r.status === 409) { S.rimmer = null; render(); } return; }
+    replaceFinding(f.id, Object.assign({ fix_status: r.json.value }, op === 'propose' ? { fix_note: note } : {}));
+    if (op === 'propose') delete S.fixForm[f.id];
+    toast(r.json.message || 'Done');
+    render();
+    watchFixes();
+  }
+  function fixForm(f) {
+    var box = h('textarea', { class: 'f', rows: 3, maxlength: 600, placeholder: 'Optional: what should it say? e.g. "Fran\'s number is 01386 …". Leave blank to use Rimmer\'s suggestion.',
+      'aria-label': 'What should change', oninput: function (e) { S.fixNote[f.id] = e.target.value; } }, S.fixNote[f.id] || '');
+    return h('div', { class: 'fix-form' }, box,
+      h('div', { class: 'actions' },
+        h('button', { class: 'btn primary', onclick: function () { fixOp(f, 'propose'); } }, 'Ask Holly for a fix'),
+        h('button', { class: 'btn', title: 'For anything needing judgement or code; your words above go with it', onclick: function () { krytenFinding(f); } }, 'Send to Kryten'),
+        h('button', { class: 'btn link', onclick: function () { delete S.fixForm[f.id]; render(); } }, 'Cancel')));
+  }
+  function fixPanel(f) {
+    var st = f.fix_status;
+    if (st === 'asked') return h('div', { class: 'note info' }, 'Holly is finding the entry and drafting a fix…');
+    if (st === 'applying') return h('div', { class: 'note info' }, 'Applying the fix… the site rebuilds in a few minutes.');
+    if (st === 'proposed') {
+      return h('div', { class: 'fix-proposal' },
+        h('div', null, h('b', null, 'Holly\'s fix: '), f.fix_label + (f.fix_field ? ' (' + f.fix_field + ')' : '')),
+        h('div', { class: 'fix-diff' },
+          h('div', { class: 'fix-old' }, h('span', { class: 'meta' }, 'Now'), h('div', null, f.fix_old)),
+          h('div', { class: 'fix-new' }, h('span', { class: 'meta' }, 'After'), h('div', null, f.fix_new))),
+        f.fix_reason ? h('div', { class: 'meta' }, f.fix_reason) : null,
+        h('div', { class: 'actions' },
+          h('button', { class: 'btn primary', onclick: function () { fixOp(f, 'apply'); } }, 'Apply'),
+          h('button', { class: 'btn', onclick: function () { fixOp(f, 'discard'); } }, 'Discard'),
+          h('button', { class: 'btn link', onclick: function () { S.fixForm[f.id] = true; render(); } }, 'Ask again')),
+        S.fixForm[f.id] ? fixForm(f) : null);
+    }
+    var why = (st === 'cannot' || st === 'failed') && f.fix_reason
+      ? h('div', { class: 'note warn' }, (st === 'failed' ? 'Not applied: ' : 'Holly couldn\'t fix it: ') + f.fix_reason) : null;
+    return [why, S.fixForm[f.id] ? fixForm(f) : null];
+  }
   function findingEl(f) {
+    var busy = FIX_BUSY.indexOf(f.fix_status) >= 0;
     return h('div', { class: 'finding' },
       h('div', null, h('span', { class: 'badge ' + (f.severity === 'problem' ? 'bad' : 'warn') }, f.severity === 'problem' ? 'Problem' : 'Check'), ' ',
         h('b', null, [f.scope === 'newsletter' ? '' : f.page, f.where].filter(Boolean).join(' · '))),
       h('div', null, f.problem),
       f.quote ? h('div', { class: 'meta' }, '"' + f.quote + '"') : null,
       f.suggestion ? h('div', { class: 'meta' }, 'Suggested fix: ' + f.suggestion) : null,
-      h('div', { class: 'actions' }, h('button', { class: 'btn link', title: 'Close this finding; the Checker won\'t raise it again', onclick: function () { dismissFinding(f); } }, 'Dismiss')));
+      fixPanel(f),
+      busy || f.fix_status === 'proposed' || S.fixForm[f.id] ? null : h('div', { class: 'actions' },
+        h('button', { class: 'btn', title: 'Holly finds the entry and proposes a change for you to check', onclick: function () { S.fixForm[f.id] = true; render(); } }, 'Fix…'),
+        h('button', { class: 'btn link', title: 'For anything needing judgement or code', onclick: function () { krytenFinding(f); } }, 'Send to Kryten'),
+        h('button', { class: 'btn link', title: 'Close this finding; Rimmer won\'t raise it again', onclick: function () { dismissFinding(f); } }, 'Dismiss')));
   }
   function checkButton(scope, label) {
-    return h('button', { class: 'btn', disabled: S.ckBusy ? true : null, title: 'A second Claude reads it now and lists any problems here; changes nothing',
+    return h('button', { class: 'btn', disabled: S.ckBusy ? true : null, title: 'Rimmer reads it now and lists any problems here; he changes nothing',
       onclick: function () { runCheck(scope); } }, S.ckBusy === scope ? 'Checking…' : label);
   }
-  // A card of findings for the given scopes, with Check buttons.
-  function checkerCard(title, scopes, buttons, intro) {
-    var c = checkerData();
+  // A card of findings for the given scopes, with Check buttons (and, when asked, the list sent to Kryten).
+  function rimmerCard(title, scopes, buttons, intro, showKryten) {
+    var c = rimmerData();
     var lastRun = c && c.last ? scopes.map(function (sc) { return c.last[sc] ? CHECK_LABELS[sc] + ' last checked ' + when(c.last[sc]) : ''; }).filter(Boolean).join(' · ') : '';
     var list = c && Array.isArray(c.open) ? c.open.filter(function (f) { return scopes.indexOf(f.scope) >= 0; }) : [];
-    return h('div', { class: 'card checker' },
+    var kr = showKryten && c && Array.isArray(c.kryten) ? c.kryten : [];
+    return h('div', { class: 'card rimmer' },
       h('div', { class: 'intro-row' }, h('h2', null, title + (c && !c.error ? ' (' + list.length + ')' : '')),
         h('div', { class: 'actions' }, buttons.map(function (b) { return checkButton(b[0], b[1]); }))),
       intro ? h('p', { class: 'meta' }, intro) : null,
-      !c ? h('p', { class: 'meta' }, 'Loading…') : c.error ? errorNote(c, 'The Checker tab')
+      !c ? h('p', { class: 'meta' }, 'Loading…') : c.error ? errorNote(c, 'The Rimmer tab')
         : list.length ? list.map(findingEl) : h('p', { class: 'meta' }, lastRun ? 'Nothing found.' : 'Not checked yet.'),
-      lastRun ? h('p', { class: 'meta' }, lastRun) : null);
+      lastRun ? h('p', { class: 'meta' }, lastRun) : null,
+      kr.length ? h('div', { class: 'kryten-list' }, h('h3', null, 'Sent to Kryten (' + kr.length + ')'),
+        h('ul', { class: 'sum-l' }, kr.map(function (f) {
+          return h('li', null, [f.scope === 'newsletter' ? 'Newsletter' : f.page, f.where].filter(Boolean).join(' · ') + ': ' + f.problem,
+            f.fix_note ? h('span', { class: 'meta' }, ' · Your note: ' + f.fix_note) : null);
+        }))) : null);
   }
 
   /* ------------------------------------------------------------- summary -- */
@@ -3660,10 +3768,10 @@ export const CLIENT_JS = String.raw`
     var ls = all && Array.isArray(all.lessons) ? all.lessons : [];
     if (all) action('Holly lessons', ls.length, !all.lessons.error, sumCard('Holly lessons awaiting approval (' + ls.length + ')', go('lessons'), ls.map(function (l) { return line(str(l.lesson), '', []); }),
       { max: 5, top: all.lessons && all.lessons.error ? errorNote(all.lessons, 'Holly lessons') : null }));
-    // The Checker's open findings (newsletter, listings, whole site).
-    var ck = checkerData();
+    // Rimmer's open findings (newsletter, listings, whole site).
+    var ck = rimmerData();
     var ckOpen = ck && Array.isArray(ck.open) ? ck.open : [];
-    action('Checker', ckOpen.length, !!(ck && !ck.error), checkerCard('Checker', ['newsletter', 'listings', 'site'], [['listings', 'Check listings'], ['site', 'Check whole site']]));
+    action('Rimmer', ckOpen.length, !!(ck && !ck.error), rimmerCard('Rimmer', ['newsletter', 'listings', 'site'], [['listings', 'Check listings'], ['site', 'Check whole site']], null, true));
     if (clear.length) els.push(h('div', { class: 'card sum' }, h('p', { class: 'sum-clear' }, h('b', null, 'No action needed on: '), clear.join(' / '))));
 
     if (!all) {
@@ -3761,9 +3869,9 @@ export const CLIENT_JS = String.raw`
           h('td', null, str(r.summary), str(r.problems) ? h('div', { class: 'meta' }, str(r.problems).split(' | ').join('; ')) : null));
       })));
     els.push(h('div', { class: 'card' }, h('h2', null, 'Daily diagnostic (latest 7)'), t, h('div', { class: 'actions' }, sheetLink('Health', 1))));
-    // The Checker: always here with its buttons (on Summary it folds away when nothing is open).
-    els.push(checkerCard('Checker', ['newsletter', 'listings', 'site'], [['newsletter', 'Check newsletter'], ['listings', 'Check listings'], ['site', 'Check whole site']],
-      'A second Claude reads what readers see and lists problems: the newsletter on Wednesday evenings, the listings pages on Sundays and the whole site on the 1st of each month.'));
+    // Rimmer: always here with its buttons (on Summary it folds away when nothing is open).
+    els.push(rimmerCard('Rimmer', ['newsletter', 'listings', 'site'], [['newsletter', 'Check newsletter'], ['listings', 'Check listings'], ['site', 'Check whole site']],
+      'Rimmer reads what readers see and lists problems: the newsletter on Wednesday evenings, the listings pages on Sundays and the whole site on the 1st of each month. Fix… asks Holly to propose a change for you to check; Send to Kryten is for anything needing judgement or code.', true));
     return els;
   }
 
