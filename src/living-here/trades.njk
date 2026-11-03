@@ -22,6 +22,7 @@ seoTitle: "Local trades in and around the Lenches — plumbers, builders, electr
   <div class="page-head">
     <h1>Local trades</h1>
     <p class="page-intro">{{ trades.intro }}</p>
+    {% if site.suggestUrl and site.turnstileSiteKey %}<p class="small">Know a good local tradesperson? You can suggest them using the <a href="#suggest">form at the bottom of this page</a>.</p>{% endif %}
   </div>
   {% set groups = [] %}{% for t in trades.trades %}{% if t.trade not in groups %}{% set groups = (groups.push(t.trade), groups) %}{% endif %}{% endfor %}
   <ul class="tr-jump" aria-label="Jump to a trade">{% for g in groups | sort %}<li><a href="#{{ g | slugify }}">{{ g }}</a></li>{% endfor %}</ul>
