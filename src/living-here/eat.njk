@@ -1,0 +1,41 @@
+---
+layout: base.njk
+title: Where to eat
+description: Pubs, cafés, restaurants and farm-shop tearooms in and around the Lenches, Harvington, Evesham and Pershore.
+seoTitle: "Where to eat in and around the Lenches — pubs, cafés and restaurants"
+---
+<style>
+.ea-jump{display:flex;flex-wrap:wrap;gap:.4rem;list-style:none;padding:0;margin:.5rem 0 1rem}
+.ea-jump a{display:inline-block;padding:.35rem .7rem;border-radius:999px;background:#fdf0dc;color:#7a4a06;text-decoration:none;font-weight:600}
+.ea-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.75rem}
+.ea-grid .card{margin:0}
+.ea-grid h3{margin:0 0 .15rem}
+.ea-where{margin:0 0 .4rem;color:#555}
+.ea-tag{display:inline-block;background:#eef3ea;color:#2f4a22;font-size:.85rem;padding:.1rem .5rem;border-radius:6px;margin:0 .3rem .3rem 0}
+.ea-links{margin:.4rem 0 0}
+</style>
+<main class="container">
+  <div class="page-head">
+    <h1>Where to eat</h1>
+    <p class="page-intro">{{ eat.intro }}</p>
+  </div>
+  <ul class="ea-jump" aria-label="Jump to an area">{% for a in eat.areas %}<li><a href="#{{ a | slugify }}">{{ a }}</a></li>{% endfor %}</ul>
+  {% for a in eat.areas %}
+  <section id="{{ a | slugify }}">
+    <h2>{{ a }}</h2>
+    <div class="ea-grid">
+    {% for p in eat.places %}{% if p.area == a %}
+      <div class="card">
+        <h3>{{ p.name }}</h3>
+        <p class="ea-where">{{ p.type }} &middot; {{ p.where }}</p>
+        {% if p.food %}<p class="mt0">{{ p.food }}</p>{% endif %}
+        {% if p.garden or p.children or p.dogs %}<p class="mt0">{% if p.garden %}<span class="ea-tag">Garden</span>{% endif %}{% if p.children %}<span class="ea-tag">Children welcome</span>{% endif %}{% if p.dogs %}<span class="ea-tag">Dogs welcome</span>{% endif %}</p>{% endif %}
+        {% if p.note %}<p class="small mut mt0">{{ p.note }}</p>{% endif %}
+        {% if p.website or p.phone %}<p class="ea-links small">{% if p.website %}<a href="{{ p.website.url }}" target="_blank" rel="noopener">{{ p.website.text }}</a>{% endif %}{% if p.website and p.phone %} &middot; {% endif %}{% if p.phone %}<a href="tel:{{ p.phone | replace(' ', '') }}">{{ p.phone }}</a>{% endif %}</p>{% endif %}
+      </div>
+    {% endif %}{% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+  <p class="small mut">Know somewhere we've missed, or spotted a change? <a href="mailto:{{ site.email }}?subject=Where%20to%20eat">Tell us</a>.</p>
+</main>

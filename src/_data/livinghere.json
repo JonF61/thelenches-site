@@ -63,6 +63,12 @@
       "text": "Circular walks, maps and the Countryside Code."
     },
     {
+      "title": "Where to eat",
+      "url": "/living-here/eat/",
+      "icon": "eat",
+      "text": "Pubs, cafés and restaurants nearby."
+    },
+    {
       "title": "What to do if…",
       "url": "/living-here/what-to-do/",
       "icon": "alert",
