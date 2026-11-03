@@ -44,6 +44,7 @@ seoTitle: "Where to eat in and around the Lenches — pubs, cafés and restauran
     </div>
   </section>
   {% endfor %}
-  <p class="small mut">Know somewhere we've missed, or spotted a change? <a href="mailto:{{ site.email }}?subject=Where%20to%20eat">Tell us</a>.</p>
+  {% if site.suggestUrl and site.turnstileSiteKey %}{% set suggestKind = "eat" %}{% include "suggest-form.njk" %}{% else %}
+  <p class="small mut">Know somewhere we've missed, or spotted a change? <a href="mailto:{{ site.email }}?subject=Where%20to%20eat">Tell us</a>.</p>{% endif %}
 </main>
 {% include "recommend.njk" %}

@@ -28,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '52';
+export const UI_VERSION = '53';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -38,7 +38,7 @@ export const CLIENT_JS = String.raw`
     picked: {}, ff: '', openF: {}, drag: null, busy: false, order: {}, shown: '' };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
-  var VIEWS = [['summary', 'Summary'], ['autonomy', 'Autonomy'], ['draft', 'Newsletter draft'], ['stats', 'Newsletter stats'], ['visitors', 'Site visitors'], ['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
+  var VIEWS = [['summary', 'Summary'], ['autonomy', 'Autonomy'], ['draft', 'Newsletter draft'], ['stats', 'Newsletter stats'], ['visitors', 'Site visitors'], ['queue', 'Submissions'], ['suggestions', 'Suggestions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
   // Health has no menu entry (28 Oct): the top bar's Diagnostic and Watchdog open it, as does Summary's Site health.
   // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
   var INTROS = {
@@ -50,6 +50,7 @@ export const CLIENT_JS = String.raw`
     queue: 'Events and notices sent in by email or picked up from feeds, waiting for you to approve or reject. Approved items go on the website and into Thursday\'s newsletter.',
     replies: 'Holly\'s draft emails waiting for you to Approve, Edit, Redraft or Reject. Below them: emails still owed a reply, and everything already sent.',
     owed: 'Emails that got an automatic holding reply over 2 days ago but no real answer yet. Redraft one, reply yourself, or close it.',
+    suggestions: 'New Local trades and Where to eat entries suggested by readers through the forms on those pages, already confirmed by email. Approve adds the entry to the page as shown; Edit lets you change it first.',
     feedback: 'Comments and corrections from readers via the website\'s feedback form, to approve, reject or postpone, with Holly\'s replies to them.',
     lessons: 'Rules Holly follows in every draft. Approve or reject the weekly suggestions, edit or delete any lesson, or add your own (yours count as approved).',
     contacts: 'Everyone who sends in, or could send in, news and events, with their profile, contributions and status. Outreach shows who is due a friendly nudge; Organisations, the yearly check of each organisation\'s entry on the site.',
@@ -405,6 +406,7 @@ export const CLIENT_JS = String.raw`
       owed: Array.isArray(d.owed) ? d.owed.filter(function (o) { return !S.done['reply:' + o.holding.reply_id]; }).length : '!',
       photos: d.photos && !d.photos.error ? d.photos.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length : '!',
       feedback: d.feedback && !d.feedback.error ? fbRows(d, 'waiting').length + fbRows(d, 'reply').length : '!',
+      suggestions: d.listingSuggestions && !d.listingSuggestions.error ? sgRows(d).length : '!',
       summary: null, autonomy: null, draft: null, stats: null, visitors: null, contacts: null, lessons: null, health: null, activity: null
     };
   }
@@ -430,6 +432,7 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'photos') return split(withIntro(photosList(d)), 'photo');
     if (S.view === 'health') return [h('div', { class: 'list wide' }, top, healthView(d))];
     if (S.view === 'feedback') return [h('div', { class: 'list wide' }, top, feedbackView(d))];
+    if (S.view === 'suggestions') return [h('div', { class: 'list wide' }, top, suggestionsView(d))];
     if (S.view === 'contacts') return [h('div', { class: 'list wide' }, top, contactsView())];
     if (S.view === 'lessons') return [h('div', { class: 'list wide' }, top, lessonsView())];
     if (S.view === 'autonomy') return [h('div', { class: 'list wide' }, top, autonomyView())];
@@ -2029,6 +2032,122 @@ export const CLIENT_JS = String.raw`
     render();
   }
 
+  /* ---------------------------------------------------------- suggestions -- */
+
+  // Local trades / Where to eat suggestions (Listing suggestions tab), confirmed by the
+  // suggester, waiting for Jon (admin/suggestions.mjs). Approve, Edit (Save and approve) and
+  // Reject all go through decide() (sug_ok / sug_no); the suggester's address never reaches
+  // this page.
+  var SG_FIELDS = {
+    trades: [['name', 'Name'], ['trade', 'Trade (section)'], ['what', 'What they do'], ['covers', 'Covers'], ['base', 'Base'],
+      ['contact', 'Contact name'], ['phone', 'Phone'], ['phone2', 'Second phone'], ['email', 'Email'], ['other', 'Other way to contact']],
+    eat: [['name', 'Name'], ['area', 'Area (section)'], ['where', 'Where'], ['type', 'Type'], ['food', 'Food'], ['phone', 'Phone'], ['note', 'Note']]
+  };
+  var SG_TAGS = [['garden', 'Garden'], ['children', 'Good for children'], ['dogs', 'Dogs welcome']];
+
+  function sgRows(d) {
+    if (!d.listingSuggestions || d.listingSuggestions.error) return [];
+    return d.listingSuggestions.rows.filter(function (r) { return !S.done['suggestion:' + r.id]; })
+      .sort(function (a, b) { return str(a.confirmed_at).localeCompare(str(b.confirmed_at)); });
+  }
+
+  function suggestionsView(d) {
+    var t = d.listingSuggestions;
+    if (!t || t.error) return [errorNote(t || { error: 'not loaded' }, 'Listing suggestions')];
+    var rows = sgRows(d);
+    var els = [h('h2', { class: 'section' }, 'Waiting (' + rows.length + ')')];
+    if (!rows.length) els.push(h('p', { class: 'empty' }, 'Nothing waiting.'));
+    rows.forEach(function (r) { els.push(sgCard(r)); });
+    return els;
+  }
+
+  // The entry as it would go on the page, one fact per line.
+  function sgFacts(kind, e) {
+    var out = [];
+    (SG_FIELDS[kind] || []).forEach(function (f) { if (f[0] !== 'name' && str(e[f[0]])) out.push([f[1], str(e[f[0]])]); });
+    if (e.website && e.website.url) out.push(['Website', e.website.text + ' (' + e.website.url + ')']);
+    var tags = SG_TAGS.filter(function (t) { return e[t[0]] === true; }).map(function (t) { return t[1]; });
+    if (tags.length) out.push(['Tags', tags.join(', ')]);
+    return out;
+  }
+
+  function sgCard(r) {
+    var e = r._draft || {};
+    var c = h('div', { class: 'card sg-card' },
+      h('div', { class: 'meta' }, 'Suggestion · ' + str(r._label) + (str(r.confirmed_at) ? ' · confirmed ' + when2(r.confirmed_at) : '')),
+      h('h2', null, str(r.name) || '(no name)'),
+      h('dl', { class: 'sg-said' },
+        h('dt', null, r.kind === 'eat' ? 'Type' : 'Trade'), h('dd', null, str(r.trade)),
+        h('dt', null, 'Phone or website'), h('dd', null, str(r.contact)),
+        h('dt', null, 'Area or village'), h('dd', null, str(r.area) || '—')),
+      str(r.why) ? h('div', { class: 'fbnotes' }, h('b', null, 'Why (only you see this)'), h('div', { class: 'fbtext' }, str(r.why))) : null,
+      (r._similar || []).length ? h('div', { class: 'note warn' }, 'Already listed? Similar name: ' + r._similar.map(function (n) { return '"' + n + '"'; }).join(', ')) : null,
+      h('div', { class: 'fbnotes' }, h('b', null, 'Approve adds'), h('dl', { class: 'sg-said' }, [h('dt', null, 'Name'), h('dd', null, str(e.name))].concat(
+        sgFacts(r.kind, e).map(function (f) { return [h('dt', null, f[0]), h('dd', null, f[1])]; })))),
+      h('div', { class: 'actions' },
+        h('button', { class: 'btn primary', onclick: function () {
+          if (window.confirm('Add ' + str(e.name) + ' to ' + str(r._label) + ' as shown? The site rebuilds in a few minutes.')) act('suggestion', r.id, 'approve', null, 'Approved');
+        } }, 'Approve'),
+        h('button', { class: 'btn', onclick: function () { overlay('Edit suggestion', sgEditForm(r)); } }, 'Edit'),
+        h('button', { class: 'btn danger', onclick: function () { overlay('Reject suggestion', sgRejectForm(r)); } }, 'Reject'),
+        sheetLink('Listing suggestions', r._row)));
+    return c;
+  }
+
+  function sgEditForm(r) {
+    var e = r._draft || {};
+    var opts = (S.data.listingOptions || {})[r.kind] || [];
+    var inputs = {};
+    var rows = (SG_FIELDS[r.kind] || []).map(function (f) {
+      var id = 'sg-' + f[0];
+      var el;
+      if (f[0] === 'trade' || f[0] === 'area') {
+        var list = opts.slice();
+        if (str(e[f[0]]) && list.indexOf(e[f[0]]) < 0) list.unshift(e[f[0]]);
+        if (f[0] === 'trade') {
+          el = h('input', { class: 'f', id: id, value: str(e[f[0]]), list: 'sg-trades', required: true });
+          return [h('label', { class: 'f', for: id }, f[1] + ' (pick one, or type a new section)'), el,
+            h('datalist', { id: 'sg-trades' }, list.map(function (o) { return h('option', { value: o }); })), (inputs[f[0]] = el, null)];
+        }
+        el = h('select', { class: 'f', id: id }, opts.map(function (o) { return h('option', { value: o, selected: o === e.area ? true : null }, o); }));
+      } else {
+        el = h('input', { class: 'f', id: id, value: str(e[f[0]]), maxlength: 300, required: ['name', 'type'].indexOf(f[0]) >= 0 ? true : null });
+      }
+      inputs[f[0]] = el;
+      return [h('label', { class: 'f', for: id }, f[1]), el];
+    });
+    var w = e.website || {};
+    var wText = h('input', { class: 'f', id: 'sg-wtext', value: str(w.text), maxlength: 80 });
+    var wUrl = h('input', { class: 'f', id: 'sg-wurl', value: str(w.url), maxlength: 300, placeholder: 'https://' });
+    var tags = r.kind === 'eat' ? SG_TAGS.map(function (t) {
+      var cb = h('input', { type: 'checkbox', id: 'sg-' + t[0], checked: e[t[0]] === true ? true : null });
+      inputs[t[0]] = cb;
+      return h('label', { class: 'chk', for: 'sg-' + t[0] }, cb, ' ' + t[1]);
+    }) : null;
+    return h('form', { onsubmit: function (ev) {
+      ev.preventDefault();
+      var fields = {};
+      Object.keys(inputs).forEach(function (k) { fields[k] = inputs[k].type === 'checkbox' ? inputs[k].checked : inputs[k].value; });
+      if (str(wUrl.value)) fields.website = { text: wText.value, url: wUrl.value };
+      act('suggestion', r.id, 'edit', { fields: fields }, 'Approved (edited)');
+    } },
+      h('p', null, 'This is the entry exactly as it will go on the ' + str(r._label) + ' page. Leave a box empty to leave that line out.'),
+      rows,
+      h('label', { class: 'f', for: 'sg-wtext' }, 'Website: text shown'), wText,
+      h('label', { class: 'f', for: 'sg-wurl' }, 'Website: address'), wUrl,
+      tags ? h('div', { class: 'sg-tags' }, h('p', { class: 'meta' }, 'Tick only when the place or a source says so.'), tags) : null,
+      h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'submit' }, 'Save and approve'),
+        h('button', { class: 'btn', type: 'button', onclick: closeOverlay }, 'Cancel')));
+  }
+
+  function sgRejectForm(r) {
+    var why = h('input', { class: 'f', id: 'sgr', maxlength: 300 });
+    return h('form', { onsubmit: function (e) { e.preventDefault(); act('suggestion', r.id, 'reject', { reason: why.value }, 'Rejected'); } },
+      h('p', null, 'Nothing goes on the page and nothing is sent to the person who suggested it. Their address is deleted.'),
+      h('label', { class: 'f', for: 'sgr' }, 'Why? (optional, kept for you only)'), why,
+      h('div', { class: 'actions' }, h('button', { class: 'btn danger', type: 'submit' }, 'Reject')));
+  }
+
   /* ------------------------------------------------------------- feedback -- */
 
   // Reader feedback (Feedback tab). _state comes from the server (admin/feedback.js):
@@ -3364,6 +3483,12 @@ export const CLIENT_JS = String.raw`
         [str(r.page_title) || str(r.page_url), age(r.received)].filter(Boolean).join(' · '), [str(r.type) ? [str(r.type), ''] : null]);
     }).concat(fbr.length ? [h('span', { class: 'meta' }, plural(fbr.length, 'reply', 'replies') + ' to send')] : []),
     { max: 5, top: d.feedback && d.feedback.error ? errorNote(d.feedback, 'Feedback') : null }));
+
+    // Local trades / Where to eat suggestions waiting.
+    var sgw = sgRows(d);
+    if (d.listingSuggestions) action('Suggestions', sgw.length, !(d.listingSuggestions && d.listingSuggestions.error), sumCard('Suggestions (' + sgw.length + ')', go('suggestions'), sgw.map(function (r) {
+      return line(str(r.name), [str(r._label), age(r.confirmed_at)].filter(Boolean).join(' · '), [(r._similar || []).length ? ['Already listed?', 'warn'] : null]);
+    }), { max: 5, top: d.listingSuggestions && d.listingSuggestions.error ? errorNote(d.listingSuggestions, 'Listing suggestions') : null }));
 
     // Holly lessons awaiting approval (below Feedback, agreed 28 Oct).
     var ls = all && Array.isArray(all.lessons) ? all.lessons : [];

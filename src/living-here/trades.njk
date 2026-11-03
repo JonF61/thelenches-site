@@ -49,6 +49,7 @@ seoTitle: "Local trades in and around the Lenches — plumbers, builders, electr
     </div>
   </section>
   {% endfor %}
-  <p class="tr-note small">Know a good local tradesperson we should list? <a href="mailto:{{ site.email }}?subject=Local%20trades">Tell us</a> their name, trade and how to contact them.</p>
+  {% if site.suggestUrl and site.turnstileSiteKey %}{% set suggestKind = "trades" %}{% include "suggest-form.njk" %}{% else %}
+  <p class="tr-note small">Know a good local tradesperson we should list? <a href="mailto:{{ site.email }}?subject=Local%20trades">Tell us</a> their name, trade and how to contact them.</p>{% endif %}
 </main>
 {% include "recommend.njk" %}

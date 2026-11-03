@@ -1,0 +1,87 @@
+name: Listing suggestion (Local trades / Where to eat)
+
+# Fired by repository_dispatch "listing-suggest":
+#   action "send"     (Worker /sg) the form saved a Listing suggestions row: email the confirm link
+#   action "confirm"  (Worker /sg?t=) the suggester pressed the link's button: it now waits on
+#                     the admin panel's Suggestions screen
+#   action "approve"  (decide() sug_ok, panel only) add the entry to src/_data/trades.json or
+#                     eat.json, commit it, mark the row approved, then build the site and
+#                     redeploy the Worker (it bundles both files)
+#   action "reject"   (decide() sug_no, panel only) mark the row rejected
+# The payload's id is a row id; Jon's edited entry and reason are read from the event file by
+# the script, never passed as env (a step's env is printed in this public log).
+on:
+  repository_dispatch:
+    types: [listing-suggest]
+
+permissions:
+  contents: write
+  actions: write
+
+# One queue per suggestion: a shared group would let a newer run cancel a waiting one.
+concurrency:
+  group: listing-suggest-${{ github.event.client_payload.id }}
+  cancel-in-progress: false
+
+jobs:
+  row:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+      SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+      GMAIL_USER: jon@thelenches.org.uk
+      APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
+      WORKER_URL: https://approvals.lenches.workers.dev
+      SUGGEST_ID: ${{ github.event.client_payload.id }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+
+      - name: Send, confirm or reject
+        if: ${{ github.event.client_payload.action != 'approve' }}
+        run: node scripts/listingsuggest/index.js
+        env:
+          ACTION: ${{ github.event.client_payload.action }}
+
+      # Approve: add the entry, commit and push (retrying on a moved main), then mark the row.
+      - name: Add the entry
+        id: add
+        if: ${{ github.event.client_payload.action == 'approve' }}
+        run: node scripts/listingsuggest/index.js
+        env:
+          ACTION: approve
+          SUGGEST_STATE: ${{ runner.temp }}/suggest-state.json
+      - name: Commit
+        id: commit
+        if: ${{ github.event.client_payload.action == 'approve' }}
+        run: |
+          git add src/_data/trades.json src/_data/eat.json
+          if git diff --cached --quiet; then echo "Nothing to commit."; echo "pushed=no" >> "$GITHUB_OUTPUT"; exit 0; fi
+          git config user.name "Lenches Pipeline"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Listing suggestion approved"
+          for n in 1 2 3 4; do
+            if git pull --rebase origin main && git push origin HEAD:main; then echo "pushed=yes" >> "$GITHUB_OUTPUT"; exit 0; fi
+            sleep $((n * 5))
+          done
+          echo "Push failed"; exit 1
+      - name: Mark approved
+        if: ${{ github.event.client_payload.action == 'approve' && steps.commit.outputs.pushed == 'yes' }}
+        run: node scripts/listingsuggest/index.js
+        env:
+          ACTION: approved
+          SUGGEST_STATE: ${{ runner.temp }}/suggest-state.json
+      - name: Build the site and redeploy the Worker
+        if: ${{ github.event.client_payload.action == 'approve' && steps.commit.outputs.pushed == 'yes' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run build.yml --ref main
+          gh workflow run deploy-worker.yml --ref main

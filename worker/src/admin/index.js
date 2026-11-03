@@ -16,6 +16,8 @@
 //                                   photoFolders: [{ id, parent, names }] live from Drive,
 //                                   for the Photos menu and the drop/Move to… targets
 //                                   feedback: Feedback rows still needing Jon (feedback.js)
+//                                   listingSuggestions: confirmed Local trades / Where to eat
+//                                   suggestions (suggestions.mjs; no addresses)
 //   GET  /admin/api/mail-images?m=  every image in one email (for a Pending item)
 //   GET  /admin/api/contact-messages?email=  a contact's emails with us, newest first (messages.js)
 //   GET  /admin/api/mail-text?m=    one email's from, subject, date and text (Replies: their
@@ -27,6 +29,8 @@
 //                                   the same path as the signed email links
 //   POST /admin/api/action          kind feedback: approve, reject (reason?), postpone (date), done
 //                                   (Mark implemented), send, edit (body), skip: also decide()
+//   POST /admin/api/action          kind suggestion: approve, edit (fields: the entry as edited),
+//                                   reject (reason?): decide() sug_ok / sug_no -> listing-suggest.yml
 //   POST /admin/api/feedback-note   { id, expected, note }: a timestamped note appended to
 //                                   the Feedback row's notes (stale-checked, never overwrites)
 //   POST /admin/api/suggest         { id, sid, expected }: Choose a suggested image (sid = an
@@ -133,6 +137,9 @@ import {
 } from './photofiles.js';
 import { photoPages, pagesFor, eventEnd } from './photopages.js';
 import { feedbackRows, planFeedback, planNote } from './feedback.js';
+import { SUGGEST_TAB as LISTING_TAB, panelRows as suggestionRows, planSuggestion } from './suggestions.mjs';
+import tradesData from '../../../src/_data/trades.json' with { type: 'json' };
+import eatData from '../../../src/_data/eat.json' with { type: 'json' };
 import { FEEDBACK_TAB } from '../feedback.js';
 import {
   CONTACTS_TAB, DELETED_TAB, DELETED_HEADERS, contactRows, planContact, planDelete, addressesOf, isIgnore,
@@ -256,6 +263,10 @@ function suggestionsByItem(t) {
 const pick = (row, keys) => Object.fromEntries(keys.filter((k) => k in row).map((k) => [k, row[k]]));
 
 // The Feedback tab; none yet (made by the first submission) reads as empty.
+// The Local trades and Where to eat data as this Worker was deployed (deploy-worker.yml runs
+// when either file changes), for the suggestion cards' draft entry and "already listed?" check.
+const LISTING_DATA = { trades: tradesData, eat: eatData };
+
 async function readFeedback(env) {
   try {
     return await readTable(env, FEEDBACK_TAB);
@@ -277,11 +288,12 @@ async function readDraft(env, range) {
 
 async function state(env, email) {
   const photosRead = readTable(env, 'Photos');
-  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite, bin, sugg, fb, draftRows] = await settled([
+  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite, bin, sugg, fb, draftRows, listing] = await settled([
     readTable(env, 'Pending'), readTable(env, 'Replies'), photosRead,
     readSettingsPairs(env), readTable(env, 'Health'), readTable(env, 'Issues'), sheetGids(env),
     readSources(env), readTable(env, 'Image fetch'), watchdog(env), folderList(env), photoPages(env),
     binList(env, photosRead), readTable(env, SUGGEST_TAB), readFeedback(env), readDraft(env, `'${DRAFT_TAB}'!A1:B13`),
+    readOptional(env, LISTING_TAB),
   ]);
   const suggested = suggestionsByItem(sugg);
   const holiday = settings.error ? settings : (settings.find((p) => p.key === 'holiday_mode') || { value: '' });
@@ -342,6 +354,11 @@ async function state(env, email) {
     photoFolders: folders,
     toDelete: bin,
     feedback: feedbackRows(fb, ukToday()),
+    // Confirmed Local trades / Where to eat suggestions waiting for Jon (suggestions.mjs):
+    // never the suggester's address.
+    listingSuggestions: suggestionRows(listing, LISTING_DATA),
+    // The Edit form's choices: Local trades sections and Where to eat areas.
+    listingOptions: { trades: [...new Set(tradesData.trades.map((t) => t.trade))].sort(), eat: eatData.areas },
     // Today in the UK, for the Past events filter.
     today: ukToday(),
     photosRoot: String(env.PHOTOS_FOLDER_ID || '').trim(),
@@ -421,6 +438,10 @@ async function doAction(env, body) {
     plan = planPending({ action, id, reason: body.reason }, row, { hasPeopleOk: headers.includes('people_ok'), sources, choicePeople });
   } else if (kind === 'reply') {
     plan = planReply({ action, id, reason: body.reason, body: body.body });
+  } else if (kind === 'suggestion') {
+    const { rows } = await readOptional(env, LISTING_TAB);
+    const matches = rows.filter((r) => id && r.id === id);
+    plan = planSuggestion({ action, id, fields: body.fields, reason: body.reason }, matches.length === 1 ? matches[0] : null, LISTING_DATA);
   } else if (kind === 'feedback') {
     const { rows } = await readFeedback(env);
     const matches = rows.filter((r) => id && r.id === id);
