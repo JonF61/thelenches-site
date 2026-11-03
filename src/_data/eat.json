@@ -8,38 +8,21 @@
   ],
   "places": [
     {
-      "name": "Old Bull Inn",
+      "name": "The Anchor Inn",
       "area": "Nearby villages",
-      "where": "Inkberrow",
+      "where": "Wyre Piddle",
       "type": "Pub",
-      "food": "Food every day",
-      "note": "16th-century pub on the village green",
-      "phone": "01386 792428",
-      "dogs": true
+      "food": "Sunday lunches",
+      "garden": true,
+      "note": "Terraced garden above the River Avon"
     },
     {
-      "name": "Bulls Head",
+      "name": "Bell Inn",
       "area": "Nearby villages",
-      "where": "Inkberrow",
+      "where": "Evesham Road, Cropthorne",
       "type": "Pub",
-      "food": "Home-cooked food; also has rooms",
-      "phone": "01386 792233"
-    },
-    {
-      "name": "The Pantry at Rush Farm",
-      "area": "Nearby villages",
-      "where": "Stockwood Business Park, Inkberrow",
-      "type": "Farm shop café",
-      "food": "Café and farm shop"
-    },
-    {
-      "name": "The Ounce at the Dolphin",
-      "area": "Nearby villages",
-      "where": "Bishampton",
-      "type": "Pub",
-      "note": "Community owned",
-      "phone": "01386 462927",
-      "food": "Steak restaurant"
+      "food": "Home-cooked food, Sunday lunch",
+      "phone": "01386 861860"
     },
     {
       "name": "Bishampton Village Store & Café",
@@ -59,16 +42,12 @@
       "phone": "01386 462658"
     },
     {
-      "name": "Mysuru",
+      "name": "Bulls Head",
       "area": "Nearby villages",
-      "where": "Cockshot Lane, Kington",
-      "type": "Indian restaurant",
-      "phone": "01905 349912",
-      "website": {
-        "text": "mysuru.co.uk",
-        "url": "https://www.mysuru.co.uk"
-      },
-      "food": "Eat in or takeaway"
+      "where": "Inkberrow",
+      "type": "Pub",
+      "food": "Home-cooked food; also has rooms",
+      "phone": "01386 792233"
     },
     {
       "name": "Chequers Inn",
@@ -91,13 +70,57 @@
       "phone": "01386 860439"
     },
     {
-      "name": "The Anchor Inn",
+      "name": "Mysuru",
       "area": "Nearby villages",
-      "where": "Wyre Piddle",
+      "where": "Cockshot Lane, Kington",
+      "type": "Indian restaurant",
+      "phone": "01905 349912",
+      "website": {
+        "text": "mysuru.co.uk",
+        "url": "https://www.mysuru.co.uk"
+      },
+      "food": "Eat in or takeaway"
+    },
+    {
+      "name": "Old Bull Inn",
+      "area": "Nearby villages",
+      "where": "Inkberrow",
       "type": "Pub",
-      "food": "Sunday lunches",
-      "garden": true,
-      "note": "Terraced garden above the River Avon"
+      "food": "Food every day",
+      "note": "16th-century pub on the village green",
+      "phone": "01386 792428",
+      "dogs": true
+    },
+    {
+      "name": "Old Chestnut Tree",
+      "area": "Nearby villages",
+      "where": "Manor Road, Lower Moor",
+      "type": "Pub",
+      "phone": "01386 860380"
+    },
+    {
+      "name": "The Ounce at the Dolphin",
+      "area": "Nearby villages",
+      "where": "Bishampton",
+      "type": "Pub",
+      "note": "Community owned",
+      "phone": "01386 462927",
+      "food": "Steak restaurant"
+    },
+    {
+      "name": "The Pantry at Rush Farm",
+      "area": "Nearby villages",
+      "where": "Stockwood Business Park, Inkberrow",
+      "type": "Farm shop café",
+      "food": "Café and farm shop"
+    },
+    {
+      "name": "Chadbury Farm Shop & Café",
+      "area": "Harvington and Norton",
+      "where": "Chadbury, between Norton and Evesham",
+      "type": "Farm shop café",
+      "food": "Breakfast and lunch; booking advised",
+      "phone": "01386 446705"
     },
     {
       "name": "Coach and Horses",
@@ -119,6 +142,14 @@
       "phone": "01386 304505"
     },
     {
+      "name": "Karma Salford Hall",
+      "area": "Harvington and Norton",
+      "where": "Abbots Salford",
+      "type": "Hotel restaurant",
+      "food": "Breakfast, lunch, dinner and afternoon tea; booking needed",
+      "phone": "01386 871300"
+    },
+    {
       "name": "Norton Grange",
       "area": "Harvington and Norton",
       "where": "Norton",
@@ -132,12 +163,50 @@
       }
     },
     {
-      "name": "Chadbury Farm Shop & Café",
+      "name": "Vineyard Inn",
       "area": "Harvington and Norton",
-      "where": "Chadbury, between Norton and Evesham",
-      "type": "Farm shop café",
-      "food": "Breakfast and lunch; booking advised",
-      "phone": "01386 446705"
+      "where": "Abbots Salford",
+      "type": "Pub and restaurant",
+      "phone": "01386 870217"
+    },
+    {
+      "name": "Apple Barn Restaurant",
+      "area": "Evesham",
+      "where": "Evesham Garden Centre",
+      "type": "Garden centre café",
+      "phone": "01386 761333",
+      "note": "No dogs"
+    },
+    {
+      "name": "The Fleece Inn",
+      "area": "Evesham",
+      "where": "Bretforton",
+      "type": "Historic pub (National Trust)",
+      "phone": "01386 831173",
+      "website": {
+        "text": "thefleeceinn.co.uk",
+        "url": "https://thefleeceinn.co.uk"
+      }
+    },
+    {
+      "name": "Ivy Inn",
+      "area": "Evesham",
+      "where": "North Littleton",
+      "type": "Pub",
+      "food": "Food including curries; takeaway",
+      "phone": "01386 834841",
+      "website": {
+        "text": "theivyinn.co.uk",
+        "url": "https://www.theivyinn.co.uk"
+      }
+    },
+    {
+      "name": "Regal Cinema",
+      "area": "Evesham",
+      "where": "Port Street",
+      "type": "Café and wine bar",
+      "phone": "01386 421007",
+      "food": "Coffee shop by day, wine bar in the evening"
     },
     {
       "name": "Wayside Farm Shop & Tearoom",
@@ -149,22 +218,6 @@
         "url": "https://www.waysidefarmshop.co.uk"
       },
       "food": "Breakfast and snacks"
-    },
-    {
-      "name": "Apple Barn Restaurant",
-      "area": "Evesham",
-      "where": "Evesham Garden Centre",
-      "type": "Garden centre café",
-      "phone": "01386 761333",
-      "note": "No dogs"
-    },
-    {
-      "name": "Regal Cinema",
-      "area": "Evesham",
-      "where": "Port Street",
-      "type": "Café and wine bar",
-      "phone": "01386 421007",
-      "food": "Coffee shop by day, wine bar in the evening"
     },
     {
       "name": "Angel Inn",
