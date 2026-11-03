@@ -29,6 +29,7 @@ const { LOW_CLASS_CONFIDENCE } = require('./classify');
 const { loadOffList } = require('./subscriptions');
 const itemFeedback = require('./itemfeedback');
 const { primeWriteups } = require('./extract');
+const dupes = require('./duplicates');
 
 const MAX_RETRIES = 3;            // after this, a failing message is left for the diagnostic
 const MAX_MESSAGES_PER_RUN = 25;  // caps run time and spend; the rest wait for the next run
@@ -225,6 +226,12 @@ async function processMessage(id, ctx) {
   }
   const items = sureSpam ? [] : result.items;
 
+  // Already listed (3 Nov): one check per item against what the site has or is about to have.
+  const listed = items.length ? dupes.listings(ctx.existing) : [];
+  const found = [];
+  for (const item of items) found.push(spam ? null : await dupes.check(item, listed, { messageId: msg.id, text: msg.text }));
+  if (found.some(Boolean)) console.log(`${id}: ${found.filter(Boolean).length} item(s) already listed.`);
+
   const link = g.gmailLink(msg);
   const rows = items.map((item, n) => {
     const img = item.image_index >= 0 ? images[item.image_index] : null;
@@ -234,12 +241,17 @@ async function processMessage(id, ctx) {
       noteParts.push(`Possible repeat of ${repeat.row.id} (${repeat.byImage ? 'same image' : 'same title/date'})`);
     }
     // Trusted sender: published without approval unless the item needs a human anyway.
-    const decided = spam
+    let decided = spam
       ? { status: 'pending' }
       : trust.applyTrust(decideStatus(item, source.mode, ctx.holiday), item,
         msg.fromAddress, ctx.trusted, { anonymous: result.anonymous, outOfScope: result.outOfScope });
     if (decided.byTrust) noteParts.push('trusted');
     else if (decided.trustedSource) noteParts.push('trusted source');
+    const dup = found[n];
+    if (dup) {
+      noteParts.push(dupes.noteFor(dup));
+      decided = { ...decided, status: 'pending' }; // never published as a new item, in any mode
+    }
     if (item.holly_note) noteParts.push(`Holly: ${item.holly_note}`);
     if (spam) noteParts.push(`Possible spam (confidence ${result.classConfidence})`);
     const row = {
@@ -291,6 +303,8 @@ async function processMessage(id, ctx) {
       links: extractLinks(msg.text).join(' '),
       // Holiday mode: nobody is choosing, so official and verbatim items use their words.
       wording: ctx.holiday && offersChoice(item) ? 'own' : '',
+      // Already listed (duplicates.js); ignored if the Sheet lacks the column (the note still says so).
+      duplicate: dup ? JSON.stringify(dup) : '',
     };
     const flags = replies.itemPolicy({ ...row, classified: item.classified }, msg.internalDate);
     if (result.anonymous) flags.push('anonymous');

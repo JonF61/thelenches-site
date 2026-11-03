@@ -1,0 +1,43 @@
+name: Now live emails
+
+# "Now on the website" (3 Nov 2026, scripts/livenotice): after each site build, tells senders
+# whose items have just gone live, once a fresh copy of the page shows them. The schedule is a
+# fallback for items the Pages cache hadn't caught up with. Sends only when replies_mode is live.
+on:
+  workflow_run:
+    workflows: ["Build and deploy to GitHub Pages"]
+    types: [completed]
+  schedule:
+    - cron: "47 */3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-notice
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Tell senders their items are live
+        run: node scripts/livenotice/index.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: jon@thelenches.org.uk

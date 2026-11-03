@@ -38,6 +38,14 @@
 //                     ID is an organisation's slug in contacts.json `outreach`. Holly's fixed
 //                     check (or chaser) email is drafted (scripts/outreach/orgs.js) as an
 //                     awaiting Replies row and a card is emailed to Jon. Nothing is sent.
+//   merge             Add details (admin panel only, 3 Nov): the item is already listed
+//                     (Pending `duplicate`, ingest/duplicates.js). BODY is JSON of the details
+//                     to add to the existing entry, as Jon left them in the panel: body,
+//                     link_text/link_url, link2_text/link2_url. A hand-written item's file in
+//                     src/items/ is rewritten (approval.yml commits it and starts the build); a
+//                     pipeline or waiting item's Pending row gets the new values (publish
+//                     rebuilds the site from it). An official entry's wording is never changed.
+//                     This item becomes "done". Nothing is sent to anyone.
 // Every item decision also completes its Item feedback row (ingest/itemfeedback.js): what Jon
 // changed in Holly's write-up before approving, for her lessons and the stage 2 stats.
 // Rejecting an item whose acknowledgement said it was on its way drafts a "sorry, we
@@ -55,6 +63,9 @@ const outreach = require('../outreach');
 const orgs = require('../outreach/orgs');
 const contactMail = require('../outreach/contactmail');
 const lessons = require('../lessons');
+const dupes = require('../ingest/duplicates');
+const fs = require('fs');
+const path = require('path');
 
 const TZ = 'Europe/London';
 const WORDING = { approve_own: 'own', approve_rewrite: 'rewrite' };
@@ -115,6 +126,76 @@ async function decideItem(id, action, reason = '') {
   }
 }
 
+// Add details: Jon's fields (JSON) -> { body?, link_text?, link_url?, link2_text?, link2_url? }
+// (pure). Links must be http(s); a link without its address is dropped.
+function mergeFields(json) {
+  let o = {};
+  try { o = JSON.parse(String(json || '')); } catch { o = {}; }
+  if (!o || typeof o !== 'object') o = {};
+  const out = {};
+  const clean = (v, n) => String(v ?? '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f\u007f]+/g, ' ').trim().slice(0, n);
+  const body = clean(o.body, 2000);
+  if (body) out.body = body;
+  for (const k of ['link', 'link2']) {
+    const url = clean(o[`${k}_url`], 500).replace(/\s+/g, '');
+    if (/^https?:\/\/\S+$/i.test(url)) {
+      out[`${k}_url`] = url;
+      out[`${k}_text`] = clean(o[`${k}_text`], 80).replace(/\s+/g, ' ') || 'More details';
+    }
+  }
+  return out;
+}
+
+const HAND_KEY = /^h:(events|notices)\/([a-z0-9][a-z0-9-]*\.json)$/;
+
+// Writes the details into the existing entry. Returns a short description of what changed.
+async function applyDetails(dup, fields, pending, itemsDir = dupes.ITEMS) {
+  const hand = HAND_KEY.exec(dup.key);
+  if (hand) {
+    const file = path.join(itemsDir, hand[1], hand[2]);
+    if (!fs.existsSync(file)) throw new Error(`The listed item ${hand[1]}/${hand[2]} no longer exists`);
+    const item = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const changed = [];
+    if (fields.body && !item.official && fields.body !== item.body) { item.body = fields.body; changed.push('text'); }
+    for (const k of ['link', 'link2']) {
+      if (fields[`${k}_url`]) { item[k] = { text: fields[`${k}_text`], url: fields[`${k}_url`] }; changed.push(k === 'link' ? 'link' : 'second link'); }
+    }
+    if (changed.length) fs.writeFileSync(file, `${JSON.stringify(item, null, 2)}\n`);
+    return changed;
+  }
+  const m = /^p:([A-Za-z0-9_:.-]{1,100})$/.exec(dup.key);
+  if (!m) throw new Error(`Bad listed-item key "${dup.key}"`);
+  const target = pending.find((r) => r.id === m[1]);
+  if (!target) throw new Error(`The listed item ${m[1]} is no longer in Pending`);
+  const official = /^(true|yes|y|1)$/i.test(String(target.official || '').trim());
+  const update = {};
+  if (fields.body && !official) update.summary = fields.body;
+  for (const f of ['link_text', 'link_url', 'link2_text', 'link2_url']) if (fields[f]) update[f] = fields[f];
+  if (Object.keys(update).length) await g.updateRow('Pending', target._row, update);
+  return Object.keys(update).map((f) => ({ summary: 'text', link_url: 'link', link2_url: 'second link' }[f])).filter(Boolean);
+}
+
+async function mergeItem(id, json) {
+  const rows = await g.readTable('Pending');
+  const row = rows.find((r) => r.id === id);
+  if (!row) throw new Error(`Item ${id} not found in Pending`);
+  if (row.status !== 'pending') {
+    console.log(`Item ${id} is already "${row.status}"; nothing to do.`);
+    return;
+  }
+  const dup = dupes.parse(row.duplicate);
+  if (!dup) throw new Error(`Item ${id} isn't marked as already listed`);
+  const fields = mergeFields(json);
+  const changed = Object.keys(fields).length ? await applyDetails(dup, fields, rows) : [];
+  const decidedAt = londonDateTime(Date.now());
+  await g.updateRow('Pending', row._row, {
+    status: 'done', decided_at: decidedAt,
+    notes: [row.notes, changed.length ? `Details added to "${dup.title}" (${changed.join(', ')})` : `Nothing new added to "${dup.title}"`].filter(Boolean).join(' | '),
+  });
+  await itemFeedback.resolve(row, 'merge', { decidedAt, merged: fields });
+  console.log(`Item ${id} done: ${changed.length ? `${changed.join(', ')} added to ${dup.key.startsWith('h:') ? 'a hand-written item' : 'a pipeline item'}` : 'nothing changed'}.`);
+}
+
 async function trustSource(id) {
   const [rows, { sources }] = await Promise.all([g.readTable('Pending'), g.readSettings()]);
   const row = rows.find((r) => r.id === id);
@@ -147,12 +228,13 @@ async function main() {
   const typed = payloadText();
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) throw new Error(`Bad id "${id}"`);
   // Holly's lessons and recent corrections, for any draft this action leads to.
-  if (!['send', 'skip', 'close', 'edit', 'lesson_ok', 'lesson_no', 'orgcheck', 'done'].includes(action)) await replies.primeLearning();
+  if (!['send', 'skip', 'close', 'edit', 'lesson_ok', 'lesson_no', 'orgcheck', 'done', 'merge'].includes(action)) await replies.primeLearning();
 
   if (ITEM_ACTIONS.includes(action)) {
     return decideItem(id, action, action === 'reject' ? String(typed.reason).replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 300) : '');
   }
   if (action === 'trust') return trustSource(id);
+  if (action === 'merge') return mergeItem(id, typed.body);
   if (action.startsWith('fb_')) {
     return readerFeedback.decide(id, action, String(typed.reason).replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 300),
       String(typed.body).replace(/\r\n?/g, '\n').trim().slice(0, 3000));
@@ -200,7 +282,9 @@ async function main() {
   throw new Error(`Bad action "${action}"`);
 }
 
-main().catch((err) => {
+if (require.main !== module) {
+  module.exports = { mergeFields, applyDetails, mergeItem, HAND_KEY };
+} else main().catch((err) => {
   console.error('Fatal:', err && err.stack ? err.stack : err);
   process.exit(1);
 });

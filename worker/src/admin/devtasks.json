@@ -2,6 +2,20 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD.",
   "tasks": [
     {
+      "task": "Already listed: Jon to add Pending columns duplicate and live_notified_at at the end; then check the next duplicate submission's banner, ack wording and Add details",
+      "waiting": "Jon adding the two Pending columns",
+      "added": "2026-11-03"
+    },
+    {
+      "task": "Now live emails: check the first one sends after a build, on the ack thread, with the right link, and only once",
+      "added": "2026-11-03"
+    },
+    {
+      "task": "Already listed for feed items (rss.js): consider the same check for feed signposts of events we already have",
+      "waiting": "Jon's go-ahead",
+      "added": "2026-11-03"
+    },
+    {
       "task": "Second link: check the next council feed items and emailed items for sensible second links (and none invented)",
       "added": "2026-11-02"
     },

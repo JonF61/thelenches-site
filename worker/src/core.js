@@ -11,6 +11,8 @@ export const ACTIONS = {
   reject: ['Reject', 'Rejected', 'reject'],
   // Pending item dealt with another way (admin panel only): status "done", nothing publishes.
   done: ['Done already', 'Marked done already', 'reject'],
+  // Already listed (admin panel only, 3 Nov): add the new details to the existing entry; this item becomes done.
+  merge: ['Add details', 'Details being added to the listed item', 'approve'],
   approve_own: ['Approve with their wording', 'Approved with their wording', 'approve'],
   approve_rewrite: ['Approve with rewrite', 'Approved with our rewrite', 'approve'],
   trust: ['Trust this source', 'Source trusted', 'approve'],
@@ -61,7 +63,7 @@ export const ACTIONS = {
 };
 
 // Never valid in a signed email link (index.js /a).
-export const PANEL_ONLY = ['nlquiet', 'nltest', 'contactmail', 'done', 'sug_ok', 'sug_no'];
+export const PANEL_ONLY = ['nlquiet', 'nltest', 'contactmail', 'done', 'merge', 'sug_ok', 'sug_no'];
 
 export const FEEDBACK_ACTIONS = ['fb_approve', 'fb_reject', 'fb_postpone', 'fb_done', 'fb_send', 'fb_edit', 'fb_skip'];
 
@@ -77,6 +79,7 @@ export function validPayload(p) {
   // Redraft links may carry the draft to show (links.js redraftLink); it is never dispatched.
   if (p.a === 'redraft' && p.b !== undefined && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
   if (p.a === 'fb_postpone' && !/^\d{4}-\d{2}-\d{2}$/.test(String(p.d || ''))) return false;
+  if (p.a === 'merge' && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
   if (p.a === 'sug_ok' && p.b !== undefined && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
   if (p.a === 'rec' && !(['trades', 'eat'].includes(p.k) && /^[a-z0-9-]{1,80}$/.test(String(p.n || '')))) return false;
   if (p.a === 'trust') {
@@ -145,6 +148,8 @@ export function dispatchFor(p, reason = '', body = '') {
   // Pending reject (3 Nov): Jon's optional reason, saved in Pending reject_reason, never sent.
   if ((p.a === 'skip' || p.a === 'redraft' || p.a === 'reject') && reason) return ['approval', { id: p.i, action: p.a, reason }];
   if (p.a === 'edit') return ['approval', { id: p.i, action: p.a, body, reason }];
+  // Add details: the fields as JSON, read by scripts/approve from the event file, never env.
+  if (p.a === 'merge') return ['approval', { id: p.i, action: p.a, body: body || p.b }];
   if (p.a === 'contactmail') return ['approval', { id: p.i, action: p.a, reason }];
   // approval.yml passes only id, action, reason and body: the postpone date rides in reason.
   if (p.a === 'fb_postpone') return ['approval', { id: p.i, action: p.a, reason: p.d }];

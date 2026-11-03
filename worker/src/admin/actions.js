@@ -13,7 +13,7 @@
 
 import { validPayload, cleanReason, cleanBody } from '../core.js';
 
-export const PENDING_ACTIONS = ['approve', 'approve_own', 'approve_rewrite', 'reject', 'done', 'trust'];
+export const PENDING_ACTIONS = ['approve', 'approve_own', 'approve_rewrite', 'reject', 'done', 'trust', 'merge'];
 export const REPLY_ACTIONS = { approve: 'send', reject: 'skip', edit: 'edit', redraft: 'redraft', close: 'close' };
 export const PHOTO_ACTIONS = { approve: 'approved', reject: 'rejected' };
 const APPROVING = new Set(['approve', 'approve_own', 'approve_rewrite', 'trust']);
@@ -51,7 +51,22 @@ const refuse = (status, error) => ({ error, status });
 // Pending decision. row: the Pending row (null if not found); hasPeopleOk: whether the
 // tab has a people_ok column; choicePeople: the people value of the suggested image chosen
 // for it (image_choice), if any. Returns { p } for decide(), or { error, status }.
-export function planPending({ action, id, reason = '' }, row, { hasPeopleOk = false, sources = [], choicePeople = '' } = {}) {
+// Add details (3 Nov): Jon's fields for the already-listed entry -> JSON (pure), or null.
+const MERGE_FIELDS = { body: 2000, link_text: 80, link_url: 500, link2_text: 80, link2_url: 500 };
+export function mergeBody(fields) {
+  if (!fields || typeof fields !== 'object') return null;
+  const out = {};
+  for (const [k, n] of Object.entries(MERGE_FIELDS)) {
+    const v = cleanBody(fields[k]).slice(0, n);
+    if (!v) continue;
+    if (/_url$/.test(k) && !/^https?:\/\/\S+$/i.test(v)) return null;
+    out[k] = v;
+  }
+  return JSON.stringify(out);
+}
+const listedOf = (row) => { try { const o = JSON.parse(String(row.duplicate || '')); return o && o.key ? o : null; } catch { return null; } };
+
+export function planPending({ action, id, reason = '', fields = null }, row, { hasPeopleOk = false, sources = [], choicePeople = '' } = {}) {
   if (!PENDING_ACTIONS.includes(action)) return refuse(400, `Unknown action "${action}"`);
   if (!row) return refuse(404, `No Pending item ${id}`);
   if (row.status !== 'pending') return refuse(409, `This item is already "${row.status}"`);
@@ -64,13 +79,18 @@ export function planPending({ action, id, reason = '' }, row, { hasPeopleOk = fa
     return refuse(409, 'The chosen image may show people: tick "People OK" before approving');
   }
   const p = { a: action, i: String(id) };
+  if (action === 'merge') {
+    if (!listedOf(row)) return refuse(409, 'This item is not marked as already listed');
+    p.b = mergeBody(fields);
+    if (p.b === null) return refuse(400, 'A link must start with http:// or https://');
+  }
   if (action === 'trust') {
     p.k = trustKeyFor(row, sources);
     if (!p.k) return refuse(409, 'This item has no source that can be trusted');
   }
   if (!validPayload(p)) return refuse(400, 'Invalid item id');
   // Reject's optional reason (3 Nov): kept in Pending reject_reason for Previous submissions.
-  return { p, reason: action === 'reject' ? cleanReason(reason) : '' };
+  return { p, reason: action === 'reject' ? cleanReason(reason) : '', body: action === 'merge' ? p.b : '' };
 }
 
 // Reply decision. Returns { p, reason, body } for decide(), or { error, status }.

@@ -922,5 +922,22 @@ test('Newsletter draft: Rebuild and Test send map to nlquiet / nltest, panel onl
   assert.deepEqual(dispatchFor({ a: 'nlquiet', i: '2026-10-29' }), ['newsletter', { action: 'build', issue_date: '2026-10-29', rebuild: true, step: 'build' }]);
   assert.deepEqual(dispatchFor({ a: 'nltest', i: '2026-10-29' }), ['newsletter', { action: 'build', issue_date: '2026-10-29', step: 'preview' }]);
   assert.equal(validPayload({ a: 'nltest', i: 'abc' }), false);
-  assert.deepEqual(PANEL_ONLY, ['nlquiet', 'nltest', 'contactmail', 'done', 'sug_ok', 'sug_no']);
+  assert.deepEqual(PANEL_ONLY, ['nlquiet', 'nltest', 'contactmail', 'done', 'merge', 'sug_ok', 'sug_no']);
+});
+
+test('Add details (merge): only for an already-listed item, panel only, fields as JSON in the body', async () => {
+  const { mergeBody } = await import('../src/admin/actions.js');
+  const { dispatchFor, validPayload, PANEL_ONLY: PO } = await import('../src/core.js');
+  const dup = JSON.stringify({ key: 'h:events/2026-11-10-x.json', title: 'Coffee morning', changes: { body: 'New text' } });
+  const row = { id: 'm1-1', status: 'pending', duplicate: dup };
+  const plan = planPending({ action: 'merge', id: 'm1-1', fields: { body: ' New text ', link_url: 'https://example.org/a' } }, row);
+  assert.equal(plan.p.a, 'merge');
+  assert.deepEqual(JSON.parse(plan.body), { body: 'New text', link_url: 'https://example.org/a' });
+  assert.equal(validPayload(plan.p), true);
+  assert.deepEqual(dispatchFor(plan.p, '', plan.body), ['approval', { id: 'm1-1', action: 'merge', body: plan.body }]);
+  assert.ok(PO.includes('merge'));
+  assert.equal(planPending({ action: 'merge', id: 'm1-1', fields: {} }, { id: 'm1-1', status: 'pending' }).status, 409);
+  assert.equal(planPending({ action: 'merge', id: 'm1-1', fields: { link_url: 'javascript:alert(1)' } }, row).status, 400);
+  assert.equal(mergeBody({ body: '' }), '{}');
+  assert.equal(validPayload({ a: 'merge', i: 'm1-1' }), false);
 });
