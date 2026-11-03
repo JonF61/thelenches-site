@@ -68,7 +68,7 @@ function londonDateTime(ms) {
   return `${date} ${time}`;
 }
 
-async function decideItem(id, action) {
+async function decideItem(id, action, reason = '') {
   const rows = await g.readTable('Pending');
   const row = rows.find((r) => r.id === id);
   if (!row) throw new Error(`Item ${id} not found in Pending`);
@@ -82,6 +82,12 @@ async function decideItem(id, action) {
   // nothing publishes and no "sorry" note goes; Contributions shows it as done, not rejected.
   const status = action === 'reject' ? 'rejected' : action === 'done' ? 'done' : 'approved';
   const fields = { status, decided_at: londonDateTime(Date.now()) };
+  // Reject's optional reason (panel, 3 Nov): Pending reject_reason, for Previous submissions only.
+  // Never logged (logs may be public) and never in the sorry note.
+  if (status === 'rejected' && reason) {
+    if ('reject_reason' in row) fields.reject_reason = reason;
+    else console.warn('Pending has no "reject_reason" column; the reason was not saved.');
+  }
   const wording = WORDING[action];
   if (wording) {
     if (!('wording' in row)) {
@@ -143,7 +149,9 @@ async function main() {
   // Holly's lessons and recent corrections, for any draft this action leads to.
   if (!['send', 'skip', 'close', 'edit', 'lesson_ok', 'lesson_no', 'orgcheck', 'done'].includes(action)) await replies.primeLearning();
 
-  if (ITEM_ACTIONS.includes(action)) return decideItem(id, action);
+  if (ITEM_ACTIONS.includes(action)) {
+    return decideItem(id, action, action === 'reject' ? String(typed.reason).replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 300) : '');
+  }
   if (action === 'trust') return trustSource(id);
   if (action.startsWith('fb_')) {
     return readerFeedback.decide(id, action, String(typed.reason).replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 300),
