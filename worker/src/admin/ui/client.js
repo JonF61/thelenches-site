@@ -860,15 +860,18 @@ export const CLIENT_JS = String.raw`
     if (listed) {
       a.push(h('button', { class: 'btn primary', onclick: function () { overlay('Add details', mergeForm(r)); } }, 'Add details'));
     }
-    if (r._offers) { a.push(approve('approve_own', 'Approve their wording', true)); a.push(approve('approve_rewrite', 'Approve rewrite', false)); }
-    else a.push(approve('approve', 'Approve', true));
+    // Already listed (4 Nov, Jon): no Approve button; publishing as new is a small link below.
+    if (!listed) {
+      if (r._offers) { a.push(approve('approve_own', 'Approve their wording', true)); a.push(approve('approve_rewrite', 'Approve rewrite', false)); }
+      else a.push(approve('approve', 'Approve', true));
+    }
     if (!inDetail) a.push(h('button', { class: 'btn', onclick: function () { overlay('Edit item', itemForm(r)); } }, 'Edit'));
     a.push(h('button', { class: 'btn danger', onclick: function () { overlay('Reject item', itemRejectForm(r)); } }, 'Reject'));
     // Done already (1 Nov): dealt with another way; nothing publishes, no sorry note.
     a.push(h('button', { class: 'btn', title: 'Already on the site or dealt with another way: nothing is published and no note is sent', onclick: function () {
       if (window.confirm('Mark "' + str(r.title) + '" as done already?\n\nNothing is published and no note goes to the sender. Their Contributions list shows it as done.')) act('pending', r.id, 'done', null, 'Done already');
     } }, 'Done already'));
-    if (r._trust) {
+    if (r._trust && !listed) {
       a.push(h('button', { class: 'btn', disabled: blocked, title: why, onclick: function () {
         if (window.confirm('Trust ' + r._trust + ' and approve this item?\n\nFuture items from it publish without asking, except anything with people in images, political or commercial content, official notices, anonymous or out-of-scope mail, classified ads or low confidence. Its other waiting items are not approved. To undo, delete its row in the Trusted tab.')) {
           act('pending', r.id, 'trust', null, 'Trusted');
@@ -877,7 +880,13 @@ export const CLIENT_JS = String.raw`
     }
     if (str(r.gmail_link)) a.push(h('a', { class: 'btn link', href: str(r.gmail_link), target: '_blank', rel: 'noopener' }, itemOrigin(r) === 'feed' ? 'Open source page' : 'Open in Gmail'));
     a.push(sheetLink('Pending', r._row));
-    return h('div', { class: 'actions' }, a);
+    if (!listed) return h('div', { class: 'actions' }, a);
+    var action = r._offers ? 'approve_own' : 'approve';
+    var anyway = h('p', { class: 'anyway' }, 'Not the same thing? ',
+      h('button', { class: 'btn link', type: 'button', disabled: blocked, title: why, onclick: function () {
+        if (window.confirm('Holly thinks this is already listed as "' + str(listed.title) + '".\n\nPublish it as a new item anyway?')) act('pending', r.id, action, null, 'Approved');
+      } }, 'Publish as a new item…'));
+    return h('div', null, h('div', { class: 'actions' }, a), anyway);
   }
 
   function itemForm(r) {
