@@ -127,6 +127,86 @@
   ],
   "notices": [
     {
+      "id": "1a19f9a2c5331db0-1",
+      "title": "Abbots Morton Road closed — Abbots Morton",
+      "body": "Abbots Morton Road in Abbots Morton will be closed from Wednesday 4 to Friday 6 November while Openreach carries out works. A signed diversion will be in place, so expect delays.",
+      "date": "2026-11-04",
+      "village": "Abbots Morton",
+      "start": "2026-11-04",
+      "end": "2026-11-06",
+      "road": "Abbots Morton Road",
+      "expires": "2026-11-24",
+      "added": "2026-11-03",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB151959384"
+      }
+    },
+    {
+      "id": "1a19f9a2c5331db0-2",
+      "title": "Morton Wood Lane closed — Abbots Morton",
+      "body": "Morton Wood Lane in Abbots Morton will be closed from Wednesday 4 to Friday 6 November for Openreach works. Expect delays and allow extra time.",
+      "date": "2026-11-04",
+      "village": "Abbots Morton",
+      "start": "2026-11-04",
+      "end": "2026-11-06",
+      "road": "Morton Wood Lane",
+      "expires": "2026-11-24",
+      "added": "2026-11-03",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB153149243"
+      }
+    },
+    {
+      "id": "1a19f9a2c5331db0-3",
+      "title": "Ab Lench Road closed — Church Lench",
+      "body": "Ab Lench Road in Church Lench will be closed on Monday 9 November for Openreach works. A diversion will run via Main Street, so expect delays.",
+      "date": "2026-11-09",
+      "village": "Church Lench",
+      "start": "2026-11-09",
+      "end": "2026-11-09",
+      "road": "Ab Lench Road",
+      "expires": "2026-11-24",
+      "added": "2026-11-03",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB153245184"
+      }
+    },
+    {
+      "id": "1a19f9a2c5331db0-4",
+      "title": "Temporary traffic lights on Alcester Road — Radford",
+      "body": "Openreach works will bring two-way temporary traffic lights to Alcester Road, Radford, from Thursday 5 to Saturday 7 November. There may be some delays.",
+      "date": "2026-11-05",
+      "village": "Radford",
+      "start": "2026-11-05",
+      "end": "2026-11-07",
+      "road": "Alcester Road",
+      "expires": "2026-11-24",
+      "added": "2026-11-03",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB153183166"
+      }
+    },
+    {
+      "id": "1a19f9a2c5331db0-5",
+      "title": "Temporary traffic lights on Alcester Road — Harvington",
+      "body": "Openreach works will bring two-way temporary traffic lights to Alcester Road, Harvington, from Monday 9 to Friday 13 November. There may be some delays.",
+      "date": "2026-11-09",
+      "village": "Harvington",
+      "start": "2026-11-09",
+      "end": "2026-11-13",
+      "road": "Alcester Road",
+      "expires": "2026-11-24",
+      "added": "2026-11-03",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB153228826"
+      }
+    },
+    {
       "id": "rss-df636fba7526f898-1",
       "title": "Home Security Advice for Darker Evenings",
       "body": "Harvington Parish Council passes on Neighbourhood Watch advice to keep homes secure as evenings darken, including locking doors and windows, hiding keys and valuables, and using timer lights. Residents are encouraged to report suspicious activity to West Mercia Police online, or call 999 in an emergency.",

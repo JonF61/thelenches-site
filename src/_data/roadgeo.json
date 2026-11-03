@@ -79,6 +79,32 @@
       ]
     }
   },
+  "alcester road|harvington": {
+    "road": "Alcester Road",
+    "village": "Harvington",
+    "looked_up": "2026-11-03",
+    "source": "village",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        -1.9257,
+        52.1429
+      ]
+    }
+  },
+  "alcester road|radford": {
+    "road": "Alcester Road",
+    "village": "Radford",
+    "looked_up": "2026-11-03",
+    "source": "village",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        -2.0097,
+        52.1807
+      ]
+    }
+  },
   "badgers hill|sheriffs lench": {
     "road": "Badgers Hill",
     "village": "Sheriffs Lench",
