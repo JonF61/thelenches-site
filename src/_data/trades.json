@@ -41,6 +41,84 @@
       "name": "Jeremy",
       "trade": "Chimney sweeps",
       "phone": "07854 522453"
+    },
+    {
+      "name": "Britania Services",
+      "trade": "Plumbing and heating",
+      "what": "Plumbing and heating; Gas Safe and OFTEC registered",
+      "base": "Kington",
+      "phone": "01386 791321",
+      "website": {
+        "text": "britserv.uk.com",
+        "url": "https://britserv.uk.com"
+      }
+    },
+    {
+      "name": "Smart Cut Ltd",
+      "trade": "Gardening and grounds",
+      "what": "Mowing, scarifying, seeding, fertilising and spraying; mainly larger grounds",
+      "base": "near Bishampton",
+      "phone": "01386 462706",
+      "website": {
+        "text": "smartcut.co.uk",
+        "url": "https://www.smartcut.co.uk"
+      }
+    },
+    {
+      "name": "Cannins",
+      "trade": "Window and exterior cleaning",
+      "what": "Window and exterior cleaning, homes and businesses",
+      "base": "Broadway, near Evesham",
+      "covers": "About 10 miles around Evesham",
+      "phone": "01386 718165",
+      "website": {
+        "text": "cannins.co.uk",
+        "url": "https://www.cannins.co.uk"
+      }
+    },
+    {
+      "name": "Cotswold Drainage",
+      "trade": "Drains",
+      "what": "Drain unblocking, jetting, CCTV surveys, repairs and septic tanks",
+      "base": "Evesham",
+      "phone": "01386 882324",
+      "website": {
+        "text": "cotswolddrainage.co.uk",
+        "url": "https://www.cotswolddrainage.co.uk"
+      }
+    },
+    {
+      "name": "Evesham Home Improvements",
+      "trade": "Windows, doors and conservatories",
+      "what": "Makes and fits uPVC windows, doors, porches and conservatories",
+      "base": "Willersey Business Park, Broadway",
+      "phone": "01386 853222",
+      "website": {
+        "text": "eveshamhomeimprovements.co.uk",
+        "url": "https://www.eveshamhomeimprovements.co.uk"
+      }
+    },
+    {
+      "name": "Tom Cook Carpets",
+      "trade": "Carpets and flooring",
+      "what": "Supplies and fits carpets and flooring; free home visits to quote",
+      "base": "Blackminster, near Evesham",
+      "phone": "01386 833766",
+      "website": {
+        "text": "tomcookcarpets.co.uk",
+        "url": "https://www.tomcookcarpets.co.uk"
+      }
+    },
+    {
+      "name": "Tapcast",
+      "trade": "Computers and IT",
+      "what": "IT support for homes and businesses, Microsoft 365, security",
+      "base": "near Inkberrow",
+      "phone": "01386 792196",
+      "website": {
+        "text": "tapcast.co.uk",
+        "url": "https://www.tapcast.co.uk"
+      }
     }
   ]
 }
