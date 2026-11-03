@@ -29,9 +29,9 @@ seoTitle: "Where to eat in and around the Lenches — pubs, cafés and restauran
         <h3>{{ p.name }}</h3>
         <p class="ea-where">{{ p.type }} &middot; {{ p.where }}</p>
         {% if p.food %}<p class="mt0">{{ p.food }}</p>{% endif %}
-        <p class="mt0">{% if p.garden %}<span class="ea-tag">Garden</span>{% endif %}{% if p.children %}<span class="ea-tag">Children welcome</span>{% endif %}<span class="ea-tag">Dogs welcome</span></p>
+        {% if p.garden or p.children or p.dogs %}<p class="mt0">{% if p.garden %}<span class="ea-tag">Garden</span>{% endif %}{% if p.children %}<span class="ea-tag">Children welcome</span>{% endif %}{% if p.dogs %}<span class="ea-tag">Dogs welcome</span>{% endif %}</p>{% endif %}
         {% if p.note %}<p class="small mut mt0">{{ p.note }}</p>{% endif %}
-        <p class="ea-links small"><a href="#">Website and opening times</a> &middot; 01386 000000</p>
+        {% if p.website or p.phone %}<p class="ea-links small">{% if p.website %}<a href="{{ p.website.url }}" target="_blank" rel="noopener">{{ p.website.text }}</a>{% endif %}{% if p.website and p.phone %} &middot; {% endif %}{% if p.phone %}<a href="tel:{{ p.phone | replace(' ', '') }}">{{ p.phone }}</a>{% endif %}</p>{% endif %}
       </div>
     {% endif %}{% endfor %}
     </div>

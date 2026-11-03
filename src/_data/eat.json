@@ -13,41 +13,50 @@
       "where": "Inkberrow",
       "type": "Pub",
       "food": "Food every day",
-      "note": "16th-century pub on the village green"
+      "note": "16th-century pub on the village green",
+      "phone": "01386 792428",
+      "dogs": true
     },
     {
       "name": "Bulls Head",
       "area": "Nearby villages",
       "where": "Inkberrow",
       "type": "Pub",
-      "food": "Restaurant",
-      "garden": true
+      "food": "Home-cooked food; also has rooms",
+      "phone": "01386 792233"
     },
     {
       "name": "The Pantry at Rush Farm",
       "area": "Nearby villages",
-      "where": "near Inkberrow",
-      "type": "Farm shop café"
+      "where": "Stockwood Business Park, Inkberrow",
+      "type": "Farm shop café",
+      "food": "Café and farm shop"
     },
     {
       "name": "The Ounce at the Dolphin",
       "area": "Nearby villages",
       "where": "Bishampton",
       "type": "Pub",
-      "note": "Community owned"
+      "note": "Community owned",
+      "phone": "01386 462927",
+      "food": "Steak restaurant"
     },
     {
-      "name": "Bishampton Shop & Café",
+      "name": "Bishampton Village Store & Café",
       "area": "Nearby villages",
       "where": "Bishampton",
-      "type": "Village shop café"
+      "type": "Village shop café",
+      "phone": "01386 462873",
+      "food": "Coffee and cake",
+      "note": "Village shop and post office"
     },
     {
       "name": "Boot Inn",
       "area": "Nearby villages",
       "where": "Flyford Flavell",
       "type": "Pub and restaurant",
-      "food": "Separate restaurant"
+      "food": "Restaurant; also has rooms",
+      "phone": "01386 462658"
     },
     {
       "name": "Mysuru",
@@ -64,23 +73,30 @@
     {
       "name": "Wheelbarrow Castle",
       "area": "Nearby villages",
-      "where": "Radford",
+      "where": "Radford, by Rous Lench",
       "type": "Pub and restaurant",
-      "food": "Pub meals, grill, Sunday lunch"
+      "food": "Pub meals, grill, Sunday lunch",
+      "phone": "01386 792207"
     },
     {
       "name": "Chequers Inn",
       "area": "Nearby villages",
       "where": "Fladbury",
       "type": "Pub",
-      "food": "Restaurant at the rear"
+      "food": "Lunch and evening meals; booking advised",
+      "phone": "01386 861854",
+      "website": {
+        "text": "thechequersinnfladbury.co.uk",
+        "url": "https://www.thechequersinnfladbury.co.uk"
+      }
     },
     {
       "name": "Clive's of Cropthorne",
       "area": "Nearby villages",
       "where": "Cropthorne",
-      "type": "Café",
-      "food": "Breakfast and lunch, Tuesday to Sunday"
+      "type": "Farm shop and café",
+      "food": "Breakfast and lunch, Tuesday to Sunday",
+      "phone": "01386 860439"
     },
     {
       "name": "The Anchor Inn",
@@ -88,22 +104,27 @@
       "where": "Wyre Piddle",
       "type": "Pub",
       "food": "Sunday lunches",
-      "garden": true
+      "garden": true,
+      "note": "Terraced garden above the River Avon"
     },
     {
       "name": "Coach and Horses",
       "area": "Harvington and Norton",
       "where": "Harvington",
-      "type": "Pub"
+      "type": "Pub",
+      "phone": "01386 870249",
+      "food": "Pub food and Sunday lunch",
+      "garden": true
     },
     {
       "name": "Golden Cross",
       "area": "Harvington and Norton",
-      "where": "Harvington",
+      "where": "Village Street, Harvington",
       "type": "Pub",
       "food": "Evening meals",
       "garden": true,
-      "children": true
+      "children": true,
+      "phone": "01386 304505"
     },
     {
       "name": "Norton Grange",
@@ -111,38 +132,58 @@
       "where": "Norton",
       "type": "Pub",
       "food": "Lunch and evening meals",
-      "garden": true
+      "garden": true,
+      "phone": "01386 871477",
+      "website": {
+        "text": "nortongrangepub.co.uk",
+        "url": "https://www.nortongrangepub.co.uk"
+      }
     },
     {
       "name": "Chadbury Farm Shop & Café",
       "area": "Harvington and Norton",
       "where": "Chadbury, between Norton and Evesham",
       "type": "Farm shop café",
-      "food": "Breakfast and lunch"
+      "food": "Breakfast and lunch; booking advised",
+      "phone": "01386 446705"
     },
     {
       "name": "Wayside Farm Shop & Tearoom",
       "area": "Evesham",
       "where": "Wickhamford",
-      "type": "Farm shop tearoom"
+      "type": "Farm shop tearoom",
+      "website": {
+        "text": "waysidefarmshop.co.uk",
+        "url": "https://www.waysidefarmshop.co.uk"
+      },
+      "food": "Breakfast and snacks"
     },
     {
       "name": "Apple Barn Restaurant",
       "area": "Evesham",
       "where": "Evesham Garden Centre",
-      "type": "Garden centre café"
+      "type": "Garden centre café",
+      "phone": "01386 761333",
+      "note": "No dogs"
     },
     {
       "name": "Regal Cinema",
       "area": "Evesham",
       "where": "Port Street",
-      "type": "Cinema café-bar"
+      "type": "Café and wine bar",
+      "phone": "01386 421007",
+      "food": "Coffee shop by day, wine bar in the evening"
     },
     {
       "name": "Angel Inn",
       "area": "Pershore",
       "where": "High Street",
-      "type": "Hotel bar and dining room"
+      "type": "Hotel bar and dining room",
+      "phone": "01386 552046",
+      "website": {
+        "text": "angelpershore.co.uk",
+        "url": "https://www.angelpershore.co.uk"
+      }
     }
   ]
 }
