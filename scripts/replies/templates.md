@@ -30,6 +30,21 @@ Thanks for these, they're on their way to the website. We include events in the 
 ## ack_none
 Thanks for getting in touch.
 
+## ack_listed
+Thanks for sending "{title}". We already have it on the website, so it's all set: {link}
+
+## ack_listed_line
+We already have "{title}" on the website: {link}
+
+## live_one
+Good news: "{title}" is now on the website: {link}
+If you don't see it straight away, try refreshing the page.
+
+## live_many
+Good news: these are now on the website:
+{titles}
+If you don't see them straight away, try refreshing the page.
+
 ## ack_newsletter
 We've also added you to our weekly newsletter so you can see your entry. To stop it, just reply UNSUBSCRIBE.
 

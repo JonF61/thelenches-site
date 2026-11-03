@@ -100,6 +100,8 @@
 // redraftReply (Redraft), closeOwed (Close, no reply needed).
 'use strict';
 
+const dupes = require('./duplicates');
+
 const fs = require('fs');
 const path = require('path');
 const g = require('./google');
@@ -386,9 +388,14 @@ function itemLabels(items) {
 // Several items (27 Oct): one list with dates; when every one is too early for the
 // newsletter the thanks says so (ack_many_held: on the website now, in the newsletter from
 // two weeks before); shared notes are said once (MANY_TEMPLATES).
-function buildBody({ items, outOfScope, clarification, unusable = [], name = '', personal = '', joined = false }) {
+// Already listed (3 Nov): items with a `listed` link (duplicates.js listedUrl) aren't "on their
+// way": each gets its own line (ack_listed_line), or the thanks itself (ack_listed) when it's the
+// only item, and none of the per-item notes.
+function buildBody({ items: all, outOfScope, clarification, unusable = [], name = '', personal = '', joined = false }) {
   const t = templates();
   const parts = [greeting(name)];
+  const listedOnes = all.filter((i) => i.listed && t.ack_listed !== undefined);
+  const items = all.filter((i) => !listedOnes.includes(i));
   const many = items.length > 1;
   const list = many ? itemLabels(items) : items.map((i) => ({ ...i, label: i.title }));
   const showFrom = (i) => (i.event_date ? longDate(firstIssueFor(i.event_date)) : '');
@@ -406,7 +413,8 @@ function buildBody({ items, outOfScope, clarification, unusable = [], name = '',
   else if (many) {
     parts.push(fill('ack_many', { titles: (splitEarly ? soon : list).map((i) => `- ${i.label}`).join('\n') }));
   }
-  else parts.push(fill('ack_none'));
+  else if (!listedOnes.length) parts.push(fill('ack_none'));
+  listedOnes.forEach((i, n) => parts.push(fill(n === 0 && !items.length ? 'ack_listed' : 'ack_listed_line', { title: i.title, link: i.listed })));
   if (personal) parts.push(personal);
   if (joined) parts.push(fill('ack_newsletter'));
 
@@ -971,7 +979,11 @@ function senderLimit(ctx, to) {
 
 async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, said, limit, contact, name }, skip) {
   const anonymous = result.anonymous === true;
+  // Already listed and live (duplicates.js, 3 Nov): no questions about it; the thanks says
+  // it's on the website, with its link.
+  const listedOf = (r) => dupes.listedUrl(dupes.parse(r.duplicate));
   const needs = rows
+    .filter((r) => !listedOf(r))
     // A booking or details link is enough for enquiries: no "who do we contact?" (27 Oct).
     .map((r) => ({ title: r.title,
       missing: splitCodes(r.missing).filter((c) => FIELD_FOR[c] && !(c === 'contact' && String(r.link_url || '').trim())) }))
@@ -979,8 +991,9 @@ async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, sa
   const type = needs.length || anonymous ? 'clarify' : 'ack';
   if (limit.over && type === 'ack') return skip(`${limit.note}: acknowledgement dropped`);
 
-  const items = rows.map((r) => ({ title: r.title, event_date: r.event_date, policy: splitCodes(r.policy_flags) }));
+  const items = rows.map((r) => ({ title: r.title, event_date: r.event_date, policy: splitCodes(r.policy_flags), listed: listedOf(r) }));
   const codes = unique([
+    items.some((i) => i.listed) && 'already_listed',
     ...items.flatMap((i) => i.policy),
     result.outOfScope && 'out_of_scope',
     anonymous && 'anonymous',

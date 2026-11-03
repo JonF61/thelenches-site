@@ -6,8 +6,11 @@ on:
   repository_dispatch:
     types: [approval]
 
+# contents/actions write: Add details (action merge) may change a hand-written item in
+# src/items/, committed below, which then needs the site build (a GITHUB_TOKEN push can't start it).
 permissions:
-  contents: read
+  contents: write
+  actions: write
 
 # One queue per item: GitHub keeps only one waiting run per group, so a shared
 # group silently cancelled taps made in quick succession (22 Oct).
@@ -21,6 +24,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: main
 
       - uses: actions/setup-node@v7
         with:
@@ -43,3 +48,17 @@ jobs:
           CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
           APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
           WORKER_URL: https://approvals.lenches.workers.dev
+
+      - name: Commit item changes (Add details)
+        if: ${{ success() && github.event.client_payload.action == 'merge' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add src/items
+          if git diff --cached --quiet; then echo "No item files changed."; exit 0; fi
+          git config user.name "Lenches Pipeline"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Add details to a listed item (admin panel)"
+          git pull --rebase
+          git push
+          gh workflow run build.yml --ref main

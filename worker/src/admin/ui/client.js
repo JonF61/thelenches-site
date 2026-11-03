@@ -577,7 +577,8 @@ export const CLIENT_JS = String.raw`
       if (f === 'people_in_image') return;
       b.push(h('span', { class: 'badge warn' }, FLAG_LABELS[f] || f.replace(/_/g, ' ')));
     });
-    if (truthy(r.possible_repeat)) b.push(h('span', { class: 'badge warn' }, 'Possible repeat'));
+    if (listedOf(r)) b.push(h('span', { class: 'badge warn' }, 'Already listed'));
+    else if (truthy(r.possible_repeat)) b.push(h('span', { class: 'badge warn' }, 'Possible repeat'));
     if (str(r.missing)) b.push(h('span', { class: 'badge warn' }, 'Missing: ' + str(r.missing).replace(/,/g, ', ')));
     return h('div', { class: 'badges' }, b);
   }
@@ -601,9 +602,53 @@ export const CLIENT_JS = String.raw`
     return (truthy(r.people_in_image) || Boolean(chosen && flaggedPeople(chosen))) && !truthy(r.people_ok);
   }
 
+  // Already listed (3 Nov; scripts/ingest/duplicates.js): Pending duplicate is JSON of the
+  // entry Holly matched, what the new email adds and her proposed changes to that entry.
+  function listedOf(r) {
+    try { var o = JSON.parse(str(r.duplicate)); return o && o.key ? o : null; } catch (e) { return null; }
+  }
+  var LISTED_FROM = { 'hand-written': 'hand-written item', pipeline: 'published submission', waiting: 'submission not yet published' };
+  var CHANGE_LABELS = { body: 'Text', link_text: 'Link text', link_url: 'Link', link2_text: 'Second link text', link2_url: 'Second link' };
+
+  function listedBox(r) {
+    var d = listedOf(r);
+    if (!d) return null;
+    var ch = d.changes || {};
+    var keys = Object.keys(ch).filter(function (k) { return CHANGE_LABELS[k] && str(ch[k]); });
+    return h('section', { class: 'note warn', 'aria-label': 'Already listed' },
+      h('strong', null, 'Already listed: '),
+      d.url ? h('a', { href: str(d.url), target: '_blank', rel: 'noopener' }, str(d.title)) : str(d.title),
+      ' (' + (LISTED_FROM[d.source] || d.source) + '; Holly ' + Math.round((Number(d.confidence) || 0) * 100) + '% sure)',
+      h('div', { class: 'meta' }, d.details ? 'This email adds: ' + str(d.details) : 'Holly found nothing new in this email.'),
+      keys.length ? h('div', { class: 'meta' }, 'Add details would change: ' + keys.map(function (k) { return CHANGE_LABELS[k]; }).join(', ') + '.') : null,
+      h('div', { class: 'meta' }, d.sure && d.url ? 'The sender was told it is already on the website, with its link.' : 'The sender got the usual thank-you.'));
+  }
+
+  function mergeForm(r) {
+    var d = listedOf(r) || {};
+    var ch = d.changes || {};
+    var inputs = {};
+    var kids = [h('p', null, 'Add these details to "' + str(d.title) + '"? This item is then marked done; nothing is sent to anyone.')];
+    if (d.official) kids.push(h('div', { class: 'note' }, 'The listed entry is official, so its wording stays as it is: only links can be added.'));
+    Object.keys(CHANGE_LABELS).forEach(function (k) {
+      if (k === 'body' && d.official) return;
+      var id = 'mg-' + k;
+      inputs[k] = k === 'body' ? h('textarea', { class: 'f', id: id, rows: 8 }, str(ch[k])) : h('input', { class: 'f', id: id, value: str(ch[k]) });
+      kids.push(h('label', { class: 'f', for: id }, CHANGE_LABELS[k] + (k === 'body' ? ' (the whole new text; leave empty to keep it as it is)' : ' (leave empty for no change)')), inputs[k]);
+    });
+    kids.push(h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'submit' }, 'Add details')));
+    return h('form', { onsubmit: function (e) {
+      e.preventDefault();
+      var fields = {};
+      Object.keys(inputs).forEach(function (k) { fields[k] = inputs[k].value; });
+      act('pending', r.id, 'merge', { fields: fields }, 'Details added');
+    } }, kids);
+  }
+
   function itemCard(r, inDetail) {
     var c = h('div', { class: 'card' });
     add(c, [h('h2', null, str(r.title) || '(no title)'), itemMeta(r), itemBadges(r)]);
+    add(c, listedBox(r));
     if (r._offers) {
       add(c, h('div', { class: 'two' },
         h('div', null, h('h3', null, r._official ? 'Their words (official)' : 'Their wording'), h('div', { class: 'text' }, str(r.own_text))),
@@ -761,12 +806,18 @@ export const CLIENT_JS = String.raw`
   function itemActions(r, inDetail) {
     var blocked = needsTick(r);
     var why = blocked ? 'Tick "People OK" first' : null;
+    var listed = listedOf(r);
     var approve = function (action, label, primary) {
-      return h('button', { class: 'btn' + (primary ? ' primary' : ''), disabled: blocked, title: why, onclick: function () {
+      return h('button', { class: 'btn' + (primary && !listed ? ' primary' : ''), disabled: blocked, title: why, onclick: function () {
+        if (listed && !window.confirm('Holly thinks this is already listed as "' + str(listed.title) + '".\n\nPublish it as a new item anyway?')) return;
         act('pending', r.id, action, null, 'Approved');
       } }, label);
     };
     var a = [];
+    // Already listed: Add details (Holly's proposal, editable) comes first.
+    if (listed) {
+      a.push(h('button', { class: 'btn primary', onclick: function () { overlay('Add details', mergeForm(r)); } }, 'Add details'));
+    }
     if (r._offers) { a.push(approve('approve_own', 'Approve their wording', true)); a.push(approve('approve_rewrite', 'Approve rewrite', false)); }
     else a.push(approve('approve', 'Approve', true));
     if (!inDetail) a.push(h('button', { class: 'btn', onclick: function () { overlay('Edit item', itemForm(r)); } }, 'Edit'));

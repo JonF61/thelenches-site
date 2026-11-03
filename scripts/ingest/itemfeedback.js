@@ -43,7 +43,11 @@ const truthy = (v) => v === true || /^(true|yes|y|1)$/i.test(str(v));
 const warn = (what, err) => console.warn(`Item feedback: ${what} failed: ${(err && err.message) || err}`);
 const clip = (t, n = CLIP) => { const f = str(t).replace(/\s+/g, ' '); return f.length > n ? `${f.slice(0, n)}…` : f; };
 
-const typeOf = (row) => `${str(row.category).toLowerCase() || 'notice'}${truthy(row.official) ? '-official' : ''}`;
+// Already listed (3 Nov, duplicates.js): its own kind, "duplicate", so the Autonomy screen
+// tracks Holly's matching apart from her write-ups.
+const dupOf = (row) => { try { const o = JSON.parse(str(row.duplicate)); return o && o.key ? o : null; } catch { return null; } };
+const typeOf = (row) => (dupOf(row) ? 'duplicate'
+  : `${str(row.category).toLowerCase() || 'notice'}${truthy(row.official) ? '-official' : ''}`);
 function sourceKindOf(row) {
   const feed = str(row.message_id).startsWith('rss:');
   const trusted = str(row.notes).split(' | ').some((n) => ['trusted', 'trusted source'].includes(n.trim()));
@@ -97,7 +101,27 @@ function diff(draft, current) {
 
 // Outcome for a decision (pure). action: approve | approve_own | approve_rewrite | reject | done.
 // row: the Pending row as it stood when Jon decided (his edits included).
-function outcomeFor(fb, row, action, wording = '') {
+// A duplicate (type "duplicate"): Holly proposed "close it" (no new details) or "add these
+// details". Taking her proposal as it stands = approved; Done when she proposed details, or Add
+// details with Jon's changes = edited; publishing it as a new item = rejected (she was wrong);
+// a plain Reject isn't counted (done). merged: the fields Jon added ({} for Done).
+function duplicateOutcome(row, action, merged = {}) {
+  const proposed = (dupOf(row) || {}).changes || {};
+  const flat = (o) => JSON.stringify(Object.keys(o).sort().map((k) => [k, str(o[k]).replace(/\s+/g, ' ')]));
+  if (action === 'reject') return { outcome: 'done', changed: '', final: '' };
+  if (action === 'merge') {
+    const same = flat(merged) === flat(proposed);
+    return { outcome: same ? 'approved' : 'edited', changed: same ? '' : 'details', final: '' };
+  }
+  if (action === 'done') {
+    const none = !Object.keys(proposed).length;
+    return { outcome: none ? 'approved' : 'edited', changed: none ? '' : 'details not added', final: '' };
+  }
+  return { outcome: 'rejected', changed: 'published as a new item', final: '' };
+}
+
+function outcomeFor(fb, row, action, wording = '', merged = {}) {
+  if (str(fb.type) === 'duplicate') return duplicateOutcome(row, action, merged);
   const draft = parse(fb.draft) || {};
   const { changed, final } = diff(draft, row);
   const status = action === 'reject' ? 'rejected' : action === 'done' ? 'done' : 'approved';
@@ -110,12 +134,12 @@ function outcomeFor(fb, row, action, wording = '') {
 }
 
 // Called by scripts/approve when Jon decides an item. Only the first decision counts.
-async function resolve(row, action, { wording = '', decidedAt = '' } = {}) {
+async function resolve(row, action, { wording = '', decidedAt = '', merged = {} } = {}) {
   try {
     const fb = (await g.readTable(TAB)).find((r) => r.item_id === row.id);
     if (!fb) { console.log(`Item feedback: no draft logged for ${row.id} (from before 2 Nov 2026).`); return null; }
     if (str(fb.outcome)) return null;
-    const o = outcomeFor(fb, row, action, wording);
+    const o = outcomeFor(fb, row, action, wording, merged);
     await g.updateRow(TAB, fb._row, { ...o, decided_at: decidedAt });
     console.log(`Item feedback: ${row.id} ${o.outcome}${o.changed ? ` (${o.changed})` : ''}.`);
     return o;
@@ -161,4 +185,5 @@ function correctionsFrom(rows, n = RECENT, since = '') {
 
 module.exports = {
   TAB, HEADERS, FIELDS, LEARN_FROM, record, resolve, updateDraft, rowFor, diff, outcomeFor, correctionsFrom, typeOf, sourceKindOf,
+  duplicateOutcome,
 };

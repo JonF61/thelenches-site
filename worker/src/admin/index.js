@@ -27,6 +27,8 @@
 //   POST /admin/api/action          { kind: pending|reply|photo, id, action, reason?, body?,
 //                                   expected? }: decisions go through core.js decide(),
 //                                   the same path as the signed email links
+//   POST /admin/api/action          kind pending, action merge (Add details, 3 Nov): fields = the
+//                                   details for the already-listed entry (actions.js mergeBody)
 //   POST /admin/api/action          kind feedback: approve, reject (reason?), postpone (date), done
 //                                   (Mark implemented), send, edit (body), skip: also decide()
 //   POST /admin/api/action          kind suggestion: approve, edit (fields: the entry as edited),
@@ -435,7 +437,7 @@ async function doAction(env, body) {
       const s = (await readTable(env, SUGGEST_TAB)).rows.filter((x) => String(x.id) === choice && String(x.item) === id);
       choicePeople = s.length === 1 ? String(s[0].people || '') : '';
     }
-    plan = planPending({ action, id, reason: body.reason }, row, { hasPeopleOk: headers.includes('people_ok'), sources, choicePeople });
+    plan = planPending({ action, id, reason: body.reason, fields: body.fields }, row, { hasPeopleOk: headers.includes('people_ok'), sources, choicePeople });
   } else if (kind === 'reply') {
     plan = planReply({ action, id, reason: body.reason, body: body.body });
   } else if (kind === 'suggestion') {
