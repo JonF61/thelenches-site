@@ -2,6 +2,10 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD.",
   "tasks": [
     {
+      "task": "Write-up length (up to ~80 words for entry details, plus lesson L20261103-1): check the next few listings keep who can take part and how to enter, and simple ones stay short",
+      "added": "2026-11-03"
+    },
+    {
       "task": "Check email now: check the first tap starts an Ingest run and the list reloads with the new items",
       "added": "2026-11-03"
     },
