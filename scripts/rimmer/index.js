@@ -192,7 +192,8 @@ function buildRequest({ scope, docs, today, dismissed, issueDate }) {
   const user = `${what}\n\nCalendar:\n${calendar(today)}\n\ndismissed:\n${dismissed.length ? dismissed.map((d) => `- ${d}`).join('\n') : '(none)'}\n\n${body}`;
   return {
     model: MODEL(),
-    max_tokens: 4000,
+    // Opus thinks before answering: 4000 cut off the first listings run (3 Nov) with no findings.
+    max_tokens: 16000,
     system: SYSTEM,
     tools: [TOOL],
     messages: [{ role: 'user', content: user }],
@@ -248,6 +249,8 @@ async function run(scope, { g, client, nowMs = Date.now() } = {}) {
   const req = buildRequest({ scope, docs, today: ukDate(nowMs), dismissed: dismissedFor(rows, scope, nowMs), issueDate });
   const { res, block } = await callTool(client, req, TOOL.name);
   if (!block) throw new Error(`Claude gave no findings (stop: ${res && res.stop_reason})`);
+  // A cut-off answer is not "no problems": fail, leaving earlier findings open.
+  if (res.stop_reason === 'max_tokens') throw new Error('Claude ran out of room before finishing (max_tokens); nothing written');
   const findings = cleanFindings(block.input, scope, docs);
   // A finding with a fix on the way (asked, proposed, applying) is left for Jon to finish.
   const old = rows.filter((r) => str(r.scope) === scope && str(r.status) === 'open' && !BUSY_FIX.includes(str(r.fix_status)));
@@ -265,7 +268,7 @@ async function main() {
   const scope = str(process.env.CHECK_SCOPE || process.argv[2] || 'newsletter').toLowerCase();
   const g = require('../ingest/google');
   const Anthropic = require('@anthropic-ai/sdk');
-  await run(scope, { g, client: new Anthropic({ maxRetries: 2, timeout: 180000 }) });
+  await run(scope, { g, client: new Anthropic({ maxRetries: 2, timeout: 600000 }) });
 }
 
 if (require.main === module) {
