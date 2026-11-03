@@ -2,11 +2,6 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD.",
   "tasks": [
     {
-      "task": "Kryten's quick Sheet access (/k): Jon to add the KRYTEN_TOKEN secret in Cloudflare and in the cloud environment, and allow approvals.lenches.workers.dev there; then Kryten tests a read and a write from a new session",
-      "waiting": "Jon",
-      "added": "2026-11-04"
-    },
-    {
       "task": "Rimmer's same-run fixes: on the next listings run (Sun 19:17), check how many findings arrive with a fix ready, that the dates/links/removals proposed are right, and note the extra Opus tokens in the log line \"Holly's fixes\"",
       "added": "2026-11-04"
     },
