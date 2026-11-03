@@ -2,6 +2,7 @@
 // Browser check of an "Already listed" submission (ui/client.js listedBox / mergeForm, 3 Nov):
 // the banner, Add details with Holly's proposal (editable) posting merge with the fields, and
 // Approve asking first. Mock API, desktop and phone. Saves screenshots (SHOTS=dir).
+// Also Submissions' Check email now (ingest-now, then the Ingest run watched in Activity's runs).
 // Run: node worker/test/ui-listed.check.mjs
 import http from 'node:http';
 import assert from 'node:assert/strict';
@@ -41,6 +42,7 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/admin/app.css') return send(CLIENT_CSS, 'text/css');
   if (url.pathname === '/admin/api/session') return send({ email: 'admin@example.org', csrf: 'c' });
   if (url.pathname === '/admin/api/state') return send(stateData());
+  if (url.pathname === '/admin/api/runs') return send({ runs: [{ name: 'Ingest', status: 'completed', conclusion: 'success', started: new Date().toISOString() }] });
   if (req.method === 'GET') return send({});
   let b = '';
   for await (const ch of req) b += ch;
@@ -60,6 +62,13 @@ try {
     const navBtn = page.locator('nav.side button', { hasText: 'Submissions' });
     if (!(await navBtn.isVisible())) await page.locator('button[aria-label*="enu"]').first().click().catch(() => {});
     await navBtn.click();
+    // Check email now (3 Nov): starts the ingest run, then reloads when the Ingest run finishes.
+    await page.getByRole('button', { name: 'Check email now' }).click();
+    await page.getByRole('button', { name: /Checking email/ }).waitFor();
+    assert.ok(posts.some((x) => x.path === '/admin/api/ingest-now'), `${name}: Check email now posts ingest-now`);
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `ingest-${name}.png`), fullPage: false });
+    await page.getByRole('button', { name: 'Check email now' }).waitFor({ timeout: 30000 });
+    posts.length = 0;
     const box = page.locator('section[aria-label="Already listed"]').first();
     await box.waitFor();
     const text = await box.innerText();

@@ -526,9 +526,48 @@ export const CLIENT_JS = String.raw`
 
   function isFlagged(r) { return Boolean(str(r.policy_flags)) || truthy(r.people_in_image) || truthy(r.political_commercial); }
 
+  // Check email now (3 Nov): runs the usual ingest (POST /admin/api/ingest-now), then watches
+  // Activity's runs every 15 seconds for that Ingest run; when it finishes the list reloads and
+  // says how many new items arrived. Gives up watching after 10 minutes (see Activity).
+  var INGEST_POLL_MS = 15000;
+  async function checkEmail() {
+    if (S.ingestBusy) return;
+    var r = await api('/admin/api/ingest-now', {});
+    if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); return; }
+    toast(r.json.message || 'Checking email');
+    var started = Date.now();
+    var before = {};
+    ((S.data && S.data.pending && S.data.pending.rows) || []).forEach(function (x) { before[x.id] = true; });
+    S.ingestBusy = { at: started };
+    render();
+    var tries = 0;
+    var finish = async function (text, bad) {
+      S.ingestBusy = false;
+      await load(true);
+      var fresh = ((S.data && S.data.pending && S.data.pending.rows) || []).filter(function (x) { return !before[x.id]; }).length;
+      toast(text || (fresh ? 'Email checked: ' + fresh + ' new item' + (fresh === 1 ? '' : 's') : 'Email checked: nothing new'), bad);
+      render();
+    };
+    var tick = async function () {
+      tries += 1;
+      var res = await api('/admin/api/runs');
+      var runs = (res.ok && res.json.runs) || [];
+      var mine = runs.filter(function (x) { return x.name === 'Ingest' && Date.parse(x.started) >= started - 60000; })[0];
+      if (mine && mine.status === 'completed') {
+        return finish(mine.conclusion === 'success' ? '' : 'The email check ended "' + str(mine.conclusion) + '": see Activity', mine.conclusion !== 'success');
+      }
+      if (tries * INGEST_POLL_MS >= 600000) return finish('Still checking email: see Activity for the Ingest run', true);
+      setTimeout(tick, INGEST_POLL_MS);
+    };
+    setTimeout(tick, INGEST_POLL_MS);
+  }
+
   // All / Urgent / Flagged filter the queue; Previous submissions shows decided items (historyView).
   function queueBar() {
+    var busy = S.ingestBusy;
     return h('div', { class: 'toolbar' },
+      h('button', { class: 'btn', disabled: busy ? true : null, title: 'Reads new mail in the Pipeline label now, instead of waiting for the next run (every two hours)', onclick: checkEmail },
+        busy ? 'Checking email… (since ' + new Date(busy.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ')' : 'Check email now'),
       h('div', { class: 'seg', role: 'group', 'aria-label': 'Filter' }, [['all', 'All'], ['urgent', 'Urgent'], ['flagged', 'Flagged'], ['previous', 'Previous submissions']].map(function (f) {
         return h('button', { 'aria-pressed': S.filter === f[0] ? 'true' : 'false', onclick: function () {
           if (f[0] === 'previous') { S.history = null; S.hiShown = 25; }
