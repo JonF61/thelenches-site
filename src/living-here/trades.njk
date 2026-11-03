@@ -28,12 +28,13 @@ seoTitle: "Local trades in and around the Lenches — plumbers, builders, electr
       <div class="card">
         <h3>{{ t.name }}</h3>
         <dl class="tr-facts small">
-          <dt>Does</dt><dd>{{ t.what }}</dd>
-          <dt>Covers</dt><dd>{{ t.covers }}</dd>
+          {% if t.what %}<dt>Does</dt><dd>{{ t.what }}</dd>{% endif %}
+          {% if t.covers %}<dt>Covers</dt><dd>{{ t.covers }}</dd>{% endif %}
           {% if t.base %}<dt>Based</dt><dd>{{ t.base }}</dd>{% endif %}
           {% if t.contact %}<dt>Contact</dt><dd>{{ t.contact }}</dd>{% endif %}
-          {% if t.phone %}<dt>Phone</dt><dd><a href="tel:{{ t.phone | replace(' ', '') }}">{{ t.phone }}</a></dd>{% endif %}
+          {% if t.phone %}<dt>Phone</dt><dd><a href="tel:{{ t.phone | replace(' ', '') }}">{{ t.phone }}</a>{% if t.phone2 %} or <a href="tel:{{ t.phone2 | replace(' ', '') }}">{{ t.phone2 }}</a>{% endif %}</dd>{% endif %}
           {% if t.email %}<dt>Email</dt><dd><a href="mailto:{{ t.email }}">{{ t.email }}</a></dd>{% endif %}
+          {% if t.other %}<dt>Contact</dt><dd>{{ t.other }}</dd>{% endif %}
           {% if t.website %}<dt>Website</dt><dd><a href="{{ t.website.url }}">{{ t.website.text }}</a></dd>{% endif %}
         </dl>
       </div>

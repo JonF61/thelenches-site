@@ -9,6 +9,38 @@
       "phone": "07956 077775",
       "email": "b.tomesandson@gmail.com",
       "base": "Norton, Evesham"
+    },
+    {
+      "name": "Andrew Smith Chimney Sweep",
+      "trade": "Chimney sweeps",
+      "base": "Inkberrow",
+      "phone": "07789 721303",
+      "phone2": "01386 793248",
+      "website": {
+        "text": "inkberrowservices.co.uk",
+        "url": "https://www.inkberrowservices.co.uk"
+      }
+    },
+    {
+      "name": "Stocky Sweeps Chimney Services",
+      "trade": "Chimney sweeps",
+      "what": "Qualified, registered and insured; CCTV inspections, nest removal, rotary power and manual sweeping",
+      "other": "Message them on Facebook (Stocky Sweeps Chimney Services)"
+    },
+    {
+      "name": "Daran Collins",
+      "trade": "Chimney sweeps",
+      "phone": "07771 667406"
+    },
+    {
+      "name": "Frank",
+      "trade": "Chimney sweeps",
+      "phone": "07544 510726"
+    },
+    {
+      "name": "Jeremy",
+      "trade": "Chimney sweeps",
+      "phone": "07854 522453"
     }
   ]
 }
