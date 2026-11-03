@@ -87,5 +87,12 @@ assert.equal(c.htmlToText('<table><tr><td>The Club</td><td></td><td>Lenches</td>
   assert.equal(appended.length, 1);
   assert.equal(out[0].target, 'listings pages');
   await assert.rejects(c.run('bogus', { g, client }), /Unknown scope/);
+  // A cut-off answer (max_tokens) fails and replaces nothing (3 Nov: 0 findings at 4000 tokens).
+  updates.length = 0; appended = null;
+  const cut = { messages: { create: async () => ({ stop_reason: 'max_tokens', usage: {}, content: [{ type: 'tool_use', name: 'report_findings', input: {} }] }) } };
+  await assert.rejects(c.run('listings', { g, client: cut, nowMs: now }), /ran out of room/);
+  assert.deepEqual(updates, []);
+  assert.equal(appended, null);
+  assert.ok(sent.max_tokens >= 16000, 'room to think');
   console.log('rimmer: all tests passed');
 })().catch((e) => { console.error(e); process.exit(1); });

@@ -139,7 +139,7 @@ function fixRequest(finding, note, cands) {
     instruction: note || '(none: use the suggestion if it needs no new facts)',
     candidates: cands.map((c) => ({ key: c.key, label: c.label, official: !!c.official, fields: c.fields })),
   }, null, 1);
-  return { model: MODEL(), max_tokens: 2000, system: SYSTEM, tools: [TOOL], messages: [{ role: 'user', content: user }] };
+  return { model: MODEL(), max_tokens: 8000, system: SYSTEM, tools: [TOOL], messages: [{ role: 'user', content: user }] };
 }
 
 // Phone numbers, emails, links and other figures in the new text that are not in the old text or
@@ -222,8 +222,8 @@ async function propose(id, { g, client, root = ROOT }) {
   if (!cands.length) {
     result = { ok: false, reason: 'No listing, regular activity or website update holds these words: it may come from a page template or the layout. Send it to Kryten.' };
   } else {
-    const { block } = await callTool(client, fixRequest(row, note, cands), TOOL.name);
-    result = block ? checkProposal(block.input, cands, note) : { ok: false, reason: 'Holly gave no answer. Try Fix again.' };
+    const { res, block } = await callTool(client, fixRequest(row, note, cands), TOOL.name);
+    result = block && res.stop_reason !== 'max_tokens' ? checkProposal(block.input, cands, note) : { ok: false, reason: 'Holly gave no answer. Try Fix again.' };
   }
   await g.updateRow(TAB, row._row, result.ok
     ? { fix_status: 'proposed', fix_source: result.source, fix_label: result.label, fix_field: result.field, fix_old: result.old, fix_new: result.new, fix_reason: result.reason }
@@ -282,7 +282,7 @@ async function main() {
   if (action !== 'propose') throw new Error(`Unknown action "${action}"`);
   const Anthropic = require('@anthropic-ai/sdk');
   try {
-    return await propose(id, { g, client: new Anthropic({ maxRetries: 2, timeout: 120000 }) });
+    return await propose(id, { g, client: new Anthropic({ maxRetries: 2, timeout: 300000 }) });
   } catch (e) {
     const row = await findRow(g, id).catch(() => null);
     if (row) await g.updateRow(TAB, row._row, { fix_status: 'cannot', fix_reason: 'Something went wrong while Holly was looking. Try Fix again.' });
