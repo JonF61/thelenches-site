@@ -175,7 +175,7 @@ async function run({ action, id, ms = Date.now() }, deps = { g, applyListRequest
   return done;
 }
 
-module.exports = { run, confirmEmail, alreadyEmail, heldEmail, TAB, HEADERS, LINK_DAYS, KEEP_DAYS };
+module.exports = { run, confirmEmail, alreadyEmail, heldEmail, emailHtml, stamp, ageDays, TAB, HEADERS, LINK_DAYS, KEEP_DAYS };
 
 if (require.main === module) {
   run({ action: str(process.env.ACTION), id: str(process.env.SIGNUP_ID) }).catch((err) => {

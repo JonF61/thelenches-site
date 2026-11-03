@@ -14,6 +14,9 @@ on:
       - "src/_data/transport.json"
       # Bundled into the admin panel's Summary page (worker/src/admin/summary.js).
       - "src/_data/onthisday.json"
+      # Bundled so the Recommend buttons only accept listed entries (worker/src/recommend.js).
+      - "src/_data/trades.json"
+      - "src/_data/eat.json"
   workflow_dispatch:
 
 permissions:

@@ -8,6 +8,7 @@
   ],
   "places": [
     {
+      "id": "the-anchor-inn",
       "name": "The Anchor Inn",
       "area": "Nearby villages",
       "where": "Wyre Piddle",
@@ -17,6 +18,7 @@
       "note": "Terraced garden above the River Avon"
     },
     {
+      "id": "bishampton-village-store-cafe",
       "name": "Bishampton Village Store & Café",
       "area": "Nearby villages",
       "where": "Bishampton",
@@ -26,6 +28,7 @@
       "note": "Village shop and post office"
     },
     {
+      "id": "boot-inn",
       "name": "Boot Inn",
       "area": "Nearby villages",
       "where": "Flyford Flavell",
@@ -34,6 +37,7 @@
       "phone": "01386 462658"
     },
     {
+      "id": "bulls-head",
       "name": "Bulls Head",
       "area": "Nearby villages",
       "where": "Inkberrow",
@@ -42,6 +46,7 @@
       "phone": "01386 792233"
     },
     {
+      "id": "chequers-inn",
       "name": "Chequers Inn",
       "area": "Nearby villages",
       "where": "Fladbury",
@@ -54,6 +59,7 @@
       }
     },
     {
+      "id": "clive-s-of-cropthorne",
       "name": "Clive's of Cropthorne",
       "area": "Nearby villages",
       "where": "Cropthorne",
@@ -62,6 +68,7 @@
       "phone": "01386 860439"
     },
     {
+      "id": "mysuru",
       "name": "Mysuru",
       "area": "Nearby villages",
       "where": "Cockshot Lane, Kington",
@@ -74,6 +81,7 @@
       "food": "Eat in or takeaway"
     },
     {
+      "id": "old-bull-inn",
       "name": "Old Bull Inn",
       "area": "Nearby villages",
       "where": "Inkberrow",
@@ -84,6 +92,7 @@
       "dogs": true
     },
     {
+      "id": "old-chestnut-tree",
       "name": "Old Chestnut Tree",
       "area": "Nearby villages",
       "where": "Manor Road, Lower Moor",
@@ -91,6 +100,7 @@
       "phone": "01386 860380"
     },
     {
+      "id": "the-ounce-at-the-dolphin",
       "name": "The Ounce at the Dolphin",
       "area": "Nearby villages",
       "where": "Bishampton",
@@ -100,6 +110,7 @@
       "food": "Steak restaurant"
     },
     {
+      "id": "the-pantry-at-rush-farm",
       "name": "The Pantry at Rush Farm",
       "area": "Nearby villages",
       "where": "Stockwood Business Park, Inkberrow",
@@ -107,6 +118,7 @@
       "food": "Café and farm shop"
     },
     {
+      "id": "chadbury-farm-shop-cafe",
       "name": "Chadbury Farm Shop & Café",
       "area": "Harvington and Norton",
       "where": "Chadbury, between Norton and Evesham",
@@ -115,6 +127,7 @@
       "phone": "01386 446705"
     },
     {
+      "id": "coach-and-horses",
       "name": "Coach and Horses",
       "area": "Harvington and Norton",
       "where": "Harvington",
@@ -124,6 +137,7 @@
       "garden": true
     },
     {
+      "id": "golden-cross",
       "name": "Golden Cross",
       "area": "Harvington and Norton",
       "where": "Village Street, Harvington",
@@ -134,6 +148,7 @@
       "phone": "01386 304505"
     },
     {
+      "id": "hillers-garden-cafe",
       "name": "Hillers Garden Café",
       "area": "Harvington and Norton",
       "where": "Dunnington, near Salford Priors",
@@ -142,6 +157,7 @@
       "phone": "01789 772771"
     },
     {
+      "id": "karma-salford-hall",
       "name": "Karma Salford Hall",
       "area": "Harvington and Norton",
       "where": "Abbots Salford",
@@ -150,6 +166,7 @@
       "phone": "01386 871300"
     },
     {
+      "id": "norton-grange",
       "name": "Norton Grange",
       "area": "Harvington and Norton",
       "where": "Norton",
@@ -163,6 +180,7 @@
       }
     },
     {
+      "id": "vineyard-inn",
       "name": "Vineyard Inn",
       "area": "Harvington and Norton",
       "where": "Abbots Salford",
@@ -170,6 +188,7 @@
       "phone": "01386 870217"
     },
     {
+      "id": "apple-barn-restaurant",
       "name": "Apple Barn Restaurant",
       "area": "Evesham",
       "where": "Evesham Garden Centre",
@@ -178,6 +197,7 @@
       "note": "No dogs"
     },
     {
+      "id": "the-fleece-inn",
       "name": "The Fleece Inn",
       "area": "Evesham",
       "where": "Bretforton",
@@ -189,6 +209,7 @@
       }
     },
     {
+      "id": "ivy-inn",
       "name": "Ivy Inn",
       "area": "Evesham",
       "where": "North Littleton",
@@ -201,6 +222,7 @@
       }
     },
     {
+      "id": "orchard-beefeater",
       "name": "Orchard Beefeater",
       "area": "Evesham",
       "where": "Twyford roundabout, Evesham",
@@ -208,6 +230,7 @@
       "phone": "01386 444300"
     },
     {
+      "id": "regal-cinema",
       "name": "Regal Cinema",
       "area": "Evesham",
       "where": "Port Street",
@@ -216,6 +239,7 @@
       "food": "Coffee shop by day, wine bar in the evening"
     },
     {
+      "id": "thai-emerald",
       "name": "Thai Emerald",
       "area": "Evesham",
       "where": "High Street, Evesham",
@@ -223,6 +247,7 @@
       "phone": "01386 49788"
     },
     {
+      "id": "wayside-farm-shop-tearoom",
       "name": "Wayside Farm Shop & Tearoom",
       "area": "Evesham",
       "where": "Wickhamford",
@@ -234,6 +259,7 @@
       "food": "Breakfast and snacks"
     },
     {
+      "id": "the-wood-norton",
       "name": "The Wood Norton",
       "area": "Evesham",
       "where": "Wood Norton, between Evesham and Fladbury",
@@ -246,6 +272,7 @@
       }
     },
     {
+      "id": "angel-inn",
       "name": "Angel Inn",
       "area": "Pershore",
       "where": "High Street",
