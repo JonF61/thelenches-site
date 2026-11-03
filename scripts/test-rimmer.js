@@ -1,13 +1,13 @@
-// scripts/test-checker.js: offline test of the Checker (scripts/checker): text from HTML, the
+// scripts/test-rimmer.js: offline test of Rimmer (scripts/rimmer): text from HTML, the
 // request it sends Claude, cleaning findings, dismissed ones passed back, and a whole run with
 // the Sheet and Claude mocked (old open findings replaced, new ones appended).
-// Run: node scripts/test-checker.js (the listings/site parts need an Eleventy build in _site).
+// Run: node scripts/test-rimmer.js (the listings/site parts need an Eleventy build in _site).
 'use strict';
 
 const assert = require('assert/strict');
 const fs = require('fs');
 const path = require('path');
-const c = require('./checker');
+const c = require('./rimmer');
 
 // htmlToText
 const t = c.htmlToText('<h2>Events</h2><p>Quiz &amp; chips <a href="https://ex.org/q">Book here</a>, '
@@ -50,12 +50,15 @@ assert.deepEqual(c.dismissedFor(rows, 'newsletter', now), ['newsletter · N: N']
 const nr = c.newRows([{ severity: 'check', page: 'newsletter', where: 'w', quote: '', problem: 'p', suggestion: '' }], { scope: 'newsletter', target: '2026-11-05', nowMs: now });
 assert.equal(nr[0].id, 'K202611041900-n1');
 assert.equal(nr[0].status, 'open');
-assert.deepEqual(Object.keys(nr[0]).sort(), [...c.HEADERS].sort());
+for (const k of Object.keys(nr[0])) assert.ok(c.HEADERS.includes(k), k);
+// mailto: targets are shown; table cells are not pipe-separated (3 Nov: two false alarms).
+assert.equal(c.htmlToText('<p><a href="mailto:bids@club.org">Bid: email the club</a></p>'), 'Bid: email the club (bids@club.org)');
+assert.equal(c.htmlToText('<table><tr><td>The Club</td><td></td><td>Lenches</td></tr></table>'), 'The Club Lenches');
 
 // A whole listings run, Sheet and Claude mocked.
 (async () => {
   if (!fs.existsSync(path.join(__dirname, '..', '_site', 'events', 'index.html'))) {
-    console.log('checker: run Eleventy first for the run test; other tests passed');
+    console.log('rimmer: run Eleventy first for the run test; other tests passed');
     return;
   }
   const sheet = [
@@ -65,7 +68,7 @@ assert.deepEqual(Object.keys(nr[0]).sort(), [...c.HEADERS].sort());
   const updates = [];
   let appended = [];
   const g = {
-    ensureTab: async (tab, headers) => { assert.equal(tab, 'Checker'); assert.deepEqual(headers, c.HEADERS); },
+    ensureTab: async (tab, headers) => { assert.equal(tab, 'Rimmer'); assert.deepEqual(headers, c.HEADERS); },
     readTable: async () => sheet,
     updateRow: async (tab, row, fields) => updates.push([row, fields]),
     appendRows: async (tab, objs) => { appended = objs; },
@@ -84,5 +87,5 @@ assert.deepEqual(Object.keys(nr[0]).sort(), [...c.HEADERS].sort());
   assert.equal(appended.length, 1);
   assert.equal(out[0].target, 'listings pages');
   await assert.rejects(c.run('bogus', { g, client }), /Unknown scope/);
-  console.log('checker: all tests passed');
+  console.log('rimmer: all tests passed');
 })().catch((e) => { console.error(e); process.exit(1); });

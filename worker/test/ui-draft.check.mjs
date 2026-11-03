@@ -90,7 +90,7 @@ try {
     await page.clock.install();
     await page.goto(`${base}/admin`);
     const menu = (await page.locator('nav.side button').allInnerTexts()).map((t) => t.replace(/\s*\d+$/, '').trim());
-    assert.deepEqual(menu.slice(0, 5), ['Summary', 'Newsletter draft', 'Newsletter stats', 'Site visitors', 'Submissions']);
+    assert.deepEqual(menu.slice(0, 6), ['Summary', 'Autonomy', 'Newsletter draft', 'Newsletter stats', 'Site visitors', 'Submissions']);
     // The top bar: Newsletter chip with its Draft link; no Feedback chip.
     const chip = page.locator('.top .chip', { hasText: 'Newsletter' });
     assert.match(await chip.innerText(), /2026-10-22 · sent[\s\S]*Draft Thu 29 Oct/);
@@ -98,6 +98,11 @@ try {
     await chip.locator('button', { hasText: 'Draft' }).click();
     const main = page.locator('.main');
     await main.locator('iframe.draft-frame').waitFor();
+    // Full height (3 Nov): the frame grows to the issue, so the page scrolls as one, Rimmer's card above it.
+    await page.waitForFunction(() => { const f = document.querySelector('iframe.draft-frame'); return f && f.style.height && parseInt(f.style.height, 10) > 900; });
+    const box = await main.locator('iframe.draft-frame').boundingBox();
+    const above = await main.locator('.card.rimmer').boundingBox();
+    assert.ok(above && above.y < box.y, 'Rimmer card above the draft');
     const text = await main.innerText();
     assert.match(text, /^The next newsletter as it would be built now/m);
     assert.match(text, /Draft for Thu 29 Oct/);

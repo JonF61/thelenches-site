@@ -1,8 +1,9 @@
-// worker/test/ui-checker.check.mjs
-// Browser check of the Checker (ui/client.js checkerCard) against a mock API, on desktop and
-// phone sizes: Summary lists the open findings with Dismiss (one POST, finding gone), Health shows
-// the card with its three Check buttons, and Check posts the scope and shows the new findings.
-// Saves screenshots (SHOTS=dir). Run: node worker/test/ui-checker.check.mjs
+// worker/test/ui-rimmer.check.mjs
+// Browser check of Rimmer (ui/client.js rimmerCard) against a mock API, on desktop and phone
+// sizes: Summary lists the open findings; Fix… with an instruction asks Holly (propose), her
+// proposal shows Now/After with Apply (confirm) and the finding goes once applied; Send to Kryten
+// moves one to the Kryten list; Dismiss; Health's three Check buttons and Check showing new findings.
+// Saves screenshots (SHOTS=dir). Run: node worker/test/ui-rimmer.check.mjs
 import http from 'node:http';
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -13,7 +14,7 @@ import { CLIENT_CSS } from '../src/admin/ui/css.js';
 const require = createRequire(import.meta.url);
 let chromium;
 try { ({ chromium } = require('playwright')); } catch {
-  console.log('ui-checker: Playwright not installed here, skipped');
+  console.log('ui-rimmer: Playwright not installed here, skipped');
   process.exit(0);
 }
 const SHOTS = process.env.SHOTS || '';
@@ -31,12 +32,13 @@ const summary = {
   issue: { date: '2026-11-05', deadline: '2026-11-04 18:00', deadlineAt: '2026-11-04T18:00:00.000Z', status: '', row: 0, onThisDay: 'x', events: 0, fresh: 0 },
   lastSent: null,
 };
-const F = (id, scope, severity, page, where, problem, extra = {}) => ({ id, created_at: '2026-11-01 19:17', scope, target: '', page, where, severity, problem, quote: '', suggestion: '', ...extra });
-let checker;
+const F = (id, scope, severity, page, where, problem, extra = {}) => ({ id, created_at: '2026-11-01 19:17', scope, target: '', page, where, severity, problem, quote: '', suggestion: '', fix_status: '', fix_note: '', fix_label: '', fix_field: '', fix_old: '', fix_new: '', fix_reason: '', ...extra });
+let rimmer;
 let posts;
 const reset = () => {
   posts = [];
-  checker = {
+  rimmer = {
+    kryten: [],
     last: { newsletter: '2026-11-01 18:37', listings: '2026-11-01 19:17' },
     open: [
       F('K1-n1', 'newsletter', 'problem', 'newsletter', 'Website update', 'The same two pages are announced twice.', { quote: 'There are two new pages', suggestion: 'Remove one of the two.' }),
@@ -52,14 +54,34 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'POST') {
     const body = await new Promise((r) => { let b = ''; req.on('data', (c) => { b += c; }); req.on('end', () => r(JSON.parse(b || '{}'))); });
     posts.push([url.pathname, body]);
-    if (url.pathname === '/admin/api/checker-dismiss') {
-      checker.open = checker.open.filter((f) => f.id !== body.id);
+    if (url.pathname === '/admin/api/rimmer-dismiss') {
+      rimmer.open = rimmer.open.filter((f) => f.id !== body.id);
       return send({ ok: true, message: 'Dismissed' });
     }
-    if (url.pathname === '/admin/api/checker-run') {
+    if (url.pathname === '/admin/api/rimmer-kryten') {
+      const f = rimmer.open.find((x) => x.id === body.id);
+      rimmer.open = rimmer.open.filter((x) => x.id !== body.id);
+      rimmer.kryten.unshift({ ...f, fix_note: body.note });
+      return send({ ok: true, message: 'Sent to Kryten' });
+    }
+    if (url.pathname === '/admin/api/rimmer-fix') {
+      const f = rimmer.open.find((x) => x.id === body.id);
+      if (body.op === 'propose') {
+        f.fix_status = 'asked';
+        setTimeout(() => Object.assign(f, { fix_status: 'proposed', fix_label: 'Event: Quiz night', fix_field: 'body', fix_old: 'Tickets from Fran.', fix_new: 'Tickets from Fran on 01386 123456.', fix_reason: 'Added the number you gave.' }), 50);
+        return send({ ok: true, value: 'asked', message: 'Holly is drafting' });
+      }
+      if (body.op === 'apply') {
+        f.fix_status = 'applying';
+        setTimeout(() => { rimmer.open = rimmer.open.filter((x) => x.id !== body.id); }, 50);
+        return send({ ok: true, value: 'applying', message: 'Applying' });
+      }
+      return send({ ok: false }, 'application/json', 400);
+    }
+    if (url.pathname === '/admin/api/rimmer-run') {
       setTimeout(() => {
-        checker.last = { ...checker.last, [body.scope]: '2026-11-02 10:00' };
-        checker.open.push(F('K2-s1', body.scope, 'problem', '/bins/', 'Bin days', 'Two different collection days are given.'));
+        rimmer.last = { ...rimmer.last, [body.scope]: '2026-11-02 10:00' };
+        rimmer.open.push(F('K2-s1', body.scope, 'problem', '/bins/', 'Bin days', 'Two different collection days are given.'));
       }, 100);
       return send({ ok: true, message: 'Checking' });
     }
@@ -71,7 +93,7 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/admin/api/session') return send({ email: 'admin@example.org', csrf: 'c' });
   if (url.pathname === '/admin/api/state') return send(stateData());
   if (url.pathname === '/admin/api/summary') return send(summary);
-  if (url.pathname === '/admin/api/checker') return send(checker);
+  if (url.pathname === '/admin/api/rimmer') return send(rimmer);
   return send({ error: 'nf' }, 'application/json', 404);
 });
 await new Promise((r) => server.listen(0, r));
@@ -88,35 +110,56 @@ try {
     await page.addInitScript(() => { const st = window.setTimeout; window.setTimeout = (f, ms, ...a) => st(f, Math.min(ms, 200), ...a); });
     await page.goto(`${base}/admin`);
     const main = page.locator('.main');
-    const card = main.locator('.card.checker');
+    const card = main.locator('.card.rimmer');
     await card.locator('.finding').first().waitFor();
     let text = await card.innerText();
-    assert.match(text, /Checker \(2\)/);
+    assert.match(text, /Rimmer \(2\)/);
     assert.match(text, /Problem\s+Website update\s+The same two pages are announced twice\.\s+"There are two new pages"\s+Suggested fix: Remove one of the two\./);
     assert.match(text, /Check\s+\/events\/ · Quiz night/);
     assert.match(text, /Newsletter last checked/);
     const wide = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     assert.equal(wide, false, 'no sideways scroll');
-    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `checker-summary-${name}.png`), fullPage: true });
-    await card.locator('.finding', { hasText: 'Quiz night' }).locator('button', { hasText: 'Dismiss' }).click();
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `rimmer-summary-${name}.png`), fullPage: true });
+    // Fix… with an instruction, Holly's proposal, Apply.
+    page.on('dialog', (d) => d.accept());
+    const quiz = card.locator('.finding', { hasText: 'Quiz night' });
+    await quiz.locator('button', { hasText: 'Fix…' }).click();
+    await quiz.locator('textarea').fill("Fran's number is 01386 123456");
+    await quiz.locator('button', { hasText: 'Ask Holly for a fix' }).click();
+    assert.deepEqual(posts.at(-1), ['/admin/api/rimmer-fix', { id: 'K1-l1', op: 'propose', note: "Fran's number is 01386 123456", expected: '' }]);
+    await quiz.locator('.fix-proposal').waitFor();
+    assert.match(await quiz.innerText(), /Holly's fix: Event: Quiz night \(body\)\s+Now\s+Tickets from Fran\.\s+After\s+Tickets from Fran on 01386 123456\./);
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `rimmer-fix-${name}.png`), fullPage: true });
+    await quiz.locator('button', { hasText: 'Apply' }).click();
+    assert.deepEqual(posts.at(-1), ['/admin/api/rimmer-fix', { id: 'K1-l1', op: 'apply', note: '', expected: 'proposed' }]);
     await card.locator('.finding', { hasText: 'Quiz night' }).waitFor({ state: 'detached' });
-    assert.deepEqual(posts.at(-1), ['/admin/api/checker-dismiss', { id: 'K1-l1' }]);
-    assert.match(await card.innerText(), /Checker \(1\)/);
+    assert.match(await card.innerText(), /Rimmer \(1\)/);
+    // Send to Kryten
+    await card.locator('.finding', { hasText: 'Website update' }).locator('button', { hasText: 'Send to Kryten' }).click();
+    assert.deepEqual(posts.at(-1), ['/admin/api/rimmer-kryten', { id: 'K1-n1', note: '' }]);
+    // Nothing open now: Summary folds Rimmer into "No action needed".
+    await main.locator('.sum-clear', { hasText: 'Rimmer' }).waitFor();
 
     // Health: the card with all three buttons; Check whole site shows the new finding.
     await page.locator('button', { hasText: 'Diagnostic' }).first().click();
-    const hc = main.locator('.card.checker');
+    const hc = main.locator('.card.rimmer');
     await hc.waitFor();
+    assert.match(await hc.innerText(), /Sent to Kryten \(1\)[\s\S]*Newsletter · Website update: The same two pages/);
     for (const b of ['Check newsletter', 'Check listings', 'Check whole site']) assert.equal(await hc.locator('button', { hasText: b }).count(), 1, b);
+    await hc.locator('.finding', { hasText: 'Bin' }).waitFor({ state: 'detached' }).catch(() => {});
     await hc.locator('button', { hasText: 'Check whole site' }).click();
     await hc.locator('.finding', { hasText: 'Two different collection days' }).waitFor();
-    assert.deepEqual(posts.find((p) => p[0] === '/admin/api/checker-run'), ['/admin/api/checker-run', { scope: 'site' }]);
+    assert.deepEqual(posts.find((p) => p[0] === '/admin/api/rimmer-run'), ['/admin/api/rimmer-run', { scope: 'site' }]);
     assert.match(await hc.innerText(), /Whole site last checked/);
-    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `checker-health-${name}.png`), fullPage: true });
+    // Dismiss
+    await hc.locator('.finding', { hasText: 'Two different collection days' }).locator('button', { hasText: 'Dismiss' }).click();
+    await hc.locator('.finding', { hasText: 'Two different collection days' }).waitFor({ state: 'detached' });
+    assert.deepEqual(posts.at(-1), ['/admin/api/rimmer-dismiss', { id: 'K2-s1' }]);
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `rimmer-health-${name}.png`), fullPage: true });
     assert.deepEqual(errors, []);
     await page.close();
   }
-  console.log('ui-checker: all checks passed (desktop and phone)');
+  console.log('ui-rimmer: all checks passed (desktop and phone)');
 } finally {
   await browser.close();
   server.close();
