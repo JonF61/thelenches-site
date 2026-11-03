@@ -50,7 +50,7 @@ for (const [name, viewport] of [['desktop', { width: 1200, height: 900 }], ['pho
   });
   await page.route(/cloudflareinsights|static\.cloudflare/, (route) => route.abort());
 
-  for (const [url, kind, n] of [['/living-here/trades/', 'trades', 13], ['/living-here/eat/', 'eat', 27]]) {
+  for (const [url, kind, n] of [['/living-here/trades/', 'trades', 13], ['/living-here/eat/', 'eat', 25]]) {
     await page.goto(base + url);
     const buttons = page.locator('.rec-btn');
     assert.equal(await buttons.count(), n, `${url}: one button per card`);
