@@ -7,6 +7,8 @@
 //               draft bar's Check button)
 //   listings    the built site's listings pages (weekly)
 //   site        every page of the built site (monthly)
+// For each finding whose words are in an entry Fix… can change, Holly drafts the fix in the same run
+// (fix_status "offered"), so the panel shows Apply / Discard straight away; Jon still applies it.
 // Each run marks the same scope's earlier open findings "replaced" and adds its own. Findings
 // Jon dismissed (last 120 days) are passed back so they are not raised again.
 // Logs print counts only (logs are public). rimmer.yml runs it; listings/site need _site built.
@@ -30,6 +32,9 @@ const BUSY_FIX = ['asked', 'proposed', 'applying'];
 const DISMISSED_DAYS = 120;
 const TZ = 'Europe/London';
 const MODEL = () => process.env.RIMMER_MODEL || 'claude-opus-5-5';
+// Fixes drafted in the same run (4 Nov, Jon): Holly (Opus) drafts one per finding whose words are
+// in an entry Fix… can change, 3 at a time; RIMMER_AUTOFIX=off turns it off.
+const AUTOFIX_AT_ONCE = 3;
 
 const str = (v) => String(v ?? '').trim();
 const clip = (t, n) => { const f = str(t).replace(/\s+/g, ' '); return f.length > n ? `${f.slice(0, n - 1)}…` : f; };
@@ -241,6 +246,37 @@ function newRows(findings, { scope, target, nowMs }) {
   return findings.map((f, i) => ({ id: `${base}-${scope[0]}${i + 1}`, created_at: stamp, scope, target, ...f, status: 'open' }));
 }
 
+const autofixOn = () => !/^(off|false|0|no)$/i.test(str(process.env.RIMMER_AUTOFIX));
+
+// Holly drafts a fix for each finding Fix… could handle (its words are in a listing, regular
+// activity, website update or published submission), writing the fix_* cells onto the finding
+// before it is added. A finding with no such entry, or whose draft fails, is left for Fix….
+async function draftFixes(findings, { g, client, nowMs }) {
+  const fix = require('./fix');
+  const stats = { offered: 0, cannot: 0, skipped: 0, failed: 0, calls: 0, inTok: 0, outTok: 0 };
+  let all;
+  try { all = fix.sources({ pending: await g.readTable('Pending') }); } catch (e) { stats.failed = findings.length; return stats; }
+  const todo = findings.filter((f) => {
+    if (fix.candidates(f, all).length) return true;
+    stats.skipped += 1;
+    return false;
+  });
+  const one = async (f) => {
+    try {
+      const { result, usage } = await fix.draftFix(f, { all, client, today: ukDate(nowMs) });
+      stats.calls += 1;
+      stats.inTok += (usage && usage.input_tokens) || 0;
+      stats.outTok += (usage && usage.output_tokens) || 0;
+      Object.assign(f, fix.fixFields(result, 'offered'));
+      stats[result.ok ? 'offered' : 'cannot'] += 1;
+    } catch {
+      stats.failed += 1;
+    }
+  };
+  for (let i = 0; i < todo.length; i += AUTOFIX_AT_ONCE) await Promise.all(todo.slice(i, i + AUTOFIX_AT_ONCE).map(one));
+  return stats;
+}
+
 async function run(scope, { g, client, nowMs = Date.now() } = {}) {
   if (!SCOPES.includes(scope)) throw new Error(`Unknown scope "${scope}" (newsletter, listings or site)`);
   const { target, docs, issueDate } = await docsFor(scope, g);
@@ -252,7 +288,9 @@ async function run(scope, { g, client, nowMs = Date.now() } = {}) {
   // A cut-off answer is not "no problems": fail, leaving earlier findings open.
   if (res.stop_reason === 'max_tokens') throw new Error('Claude ran out of room before finishing (max_tokens); nothing written');
   const findings = cleanFindings(block.input, scope, docs);
-  // A finding with a fix on the way (asked, proposed, applying) is left for Jon to finish.
+  const drafted = autofixOn() ? await draftFixes(findings, { g, client, nowMs }) : null;
+  // A finding with a fix on the way (asked, proposed, applying) is left for Jon to finish; one
+  // Holly drafted in an earlier run ("offered") is replaced like any other.
   const old = rows.filter((r) => str(r.scope) === scope && str(r.status) === 'open' && !BUSY_FIX.includes(str(r.fix_status)));
   for (const r of old) await g.updateRow(TAB, r._row, { status: 'replaced' });
   const add = newRows(findings, { scope, target, nowMs });
@@ -261,6 +299,10 @@ async function run(scope, { g, client, nowMs = Date.now() } = {}) {
   console.log(`Rimmer ${scope} (${target}): ${docs.length} page(s), ${docs.reduce((n, d) => n + d.text.length, 0)} characters read; `
     + `${add.filter((f) => f.severity === 'problem').length} problem(s), ${add.filter((f) => f.severity === 'check').length} to check; `
     + `${old.length} earlier finding(s) replaced; tokens in ${u.input_tokens || 0}, out ${u.output_tokens || 0}.`);
+  if (drafted) {
+    console.log(`Holly's fixes: ${drafted.offered} drafted, ${drafted.cannot} she couldn't, ${drafted.skipped} with no entry to change, ${drafted.failed} failed; `
+      + `${drafted.calls} call(s), tokens in ${drafted.inTok}, out ${drafted.outTok}.`);
+  }
   return add;
 }
 
@@ -280,5 +322,5 @@ if (require.main === module) {
 
 module.exports = {
   run, htmlToText, pageContent, sitePages, readPages, calendar, buildRequest, cleanFindings, dismissedFor, newRows,
-  TAB, HEADERS, SCOPES, LISTING_PAGES, SYSTEM, TOOL, BUSY_FIX, ukStamp, str, clip,
+  TAB, HEADERS, SCOPES, LISTING_PAGES, SYSTEM, TOOL, BUSY_FIX, ukStamp, str, clip, draftFixes,
 };

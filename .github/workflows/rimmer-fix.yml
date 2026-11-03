@@ -2,8 +2,10 @@ name: Rimmer fix
 
 # Fix… on one of Rimmer's findings (scripts/rimmer/fix.js), from the admin panel through decide():
 #   propose (rfix)   Holly finds the entry and proposes one change; written to the Rimmer tab
-#   apply (rfix_ok)  the change is written: a repo file (committed here, then the site build) or a
-#                    Pending cell (then Publish, which rebuilds pipeline.json and the site)
+#   apply (rfix_ok)  the change is written: a repo file (committed here, then the site build; an
+#                    event whose date moved is renamed, a removed entry's file deleted; Local trades
+#                    or Where to eat also redeploy the Worker, which bundles them) or a Pending cell
+#                    (then Publish, which rebuilds pipeline.json and the site)
 # Jon's instruction is read from the Rimmer tab row, never from env (a step's env is public).
 on:
   repository_dispatch:
@@ -49,7 +51,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git add src
+          git add -A src
           if git diff --cached --quiet; then echo "No files changed."; exit 0; fi
           git config user.name "Lenches Pipeline"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -57,6 +59,12 @@ jobs:
           git pull --rebase
           git push
           gh workflow run build.yml --ref main
+
+      - name: Redeploy the Worker (Local trades or Where to eat changed)
+        if: ${{ success() && steps.fix.outputs.worker == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-worker.yml --ref main
 
       - name: Publish the corrected submission
         if: ${{ success() && steps.fix.outputs.publish == 'true' }}

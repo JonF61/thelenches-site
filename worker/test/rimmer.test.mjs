@@ -48,6 +48,14 @@ test('Fix…, Apply and Discard: stale-checked fix_status moves, decisions only 
   assert.equal(planFix(prop, { op: 'propose', expected: 'proposed' }).action, 'rfix');
   assert.equal(planFix(row('a', 'site', 'fixed'), { op: 'apply', expected: '' }).status, 409);
   assert.equal(planFix(prop, { op: 'zap', expected: 'proposed' }).status, 400);
+  // A fix Holly drafted with Rimmer's own run ("offered", 4 Nov): Apply, Discard or ask again.
+  const off = row('b', 'listings', 'open', 'problem', '', { fix_status: 'offered' });
+  assert.deepEqual(planFix(off, { op: 'apply', expected: 'offered' }), { field: 'fix_status', expected: 'offered', value: 'applying', action: 'rfix_ok' });
+  assert.deepEqual(planFix(off, { op: 'discard', expected: 'offered' }), { field: 'fix_status', expected: 'offered', value: 'discarded' });
+  assert.equal(planFix(off, { op: 'propose', expected: 'offered', note: 'It is on 6 December' }).value, 'asked');
+  assert.equal(planFix(off, { op: 'apply', expected: 'proposed' }).status, 409);
+  assert.equal(planKryten(off, '').value, 'kryten');
+  assert.equal(planDismiss(off).value, 'dismissed');
   assert.equal(planFix(undefined, { op: 'apply' }).status, 404);
 });
 

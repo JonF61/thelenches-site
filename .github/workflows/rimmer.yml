@@ -31,7 +31,7 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - name: Choose the scope
         id: scope
@@ -70,6 +70,8 @@ jobs:
           CHECK_SCOPE: ${{ steps.scope.outputs.scope }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           RIMMER_MODEL: ${{ vars.RIMMER_MODEL }}
+          RIMMER_AUTOFIX: ${{ vars.RIMMER_AUTOFIX }}
+          HOLLY_MODEL: ${{ vars.HOLLY_MODEL }}
           GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
           SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
           GMAIL_USER: jon@thelenches.org.uk
