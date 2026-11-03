@@ -1,9 +1,0 @@
-{
-  "intro": "Local tradespeople recommended by people in the Lenches. Every business here has been recommended by at least one resident and has agreed to be listed. We don't check or guarantee anyone's work, so please get quotes and ask questions as you would with anyone.",
-  "trades": [
-    { "name": "Example Plumbing & Heating", "trade": "Plumbers and heating", "contact": "Sam Example", "phone": "07700 900001", "website": { "text": "example.org", "url": "https://example.org" }, "covers": "The Lenches, Evesham", "what": "Boilers, bathrooms, leaks", "recommended": "2026-10", "count": 3 },
-    { "name": "A. N. Electrician", "trade": "Electricians", "contact": "Alex Example", "phone": "07700 900002", "covers": "The Lenches, Harvington, Pershore", "what": "Rewiring, fault finding, EV chargers", "recommended": "2026-09", "count": 1 },
-    { "name": "Green Fingers Gardening", "trade": "Gardeners", "phone": "07700 900003", "covers": "The Lenches", "what": "Mowing, hedges, clearance", "recommended": "2026-10", "count": 2 },
-    { "name": "Example Building Ltd", "trade": "Builders", "phone": "01386 000000", "website": { "text": "example.com", "url": "https://example.com" }, "covers": "Evesham area", "what": "Extensions, repairs, roofing", "recommended": "2026-08", "count": 1 }
-  ]
-}
