@@ -28,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '54';
+export const UI_VERSION = '55';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -38,7 +38,7 @@ export const CLIENT_JS = String.raw`
     picked: {}, ff: '', openF: {}, drag: null, busy: false, order: {}, shown: '' };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
-  var VIEWS = [['summary', 'Summary'], ['autonomy', 'Autonomy'], ['draft', 'Newsletter draft'], ['stats', 'Newsletter stats'], ['visitors', 'Site visitors'], ['queue', 'Submissions'], ['suggestions', 'Suggestions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
+  var VIEWS = [['summary', 'Summary'], ['draft', 'Newsletter draft'], ['stats', 'Newsletter stats'], ['visitors', 'Site visitors'], ['queue', 'Submissions'], ['suggestions', 'Suggestions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['autonomy', 'Autonomy'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
   // Health has no menu entry (28 Oct): the top bar's Diagnostic and Watchdog open it, as does Summary's Site health.
   // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
   var INTROS = {
