@@ -145,6 +145,11 @@ const FALLBACK_TYPES = ['ack', 'clarify'];
 // Stage 1 of graduated autonomy (Jon, 2 Nov 2026): outside holiday mode nothing Holly drafts
 // goes without Jon's tap, so the 24h fallback is off; holiday mode still sends at once.
 const TIMEOUT_SEND = false;
+// Jon, 4 Nov 2026: acknowledgements (with Holly's personal line), holding replies and "Now on
+// the website" emails wait for his tap too; only subscribe/unsubscribe confirmations (fixed
+// wording) still go at once. Holiday mode sends them as before. Awaiting rows of these types
+// made before holiday mode came on send at the next run while it is on.
+const HOLIDAY_SEND_TYPES = [...FALLBACK_TYPES, 'holding', 'live'];
 
 // Statuses that count as "we have replied / will reply".
 const ACTIVE = ['shadow', 'queued', 'awaiting', 'sending', 'sent'];
@@ -1009,7 +1014,7 @@ async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, sa
 
   let status = 'queued';
   if (mode === 'shadow') status = 'shadow';
-  else if (limit.over || (type === 'clarify' && !ctx.holiday)) status = 'awaiting';
+  else if (limit.over || !ctx.holiday) status = 'awaiting';
 
   const row = await appendReply(ctx, {
     ...base,
@@ -1070,7 +1075,7 @@ async function planHeld({ msg, result, ctx, mode, base, said, limit, contact, na
       policy_codes: 'holding',
       subject: replySubject(msg.subject),
       body: wrap(fill('holding'), name),
-      status: mode === 'shadow' ? 'shadow' : 'queued',
+      status: mode === 'shadow' ? 'shadow' : ctx.holiday ? 'queued' : 'awaiting',
       notes: hold ? `Holding reply: held for you (${cls.HOLD_WORDS[hold] || hold})` : 'Holding reply',
     });
   }
@@ -1086,7 +1091,7 @@ async function planHeld({ msg, result, ctx, mode, base, said, limit, contact, na
       hold ? `Held for you: ${cls.HOLD_WORDS[hold] || hold}` : '',
       why,
       `${base.class} (${base.class_confidence})${result.request ? `: ${result.request}` : ''}`,
-      holding ? 'Holding reply sent automatically' : `${limit.note}: no holding reply sent`,
+      holding ? (ctx.holiday ? 'Holding reply sent automatically' : 'Holding reply waiting for you') : `${limit.note}: no holding reply sent`,
       theyWroteNote(said),
       d.drafted ? '' : 'Draft is holding wording: edit before approving',
       d.personal ? PERSONAL_NOTE : '',
@@ -1865,8 +1870,9 @@ async function sendDueReplies(settings, holiday) {
   const rows = await g.readTable('Replies');
   const cutoff = londonDateTime(Date.now() - AWAIT_HOURS * 3600000);
   const due = rows.filter((r) => r.reply_id && r.type !== 'followup' && (r.status === 'queued'
-    || (r.status === 'awaiting' && FALLBACK_TYPES.includes(r.type || 'ack') && !heldBySenderLimit(r)
-      && (holiday || (TIMEOUT_SEND && String(r.created_at) <= cutoff)))));
+    || (r.status === 'awaiting' && !heldBySenderLimit(r)
+      && ((holiday && HOLIDAY_SEND_TYPES.includes(r.type || 'ack'))
+        || (TIMEOUT_SEND && FALLBACK_TYPES.includes(r.type || 'ack') && String(r.created_at) <= cutoff)))));
   if (!due.length) return 0;
 
   await assertSendAs();

@@ -27,7 +27,7 @@
         "normal": [
           [
             "ack",
-            "queued"
+            "awaiting"
           ]
         ],
         "holiday": [
@@ -225,7 +225,7 @@
         "normal": [
           [
             "holding",
-            "queued"
+            "awaiting"
           ],
           [
             "held",
@@ -265,7 +265,7 @@
         "normal": [
           [
             "holding",
-            "queued"
+            "awaiting"
           ],
           [
             "held",
@@ -305,7 +305,7 @@
         "normal": [
           [
             "holding",
-            "queued"
+            "awaiting"
           ],
           [
             "held",
@@ -345,7 +345,7 @@
         "normal": [
           [
             "holding",
-            "queued"
+            "awaiting"
           ],
           [
             "held",

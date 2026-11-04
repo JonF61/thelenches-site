@@ -187,9 +187,10 @@ async function testLive() {
   replies.sendDueReplies = async () => { delivered += 1; return 1; };
   try {
     const n = await live.run({ fetchPage });
-    ok(n === 1 && delivered === 1, 'one email queued and sent');
+    // Jon, 4 Nov 2026: waits for his tap outside holiday mode, so nothing is sent by the run.
+    ok(n === 1 && delivered === 0, 'one email drafted, not sent');
     const row = tables.Replies.find((r) => r.type === 'live');
-    ok(row && row.reply_id === 'a1-live-1' && row.status === 'queued' && row.thread_id === 't1', 'Replies row on the ack thread');
+    ok(row && row.reply_id === 'a1-live-1' && row.status === 'awaiting' && row.thread_id === 't1', 'Replies row on the ack thread, awaiting Jon');
     ok(tables.Pending[0].live_notified_at, 'item marked');
     ok(await live.run({ fetchPage }) === 0, 'never twice');
     tables.Pending = tables.Pending.map(({ live_notified_at, ...r }) => r); // eslint-disable-line camelcase

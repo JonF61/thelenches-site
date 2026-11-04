@@ -49,7 +49,7 @@ export const CLIENT_JS = String.raw`
     autonomy: 'Progress towards Holly acting on her own, kind by kind. Nothing here is automatic: each step up needs your tap. Ignore a decision (a test or a slip) to leave it out of the counts and of Holly\'s learning.',
     queue: 'Events and notices sent in by email or picked up from feeds, waiting for you to approve or reject. Approved items go on the website and into Thursday\'s newsletter.',
     replies: 'Holly\'s draft emails waiting for you to Approve, Edit, Redraft or Reject. Below them: emails still owed a reply, and everything already sent.',
-    owed: 'Emails that got an automatic holding reply over 2 days ago but no real answer yet. Redraft one, reply yourself, or close it.',
+    owed: 'Emails that got a holding reply over 2 days ago but no real answer yet. Redraft one, reply yourself, or close it.',
     suggestions: 'New Local trades and Where to eat entries suggested by readers through the forms on those pages, already confirmed by email. Approve adds the entry to the page as shown; Edit lets you change it first.',
     feedback: 'Comments and corrections from readers via the website\'s feedback form, to approve, reject or postpone, with Holly\'s replies to them.',
     lessons: 'Rules Holly follows in every draft. Approve or reject the weekly suggestions, edit or delete any lesson, or add your own (yours count as approved).',
@@ -114,7 +114,7 @@ export const CLIENT_JS = String.raw`
       ['Own thread', 'you wrote by hand earlier in this conversation, so Holly drafts nothing: Reply in Gmail, then Done.'],
       'Your edits and reasons teach Holly (see Holly lessons).'],
     owed: [
-      'These people got the automatic holding reply over 2 days ago and nothing since.',
+      'These people got the holding reply over 2 days ago and nothing since.',
       ['Redraft', 'Holly writes a proper answer for you to check in Replies.'],
       ['Reply in Gmail', 'answer it yourself, then close it here.']],
     feedback: [
