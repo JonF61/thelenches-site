@@ -94,6 +94,7 @@ export const CLIENT_JS = String.raw`
       ['Done already', 'you have dealt with it another way: nothing publishes and no note is sent.'],
       ['Trust this source', 'approves this item and marks the sender trusted. For now their items still wait here, marked "trusted source".'],
       ['Already listed', 'the site has this already; Add details puts any new facts into the existing entry.'],
+      ['Different sender', 'an Already listed update not from whoever sent the entry in (hand-written entries always show it): check it is genuine before adding details.'],
       ['Possible repeat', 'it may be something already sent in: check before approving.'],
       ['Official, own words', 'from a council or other official body: only typos may be corrected.'],
       ['Urgent', 'needs a decision soon (e.g. happening before the next newsletter).'],
@@ -726,6 +727,7 @@ export const CLIENT_JS = String.raw`
       b.push(h('span', { class: 'badge warn' }, FLAG_LABELS[f] || f.replace(/_/g, ' ')));
     });
     if (listedOf(r)) b.push(h('span', { class: 'badge warn' }, 'Already listed'));
+    if (listedOf(r) && listedOf(r).same_sender === false) b.push(h('span', { class: 'badge bad' }, 'Different sender'));
     else if (truthy(r.possible_repeat)) b.push(h('span', { class: 'badge warn' }, 'Possible repeat'));
     if (str(r.missing)) b.push(h('span', { class: 'badge warn' }, 'Missing: ' + str(r.missing).replace(/,/g, ', ')));
     return h('div', { class: 'badges' }, b);
@@ -764,6 +766,9 @@ export const CLIENT_JS = String.raw`
     var ch = d.changes || {};
     var keys = Object.keys(ch).filter(function (k) { return CHANGE_LABELS[k] && str(ch[k]); });
     return h('section', { class: 'note warn', 'aria-label': 'Already listed' },
+      d.same_sender === false ? h('div', null, h('strong', null, 'Sender different to original poster: '),
+        d.source === 'hand-written' ? 'this entry was added by hand, so no original sender is on record. Check the change is genuine.'
+          : 'this email is not from the address that sent the entry in. Check the change is genuine.') : null,
       h('strong', null, 'Already listed: '),
       d.url ? h('a', { href: str(d.url), target: '_blank', rel: 'noopener' }, str(d.title)) : str(d.title),
       ' (' + (LISTED_FROM[d.source] || d.source) + '; Holly ' + Math.round((Number(d.confidence) || 0) * 100) + '% sure)',

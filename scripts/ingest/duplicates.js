@@ -228,7 +228,22 @@ async function check(item, list, { messageId = '', text = '' } = {}) {
 
 // Pending notes line for a match (pure).
 function noteFor(d) {
-  return `Already listed: "${d.title}" (${d.source}, Holly ${Math.round(d.confidence * 100)}%)${d.details ? `; adds: ${d.details}` : ''}`;
+  return `Already listed: "${d.title}" (${d.source}, Holly ${Math.round(d.confidence * 100)}%)${d.details ? `; adds: ${d.details}` : ''}`
+    + (d.same_sender === false ? `; ${DIFFERENT_SENDER}` : '');
+}
+
+// Sender check (Jon, 4 Nov 2026): is this email from whoever sent the listed entry in? True
+// when the address matches the original Pending row's From, or both are on one Contacts row
+// (samePerson, e.g. replies.samePerson: other_emails). Hand-written entries have no sender on
+// record, so they count as different, as does a submission whose row can't be found (pure).
+const DIFFERENT_SENDER = 'sender different to original poster';
+const emailIn = (v) => { const m = str(v).match(/[^\s<>,;"']+@[^\s<>,;"']+/); return m ? m[0].toLowerCase() : ''; };
+function sameSender(d, fromAddress, existing = [], samePerson = () => false) {
+  const me = emailIn(fromAddress);
+  if (!d || !me || !str(d.key).startsWith('p:')) return false;
+  const row = existing.find((r) => str(r.id) === str(d.key).slice(2));
+  const orig = row ? emailIn(row.from) : '';
+  return Boolean(orig) && (orig === me || Boolean(samePerson(orig, me)));
 }
 
 const parse = (json) => { try { const o = JSON.parse(str(json)); return o && typeof o === 'object' && o.key ? o : null; } catch { return null; } };
@@ -237,6 +252,6 @@ const parse = (json) => { try { const o = JSON.parse(str(json)); return o && typ
 const listedUrl = (d) => (d && d.sure && /^https:\/\//.test(str(d.url)) ? d.url : '');
 
 module.exports = {
-  listings, candidatesFor, check, resultFrom, noteFor, parse, listedUrl, setClient, words,
-  SURE, CHANGE_FIELDS, ITEMS, PIPELINE, SYSTEM,
+  listings, candidatesFor, check, resultFrom, noteFor, parse, listedUrl, setClient, words, sameSender,
+  SURE, DIFFERENT_SENDER, CHANGE_FIELDS, ITEMS, PIPELINE, SYSTEM,
 };

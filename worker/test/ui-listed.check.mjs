@@ -21,7 +21,7 @@ const SHOTS = process.env.SHOTS || '';
 const dup = {
   key: 'h:events/2026-11-10-autumn-coffee-morning-church-lench.json', title: 'Autumn bring and buy coffee morning — Church Lench',
   url: 'https://thelenches.org.uk/events/#ev-2026-11-10-autumn-bring-and-buy-coffee-morning-church-lench', source: 'hand-written',
-  confidence: 0.93, sure: true, details: 'Entry is £3, including cake', official: false,
+  confidence: 0.93, sure: true, details: 'Entry is £3, including cake', official: false, same_sender: false,
   changes: { body: 'Celia Hall is kindly hosting a coffee morning with a bring and buy sale and a raffle, 10am to noon. Entry £3, including cake.' },
 };
 const stateData = () => ({
@@ -76,6 +76,8 @@ try {
     assert.match(text, /This email adds: Entry is £3/, `${name}: says what's new`);
     assert.match(text, /told it is already on the website/, `${name}: says what the sender was told`);
     assert.equal(await page.locator('.badge', { hasText: 'Already listed' }).count() > 0, true, `${name}: badge`);
+    assert.match(text, /Sender different to original poster: this entry was added by hand/, `${name}: sender warning`);
+    assert.equal(await page.locator('.badge', { hasText: 'Different sender' }).count() > 0, true, `${name}: different sender badge`);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `listed-${name}.png`), fullPage: false });
     // 4 Nov: no Approve (or Trust) button on an already listed item; a small link asks first.
     const card = page.locator('section[aria-label="Already listed"]').first().locator('xpath=..');
