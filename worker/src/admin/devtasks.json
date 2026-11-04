@@ -2,9 +2,8 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
-      "task": "Plan doc: add the Build history entry for PR 260 (Summary: dev tasks folded to 5 with Show more; road works dropped from Coming up)",
-      "added": "2026-11-04",
-      "kryten": true
+      "task": "Edit everything: on the first real listing edit (Edit page or the draft's Edit text), check the Listing edit run commits or publishes it, the box reaches Live ✓, and a built newsletter is rebuilt",
+      "added": "2026-11-04"
     },
     {
       "task": "Rimmer's same-run fixes: on the next listings run (Sun 19:17), check how many findings arrive with a fix ready, that the dates/links/removals proposed are right, and note the extra Opus tokens in the log line \"Holly's fixes\"",

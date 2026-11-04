@@ -8,8 +8,10 @@
 //   POST /admin/api/page-save  { path, changes: [{ old, new }] }: each old must still be one of
 //                              those blocks; new is wording and links only (cleanInline). One
 //                              commit to main with the Worker's token; build.yml publishes it.
-// Only page templates (src/*.njk, never _includes, _data or items) can change; text built
-// from data files or template logic stays greyed out on the page ("Ask Kryten").
+// Only page templates (src/*.njk, never _includes, _data or items) can change here; text built
+// from template logic stays greyed out on the page ("Ask Kryten"). Listing entries (events,
+// notices, regular activities, places to eat, trades, published submissions; tagged data-entry
+// in the templates) have their own edit box and save path: entryedit.js (4 Nov).
 
 import { github } from '../core.js';
 
@@ -280,7 +282,11 @@ export async function editorPage(env, { page, origin, csrf, version, fetcher = f
   const blocks = editableBlocks(text).map(({ tag, raw, text: t }) => ({ tag, raw, text: t })); // whole stays here
   return {
     status: 200,
-    html: editorHtml(html, { origin, site, page: p, version, data: { page: p, path, sha, csrf, blocks, live: new URL(p, site).href, api: `${origin}/admin/api/page-save`, statusApi: `${origin}/admin/api/build-status` } }),
+    html: editorHtml(html, { origin, site, page: p, version, data: {
+      mode: 'page', page: p, path, sha, csrf, blocks, live: new URL(p, site).href, site, api: `${origin}/admin/api/page-save`, statusApi: `${origin}/admin/api/build-status`,
+      // Listing entries on the page (data-entry; entryedit.js): their own edit box and save path.
+      entryApi: `${origin}/admin/api/entry`, entrySaveApi: `${origin}/admin/api/entry-save`, entryStatusApi: `${origin}/admin/api/entry-status`,
+    } }),
     csp: editorCsp(origin, site),
   };
 }

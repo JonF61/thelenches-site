@@ -36,6 +36,7 @@ export const WORKFLOW_NAMES = {
   'watchdog-alert.yml': 'Watchdog alert',
   'dependabot-check.yml': 'Dependabot check',
   'live-notice.yml': 'Now live emails',
+  'entry-edit.yml': 'Listing edit',
 };
 
 const EVENTS = {

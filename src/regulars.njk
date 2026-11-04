@@ -45,22 +45,23 @@ seoTitle: "Weekly classes and clubs in the Lenches, near Evesham"
   <section class="reg-day" id="{{ (d or 'other') | slugify }}">
     <h2>{{ d or "Day to be confirmed" }}</h2>
     {% for r in list %}
-    <div class="card reg-card" id="{{ ('reg-' + (d or 'other') + '-' + r.what + '-' + r.where) | slugify }}">
+    {%- set ek = r | entryKey %}
+    <div class="card reg-card" id="{{ ('reg-' + (d or 'other') + '-' + r.what + '-' + r.where) | slugify }}"{% if ek %} data-entry="{{ ek }}" data-label="Regular activity: {{ r.what | escape }}"{% endif %}>
       {% if r.image %}<figure class="reg-img"><a href="{{ r.image.url | url }}" data-viewer aria-label="View full flyer"><img src="{{ r.image.url | url }}" alt="{{ r.image.alt | escape }}" loading="lazy"></a></figure>{% else %}{{ { title: r.what, body: r.about, tile: r.tile } | tileSvg | safe }}{% endif %}
       <h3>{{ r.what }}{% if r.pausedUntil and r.pausedUntil > updated %} <span class="reg-break">Back {{ r.pausedUntil | longDate }}</span>{% endif %}</h3>
-      {% if r.sessions.length %}<p class="reg-when">{{ r.frequency or ("Every " + d if d else "") }}{% for x in r.sessions %}{% if not loop.first %}<br>{% elif r.frequency or d %}, {% endif %}{{ x.time }}{% if x.where %} &middot; {{ x.where }}{% endif %}{% endfor %}{% if r.note %} <span class="mut">({{ r.note }})</span>{% endif %}</p>
-      {%- else %}<p class="reg-when">{{ r.frequency or ("Every " + d if d else "") }}{% if r.time %}{% if r.frequency or d %}, {% endif %}{{ r.time }}{% endif %}{% if r.where %}{% if r.frequency or d or r.time %} &middot; {% endif %}{{ r.where }}{% endif %}{% if r.note %} <span class="mut">({{ r.note }})</span>{% endif %}</p>{% endif %}
-      {% if r.about %}<p>{{ r.about }}</p>{% endif %}
+      {% if r.sessions.length %}<p class="reg-when" data-field="frequency note">{{ r.frequency or ("Every " + d if d else "") }}{% for x in r.sessions %}{% if not loop.first %}<br>{% elif r.frequency or d %}, {% endif %}{{ x.time }}{% if x.where %} &middot; {{ x.where }}{% endif %}{% endfor %}{% if r.note %} <span class="mut">({{ r.note }})</span>{% endif %}</p>
+      {%- else %}<p class="reg-when" data-field="frequency time where note">{{ r.frequency or ("Every " + d if d else "") }}{% if r.time %}{% if r.frequency or d %}, {% endif %}{{ r.time }}{% endif %}{% if r.where %}{% if r.frequency or d or r.time %} &middot; {% endif %}{{ r.where }}{% endif %}{% if r.note %} <span class="mut">({{ r.note }})</span>{% endif %}</p>{% endif %}
+      {% if r.about %}<p data-field="about">{{ r.about }}</p>{% endif %}
       {% if r.link %}<p><a href="{{ r.link.url | url if r.link.url.startsWith('/') else r.link.url }}">{{ r.link.text }} &rarr;</a></p>{% endif %}
       {% set contact = [r.phone, ('<a href="mailto:' + r.email + '">' + r.email + '</a>') if r.email, ('<a href="' + r.website.url + '" target="_blank" rel="noopener">' + r.website.text + '</a>') if r.website] | select | join(" &middot; ") %}
       {% if not r.detailsElsewhere and (r.runBy or contact or r.forWho or r.cost or r.booking or r.bring) %}
       <dl class="reg-facts">
-        {% if r.runBy %}<dt>Run by</dt><dd>{{ r.runBy }}</dd>{% endif %}
-        {% if contact %}<dt>Contact</dt><dd>{{ contact | safe }}</dd>{% endif %}
-        {% if r.forWho %}<dt>Who it's for</dt><dd>{{ r.forWho }}</dd>{% endif %}
-        {% if r.cost %}<dt>Cost</dt><dd>{{ r.cost }}</dd>{% endif %}
-        {% if r.booking %}<dt>Booking</dt><dd>{{ r.booking }}</dd>{% endif %}
-        {% if r.bring %}<dt>What to bring</dt><dd>{{ r.bring }}</dd>{% endif %}
+        {% if r.runBy %}<dt>Run by</dt><dd data-field="runBy">{{ r.runBy }}</dd>{% endif %}
+        {% if contact %}<dt>Contact</dt><dd data-field="phone email">{{ contact | safe }}</dd>{% endif %}
+        {% if r.forWho %}<dt>Who it's for</dt><dd data-field="forWho">{{ r.forWho }}</dd>{% endif %}
+        {% if r.cost %}<dt>Cost</dt><dd data-field="cost">{{ r.cost }}</dd>{% endif %}
+        {% if r.booking %}<dt>Booking</dt><dd data-field="booking">{{ r.booking }}</dd>{% endif %}
+        {% if r.bring %}<dt>What to bring</dt><dd data-field="bring">{{ r.bring }}</dd>{% endif %}
       </dl>
       {% endif %}
       <p class="reg-foot small mut" data-pagefind-ignore>{% if r.checked %}Details checked {{ r.checked | monthYear }}. {% endif %}Know more, or spotted a change? <a href="mailto:{{ site.email }}?subject={{ ('Regular activities: ' + r.what) | urlencode }}">Tell us</a>.</p>

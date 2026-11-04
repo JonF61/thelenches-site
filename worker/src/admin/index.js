@@ -128,6 +128,12 @@
 //   GET  /admin/api/runs            Activity: the latest 20 GitHub Actions runs (runs.js; read-only)
 //   GET  /admin/api/build-status?sha=&at=&p=&text=  whether an Edit page commit is live: its
 //                                   site build succeeded AND the page (fresh copy) shows text
+//   GET  /admin/api/entry?key=      Edit everything (4 Nov; entryedit.js): one listing entry's
+//                                   editable wording and links, read from main or its Pending row
+//   POST /admin/api/entry-save      { key, changes: [{ field, old, new }] }: stale-checked, then
+//                                   decide() entryedit -> entry-edit.yml (scripts/entryedit)
+//   GET  /admin/api/entry-status?id=&at=&p=&text=  that edit's run, then whether the page shows it
+//   GET  /admin/draft-edit          the Newsletter draft with the editor (Edit text), framed by the panel
 //   GET  /admin/img/mail/MSG/PART   a Pending image (email attachment)
 //   GET  /admin/img/drive/ID[?size=N]  a Photos image (Drive thumbnail, else the file)
 // The newsletter reaches subscribers from here only by Send to all (4 Nov, Jon): the same nlsend
@@ -135,7 +141,8 @@
 // wording edits to page templates (src/*.njk, pageedit.js). Otherwise the only GitHub call
 // is decide(), for the item and reply actions listed in actions.js, the Feedback
 // actions in feedback.js, outreach's nudge (a draft only; it never sends) and approving or
-// rejecting a proposed Holly lesson, Fix… and Apply on Rimmer's findings (rfix / rfix_ok), plus the read-only runs it starts by repository_dispatch
+// rejecting a proposed Holly lesson, Fix… and Apply on Rimmer's findings (rfix / rfix_ok), listing
+// edits from the Edit page and the draft editor (entryedit), plus the read-only runs it starts by repository_dispatch
 // (Check email now, Refresh draft, Check now for Rimmer).
 
 import { ACTIONS, decide, github, dispatch } from '../core.js';
@@ -183,6 +190,7 @@ import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 import { PAGEEDIT_JS, PAGEEDIT_CSS, PAGEEDIT_VERSION } from './ui/pageedit.js';
 import { editorPage, savePage, showsText } from './pageedit.js';
+import { entryInfo, saveEntry, entryStatus, draftEditPage } from './entryedit.js';
 import { recentRuns, buildStatus } from './runs.js';
 import {
   nextIssue, failingRuns, subscriberChanges, lastSentDate, comingWeek, comingUpFile, devTasks,
@@ -949,6 +957,15 @@ export async function handleAdmin(request, env) {
         });
       }
       if (path === '/admin/draft') return draftPage(await draftHtml(await readDraft(env, DRAFT_RANGE)));
+      // The same draft with the editor in it (Edit text on the draft screen; entryedit.js).
+      if (path === '/admin/draft-edit') {
+        return draftEditPage(await readDraft(env, DRAFT_RANGE), { origin: url.origin, csrf: await makeCsrf(env, auth.email), version: PAGEEDIT_VERSION });
+      }
+      if (path === '/admin/api/entry') return fromResult(await entryInfo(env, String(url.searchParams.get('key') || '')));
+      if (path === '/admin/api/entry-status') {
+        const q = (k) => String(url.searchParams.get(k) || '');
+        return fromResult(await entryStatus(env, { id: q('id'), at: q('at'), page: q('p'), text: q('text').slice(0, 200) }));
+      }
       if (path === '/admin/api/draft') return json({ meta: draftMeta(await readDraft(env, `'${DRAFT_TAB}'!A1:B13`)) });
       if (path === '/admin/api/mail-images') return await mailImages(env, url);
       if (path === '/admin/api/mail-text') return await mailText(env, url);
@@ -1036,6 +1053,9 @@ export async function handleAdmin(request, env) {
         }[plan.p.a] });
       }
       if (path === '/admin/api/page-save') return fromResult(await savePage(env, body));
+      if (path === '/admin/api/entry-save') {
+        return fromResult(await saveEntry(env, body, { meta: draftMeta(await readDraft(env, `'${DRAFT_TAB}'!A1:B13`)) }));
+      }
       return json({ ok: false, error: 'Not found' }, 404);
     }
     return new Response('Method not allowed', { status: 405, headers: SECURITY_HEADERS });

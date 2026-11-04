@@ -64,10 +64,14 @@ export const ACTIONS = {
   // instruction is in the Rimmer tab row); Apply writes it. Both run rimmer-fix.yml.
   rfix: ['Ask Holly for a fix', 'Fix requested', 'approve'],
   rfix_ok: ['Apply fix', 'Fix being applied', 'approve'],
+  // Edit page / Newsletter draft "edit everything" (admin panel only, 4 Nov): Jon's new wording or
+  // link for one listing entry (admin/entryedit.js). The id is a fresh edit id; the entry key and
+  // the changes (each with the value Jon saw, for the stale check) ride as JSON in b. entry-edit.yml.
+  entryedit: ['Save listing edit', 'Edit being saved', 'approve'],
 };
 
 // Never valid in a signed email link (index.js /a).
-export const PANEL_ONLY = ['nlquiet', 'nltest', 'contactmail', 'done', 'merge', 'sug_ok', 'sug_no', 'rfix', 'rfix_ok'];
+export const PANEL_ONLY = ['nlquiet', 'nltest', 'contactmail', 'done', 'merge', 'sug_ok', 'sug_no', 'rfix', 'rfix_ok', 'entryedit'];
 
 export const FEEDBACK_ACTIONS = ['fb_approve', 'fb_reject', 'fb_postpone', 'fb_done', 'fb_send', 'fb_edit', 'fb_skip'];
 
@@ -84,6 +88,7 @@ export function validPayload(p) {
   if (p.a === 'redraft' && p.b !== undefined && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
   if (p.a === 'fb_postpone' && !/^\d{4}-\d{2}-\d{2}$/.test(String(p.d || ''))) return false;
   if (p.a === 'merge' && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
+  if (p.a === 'entryedit' && (typeof p.b !== 'string' || p.b.length > 20000)) return false;
   if (p.a === 'sug_ok' && p.b !== undefined && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
   if (p.a === 'rec' && !(['trades', 'eat'].includes(p.k) && /^[a-z0-9-]{1,80}$/.test(String(p.n || '')))) return false;
   if (p.a === 'trust') {
@@ -148,6 +153,8 @@ export function dispatchFor(p, reason = '', body = '') {
   if (p.a === 'sug_no') return ['listing-suggest', { action: 'reject', id: p.i, reason }];
   if (p.a === 'rfix') return ['rimmer-fix', { action: 'propose', id: p.i }];
   if (p.a === 'rfix_ok') return ['rimmer-fix', { action: 'apply', id: p.i }];
+  // Listing edit: the changes as JSON, read by scripts/entryedit from the event file, never env.
+  if (p.a === 'entryedit') return ['entry-edit', { id: p.i, body: body || p.b }];
   if (p.a === 'nlbuild') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true }];
   if (p.a === 'nlquiet') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true, step: 'build' }];
   if (p.a === 'nltest') return ['newsletter', { action: 'build', issue_date: p.i, step: 'preview' }];
@@ -165,7 +172,7 @@ export function dispatchFor(p, reason = '', body = '') {
 }
 
 // One decision (approve, reject, trust, send, skip, edit, redraft, close, nlsend, nlbuild, nlquiet, nltest,
-// the reader feedback fb_* actions, nudge, orgcheck, contactmail, lesson_ok / lesson_no, sug_ok / sug_no, and rfix / rfix_ok) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
+// the reader feedback fb_* actions, nudge, orgcheck, contactmail, lesson_ok / lesson_no, sug_ok / sug_no, rfix / rfix_ok and entryedit) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
 export async function decide(env, p, reason = '', body = '') {
   const [eventType, payload] = dispatchFor(p, reason, body);
   return dispatch(env, eventType, payload, 2);

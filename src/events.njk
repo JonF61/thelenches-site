@@ -48,12 +48,13 @@ seoTitle: "What's on in the Lenches and near Evesham — Events"
     {% set d = e.date | dateParts %}
     {% set img = e | eventImage(photos) %}
     {#- id is linked from the home page's "more" links: keep the two in step. The heading's "-t" id gives Pagefind search results a link to each event. -#}
-    <div class="item-card" id="{{ ('ev-' + e.date + '-' + e.title) | slugify }}">
+    {#- data-entry / data-label / data-field: Edit page's "edit everything" (admin/entryedit.js); no visible change. -#}
+    {% set ek = e | entryKey %}<div class="item-card" id="{{ ('ev-' + e.date + '-' + e.title) | slugify }}"{% if ek %} data-entry="{{ ek }}" data-label="Event: {{ e.title | escape }}"{% endif %}>
       <div class="date" data-pagefind-ignore><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>
       <div class="item-body">
         {% if img %}<figure class="ev-img"><a href="{{ img.url | url }}" data-viewer aria-label="View full image"><img src="{{ img.url | url }}" alt="{{ img.alt | escape }}" loading="lazy"></a>{% if img.credit %}<figcaption data-pagefind-ignore class="img-credit small mut">{% if img.creditUrl %}<a href="{{ img.creditUrl | escape }}" target="_blank" rel="noopener">{{ img.credit | escape }}</a>{% else %}{{ img.credit | escape }}{% endif %}</figcaption>{% endif %}</figure>{% else %}{{ e | tileSvg | safe }}{% endif %}
         <h3 id="{{ ('ev-' + e.date + '-' + e.title) | slugify }}-t">{{ e.title | escape }}{% if e | inLenches %} <span class="lenches-badge" data-pagefind-ignore>Lenches</span>{% endif %}</h3>
-        {% for p in e.body | paras %}<p>{{ p | escape }}{% if loop.last and e.link %} <a href="{{ e.link.url | escape }}" target="_blank" rel="noopener">{{ e.link.text | escape }} &rarr;</a>{% endif %}{% if loop.last and e.link2 %} <a href="{{ e.link2.url | escape }}" target="_blank" rel="noopener">{{ e.link2.text | escape }} &rarr;</a>{% endif %}</p>{% endfor %}
+        {% for p in e.body | paras %}<p data-field="body">{{ p | escape }}{% if loop.last and e.link %} <a href="{{ e.link.url | escape }}" target="_blank" rel="noopener" data-field="link">{{ e.link.text | escape }} &rarr;</a>{% endif %}{% if loop.last and e.link2 %} <a href="{{ e.link2.url | escape }}" target="_blank" rel="noopener" data-field="link2">{{ e.link2.text | escape }} &rarr;</a>{% endif %}</p>{% endfor %}
         <p class="cal-add" data-pagefind-ignore><a href="{{ ('/calendar/' + (('ev-' + e.date + '-' + e.title) | slugify) + '.ics') | url }}" download><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4M12 12.5v5M9.5 15h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Add to calendar<span class="sr-only">: {{ e.title | escape }}</span></a></p>
       </div>
     </div>
