@@ -159,7 +159,7 @@ for (const size of [{ width: 1200, height: 900, name: 'desktop' }, { width: 390,
     await page.click('.le-bar button:has-text("Link")');
     assert.equal(await page.locator('.le-count').textContent(), '1 change');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pageedit-editing.png') });
-    await page.click('.le-bar button:has-text("Save")');
+    await page.click('.le-bar button:has-text("Save page text")');
     await page.waitForSelector('.le-dlg[open]');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pageedit-confirm.png') });
     await page.click('.le-dlg button:has-text("Save and publish")');
@@ -194,6 +194,8 @@ for (const size of [{ width: 1200, height: 900, name: 'desktop' }, { width: 390,
   await page.goto(`${ORIGIN}/admin/page?p=/living-here/trades/`);
   await page.waitForSelector('.le-bar');
   assert.ok(await page.locator('.le-entry').count() >= trades.length, 'every trade has outlined fields');
+  assert.match(await page.locator('.le-bar .le-hint').textContent(), /save from their own box with Publish/);
+  assert.equal(await page.locator('.le-bar button.le-primary').textContent(), 'Save page text');
   assert.equal(await page.locator('.le-edit').count() > 0, true, 'the page\'s own wording is still editable');
   const card = page.locator(`[data-entry="t:${t.id}"]`);
   // Names stay Ask Kryten (greyed), the fields are outlined, the label shows on hover.

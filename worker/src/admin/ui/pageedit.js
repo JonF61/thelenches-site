@@ -13,7 +13,7 @@
 // /admin/api/entry-save, then shows Saving → Building → Live ✓. The same script runs in the
 // Newsletter draft's editor (/admin/draft-edit, data.mode "draft"), where only entries are editable.
 
-export const PAGEEDIT_VERSION = '5';
+export const PAGEEDIT_VERSION = '6';
 
 function editor() {
   const data = JSON.parse(document.getElementById('lenches-edit-data').textContent);
@@ -103,11 +103,14 @@ function editor() {
   msg.setAttribute('role', 'status');
   const linkBtn = h('button', 'le-btn', '🔗 Link');
   const cancelBtn = h('button', 'le-btn', 'Cancel');
-  const saveBtn = h('button', 'le-btn le-primary', 'Save');
+  const saveBtn = h('button', 'le-btn le-primary', 'Save page text');
   [linkBtn, cancelBtn, saveBtn].forEach((b) => { b.type = 'button'; });
   linkBtn.disabled = true;
   saveBtn.disabled = true;
-  bar.append(title, count, msg, linkBtn, cancelBtn, saveBtn);
+  // Jon, 4 Nov: the bar's Save is only for the page's own wording; listings save from their own box.
+  const hint = h('span', 'le-hint', cards.length ? 'Events and other listings (blue outline) save from their own box with Publish.' : '');
+  saveBtn.title = 'Saves the page\'s own wording (orange outline)';
+  bar.append(title, count, msg, linkBtn, cancelBtn, saveBtn, hint);
   document.body.prepend(bar);
   document.body.classList.add('le-on');
   if (!edits.length && !cards.length) msg.textContent = 'Nothing on this page can be edited here: ask Kryten.';
@@ -534,11 +537,11 @@ function editor() {
           if (j.ok && j.state) { state = j.state; link = j.url || link; phase = j.phase || (state === 'building' ? 'building' : ''); }
         } catch (e) { /* try again next time */ }
         show();
-        if (state === 'building') setTimeout(check, 10000);
+        if (state === 'building') setTimeout(check, 5000);
         else { clearInterval(timer); done(); }
       };
       show();
-      setTimeout(check, 5000);
+      setTimeout(check, 3000);
     }
   }
 }
@@ -554,6 +557,8 @@ export const PAGEEDIT_CSS = `
 .le-count{background:#FFF3B0;color:#2E2A1F;border-radius:999px;padding:0 .6rem}
 .le-count:empty,.le-msg:empty{display:none}
 .le-msg{flex-basis:100%;order:9;color:#FFE7C2}
+.le-hint{flex-basis:100%;order:10;font-size:13px;font-weight:400;color:#DCE6D5}
+.le-hint:empty{display:none}
 .le-view{color:#fff;font-weight:600}
 .le-btn{font:inherit;min-height:40px;padding:.3rem .9rem;border-radius:8px;border:1px solid rgba(255,255,255,.6);background:transparent;color:inherit;cursor:pointer}
 .le-btn:disabled{opacity:.45;cursor:default}
