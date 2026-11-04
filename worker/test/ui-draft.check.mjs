@@ -2,7 +2,9 @@
 // Browser check of the panel's Newsletter draft screen (ui/client.js, admin/draft.js) against
 // a mock API, on desktop and phone sizes: the menu entry, the top bar's Newsletter chip and
 // its Draft link, the draft (a real render from scripts/newsletter/draft.js) in its frame,
-// Refresh showing the newer draft, and Rebuild / Test send (confirm, then the POST). Saves screenshots (SHOTS=dir).
+// Refresh showing the newer draft, and Rebuild / Test send (confirm, then the POST). Edit text (4 Nov):
+// the draft editor frame outlines the entries, a click opens the edit box and Save and publish posts
+// the change (mocked). Saves screenshots (SHOTS=dir).
 // Run: node worker/test/ui-draft.check.mjs
 import http from 'node:http';
 import assert from 'node:assert/strict';
@@ -11,6 +13,8 @@ import { createRequire } from 'node:module';
 import { CLIENT_JS } from '../src/admin/ui/client.js';
 import { CLIENT_CSS } from '../src/admin/ui/css.js';
 import { draftMeta, draftHtml, draftPage } from '../src/admin/draft.js';
+import { draftEditPage } from '../src/admin/entryedit.js';
+import { PAGEEDIT_JS, PAGEEDIT_CSS } from '../src/admin/ui/pageedit.js';
 
 const require = createRequire(import.meta.url);
 let chromium;
@@ -27,7 +31,7 @@ const draft = buildDraft({
   today: '2026-10-28', settings: {}, sources: [], jpegFor: () => '', whatson: loadWhatson({ today: '2026-10-28' }),
   bins: data('bins.json'), siteupdates: data('siteupdates.json'), onthisday: data('onthisday.json'),
   pending: [
-    { id: 'a', title: 'Hall quiz night results', body: 'Well done to every team, and thanks to all who came.', category: 'notice', status: 'approved', received: '2026-10-26 10:00', decided_at: '2026-10-26 11:00' },
+    { id: 'a', title: 'Hall quiz night results', summary: 'Well done to every team, and thanks to all who came.', category: 'notice', status: 'approved', received: '2026-10-26 10:00', decided_at: '2026-10-26 11:00' },
     { id: 'b', title: 'Too late notice', body: 'x', category: 'notice', status: 'approved', received: '2026-10-28 19:00', decided_at: '2026-10-28 19:30' },
   ],
   issues: [{ issue_id: '2026-10-22', issue_date: '2026-10-22', status: 'sent', item_keys: '', image_keys: '' }],
@@ -42,6 +46,8 @@ let rows = liveRows;
 let refreshed = 0;
 const nlPosts = [];
 let signedOut = false;
+const entrySaves = [];
+let entryChecks = 0;
 
 const stateData = () => ({
   email: 'admin@example.org', sheetId: 'sheet', gids: {}, holiday: { value: 'FALSE', on: false },
@@ -77,6 +83,30 @@ const server = http.createServer(async (req, res) => {
     return send({ ok: true, message: { rebuild: 'Rebuilding: nothing is sent.', test: 'Test send started.', send: 'Send started.' }[body.action] });
   }
   if (url.pathname === '/admin/api/rimmer') return send({ open: [], kryten: [], last: { newsletter: '2026-10-28T11:00:00.000Z' } });
+  if (url.pathname === '/admin/draft-edit') {
+    const r = await draftEditPage(rows, { origin: base, csrf: 'c', version: 't' });
+    res.writeHead(200, Object.fromEntries(r.headers));
+    return res.end(await r.text());
+  }
+  if (url.pathname === '/admin/pageedit.js') return send(PAGEEDIT_JS, 'text/javascript');
+  if (url.pathname === '/admin/pageedit.css') return send(PAGEEDIT_CSS, 'text/css');
+  if (url.pathname === '/admin/api/entry') {
+    assert.equal(url.searchParams.get('key'), 'p:a');
+    return send({ ok: true, key: 'p:a', label: 'Submission: Hall quiz night results', official: false, page: '/notices/', fields: [
+      { field: 'body', name: 'Text', type: 'text', multiline: true, required: true, value: 'Well done to every team, and thanks to all who came.' },
+      { field: 'link', name: 'Link', type: 'link', value: '' }, { field: 'link2', name: 'Second link', type: 'link', value: '' }] });
+  }
+  if (url.pathname === '/admin/api/entry-save' && req.method === 'POST') {
+    let b = '';
+    for await (const c of req) b += c;
+    assert.equal(req.headers['x-csrf-token'], 'c');
+    entrySaves.push(JSON.parse(b));
+    return send({ ok: true, id: `ee${'1'.repeat(16)}`, count: 1, at: new Date().toISOString(), page: '/notices/', check: 'Well done', rebuild: false, message: 'Saved 1 change.' });
+  }
+  if (url.pathname === '/admin/api/entry-status') {
+    entryChecks += 1;
+    return send({ ok: true, state: entryChecks > 1 ? 'live' : 'building', phase: 'saving' });
+  }
   if (url.pathname === '/admin/draft') {
     const r = draftPage(await draftHtml(rows));
     res.writeHead(200, Object.fromEntries(r.headers));
@@ -128,6 +158,34 @@ try {
     assert.equal(await frame.locator('text=Too late notice').count(), 0);
     await page.waitForTimeout(500);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `draft-${name}.png`), fullPage: false });
+    // Edit text: the editor frame (script from the Worker), entries outlined; edit a submission's text.
+    if (name === 'desktop') {
+      await main.locator('button', { hasText: 'Edit text' }).click();
+      await main.locator('.note', { hasText: 'click an outlined entry' }).waitFor();
+      assert.match(await main.locator('iframe.draft-frame').getAttribute('src'), /^\/admin\/draft-edit\?v=/);
+      const ef = page.frameLocator('iframe.draft-frame');
+      await ef.locator('.le-banner').waitFor();
+      assert.ok(await ef.locator('.le-entry-card').count() >= 1);
+      const target = ef.locator('[data-entry="p:a"] [data-field="body"]');
+      await target.click();
+      const ta = ef.locator('.le-entry-form textarea');
+      await ta.waitFor();
+      assert.equal(await ta.inputValue(), 'Well done to every team, and thanks to all who came.');
+      await ta.fill('Well done to every team, and thanks to everyone who came.');
+      if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'draft-edit-box.png'), fullPage: false });
+      await ef.locator('.le-entry-form button:text-is("Save and publish")').click();
+      await ef.locator('.le-entry-form button:text-is("Publish")').click();
+      await ef.locator('.le-ef-msg', { hasText: 'Saved ✓' }).waitFor();
+      assert.deepEqual(entrySaves.pop(), { key: 'p:a', changes: [{ field: 'body', old: 'Well done to every team, and thanks to all who came.', new: 'Well done to every team, and thanks to everyone who came.' }] });
+      await page.clock.runFor(6000);
+      await page.clock.runFor(11000);
+      await ef.locator('.le-ef-msg', { hasText: 'Live ✓' }).waitFor();
+      // Links in the draft don't navigate while editing.
+      await ef.locator('a').first().click();
+      assert.equal(page.frames().length, 2);
+      await main.locator('button', { hasText: 'Stop editing' }).click();
+      assert.match(await main.locator('iframe.draft-frame').getAttribute('src'), /^\/admin\/draft\?v=/);
+    }
     // Refresh: shows the newer draft once it appears.
     const before = refreshed;
     await main.locator('button', { hasText: 'Refresh' }).click();

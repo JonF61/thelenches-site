@@ -1,0 +1,19 @@
+{
+  "_help": "Edit everything (4 Nov): which fields of each kind of listing entry Jon can change from the Edit page and the Newsletter draft (worker/src/admin/entryedit.js and scripts/entryedit, which both read this file). Wording and links only: titles, names, dates and official statements stay with Kryten. text = plain text fields, links = {text, url} links (hand-written items and submissions only). Keys as in scripts/rimmer/fix.js sources(). names = the labels in the edit box.",
+  "kinds": {
+    "events": { "label": "Event", "text": ["body"], "links": ["link", "link2"] },
+    "notices": { "label": "Notice", "text": ["body"], "links": ["link", "link2"] },
+    "pending": { "label": "Submission", "text": ["body"], "links": ["link", "link2"] },
+    "regulars": { "label": "Regular activity", "text": ["frequency", "time", "where", "note", "about", "runBy", "forWho", "cost", "booking", "bring", "phone", "email"], "links": [] },
+    "eat": { "label": "Where to eat", "text": ["type", "where", "food", "note", "phone"], "links": [] },
+    "trades": { "label": "Local trades", "text": ["what", "covers", "base", "contact", "phone", "phone2", "email", "other"], "links": [] }
+  },
+  "required": ["body"],
+  "multiline": ["body", "about"],
+  "names": {
+    "body": "Text", "link": "Link", "link2": "Second link", "frequency": "How often (blank = every week)", "time": "Time", "where": "Where",
+    "note": "Note", "about": "About", "runBy": "Run by", "forWho": "Who it's for", "cost": "Cost", "booking": "Booking", "bring": "What to bring",
+    "phone": "Phone", "phone2": "Second phone", "email": "Email", "type": "Type", "food": "Food", "what": "Does", "covers": "Covers",
+    "base": "Based", "contact": "Contact", "other": "Other contact"
+  }
+}

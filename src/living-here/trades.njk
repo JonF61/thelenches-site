@@ -31,16 +31,16 @@ seoTitle: "Local trades in and around the Lenches — plumbers, builders, electr
     <h2>{{ g }}</h2>
     <div class="tr-grid">
     {% for t in trades.trades %}{% if t.trade == g %}
-      <div class="card">
+      <div class="card"{% if t.id %} data-entry="t:{{ t.id }}" data-label="Local trades: {{ t.name | escape }}"{% endif %}>
         <h3>{{ t.name }}</h3>
         <dl class="tr-facts small">
-          {% if t.what %}<dt>Does</dt><dd>{{ t.what }}</dd>{% endif %}
-          {% if t.covers %}<dt>Covers</dt><dd>{{ t.covers }}</dd>{% endif %}
-          {% if t.base %}<dt>Based</dt><dd>{{ t.base }}</dd>{% endif %}
-          {% if t.contact %}<dt>Contact</dt><dd>{{ t.contact }}</dd>{% endif %}
-          {% if t.phone %}<dt>Phone</dt><dd><a href="tel:{{ t.phone | replace(' ', '') }}">{{ t.phone }}</a>{% if t.phone2 %} or <a href="tel:{{ t.phone2 | replace(' ', '') }}">{{ t.phone2 }}</a>{% endif %}</dd>{% endif %}
-          {% if t.email %}<dt>Email</dt><dd><a href="mailto:{{ t.email }}">{{ t.email }}</a></dd>{% endif %}
-          {% if t.other %}<dt>Contact</dt><dd>{{ t.other }}</dd>{% endif %}
+          {% if t.what %}<dt>Does</dt><dd data-field="what">{{ t.what }}</dd>{% endif %}
+          {% if t.covers %}<dt>Covers</dt><dd data-field="covers">{{ t.covers }}</dd>{% endif %}
+          {% if t.base %}<dt>Based</dt><dd data-field="base">{{ t.base }}</dd>{% endif %}
+          {% if t.contact %}<dt>Contact</dt><dd data-field="contact">{{ t.contact }}</dd>{% endif %}
+          {% if t.phone %}<dt>Phone</dt><dd data-field="phone phone2"><a href="tel:{{ t.phone | replace(' ', '') }}">{{ t.phone }}</a>{% if t.phone2 %} or <a href="tel:{{ t.phone2 | replace(' ', '') }}">{{ t.phone2 }}</a>{% endif %}</dd>{% endif %}
+          {% if t.email %}<dt>Email</dt><dd data-field="email"><a href="mailto:{{ t.email }}">{{ t.email }}</a></dd>{% endif %}
+          {% if t.other %}<dt>Contact</dt><dd data-field="other">{{ t.other }}</dd>{% endif %}
           {% if t.website %}<dt>Website</dt><dd><a href="{{ t.website.url }}">{{ t.website.text }}</a></dd>{% endif %}
         </dl>
         {% set n = recommends.trades[t.id] %}{% if n %}<p class="rec-count">&#9733; Recommended by {{ n }} {{ "person" if n == 1 else "people" }}</p>{% endif %}

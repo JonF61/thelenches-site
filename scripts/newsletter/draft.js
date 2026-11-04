@@ -20,7 +20,7 @@
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
-const { select, deadlineFor } = require('./select');
+const { select, deadlineFor, whatsonKey } = require('./select');
 const { render } = require('./render');
 const { forPreview } = require('./unsub');
 const { buildRecipients, canaryList } = require('./send');
@@ -69,7 +69,8 @@ function buildDraft(inputs) {
       cutoff: deadlineFor(issueDate), whatson: inputs.whatson, bins: inputs.bins, siteupdates: inputs.siteupdates, onthisday: inputs.onthisday, photos: inputs.photos,
     });
   }
-  const issue = forPreview(render(model));
+  const tagged = editTags(model, inputs);
+  const issue = forPreview(render(tagged.model, { entries: tagged.entries }));
   const meta = {
     issue_date: issueDate, mode, status, subject: issue.subject,
     items: (model.keys || []).length, events: (model.events || []).length, notices: (model.notices || []).length,
@@ -87,6 +88,35 @@ function buildDraft(inputs) {
     else if (subs !== null) meta.send_count = subs;
   }
   return { meta, html: issue.html };
+}
+
+// Edit tags for the panel's draft editor (4 Nov, "edit everything"): each item's newsletter key ->
+// its source key as in scripts/rimmer/fix.js sources() (p:<Pending id>; h:events/<file> and
+// h:notices/<file> found by whatsonKey from the current src/items; r:<index> for Regular
+// activities, matched on day, what, time and where). Official statements are left out (Ask Kryten).
+// Only this copy carries them; the built issue and every sent copy never do.
+function editTags(model, inputs) {
+  const { entryKeyOf } = require('../../lib/whatson');
+  const truthy = (v) => v === true || /^(true|yes|y|1)$/i.test(str(v));
+  const entries = {};
+  const w = inputs.whatson || {};
+  const official = new Set((inputs.pending || []).filter((r) => truthy(r.official)).map((r) => `p:${str(r.id)}`));
+  for (const ev of w.events || []) if (entryKeyOf(ev) && !truthy(ev.official)) entries[whatsonKey('events', ev)] = entryKeyOf(ev);
+  for (const n of w.notices || []) if (entryKeyOf(n) && !truthy(n.official)) entries[whatsonKey('notices', n)] = entryKeyOf(n);
+  for (const it of [...(model.events || []), ...(model.notices || []), ...(model.roads || [])]) {
+    const k = str(it && it.key);
+    if (/^p:/.test(k) && !official.has(k)) entries[k] = k;
+  }
+  const regKey = (r) => [r.day, r.what, r.time, r.where].map(str).join('|');
+  const regs = new Map((w.regulars || []).filter((r) => entryKeyOf(r)).map((r) => [regKey(r), entryKeyOf(r)]));
+  if (!Array.isArray(model.regulars)) return { model, entries };
+  const regulars = model.regulars.map((r, i) => {
+    const e = regs.get(regKey(r));
+    if (!e) return r;
+    entries[`rg:${i}`] = e;
+    return { ...r, key: `rg:${i}` };
+  });
+  return { model: { ...model, regulars }, entries };
 }
 
 // The tab's rows: header, meta, then the deflated html in chunks.
@@ -133,4 +163,5 @@ if (require.main === module) {
   });
 }
 
-module.exports = { buildDraft, draftRows, issueDateFor, loadInputs, TAB, CHUNK };
+module.exports = {
+  editTags, buildDraft, draftRows, issueDateFor, loadInputs, TAB, CHUNK };

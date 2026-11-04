@@ -18,6 +18,8 @@ on:
       # and for the panel's Suggestions cards (worker/src/admin/suggestions.mjs).
       - "src/_data/trades.json"
       - "src/_data/eat.json"
+      # Which listing fields the Edit page and the draft editor can change (worker/src/admin/entryedit.js).
+      - "lib/entryfields.json"
   workflow_dispatch:
 
 permissions:

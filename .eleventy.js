@@ -45,6 +45,15 @@ module.exports = async function (eleventyConfig) {
   // Join two lists, e.g. hand-written src/items/ items plus pipeline.json items
   eleventyConfig.addFilter("merge", (a, b) => [...(a || []), ...(b || [])]);
 
+  // Edit page "edit everything" (4 Nov): the entry's source key for data-entry (as in
+  // scripts/rimmer/fix.js sources(): p:<Pending id> for published submissions, h:events/<file>,
+  // h:notices/<file>, r:<index> from lib/whatson.js). '' for official statements (Ask Kryten).
+  eleventyConfig.addFilter("entryKey", (item) => {
+    if (!item || item.official === true || /^(true|yes)$/i.test(String(item.official || ""))) return "";
+    if (item.id) return `p:${item.id}`;
+    return require("./lib/whatson.js").entryKeyOf(item);
+  });
+
   // Split a body into paragraphs at blank lines ("\n\n" in the JSON). Returns plain strings,
   // so templates still escape each one; always at least one (possibly empty) paragraph.
   eleventyConfig.addFilter("paras", (text) => {

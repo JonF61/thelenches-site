@@ -134,15 +134,28 @@ function titleWithBadge(titleHtml, style) {
 }
 
 // The item's link and its optional second link (link2) on one line.
+// Edit tags (4 Nov, "edit everything"): only the panel's Newsletter draft passes render(model,
+// { entries }) (draft.js): { item key -> entry key as in scripts/rimmer/fix.js sources() }. Then each
+// editable item gets data-entry / data-label and its body and links data-field, so the panel's
+// draft editor (/admin/draft-edit) can find them. Sent copies never carry them (no entries given).
+let TAGS = null;
+const attr = (v) => esc(v).replace(/"/g, '&quot;');
+function entryAttrs(it, label) {
+  const key = TAGS && it && TAGS[it.key];
+  return key ? ` data-entry="${attr(key)}" data-label="${attr(`${label}: ${it.title || it.what || ''}`)}"` : '';
+}
+const fieldAttr = (name) => (TAGS ? ` data-field="${name}"` : '');
+const fieldLink = (html, name) => (TAGS ? html.replace(/^<a /, `<a data-field="${name}" `) : html);
+
 function linkLine(link, link2) {
-  const parts = [link, link2].filter(Boolean).map((l) => a(l.url, l.text, C.accentText));
+  const parts = [link, link2].map((l, i) => (l ? fieldLink(a(l.url, l.text, C.accentText), i ? 'link2' : 'link') : '')).filter(Boolean);
   return parts.length ? `<div style="margin-top:6px;font-family:${SANS};font-size:13px;">${parts.join(' &nbsp;&middot;&nbsp; ')}</div>` : '';
 }
 
 // The event's own link (if any) and "Add to calendar" on one line, as on the Events page.
 function eventLinks(ev) {
   const cal = calendarUrl(ev);
-  const parts = [ev.link ? a(ev.link.url, ev.link.text, C.accentText) : '', ev.link2 ? a(ev.link2.url, ev.link2.text, C.accentText) : '', cal ? a(cal, 'Add to calendar', C.accentText) : ''].filter(Boolean);
+  const parts = [ev.link ? fieldLink(a(ev.link.url, ev.link.text, C.accentText), 'link') : '', ev.link2 ? fieldLink(a(ev.link2.url, ev.link2.text, C.accentText), 'link2') : '', cal ? a(cal, 'Add to calendar', C.accentText) : ''].filter(Boolean);
   return parts.length ? `<div style="margin-top:6px;font-family:${SANS};font-size:13px;">${parts.join(' &nbsp;&middot;&nbsp; ')}</div>` : '';
 }
 
@@ -155,7 +168,7 @@ function eventCard(ev) {
     + `<div style="font-size:11px;color:${C.muted};">${p.mon}</div>`
     + `</td></tr></table>`;
   const meta = ev.meta ? `<div style="font-family:${SANS};font-size:12px;color:${C.muted};margin-top:2px;">${esc(ev.meta)}</div>` : '';
-  const body = ev.body ? `<div style="margin-top:4px;">${para(ev.body)}</div>` : '';
+  const body = ev.body ? `<div style="margin-top:4px;"${fieldAttr('body')}>${para(ev.body)}</div>` : '';
   const img = ev.image
     ? `<tr><td colspan="2" style="padding:0 12px 12px;">${imageRow(ev.image, 528, anchorUrl('event', ev))}</td></tr>`
     : '';
@@ -164,7 +177,7 @@ function eventCard(ev) {
     ? titleWithBadge(esc(ev.title), `${titleStyle}color:${C.ink};`)
     : `<div style="${titleStyle}">${esc(ev.title)}</div>`;
   return `<tr><td class="px" style="padding:10px 24px 0;">`
-    + `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.card};">`
+    + `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.card};"${entryAttrs(ev, 'Event')}>`
     + `<tr><td width="62" valign="top" style="padding:12px 0 12px 12px;">${tile}</td>`
     + `<td valign="top" style="padding:12px;font-family:${SERIF};font-size:14px;line-height:1.5;color:${C.ink};">`
     + `${title}${meta}${body}${eventLinks(ev)}</td></tr>${img}</table></td></tr>`;
@@ -173,9 +186,9 @@ function eventCard(ev) {
 function storyBlock(it, titleSize, kind) {
   const meta = it.meta ? `<div style="font-family:${SANS};font-size:12px;color:${C.muted};">${esc(it.meta)}</div>` : '';
   const img = it.image ? `<div style="margin-top:8px;">${imageRow(it.image, 552, anchorUrl(kind, it))}</div>` : '';
-  return `<tr><td class="px" style="padding:12px 24px 0;font-family:${SERIF};font-size:14px;line-height:1.55;color:${C.ink};">`
+  return `<tr><td class="px" style="padding:12px 24px 0;font-family:${SERIF};font-size:14px;line-height:1.55;color:${C.ink};"${entryAttrs(it, kind === 'news' ? 'News' : 'Notice')}>`
     + `<div style="font-weight:bold;font-size:${titleSize}px;">${esc(it.title)}</div>${meta}`
-    + (it.body ? `<div style="margin-top:4px;">${para(it.body)}</div>` : '')
+    + (it.body ? `<div style="margin-top:4px;"${fieldAttr('body')}>${para(it.body)}</div>` : '')
     + `${linkLine(it.link, it.link2)}${img}</td></tr>`;
 }
 
@@ -197,9 +210,9 @@ function roadsAndBins(m) {
   const lines = [];
   for (const r of m.roads) {
     const when = r.date ? ` (from ${dateParts(r.date).short})` : '';
-    lines.push(`<div style="margin-bottom:8px;"><span style="color:${C.accentText};">Roadworks</span> · `
+    lines.push(`<div style="margin-bottom:8px;"${entryAttrs(r, 'Road item')}><span style="color:${C.accentText};">Roadworks</span> · `
       + `<strong>${esc(r.title)}</strong>${esc(when)}`
-      + (r.body ? para(r.body) : '')
+      + (r.body ? (TAGS ? `<div${fieldAttr('body')}>${para(r.body)}</div>` : para(r.body)) : '')
       + (r.link ? `<div>${a(r.link.url, r.link.text, C.accentText)}</div>` : '') + `</div>`);
   }
   if (!lines.length) return '';
@@ -250,7 +263,7 @@ function renderHtml(m, subject) {
     rows.push(sectionHead('Regular activities', `${esc(REGULARS_MORE)} ${a(siteUrl('/regulars/'), 'Regular activities page', C.accentText)}.`));
     rows.push(`<tr><td class="px" style="padding:6px 24px 0;font-family:${SANS};font-size:14px;line-height:1.5;color:${C.ink};">`
       + regularDays(regs).map((g) => `<div style="font-weight:bold;color:${C.green};margin:8px 0 2px;">${esc(g.day)}</div>`
-        + g.items.map((r) => `<div style="margin:0 0 3px;">${esc(r.what)}${regularTime(r) ? ` · ${esc(regularTime(r))}` : ''}`
+        + g.items.map((r) => `<div style="margin:0 0 3px;"${entryAttrs(r, 'Regular activity')}${TAGS && TAGS[r.key] ? fieldAttr('time frequency where note') : ''}>${esc(r.what)}${regularTime(r) ? ` · ${esc(regularTime(r))}` : ''}`
           + `${r.where ? ` · <span style="color:${C.muted};">${esc(r.where)}</span>` : ''}`
           + `${r.note ? ` <span style="color:${C.muted};">(${esc(r.note)})</span>` : ''}`
           + `${r.link ? ` · ${a(siteUrl(r.link.url), r.link.text, C.accentText)}` : ''}</div>`).join('')).join('')
@@ -362,9 +375,11 @@ function renderText(m) {
 
 /* ------------------------------------------------------------ Render API -- */
 
-function render(model) {
+function render(model, { entries = null } = {}) {
   const subject = `The Lenches Newsletter – ${dateParts(model.issueDate).subject}`;
-  const html = renderHtml(model, subject);
+  TAGS = entries && typeof entries === 'object' ? entries : null;
+  let html;
+  try { html = renderHtml(model, subject); } finally { TAGS = null; }
   const text = renderText(model);
   const hash = crypto.createHash('sha256').update(`${subject}\n\u0000${html}\n\u0000${text}`, 'utf8').digest('hex');
   return { subject, html, text, hash };

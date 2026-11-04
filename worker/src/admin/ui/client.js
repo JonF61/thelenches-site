@@ -42,7 +42,7 @@ export const CLIENT_JS = String.raw`
   // Health has no menu entry (28 Oct): the top bar's Diagnostic and Watchdog open it, as does Summary's Site health.
   // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
   var INTROS = {
-    draft: 'The next newsletter as it would be built now from what is approved. It updates after each approval and every 3 hours. Once the issue is built on Thursday, this shows it exactly as built.',
+    draft: 'The next newsletter as it would be built now from what is approved. It updates after each approval and every 3 hours. Once the issue is built on Thursday, this shows it exactly as built. Edit text lets you change entries\' wording and links here.',
     visitors: 'How many people use the website: page views and visits by day and by month, and the most viewed pages. Counts only: nobody can be identified.',
     stats: 'How each newsletter did: how many it went to, bounces, and anonymous opens and link clicks. Counts are totals only: nobody can see who opened or clicked.',
     summary: 'What needs you now, and what is coming up, in one place. Tap a heading to open its page.',
@@ -76,6 +76,7 @@ export const CLIENT_JS = String.raw`
       ['Built', 'Thursday\'s issue is made and frozen exactly as it will go out.'],
       ['Rebuild', 're-makes a built issue with anything approved since. It sends nothing.'],
       ['Test send', 'emails the preview of the built issue to you only.'],
+      ['Edit text', 'outlines each event, notice, regular activity and submission in the draft in blue: click one to change its wording or links, then Save and publish. It changes the website too (Saving → Building → Live ✓). Titles, dates and official statements stay with Kryten. If the issue is already built it is rebuilt with the change, so Test send again before Send to all.'],
       ['Send to all', 'sends the built issue to every subscriber, once it has had a Test send. It first shows when it was last rebuilt and tested and when Rimmer last checked it, and asks you to confirm. After a Rebuild, Test send again before sending. The preview email\'s Send button still works too.'],
       ['Rimmer', 'his notes on the issue sit above the draft (open How this works on his card).']],
     stats: [
@@ -3565,12 +3566,20 @@ export const CLIENT_JS = String.raw`
         m ? h('button', { class: 'btn', disabled: S.draftBusy ? true : null, title: 'Build this issue again now; sends nothing', onclick: function () { nlConfirm('rebuild', m); } }, 'Rebuild') : null,
         m && m.mode === 'frozen' ? h('button', { class: 'btn', disabled: S.draftBusy ? true : null, title: 'Email the preview, with its Send button, to you only', onclick: function () { nlConfirm('test', m); } }, 'Test send') : null,
         canSend(m) ? h('button', { class: 'btn send-all', disabled: S.draftBusy ? true : null, title: 'Send this built issue to every subscriber (asks first)', onclick: function () { sendConfirm(m); } }, m.send_mode === 'live' ? 'Send to all' : m.send_mode === 'canary' ? 'Canary send' : 'Shadow run') : null,
-        h('a', { class: 'btn link', href: '/admin/draft', target: '_blank', rel: 'noopener' }, 'Open in new tab'))));
+        m ? h('button', { class: S.draftEdit ? 'btn primary' : 'btn', title: 'Click an entry in the draft to change its wording or links (the website changes too)', 'aria-pressed': S.draftEdit ? 'true' : 'false',
+          onclick: function () { S.draftEdit = !S.draftEdit; render(); } }, S.draftEdit ? 'Stop editing' : 'Edit text') : null,
+        h('a', { class: 'btn link', href: S.draftEdit ? '/admin/draft-edit' : '/admin/draft', target: '_blank', rel: 'noopener' }, 'Open in new tab'))));
+    // Edit text (4 Nov, "edit everything"): the same draft with the entry editor in it.
+    if (S.draftEdit) {
+      els.push(h('div', { class: 'note' }, 'Editing: click an outlined entry in the draft to change its wording or links, then Save and publish. The website changes too.'
+        + (m && m.mode === 'frozen' ? ' This issue is built, so it is rebuilt with each change: Test send again before Send to all.' : '')));
+    }
     els.push(rimmerCard('Rimmer', ['newsletter'], [['newsletter', 'Check']],
       'Rimmer reads the issue as a villager would and lists anything wrong. He runs on Wednesday evening after the deadline; Check runs him now.'));
     // The draft at its full height (3 Nov, Jon): the page scrolls as one, Rimmer's notes above it.
     els.push(S.draftAuth === 'ok'
-      ? h('iframe', { class: 'draft-frame', src: '/admin/draft?v=' + encodeURIComponent(m ? str(m.as_of) : '0'), title: 'Newsletter draft', scrolling: 'no', onload: fitFrame })
+      ? h('iframe', { class: 'draft-frame', src: S.draftEdit ? '/admin/draft-edit?v=' + encodeURIComponent(m ? str(m.as_of) : '0') : '/admin/draft?v=' + encodeURIComponent(m ? str(m.as_of) : '0'),
+        title: S.draftEdit ? 'Newsletter draft (editing)' : 'Newsletter draft', scrolling: 'no', onload: fitFrame })
       : h('p', { class: 'loading' }, 'Loading the draft…'));
     return els;
   }
