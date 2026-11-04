@@ -48,7 +48,7 @@ const summaryData = () => (empty ? {
 } : {
   today: '2026-10-28',
   failing: [{ name: 'Ingest', started: new Date(now - 2 * H).toISOString(), url: 'https://github.com/o/r/actions/runs/9' }],
-  devTasks: [{ task: 'Groups page: add the group once consent arrives', waiting: 'a reply by email', added: '2026-10-28' }]
+  devTasks: [{ task: 'Groups page: add the group once consent arrives', waiting: 'a reply by email', added: '2026-10-28', kryten: true }]
     .concat([2, 3, 4, 5, 6, 7].map((n) => ({ task: 'Dev task ' + n, added: '2026-10-28' }))),
   lessons: [{ id: 'L1', lesson: 'Thank council clerks for their help.' }],
   outreach: { seasonal: 1, quiet: 1, lead: 0 }, orgs: { due: 1, chase: 0 },
@@ -106,7 +106,7 @@ try {
     assert.match(text, /Feedback \(1\)[\s\S]*★★★★☆ "Bin dates wrong/);
     assert.match(text, /Feed Harvington PC: HTTP 403/);
     assert.match(text, /Ingest · last run failed/);
-    assert.match(text, /Development tasks \(7\)[\s\S]*waiting on a reply by email[\s\S]*Dev task 5\n[\s\S]*Show 2 more/);
+    assert.match(text, /Development tasks \(7\)[\s\S]*waiting on a reply by email Kryten[\s\S]*Dev task 5\n[\s\S]*Show 2 more/);
     assert.doesNotMatch(text, /Dev task 6/);
     await main.locator('button', { hasText: 'Show 2 more' }).click();
     assert.match(await main.innerText(), /Dev task 7[\s\S]*Show fewer/);

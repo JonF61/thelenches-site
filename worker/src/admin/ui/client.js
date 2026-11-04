@@ -4016,7 +4016,7 @@ export const CLIENT_JS = String.raw`
 
     // 6. Development tasks (devtasks.json, kept by Kryten).
     els.push(sumCard('Development tasks (' + (all.devTasks || []).length + ')', null, (all.devTasks || []).map(function (t) {
-      return line(t.task, t.waiting ? 'waiting on ' + t.waiting : '', []);
+      return line(t.task, t.waiting ? 'waiting on ' + t.waiting : '', [t.kryten ? ['Kryten', 'info'] : null]);
     }), { empty: 'Nothing outstanding', max: 5, more: true }));
 
     // 7. Next newsletter.

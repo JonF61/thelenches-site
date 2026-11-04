@@ -118,6 +118,8 @@ Minimal notice (`src/items/notices/hall-car-park-resurfacing.json`):
 
 **Dev tasks**: at the end of every job, update `worker/src/admin/devtasks.json` (shown on the panel's Summary): add what is still outstanding, remove what is done. Never name private individuals there (the repo is public).
 
+**Kryten's to-do** (4 Nov, Jon: so work carries over between sessions): anything Kryten owes for later (a Build history entry put off, a check after the next live run) goes in devtasks.json with `"kryten": true` (the Summary shows a Kryten badge). At the start of every session, read devtasks.json's `kryten` entries and do them (or ask Jon), then remove each in that job's PR.
+
 **Rimmer's findings for Kryten**: at the start of every session, read the Rimmer tab (Read Sheet tab, columns A:L plus fix_note) for rows with status `kryten`; deal with each (or ask Jon), then set its status to `fixed` or `dismissed` with Write Sheet cells (with Jon's go-ahead for the write).
 
 **Kryten and Holly tab** (in the Plan doc; the name is historical): closed except for Chrome jobs. At the start of every session, glance at it for answered Chrome jobs and act on them, then set their Status to Done.
