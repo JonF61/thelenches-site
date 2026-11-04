@@ -154,6 +154,18 @@ async function testMerge(d) {
   ok(tables.Pending[0].summary === 'Closed.' && tables.Pending[0].link2_url === 'https://e.org/' && ch.join() === 'second link', 'official pipeline item: links only');
 }
 
+// Sender check (Jon, 4 Nov 2026): an update not from whoever sent the entry in is flagged.
+function testSender() {
+  const existing = [{ id: 'm1-1', from: 'Sue Brown <Sue@Example.org>' }];
+  const p = { key: 'p:m1-1', title: 'Quiz', source: 'pipeline', confidence: 0.9, details: '' };
+  ok(dupes.sameSender(p, 'sue@example.org', existing) === true, 'same address (any case): same sender');
+  ok(dupes.sameSender(p, 'x@example.org', existing) === false, 'other address: different');
+  ok(dupes.sameSender(p, 'sue2@example.org', existing, (a, b) => a === 'sue@example.org' && b === 'sue2@example.org') === true, 'same Contacts row: same sender');
+  ok(dupes.sameSender({ ...p, key: 'p:gone' }, 'sue@example.org', existing) === false, 'original row not found: different');
+  ok(dupes.sameSender({ ...p, key: 'h:events/x.json', source: 'hand-written' }, 'sue@example.org', existing) === false, 'hand-written: different');
+  ok(!dupes.noteFor({ ...p, same_sender: true }).includes('sender different') && dupes.noteFor({ ...p, same_sender: false }).endsWith('; sender different to original poster'), 'Pending note says so');
+}
+
 async function testLive() {
   const pipeline = { events: [{ id: 'a1-1', date: '2026-11-20', title: 'Quiz — Rous Lench' }], notices: [{ id: 'a2-1', title: 'Lost cat' }] };
   const published = live.publishedById(pipeline);
@@ -232,6 +244,7 @@ async function testFeed() {
   testAck(d);
   testFeedback(d);
   await testMerge(d);
+  testSender();
   await testLive();
   console.log(`All duplicate and live-notice tests passed (${checks} checks).`);
 })().catch((err) => { console.error(err); process.exit(1); });

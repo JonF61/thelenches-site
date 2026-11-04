@@ -230,6 +230,8 @@ async function processMessage(id, ctx) {
   const listed = items.length ? dupes.listings(ctx.existing) : [];
   const found = [];
   for (const item of items) found.push(spam ? null : await dupes.check(item, listed, { messageId: msg.id, text: msg.text }));
+  // Sender check (Jon, 4 Nov): flag an update that isn't from whoever sent the entry in.
+  for (const d of found.filter(Boolean)) d.same_sender = dupes.sameSender(d, msg.fromAddress, ctx.existing, replies.samePerson);
   if (found.some(Boolean)) console.log(`${id}: ${found.filter(Boolean).length} item(s) already listed.`);
 
   const link = g.gmailLink(msg);

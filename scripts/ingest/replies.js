@@ -631,6 +631,13 @@ function contactFor(...addresses) {
   return null;
 }
 
+// Both addresses on one Contacts row (its email or other_emails), for the Already listed
+// sender check (duplicates.js sameSender).
+function samePerson(a, b) {
+  const c = learning.contacts.get(norm(a));
+  return Boolean(c) && c === learning.contacts.get(norm(b));
+}
+
 // known_contact as given to Claude (status is for the code only).
 const promptContact = (c) => (c ? { name: c.name, organisation: c.organisation, role: c.role, profile: c.profile, recent: c.recent } : undefined);
 const PERSONAL_NOTE = 'Personalised from their Contacts row';
@@ -2232,6 +2239,7 @@ module.exports = {
   correctionsFrom,
   contactFacts,
   contactFor,
+  samePerson,
   contactFirstName,
   sanitiseAckLine,
   buildBody,
