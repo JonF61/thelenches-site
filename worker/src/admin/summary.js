@@ -153,7 +153,7 @@ export function comingWeek(coming, today) {
 
 export function devTasks() {
   return (devTasksData.tasks || []).filter((t) => str(t.task))
-    .map((t) => ({ task: str(t.task), waiting: str(t.waiting), added: ymd(t.added) }));
+    .map((t) => ({ task: str(t.task), waiting: str(t.waiting), added: ymd(t.added), kryten: t.kryten === true }));
 }
 
 // The site's coming-up.json, or { error }. Cached at the edge for 5 minutes.
