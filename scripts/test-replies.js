@@ -227,8 +227,10 @@ async function testSending() {
 
   await replies.sendDueReplies(settings, false);
   const byType = (t) => tables.Replies.filter((r) => r.type === t);
-  ok(byType('ack').every((r) => r.status === 'sent'), 'acks sent');
-  ok(byType('holding').every((r) => r.status === 'sent'), 'holding replies sent');
+  // Jon, 4 Nov 2026: acknowledgements and holding replies wait for his tap outside holiday mode.
+  ok(byType('ack').length && byType('ack').every((r) => r.status === 'awaiting'), 'acks wait for Jon');
+  ok(byType('holding').length && byType('holding').every((r) => r.status === 'awaiting'), 'holding replies wait for Jon');
+  ok(byType('list').every((r) => r.status === 'sent'), 'list confirmations still sent at once');
   // Stage 1 (2 Nov 2026, TIMEOUT_SEND off): a clarification waits for Jon however long it takes.
   ok(clarify.status === 'awaiting' && !sent.some((m) => m.to === clarify.to && m.text.includes('Could you let us know')), 'clarification still waits for Jon after 24h');
   ok(byType('answer').every((r) => r.status === 'awaiting') && byType('held').every((r) => r.status === 'awaiting'),
@@ -266,6 +268,8 @@ async function testSending() {
 
   // Sorry note when Jon rejects an acknowledged item.
   const ackRow = byType('ack')[0];
+  await replies.decideReply(ackRow.reply_id, 'send');
+  ok(ackRow.status === 'sent', 'ack sent on Approve');
   const item = (await g.readTable('Pending')).find((r) => r.message_id === ackRow.message_id);
   const sorry = await replies.planSorry(item);
   ok(sorry && sorry.status === 'awaiting' && sorry.body.includes(`"${item.title}"`) && /couldn't use it after all/.test(sorry.body), 'sorry note drafted for Jon');
@@ -295,7 +299,7 @@ async function testSending() {
   reset();
   const owner = { ...fixtures[0], msg: { ...fixtures[0].msg, from: 'Owner Smith <os@example.com>' } };
   await plan(owner, 'o1', false, { settings, holiday: false, replies: [], existing: [] });
-  await replies.sendDueReplies(settings, false);
+  await replies.decideReply(tables.Replies[0].reply_id, 'send');
   ok(tables.Replies[0].status === 'sent' && tables.Replies[0].body.startsWith('Hi Owner,'), 'greeting with the team name is allowed');
 }
 
@@ -574,16 +578,34 @@ async function testRedraft() {
   ok(sent[0] && (sent[0].html.match(/>Redraft</g) || []).length === 1 && sent[0].text.includes('Redraft: https://worker.example/a?t='), 'action email cards have Redraft');
 }
 
+// Jon, 4 Nov 2026: acks, holding replies and "Now on the website" emails wait for him, but
+// any still waiting when holiday mode comes on are sent by the next run.
+async function testHolidaySendsWaiting() {
+  reset();
+  settings = LIVE;
+  const ctx = { settings, holiday: false, replies: [], existing: [] };
+  await plan(caseNamed('clean submission'), 'hw1', false, ctx);
+  await plan(caseNamed('complaint'), 'hw2', false, ctx);
+  tables.Replies.push({ reply_id: 'hw3-live-1', message_id: 'hw3', type: 'live', status: 'awaiting', to: 'z@example.org', thread_id: 't-hw3', subject: 'Re: x', body: 'Hi Zed,\n\nGood news.', created_at: hoursAgo(1) });
+  await replies.sendDueReplies(settings, false);
+  ok(['hw1-ack', 'hw2-holding', 'hw3-live-1'].every((id) => find(`m${id}`.replace('mhw3', 'hw3')).status === 'awaiting'), 'outside holiday: ack, holding and live wait');
+  await replies.sendDueReplies(settings, true);
+  ok(['hw1-ack', 'hw2-holding', 'hw3-live-1'].every((id) => find(`m${id}`.replace('mhw3', 'hw3')).status === 'sent'), 'holiday mode: waiting ack, holding and live sent');
+  ok(find('mhw2-held').status === 'awaiting', 'holiday mode: held draft still waits');
+}
+
 async function testOwed() {
   reset();
   settings = LIVE;
   const ctx = { settings, holiday: false, replies: [], existing: [] };
   await plan(caseNamed('complaint'), 'w1', false, ctx);
   await plan(caseNamed('who runs the site'), 'w2', false, ctx);
-  await replies.sendDueReplies(settings, false);
   const holding1 = find('mw1-holding');
   const holding2 = find('mw2-holding');
-  ok(holding1.status === 'sent' && holding2.status === 'sent', 'holding replies sent');
+  ok(holding1.status === 'awaiting' && holding2.status === 'awaiting', 'holding replies wait for Jon');
+  await replies.decideReply('mw1-holding', 'send');
+  await replies.decideReply('mw2-holding', 'send');
+  ok(find('mw1-holding').status === 'sent' && find('mw2-holding').status === 'sent', 'holding replies sent on Approve');
   ok(replies.owedReplies(tables.Replies.map((r, i) => ({ ...r, _row: i + 2 }))).length === 0, 'not owed before 2 days');
   holding1.sent_at = hoursAgo(50);
   holding2.sent_at = hoursAgo(50);
@@ -690,6 +712,7 @@ function testManyItems() {
   await testFollowupLists();
   await testAutoResponders();
   await testRedraft();
+  await testHolidaySendsWaiting();
   await testOwed();
   await testRouting();
   await testSending();

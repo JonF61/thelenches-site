@@ -147,6 +147,8 @@ async function run({ fetchPage = defaultFetch, now = Date.now() } = {}) {
     }
   }
 
+  // Jon, 4 Nov 2026: waits for his tap in the panel, except in holiday mode.
+  const holiday = String(settings.holiday_mode || '').toUpperCase() === 'TRUE';
   let queued = 0;
   for (const gr of ready) {
     const n = repliesRows.filter((r) => str(r.reply_id).startsWith(`${gr.messageId}-live-`)).length + 1;
@@ -160,7 +162,7 @@ async function run({ fetchPage = defaultFetch, now = Date.now() } = {}) {
       policy_codes: 'live',
       subject: gr.ack.subject,
       body: bodyFor(gr.ack, gr.items),
-      status: 'queued',
+      status: holiday ? 'queued' : 'awaiting',
       created_at: at,
       notes: `Now on the website: ${gr.items.length} item(s), checked on the live page`,
     };
@@ -170,10 +172,7 @@ async function run({ fetchPage = defaultFetch, now = Date.now() } = {}) {
     queued += 1;
   }
   console.log(`"Now live" emails queued: ${queued} (${readyIds.size} item(s)).`);
-  if (queued) {
-    const holiday = String(settings.holiday_mode || '').toUpperCase() === 'TRUE';
-    await replies.sendDueReplies(settings, holiday);
-  }
+  if (queued && holiday) await replies.sendDueReplies(settings, holiday);
   return queued;
 }
 

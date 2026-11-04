@@ -234,7 +234,7 @@ async function main() {
   const quiz = [{ title: 'Quiz night', event_date: '2026-11-20', policy_flags: '', missing: '' }];
   const ack = await replies.planReply({ msg: sue('p3'), sourceName: 'website', result: { emailClass: 'submission' }, rows: quiz, ctx: ctxFor() });
   const paras = ack.body.split('\n\n');
-  ok(ack.type === 'ack' && ack.status === 'queued' && paras[0] === 'Hi Sue,' && /^Thanks for sending "Quiz night"/.test(paras[1])
+  ok(ack.type === 'ack' && ack.status === 'awaiting' && paras[0] === 'Hi Sue,' && /^Thanks for sending "Quiz night"/.test(paras[1])
     && paras[2] === 'Lovely to hear from the Lenches Club again.', 'personal line after the thanks');
   ok(/Personal line from their Contacts row/.test(ack.notes), 'ack note');
   for (const bad of ['We noticed you send this every year.', 'See you on 20 November at the quiz.', 'Hope Sue enjoys the evening as always.',
