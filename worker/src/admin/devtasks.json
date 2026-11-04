@@ -26,24 +26,8 @@
       "added": "2026-11-03"
     },
     {
-      "task": "Already listed: check the next duplicate submission's banner, ack wording and Add details (file commit and build)",
-      "added": "2026-11-03"
-    },
-    {
       "task": "Now live emails: check the first one sends after a build, on the ack thread, with the right link, and only once",
       "added": "2026-11-03"
-    },
-    {
-      "task": "Second link: check the next council feed items and emailed items for sensible second links (and none invented)",
-      "added": "2026-11-02"
-    },
-    {
-      "task": "Inbound on Opus 5.5: check the next Ingest and Contacts runs complete and note the cost change",
-      "added": "2026-11-02"
-    },
-    {
-      "task": "Graduated autonomy stage 1: check the next ingest run fills the Item feedback tab, nothing goes to auto, and Holly notes read well",
-      "added": "2026-11-02"
     },
     {
       "task": "Graduated autonomy stage 3 (a veto window for a kind that qualifies on the Autonomy screen): propose once one qualifies",
@@ -57,10 +41,6 @@
     {
       "task": "Holly on Opus 5.5 with looser rules: review the first week's drafts",
       "added": "2026-11-01"
-    },
-    {
-      "task": "Contacts on the newsletter: check the first contacts run's Newsletter line and that Thursday's send count rose by about that many",
-      "added": "2026-10-31"
     },
     {
       "task": "Write Sheet cells: after a few weeks, check the Kryten log tab and tidy old entries",
@@ -91,16 +71,6 @@
     },
     {
       "task": "Regular activities: take down the under-construction box once most entries are filled in",
-      "added": "2026-10-30"
-    },
-    {
-      "task": "SEO: in Search Console (thelenches.org.uk Domain property, verified 30 Oct; sitemap submitted) check Enhancements → Events and Pages indexed after a week (missing endDate fixed 31 Oct: press Validate fix; performer, offers and organizer warnings left as we hold no such data)",
-      "waiting": "Google to crawl",
-      "added": "2026-10-30"
-    },
-    {
-      "task": "Site visitors: check the first nightly save (Visitors tab should hold 28–30 Oct after 00:10 UK on 31 Oct) and that the panel screen shows them",
-      "waiting": "the first nightly run",
       "added": "2026-10-30"
     },
     {
