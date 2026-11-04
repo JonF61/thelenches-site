@@ -31,7 +31,12 @@ const draft = buildDraft({
     { id: 'b', title: 'Too late notice', body: 'x', category: 'notice', status: 'approved', received: '2026-10-28 19:00', decided_at: '2026-10-28 19:30' },
   ],
   issues: [{ issue_id: '2026-10-22', issue_date: '2026-10-22', status: 'sent', item_keys: '', image_keys: '' }],
+  subscribers: [{ email: 'a@example.org', status: 'active' }, { email: 'b@example.org', status: '' }, { email: 'c@example.org', status: 'unsubscribed' }, { email: 'd@example.org' }],
+  dns: [{ email: 'd@example.org' }],
 });
+assert.equal(draft.meta.subscribers, 2);
+// The built issue after its Test send (4 Nov): what Send to all passes on.
+const SEND = { built_at: '2026-10-28T13:20:00.000Z', tested_at: '2026-10-28T13:30:00.000Z', hash: '0123456789abcdef', send_mode: 'live', send_count: 2 };
 const liveRows = draftRows(draft.meta, draft.html, '2026-10-28T12:00:00.000Z');
 let rows = liveRows;
 let refreshed = 0;
@@ -67,9 +72,11 @@ const server = http.createServer(async (req, res) => {
     for await (const c of req) b += c;
     const body = JSON.parse(b);
     nlPosts.push(body);
-    if (body.action === 'rebuild') rows = draftRows({ ...draft.meta, mode: 'frozen', status: 'built' }, draft.html, '2026-10-28T13:20:00.000Z');
-    return send({ ok: true, message: body.action === 'rebuild' ? 'Rebuilding: nothing is sent.' : 'Test send started.' });
+    if (body.action === 'rebuild') rows = draftRows({ ...draft.meta, mode: 'frozen', status: 'built', built_at: SEND.built_at, hash: SEND.hash, send_mode: 'live', send_count: 2 }, draft.html, '2026-10-28T13:20:00.000Z');
+    if (body.action === 'test') rows = draftRows({ ...draft.meta, mode: 'frozen', status: 'tested', ...SEND }, draft.html, '2026-10-28T13:31:00.000Z');
+    return send({ ok: true, message: { rebuild: 'Rebuilding: nothing is sent.', test: 'Test send started.', send: 'Send started.' }[body.action] });
   }
+  if (url.pathname === '/admin/api/rimmer') return send({ open: [], kryten: [], last: { newsletter: '2026-10-28T11:00:00.000Z' } });
   if (url.pathname === '/admin/draft') {
     const r = draftPage(await draftHtml(rows));
     res.writeHead(200, Object.fromEntries(r.headers));
@@ -108,6 +115,13 @@ try {
     assert.match(text, /Draft for Thu 29 Oct/);
     assert.match(text, /1 held as late, for next week/);
     assert.match(text, /Live draft: changes as items are approved/);
+    assert.match(text, /2 subscribers on the list/);
+    // Rimmer with nothing found (4 Nov): one short row, no intro paragraph.
+    const rim = main.locator('.card.rimmer.compact');
+    await rim.waitFor();
+    assert.match(await rim.innerText(), /Nothing found · Newsletter last checked/);
+    assert.ok((await rim.boundingBox()).height < 110, 'compact Rimmer card');
+    assert.equal(await main.locator('button', { hasText: 'Send to all' }).count(), 0);
     const frame = page.frameLocator('iframe.draft-frame');
     await frame.locator('text=Hall quiz night results').first().waitFor();
     assert.equal(await frame.locator('text=Too late notice').count(), 0);
@@ -130,6 +144,8 @@ try {
     assert.deepEqual(nlPosts.pop(), { action: 'rebuild', issue_date: draft.meta.issue_date });
     await page.clock.runFor(16000);
     await main.locator('.badge', { hasText: 'Built: as it will go out (built)' }).waitFor();
+    assert.equal(await main.locator('button', { hasText: 'Send to all' }).count(), 0);
+    await main.locator('.meta', { hasText: 'Test send first' }).waitFor();
     await main.locator('button', { hasText: 'Test send' }).click();
     await page.locator('.overlay', { hasText: 'No subscriber and no test copy' }).waitFor();
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `draft-test-${name}.png`), fullPage: false });
@@ -137,6 +153,26 @@ try {
     await page.locator('text=Test send started.').waitFor();
     assert.deepEqual(nlPosts.pop(), { action: 'test', issue_date: draft.meta.issue_date });
     assert.equal(await page.locator('.overlay').count(), 0);
+    // Send to all (4 Nov): shows once tested; the confirm gives the times and Rimmer's check, then posts nlsend's details.
+    await main.locator('button', { hasText: 'Test sending…' }).waitFor();
+    await page.clock.runFor(16000);
+    await main.locator('button', { hasText: 'Send to all' }).click();
+    const ov = page.locator('.overlay', { hasText: 'Are you sure?' });
+    await ov.waitFor();
+    const ovText = await ov.innerText();
+    assert.match(ovText, /to 2 subscribers\. It can't be undone/);
+    assert.match(ovText, /Last rebuilt: /);
+    assert.match(ovText, /Test send: /);
+    assert.match(ovText, /Rimmer last checked: .* · 0 open findings/);
+    assert.match(ovText, /Rimmer checked before the last rebuild/);
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `draft-send-${name}.png`), fullPage: false });
+    await ov.locator('button', { hasText: 'Cancel' }).click();
+    assert.equal(await page.locator('.overlay').count(), 0);
+    assert.equal(nlPosts.length, 0);
+    await main.locator('button', { hasText: 'Send to all' }).click();
+    await page.locator('.overlay button[type=submit]', { hasText: 'Yes, send to 2' }).click();
+    await page.locator('text=Send started.').waitFor();
+    assert.deepEqual(nlPosts.pop(), { action: 'send', issue_date: draft.meta.issue_date, hash: SEND.hash, count: 2, mode: 'live' });
     rows = liveRows;
     // Signed out of Cloudflare: a message and Reload instead of a blocked frame.
     signedOut = true;

@@ -544,7 +544,7 @@ test('E2E: state, session and the panel files', async () => {
   const code = await js.text();
   assert.doesNotThrow(() => new Function(code), 'the panel script parses');
   assert.doesNotMatch(code, /innerHTML/, 'all text goes in as text nodes');
-  assert.doesNotMatch(code, /nlsend|nlbuild/, 'no newsletter send in the panel');
+  assert.doesNotMatch(code, /nlsend|nlbuild/, 'the panel sends only through /admin/api/newsletter (Send to all, 4 Nov)');
   const css = await worker.fetch(await reqWith('/admin/app.css'), env());
   assert.match(await css.text(), /prefers-color-scheme: dark/);
 });
@@ -915,7 +915,15 @@ test('Newsletter draft: Rebuild and Test send map to nlquiet / nltest, panel onl
   const today = '2026-10-29';
   assert.deepEqual(planNewsletter({ action: 'rebuild', issueDate: '2026-10-29' }, today).p, { a: 'nlquiet', i: '2026-10-29' });
   assert.deepEqual(planNewsletter({ action: 'test', issueDate: '2026-11-05' }, today).p, { a: 'nltest', i: '2026-11-05' });
+  // Send to all (4 Nov): the email's nlsend decision, with the draft's hash, count and mode.
   assert.equal(planNewsletter({ action: 'send', issueDate: '2026-10-29' }, today).status, 400);
+  assert.deepEqual(planNewsletter({ action: 'send', issueDate: '2026-10-29', hash: '0123456789ABCDEF', count: 425, mode: 'live' }, today).p,
+    { a: 'nlsend', i: '2026-10-29', h: '0123456789abcdef', n: 425, m: 'live' });
+  assert.equal(planNewsletter({ action: 'send', issueDate: '2026-10-29', hash: '0123456789abcdef', count: 425, mode: 'off' }, today).status, 400);
+  assert.equal(planNewsletter({ action: 'send', issueDate: '2026-10-29', hash: '0123456789abcdef', count: '', mode: 'live' }, today).status, 400);
+  assert.equal(planNewsletter({ action: 'send', issueDate: '2026-10-22', hash: '0123456789abcdef', count: 425, mode: 'live' }, today).status, 409);
+  assert.deepEqual(dispatchFor({ a: 'nlsend', i: '2026-10-29', h: '0123456789abcdef', n: 425, m: 'live' }),
+    ['newsletter', { action: 'send', issue_date: '2026-10-29', confirm_count: '425', expect_hash: '0123456789abcdef', expect_mode: 'live' }]);
   assert.equal(planNewsletter({ action: 'test', issueDate: 'x' }, today).status, 400);
   assert.equal(planNewsletter({ action: 'test', issueDate: '2026-10-22' }, today).status, 409);
   assert.equal(planNewsletter({ action: 'test', issueDate: '2026-11-06' }, today).status, 409);

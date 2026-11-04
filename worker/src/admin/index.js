@@ -103,9 +103,10 @@
 //                                   (draft.js; scripts/newsletter/draft.js), framed by the panel
 //   GET  /admin/api/draft           that draft's meta only (as_of, issue_date, mode, counts)
 //   POST /admin/api/draft-refresh   runs newsletter-draft.yml now (repository_dispatch); sends nothing
-//   POST /admin/api/newsletter      { action: rebuild|test, issue_date } through decide():
+//   POST /admin/api/newsletter      { action: rebuild|test|send, issue_date[, hash, count, mode] } through decide():
 //                                   rebuild (nlquiet) sends nothing; test (nltest) sends only the
-//                                   preview, with its Send button, to preview_to (Jon)
+//                                   preview, with its Send button, to preview_to (Jon); send (nlsend,
+//                                   4 Nov) is the preview email's Send decision, checked by send.js
 //   GET  /admin/api/site-visitors   Site visitors (sitestats.js): saved days and months from the
 //                                   Visitors tab, plus today so far from Cloudflare.
 //   GET  /admin/api/nlstats?i=DATE  Newsletter stats (nlstats.js): sent issues with sent, bounced,
@@ -129,7 +130,8 @@
 //                                   site build succeeded AND the page (fresh copy) shows text
 //   GET  /admin/img/mail/MSG/PART   a Pending image (email attachment)
 //   GET  /admin/img/drive/ID[?size=N]  a Photos image (Drive thumbnail, else the file)
-// Nothing here can send the newsletter to subscribers (Test send emails Jon's preview only) or change repository code, except Edit page's
+// The newsletter reaches subscribers from here only by Send to all (4 Nov, Jon): the same nlsend
+// decision as the preview email's Send button, after a confirm. Nothing here changes repository code, except Edit page's
 // wording edits to page templates (src/*.njk, pageedit.js). Otherwise the only GitHub call
 // is decide(), for the item and reply actions listed in actions.js, the Feedback
 // actions in feedback.js, outreach's nudge (a draft only; it never sends) and approving or
@@ -1024,12 +1026,14 @@ export async function handleAdmin(request, env) {
         return json({ ok: true, message: 'Refreshing: the new draft shows in a minute or two.' });
       }
       if (path === '/admin/api/newsletter') {
-        const plan = planNewsletter({ action: body.action, issueDate: body.issue_date }, ukToday());
+        const plan = planNewsletter({ action: body.action, issueDate: body.issue_date, hash: body.hash, count: body.count, mode: body.mode }, ukToday());
         if (plan.error) return json({ ok: false, error: plan.error }, plan.status);
         if (!(await decide(env, plan.p))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);
-        return json({ ok: true, message: plan.p.a === 'nlquiet'
-          ? 'Rebuilding: nothing is sent. The draft shows the new build in a few minutes.'
-          : 'Test send started: the preview should reach your inbox in a few minutes.' });
+        return json({ ok: true, message: {
+          nlquiet: 'Rebuilding: nothing is sent. The draft shows the new build in a few minutes.',
+          nltest: 'Test send started: the preview should reach your inbox in a few minutes.',
+          nlsend: 'Send started: Activity shows the Newsletter run. If anything no longer matches, nothing is sent and the run says why.',
+        }[plan.p.a] });
       }
       if (path === '/admin/api/page-save') return fromResult(await savePage(env, body));
       return json({ ok: false, error: 'Not found' }, 404);

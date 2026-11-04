@@ -10,8 +10,9 @@
 
 export const DRAFT_TAB = 'Newsletter draft';
 export const DRAFT_RANGE = `'${DRAFT_TAB}'!A1:B60`;
-const META_KEYS = ['as_of', 'issue_date', 'mode', 'status', 'subject', 'items', 'events', 'notices', 'roads', 'elsewhere', 'held', 'cutoff'];
-const NUMBERS = new Set(['items', 'events', 'notices', 'roads', 'elsewhere', 'held']);
+const META_KEYS = ['as_of', 'issue_date', 'mode', 'status', 'subject', 'items', 'events', 'notices', 'roads', 'elsewhere', 'held', 'cutoff',
+  'subscribers', 'built_at', 'tested_at', 'hash', 'send_mode', 'send_count'];
+const NUMBERS = new Set(['items', 'events', 'notices', 'roads', 'elsewhere', 'held', 'subscribers', 'send_count']);
 
 const str = (v) => String(v ?? '').trim();
 const pairs = (rows) => (rows || []).slice(1).filter((r) => str(r[0])).map((r) => [str(r[0]), String(r[1] ?? '')]);

@@ -75,7 +75,8 @@ export const CLIENT_JS = String.raw`
       ['Live draft', 'changes as items are approved; Refresh rebuilds this preview now.'],
       ['Built', 'Thursday\'s issue is made and frozen exactly as it will go out.'],
       ['Rebuild', 're-makes a built issue with anything approved since. It sends nothing.'],
-      ['Test send', 'emails the preview of the built issue to you only. The real Send is in the preview email.'],
+      ['Test send', 'emails the preview of the built issue to you only.'],
+      ['Send to all', 'sends the built issue to every subscriber, once it has had a Test send. It first shows when it was last rebuilt and tested and when Rimmer last checked it, and asks you to confirm. After a Rebuild, Test send again before sending. The preview email\'s Send button still works too.'],
       ['Rimmer', 'his notes on the issue sit above the draft (open How this works on his card).']],
     stats: [
       ['Sent', 'how many addresses the issue went to.'],
@@ -3454,12 +3455,46 @@ export const CLIENT_JS = String.raw`
       closeOverlay();
       if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); return; }
       toast(r.json.message || 'Started');
-      if (rebuild) pollDraft(before, 'Rebuilding…', 40);
+      // After a Test send the draft is redone too (newsletter-draft.yml), bringing Send to all.
+      pollDraft(before, rebuild ? 'Rebuilding…' : 'Test sending…', 40);
     } },
     h('p', null, rebuild
       ? 'Builds the ' + day(m.issue_date) + ' issue again with everything approved, including items that came in after the Wednesday deadline. Nothing is sent. Any Send button in an earlier preview stops working; use Test send for a new one.'
       : 'Sends the preview of the ' + day(m.issue_date) + ' issue, exactly as built, to your thelenches.org.uk inbox only, with the usual Send, Rebuild, Approve and Reject buttons. No subscriber and no test copy gets anything.'),
     h('div', { class: 'actions' }, btn)));
+  }
+
+  // Send to all (4 Nov, Jon): the preview email's Send decision from the panel (POST /admin/api/newsletter action send), for a
+  // built issue that has had its Test send. The confirm shows when it was last rebuilt and tested
+  // and when Rimmer last checked it; send.js refuses if the build, mode or count no longer match.
+  var SEND_WORDS = { live: 'subscribers', canary: 'canary addresses', shadow: 'would-be recipients (shadow run: no emails)' };
+  function canSend(m) {
+    return !!(m && m.mode === 'frozen' && (m.status === 'tested' || m.status === 'shadow') && m.hash && SEND_WORDS[m.send_mode] && m.send_count !== undefined);
+  }
+  function sendConfirm(m) {
+    var c = rimmerData();
+    var checked = c && c.last ? str(c.last.newsletter) : '';
+    var open = c && Array.isArray(c.open) ? c.open.filter(function (f) { return f.scope === 'newsletter'; }).length : 0;
+    var stale = !checked || (str(m.built_at) && stampMs(checked) < stampMs(m.built_at));
+    var who = m.send_count + ' ' + SEND_WORDS[m.send_mode];
+    var btn = h('button', { class: 'btn primary', type: 'submit' }, m.send_mode === 'live' ? 'Yes, send to ' + m.send_count : 'Yes, go ahead');
+    var row = function (k, v) { return h('li', null, h('b', null, k + ': '), v); };
+    overlay('Send to all', h('form', { onsubmit: async function (e) {
+      e.preventDefault();
+      btn.disabled = true;
+      var r = await api('/admin/api/newsletter', { action: 'send', issue_date: m.issue_date, hash: m.hash, count: m.send_count, mode: m.send_mode });
+      closeOverlay();
+      if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); return; }
+      toast(r.json.message || 'Send started');
+    } },
+    h('p', null, h('b', null, 'Are you sure? '), 'This sends the ' + day(m.issue_date) + ' issue, exactly as built, to ' + who + '. It can\'t be undone.'),
+    h('ul', { class: 'sum-l' },
+      row('Last rebuilt', str(m.built_at) ? when(m.built_at) : 'not known'),
+      row('Test send', str(m.tested_at) ? when(m.tested_at) : 'not known'),
+      row('Rimmer last checked', checked ? when(checked) + ' · ' + plural(open, 'open finding') : 'not yet')),
+    stale ? h('p', { class: 'note warn' }, checked ? 'Rimmer checked before the last rebuild: tap Check on his card first if you want him to read this build.' : 'Rimmer hasn\'t checked this issue: tap Check on his card first if you want him to.') : null,
+    open ? h('p', { class: 'note warn' }, 'Rimmer has ' + plural(open, 'open finding') + ' on this issue.') : null,
+    h('div', { class: 'actions' }, btn, h('button', { class: 'btn', type: 'button', onclick: closeOverlay }, 'Cancel'))));
   }
 
   // Checks every 15 seconds (default up to 6 minutes) for a draft newer than before.
@@ -3515,6 +3550,8 @@ export const CLIENT_JS = String.raw`
         h('h2', null, m ? 'Draft for ' + day(m.issue_date) : 'No draft yet'),
         m ? h('div', { class: 'meta' }, 'As of ' + when(m.as_of) + ' · ' + plural(m.items, 'item') + (counts ? ' (' + counts + ')' : '') +
           (m.held ? ' · ' + m.held + ' held as late, for next week' : '')) : h('div', { class: 'meta' }, 'Tap Refresh to make the first one.'),
+        m && m.subscribers !== undefined ? h('div', { class: 'meta' }, plural(m.subscribers, 'subscriber') + ' on the list') : null,
+        m && m.mode === 'frozen' && !canSend(m) && m.status === 'built' ? h('div', { class: 'meta' }, 'Test send first: Send to all shows once the preview has gone to you.') : null,
         m ? h('div', { class: 'badges' }, m.mode === 'frozen'
           ? h('span', { class: 'badge ok' }, 'Built: as it will go out' + (m.status ? ' (' + m.status + ')' : ''))
           : h('span', { class: 'badge info' }, 'Live draft: changes as items are approved')) : null),
@@ -3522,6 +3559,7 @@ export const CLIENT_JS = String.raw`
         h('button', { class: 'btn primary', disabled: S.draftBusy ? true : null, onclick: refreshDraft }, S.draftBusy || 'Refresh'),
         m ? h('button', { class: 'btn', disabled: S.draftBusy ? true : null, title: 'Build this issue again now; sends nothing', onclick: function () { nlConfirm('rebuild', m); } }, 'Rebuild') : null,
         m && m.mode === 'frozen' ? h('button', { class: 'btn', disabled: S.draftBusy ? true : null, title: 'Email the preview, with its Send button, to you only', onclick: function () { nlConfirm('test', m); } }, 'Test send') : null,
+        canSend(m) ? h('button', { class: 'btn send-all', disabled: S.draftBusy ? true : null, title: 'Send this built issue to every subscriber (asks first)', onclick: function () { sendConfirm(m); } }, m.send_mode === 'live' ? 'Send to all' : m.send_mode === 'canary' ? 'Canary send' : 'Shadow run') : null,
         h('a', { class: 'btn link', href: '/admin/draft', target: '_blank', rel: 'noopener' }, 'Open in new tab'))));
     els.push(rimmerCard('Rimmer', ['newsletter'], [['newsletter', 'Check']],
       'Rimmer reads the issue as a villager would and lists anything wrong. He runs on Wednesday evening after the deadline; Check runs him now.'));
@@ -3757,6 +3795,15 @@ export const CLIENT_JS = String.raw`
     var lastRun = c && c.last ? scopes.map(function (sc) { return c.last[sc] ? CHECK_LABELS[sc] + ' last checked ' + when(c.last[sc]) : ''; }).filter(Boolean).join(' · ') : '';
     var list = c && Array.isArray(c.open) ? c.open.filter(function (f) { return scopes.indexOf(f.scope) >= 0; }) : [];
     var kr = showKryten && c && Array.isArray(c.kryten) ? c.kryten : [];
+    // Nothing to show (4 Nov, Jon): one short row, the intro left out, How this works still there.
+    if (c && !c.error && !list.length && !kr.length) {
+      return h('div', { class: 'card rimmer compact' },
+        h('div', { class: 'intro-row' },
+          h('div', { class: 'intro-wrap' }, h('h2', null, title + ' (0)'),
+            h('div', { class: 'meta' }, lastRun ? 'Nothing found · ' + lastRun : 'Not checked yet.')),
+          h('div', { class: 'actions' }, buttons.map(function (b) { return checkButton(b[0], b[1]); }))),
+        rimmerHelp());
+    }
     return h('div', { class: 'card rimmer' },
       h('div', { class: 'intro-row' }, h('h2', null, title + (c && !c.error ? ' (' + list.length + ')' : '')),
         h('div', { class: 'actions' }, buttons.map(function (b) { return checkButton(b[0], b[1]); }))),
