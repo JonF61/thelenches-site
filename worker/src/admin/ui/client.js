@@ -3877,7 +3877,16 @@ export const CLIENT_JS = String.raw`
     return h('div', { class: 'card sum' }, h('h2', null, head),
       o.top || null,
       list.length ? h('ul', { class: 'sum-l' }, shown.map(function (l) { return h('li', null, l); })) : (o.top ? null : h('p', { class: 'meta' }, o.empty || 'Nothing waiting')),
-      list.length > shown.length ? h('p', { class: 'meta' }, 'and ' + (list.length - shown.length) + ' more') : null);
+      list.length > shown.length ? (o.more ? moreToggle(list.slice(shown.length)) : h('p', { class: 'meta' }, 'and ' + (list.length - shown.length) + ' more')) : null);
+  }
+  // A "Show N more" button that unfolds the rest of a summary list in place.
+  function moreToggle(rest) {
+    var extra = h('ul', { class: 'sum-l', hidden: true }, rest.map(function (l) { return h('li', null, l); }));
+    var btn = h('button', { class: 'btn link', onclick: function () {
+      extra.hidden = !extra.hidden;
+      btn.textContent = extra.hidden ? 'Show ' + rest.length + ' more' : 'Show fewer';
+    } }, 'Show ' + rest.length + ' more');
+    return h('div', null, extra, btn);
   }
   function line(main, meta, badges) {
     return [h('span', null, main), meta ? h('span', { class: 'meta' }, ' · ' + meta) : null,
@@ -4003,7 +4012,7 @@ export const CLIENT_JS = String.raw`
     // 6. Development tasks (devtasks.json, kept by Kryten).
     els.push(sumCard('Development tasks (' + (all.devTasks || []).length + ')', null, (all.devTasks || []).map(function (t) {
       return line(t.task, t.waiting ? 'waiting on ' + t.waiting : '', []);
-    }), { empty: 'Nothing outstanding' }));
+    }), { empty: 'Nothing outstanding', max: 5, more: true }));
 
     // 7. Next newsletter.
     if (all.issue && all.issue.error) els.push(sumCard('Next newsletter', null, [], { top: errorNote(all.issue, 'Issues') }));
@@ -4033,10 +4042,7 @@ export const CLIENT_JS = String.raw`
     var cw = all.coming || {};
     els.push(sumCard('Coming up this week', 'https://thelenches.org.uk/events/', cw.error ? [] : (cw.events || []).map(function (e) {
       return [h('span', { class: 'meta' }, dayRange(e.date, e.end) + ' · '), e.url ? h('a', { href: e.url, target: '_blank', rel: 'noopener' }, str(e.title)) : str(e.title)];
-    }).concat((cw.roads || []).map(function (r) {
-      return [h('span', { class: 'badge warn' }, 'Road'), ' ', h('a', { href: r.url, target: '_blank', rel: 'noopener' }, str(r.title)),
-        h('span', { class: 'meta' }, ' · ' + (r.end ? 'until ' + day(r.end) : 'end date not given'))];
-    })), { top: cw.error ? errorNote(cw, 'The site\'s coming-up list') : null, empty: 'Nothing in the next 7 days' }));
+    }), { top: cw.error ? errorNote(cw, 'The site\'s coming-up list') : null, empty: 'Nothing in the next 7 days' }));
 
     // 9. Outreach due.
     var ou = all.outreach || {};

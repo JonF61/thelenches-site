@@ -8,7 +8,7 @@
 //   failingRuns         workflows whose latest finished run failed
 //   subscriberChanges   sign-ups and Do Not Send additions since the last sent newsletter
 //                       (counts only: no address ever reaches the page)
-//   comingWeek          events and road works in the next 7 days (the site's coming-up.json)
+//   comingWeek          events (and road works, not shown) in the next 7 days (the site's coming-up.json)
 //   devTasks            the repo's dev-tasks list (devtasks.json, kept by Kryten)
 
 import onThisDayData from '../../../src/_data/onthisday.json' with { type: 'json' };
