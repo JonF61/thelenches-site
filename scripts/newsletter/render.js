@@ -370,6 +370,9 @@ function render(model) {
   return { subject, html, text, hash };
 }
 
+// Under the email's Send button (4 Nov, Jon): it still works, but the panel is the usual way.
+const SEND_NOTE = "You can send from here, but the usual way is Send to all on the admin panel's Newsletter draft screen, which shows when Rimmer last checked the issue.";
+
 // Signed buttons (actions.js) as HTML and text, for the preview and reminder emails.
 // info: { send, rebuild, pending: [{ title, approve?, reject? }], pendingTotal, note }
 function actionsBlock(info) {
@@ -387,13 +390,14 @@ function actionsBlock(info) {
       + `<div style="color:${C.muted};font-size:12px;">Approvals reach this issue only when you Rebuild.</div></div>`
     : '<div style="margin-top:8px;">Nothing awaiting approval.</div>')
     + `<div style="margin-top:10px;">${btn(info.send, C.green)}${btn(info.rebuild, C.accentText)}</div>`
+    + (info.send ? `<div style="margin-top:6px;color:${C.muted};font-size:12px;">${esc(SEND_NOTE)}</div>` : '')
     + (info.note ? `<div style="margin-top:6px;color:${C.muted};font-size:12px;">${esc(info.note)}</div>` : '');
   const lines = [total ? `Awaiting approval (${total}; approvals reach this issue only when you Rebuild):` : 'Nothing awaiting approval.'];
   for (const p of pend) {
     lines.push(`- ${p.title}`);
     if (p.approve) lines.push(`  Approve: ${p.approve}`, `  Reject: ${p.reject}`);
   }
-  if (info.send) lines.push('', `${info.send.label}: ${info.send.url}`);
+  if (info.send) lines.push('', `${info.send.label}: ${info.send.url}`, SEND_NOTE);
   if (info.rebuild) lines.push(`${info.rebuild.label}: ${info.rebuild.url}`);
   if (info.note) lines.push(info.note);
   return { html, text: lines.join('\n') };

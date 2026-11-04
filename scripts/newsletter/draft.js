@@ -5,7 +5,12 @@
 // snapshot exactly as built. Sends nothing and never touches Issues, Pending or any other
 // tab: it only rewrites the "Newsletter draft" tab (key, value), which the panel reads.
 //   as_of, issue_date, mode (live | frozen), status (the Issues row's, if any), subject,
-//   items, events, notices, roads, elsewhere, held, cutoff, then html_1..html_n: the copy as
+//   items, events, notices, roads, elsewhere, held, cutoff, subscribers (who a live send goes
+//   to now: Subscribers minus Do Not Send, as send.js counts them), then, for a built issue,
+//   built_at, tested_at, hash (first 16 of content_hash), send_mode (Settings newsletter_mode)
+//   and send_count (the count send.js will check; canary_to's for a canary), which the panel's
+//   Send to all (4 Nov) passes to the same nlsend decision as the preview email's Send button;
+//   then html_1..html_n: the copy as
 //   a subscriber sees it (unsubscribe link pointing at the privacy page, as preview copies),
 //   deflated and base64, split into cells under the Sheet's 50,000-character limit.
 // Run by newsletter-draft.yml after approvals, publishing, site builds and newsletter
@@ -18,6 +23,7 @@ const zlib = require('zlib');
 const { select, deadlineFor } = require('./select');
 const { render } = require('./render');
 const { forPreview } = require('./unsub');
+const { buildRecipients, canaryList } = require('./send');
 
 const TAB = 'Newsletter draft';
 const CHUNK = 45000;
@@ -43,7 +49,8 @@ function snapshotModel(row) {
   return model;
 }
 
-// inputs: { today, pending, issues, settings, sources, whatson, bins, siteupdates, onthisday, photos, jpegFor }
+// inputs: { today, pending, issues, settings, sources, whatson, bins, siteupdates, onthisday, photos, jpegFor,
+//           subscribers?, dns? (Subscribers / Do Not Send rows; counts only, never printed) }
 // -> { meta, html }
 function buildDraft(inputs) {
   const issues = inputs.issues || [];
@@ -69,6 +76,16 @@ function buildDraft(inputs) {
     roads: (model.roads || []).length, elsewhere: (model.elsewhere || []).length,
     held: model.held || 0, cutoff: str(model.cutoff),
   };
+  const subs = Array.isArray(inputs.subscribers) ? buildRecipients(inputs.subscribers, inputs.dns || [], []).list.length : null;
+  if (subs !== null) meta.subscribers = subs;
+  if (mode === 'frozen') {
+    const sendMode = str((inputs.settings || {}).newsletter_mode).toLowerCase() || 'off';
+    Object.assign(meta, {
+      built_at: str(row.built_at), tested_at: str(row.tested_at), hash: str(row.content_hash).toLowerCase().slice(0, 16), send_mode: sendMode,
+    });
+    if (sendMode === 'canary') meta.send_count = canaryList((inputs.settings || {}).canary_to, []).length;
+    else if (subs !== null) meta.send_count = subs;
+  }
   return { meta, html: issue.html };
 }
 
@@ -90,9 +107,11 @@ async function loadInputs(g) {
     return fs.existsSync(path.join(ROOT, 'src', rel)) ? `${SITE}${rel}` : '';
   };
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(Date.now());
-  const [{ sources, settings }, pending, issues] = await Promise.all([g.readSettings(), g.readTable('Pending'), g.readTable('Issues')]);
+  const [{ sources, settings }, pending, issues, subscribers, dns] = await Promise.all([
+    g.readSettings(), g.readTable('Pending'), g.readTable('Issues'), g.readTable('Subscribers'), g.readTable('Do Not Send'),
+  ]);
   return {
-    today, pending, issues, settings, sources, jpegFor, whatson: loadWhatson(),
+    today, pending, issues, settings, sources, jpegFor, whatson: loadWhatson(), subscribers, dns,
     bins: readJson('src/_data/bins.json'), siteupdates: readJson('src/_data/siteupdates.json'), onthisday: readJson('src/_data/onthisday.json'),
     photos: readJson('src/_data/photos.json'),
   };
@@ -103,7 +122,8 @@ async function main() {
   const { meta, html } = buildDraft(await loadInputs(g));
   await g.replaceTab(TAB, draftRows(meta, html, new Date().toISOString()));
   console.log(`Draft for ${meta.issue_date} (${meta.mode}${meta.status ? `, Issues ${meta.status}` : ''}): ${meta.items} items `
-    + `(${meta.events} events, ${meta.notices} notices, ${meta.roads} roads, ${meta.elsewhere} elsewhere), ${meta.held} held as late.`);
+    + `(${meta.events} events, ${meta.notices} notices, ${meta.roads} roads, ${meta.elsewhere} elsewhere), ${meta.held} held as late`
+    + `${meta.subscribers !== undefined ? `; ${meta.subscribers} subscribers` : ''}.`);
 }
 
 if (require.main === module) {

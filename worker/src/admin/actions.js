@@ -179,15 +179,18 @@ export function planSuggest({ id, sid }, row, suggestion, { hasChoice = false, h
   return { value: String(sid), save };
 }
 
-// Newsletter draft screen: Rebuild (nlquiet: rebuild, nothing sent) or Test send (nltest:
-// the preview of that build to Jon only). The issue date is the draft's, today to 7 days on.
-// Returns { p } for decide(), or { error, status }.
-export function planNewsletter({ action, issueDate }, today) {
-  const a = { rebuild: 'nlquiet', test: 'nltest' }[String(action || '')];
+// Newsletter draft screen: Rebuild (nlquiet: rebuild, nothing sent), Test send (nltest:
+// the preview of that build to Jon only) or Send to all (4 Nov, Jon: nlsend, the same decision
+// as the preview email's Send button, with the built issue's hash, mode and recipient count
+// from the draft tab; send.js refuses unless the issue is tested and all three still match).
+// The issue date is the draft's, today to 7 days on. Returns { p } for decide(), or { error, status }.
+export function planNewsletter({ action, issueDate, hash, count, mode }, today) {
+  const a = { rebuild: 'nlquiet', test: 'nltest', send: 'nlsend' }[String(action || '')];
   if (!a) return { error: `Unknown newsletter action "${action}"`, status: 400 };
   const i = String(issueDate || '');
   const p = { a, i };
-  if (!validPayload(p)) return { error: 'Bad issue date', status: 400 };
+  if (a === 'nlsend') Object.assign(p, { h: String(hash || '').toLowerCase(), n: String(count ?? '').trim() === '' ? NaN : Number(count), m: String(mode || '').toLowerCase() });
+  if (!validPayload(p)) return { error: a === 'nlsend' ? 'This draft has no Send details: Refresh it first' : 'Bad issue date', status: 400 };
   const last = new Date(Date.parse(`${today}T12:00:00Z`) + 7 * 86400000).toISOString().slice(0, 10);
   if (i < today || i > last) return { error: `The ${i} issue is not the next one: Refresh the draft first`, status: 409 };
   return { p };
