@@ -28,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '53';
+export const UI_VERSION = '54';
 
 export const CLIENT_JS = String.raw`
 (function () {
