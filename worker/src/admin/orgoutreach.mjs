@@ -296,7 +296,10 @@ export function orgState(org, { replies = [], contacts = [], orgRow = null, toda
   const addresses = addressesFor(org, orgRow, contacts, domains);
   const regular = (recent && recent.has(org.id)) || contactRecent(addresses, contacts, today);
   const REGULAR = { state: 'regular', why: 'Emailed us in the last 3 months: no check needed' };
-  if (isDay(next) && next > today) return regular ? REGULAR : { state: 'held', why: heldWhy(next, orgRow) };
+  if (isDay(next) && next > today) {
+    // A date set by Done or by hand still shows (5 Nov, Jon: the hall's 15 January was invisible).
+    return regular ? { ...REGULAR, why: `${REGULAR.why} · next check ${next}` } : { state: 'held', why: heldWhy(next, orgRow) };
+  }
   const rows = rowsFor(org.id, replies);
   if (rows.some((r) => low(r.status) === 'awaiting')) return { state: 'draft', why: 'A draft is waiting for you' };
   const check = rows.find((r) => !isChase(r) && SENT.includes(low(r.status)));
