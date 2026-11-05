@@ -157,7 +157,10 @@ function eventLinks(ev) {
   const cal = calendarUrl(ev);
   const gcal = googleCalendarLink(ev);
   // Two calendar links (5 Nov 2026): Google's own page, and the .ics for Outlook / Apple.
-  const parts = [ev.link ? fieldLink(a(ev.link.url, ev.link.text, C.accentText), 'link') : '', ev.link2 ? fieldLink(a(ev.link2.url, ev.link2.text, C.accentText), 'link2') : '', gcal ? a(gcal, 'Google Calendar', C.accentText) : '', cal ? a(cal, 'Other calendar (Outlook, Apple)', C.accentText) : ''].filter(Boolean);
+  const parts = [ev.link ? fieldLink(a(ev.link.url, ev.link.text, C.accentText), 'link') : '', ev.link2 ? fieldLink(a(ev.link2.url, ev.link2.text, C.accentText), 'link2') : ''].filter(Boolean);
+  // "Add to: Google Calendar · Other calendar" (Jon, 5 Nov).
+  const calLinks = [gcal ? a(gcal, 'Google Calendar', C.accentText) : '', cal ? a(cal, 'Other calendar', C.accentText) : ''].filter(Boolean);
+  if (calLinks.length) parts.push(`Add to: ${calLinks.join(' &nbsp;&middot;&nbsp; ')}`);
   return parts.length ? `<div style="margin-top:6px;font-family:${SANS};font-size:13px;">${parts.join(' &nbsp;&middot;&nbsp; ')}</div>` : '';
 }
 
