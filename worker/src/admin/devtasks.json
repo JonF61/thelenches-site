@@ -111,6 +111,18 @@
       "task": "Check the first Send to all with the new progress bar (12 Nov): it counts up to the full list, says Sent ✓, and the button stays hidden after a reload.",
       "added": "2026-11-05",
       "kryten": true
+    },
+    {
+      "task": "After the next approved listing suggestion: check the Listing suggestion run sent the thank-you (row result \"added, thanked\"), the card shows its star, and the email link opens the card.",
+      "waiting": "next suggestion approved",
+      "added": "2026-11-05",
+      "kryten": true
+    },
+    {
+      "task": "Thank the suggester of John (electrician), approved before thank-you emails existed: count their recommendation and send the thank-you (address is in the 4 Nov confirmation in Sent mail).",
+      "waiting": "Jon's go-ahead",
+      "added": "2026-11-05",
+      "kryten": true
     }
   ]
 }
