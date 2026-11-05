@@ -886,7 +886,7 @@ async function appendReply(ctx, row) {
   await g.appendRows('Replies', [row]);
   ctx.replies.push(row);
   const notes = logNotes(row.notes);
-  console.log(`Reply ${row.reply_id}: ${row.type || 'reply'}, ${row.status}${notes ? ` (${notes})` : ''}`);
+  console.log(`Reply ${row.reply_id}: ${row.type || 'reply'}, ${row.status}${notes ? ` (${require('../../lib/logsafe').scrub(notes)})` : ''}`);
   return row;
 }
 
