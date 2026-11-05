@@ -3477,6 +3477,24 @@ export const CLIENT_JS = String.raw`
   function canSend(m) {
     return !!(m && m.mode === 'frozen' && (m.status === 'tested' || m.status === 'shadow') && m.hash && SEND_WORDS[m.send_mode] && m.send_count !== undefined);
   }
+  // After Send to all (5 Nov, Jon): the bar says the send has started and the button goes, for this
+  // build (issue + hash), also after a reload (sessionStorage, guarded; the panel works without it).
+  // Once the send finishes the draft moves on to next week's issue and the note goes with it.
+  var SENT_KEY = 'lenches-nl-sent';
+  function markSent(m) {
+    S.nlSent = { issue_date: m.issue_date, hash: m.hash, count: m.send_count, mode: m.send_mode, at: new Date().toISOString() };
+    try { window.sessionStorage.setItem(SENT_KEY, JSON.stringify(S.nlSent)); } catch (e) { /* not kept */ }
+  }
+  function sentFor(m) {
+    if (!S.nlSent) { try { S.nlSent = JSON.parse(window.sessionStorage.getItem(SENT_KEY) || 'null'); } catch (e) { S.nlSent = null; } }
+    var x = S.nlSent;
+    return x && m && x.issue_date === m.issue_date && x.hash === m.hash ? x : null;
+  }
+  function sentNote(x) {
+    var who = x.count + ' ' + (SEND_WORDS[x.mode] || 'subscribers');
+    return h('div', { class: 'note ok sent-note' }, h('b', null, (x.mode === 'shadow' ? 'Shadow run started' : 'Sending') + ' ✓ '),
+      (x.mode === 'shadow' ? 'No emails go out; ' : 'The newsletter is going to ' + who + '; ') + 'started ' + when(x.at) + '. It takes a few minutes: Activity shows the "Newsletter build and send" run, and once it finishes this screen moves on to next week\'s draft.');
+  }
   function sendConfirm(m) {
     var c = rimmerData();
     var checked = c && c.last ? str(c.last.newsletter) : '';
@@ -3491,7 +3509,9 @@ export const CLIENT_JS = String.raw`
       var r = await api('/admin/api/newsletter', { action: 'send', issue_date: m.issue_date, hash: m.hash, count: m.send_count, mode: m.send_mode });
       closeOverlay();
       if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); return; }
+      markSent(m);
       toast(r.json.message || 'Send started');
+      render();
     } },
     h('p', null, h('b', null, 'Are you sure? '), 'This sends the ' + day(m.issue_date) + ' issue, exactly as built, to ' + who + '. It can\'t be undone.'),
     h('ul', { class: 'sum-l' },
@@ -3558,6 +3578,7 @@ export const CLIENT_JS = String.raw`
           (m.held ? ' · ' + m.held + ' held as late, for next week' : '')) : h('div', { class: 'meta' }, 'Tap Refresh to make the first one.'),
         m && m.subscribers !== undefined ? h('div', { class: 'meta' }, plural(m.subscribers, 'subscriber') + ' on the list') : null,
         m && m.mode === 'frozen' && !canSend(m) && m.status === 'built' ? h('div', { class: 'meta' }, 'Test send first: Send to all shows once the preview has gone to you.') : null,
+        sentFor(m) ? sentNote(sentFor(m)) : null,
         m ? h('div', { class: 'badges' }, m.mode === 'frozen'
           ? h('span', { class: 'badge ok' }, 'Built: as it will go out' + (m.status ? ' (' + m.status + ')' : ''))
           : h('span', { class: 'badge info' }, 'Live draft: changes as items are approved')) : null),
@@ -3565,7 +3586,7 @@ export const CLIENT_JS = String.raw`
         h('button', { class: 'btn primary', disabled: S.draftBusy ? true : null, onclick: refreshDraft }, S.draftBusy || 'Refresh'),
         m ? h('button', { class: 'btn', disabled: S.draftBusy ? true : null, title: 'Build this issue again now; sends nothing', onclick: function () { nlConfirm('rebuild', m); } }, 'Rebuild') : null,
         m && m.mode === 'frozen' ? h('button', { class: 'btn', disabled: S.draftBusy ? true : null, title: 'Email the preview, with its Send button, to you only', onclick: function () { nlConfirm('test', m); } }, 'Test send') : null,
-        canSend(m) ? h('button', { class: 'btn send-all', disabled: S.draftBusy ? true : null, title: 'Send this built issue to every subscriber (asks first)', onclick: function () { sendConfirm(m); } }, m.send_mode === 'live' ? 'Send to all' : m.send_mode === 'canary' ? 'Canary send' : 'Shadow run') : null,
+        canSend(m) && !sentFor(m) ? h('button', { class: 'btn send-all', disabled: S.draftBusy ? true : null, title: 'Send this built issue to every subscriber (asks first)', onclick: function () { sendConfirm(m); } }, m.send_mode === 'live' ? 'Send to all' : m.send_mode === 'canary' ? 'Canary send' : 'Shadow run') : null,
         m ? h('button', { class: S.draftEdit ? 'btn primary' : 'btn', title: 'Click an entry in the draft to change its wording or links (the website changes too)', 'aria-pressed': S.draftEdit ? 'true' : 'false',
           onclick: function () { S.draftEdit = !S.draftEdit; render(); } }, S.draftEdit ? 'Stop editing' : 'Edit text') : null,
         h('a', { class: 'btn link', href: S.draftEdit ? '/admin/draft-edit' : '/admin/draft', target: '_blank', rel: 'noopener' }, 'Open in new tab'))));

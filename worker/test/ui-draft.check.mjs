@@ -232,6 +232,11 @@ try {
     await page.locator('.overlay button[type=submit]', { hasText: 'Yes, send to 2' }).click();
     await page.locator('text=Send started.').waitFor();
     assert.deepEqual(nlPosts.pop(), { action: 'send', issue_date: draft.meta.issue_date, hash: SEND.hash, count: 2, mode: 'live' });
+    // After it (5 Nov, Jon): the bar says it is sending and Send to all goes, also after a reload.
+    await main.locator('.sent-note', { hasText: 'Sending ✓' }).waitFor();
+    assert.match(await main.locator('.sent-note').innerText(), /going to 2 subscribers; started .*Newsletter build and send/);
+    assert.equal(await main.locator('button', { hasText: 'Send to all' }).count(), 0);
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `draft-sent-${name}.png`), fullPage: false });
     rows = liveRows;
     // Signed out of Cloudflare: a message and Reload instead of a blocked frame.
     signedOut = true;
