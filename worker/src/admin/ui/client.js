@@ -77,7 +77,7 @@ export const CLIENT_JS = String.raw`
       ['Rebuild', 're-makes a built issue with anything approved since. It sends nothing.'],
       ['Test send', 'emails the preview of the built issue to you only.'],
       ['Edit text', 'outlines each event, notice, regular activity and submission in the draft in blue: click one to change its wording or links, then Save and publish. It changes the website too (Saving → Building → Live ✓). Titles, dates and official statements stay with Kryten. If the issue is already built it is rebuilt with the change, so Test send again before Send to all.'],
-      ['Send to all', 'sends the built issue to every subscriber, once it has had a Test send. It first shows when it was last rebuilt and tested and when Rimmer last checked it, and asks you to confirm. After a Rebuild, Test send again before sending. The preview email\'s Send button still works too.'],
+      ['Send to all', 'sends the built issue to every subscriber, once it has had a Test send. It first shows when it was last rebuilt and tested and when Rimmer last checked it, and asks you to confirm. Once it starts, the button goes and a bar shows how many have been sent, until it says Sent ✓. After a Rebuild, Test send again before sending. The preview email\'s Send button still works too.'],
       ['Rimmer', 'his notes on the issue sit above the draft (open How this works on his card).']],
     stats: [
       ['Sent', 'how many addresses the issue went to.'],
@@ -3477,6 +3477,61 @@ export const CLIENT_JS = String.raw`
   function canSend(m) {
     return !!(m && m.mode === 'frozen' && (m.status === 'tested' || m.status === 'shadow') && m.hash && SEND_WORDS[m.send_mode] && m.send_count !== undefined);
   }
+  // After Send to all (5 Nov, Jon): the bar says the send has started and the button goes, for this
+  // build (issue + hash), also after a reload (sessionStorage, guarded; the panel works without it).
+  // Once the send finishes the draft moves on to next week's issue and the note goes with it.
+  var SENT_KEY = 'lenches-nl-sent';
+  function markSent(m) {
+    S.nlSent = { issue_date: m.issue_date, hash: m.hash, count: m.send_count, mode: m.send_mode, at: new Date().toISOString() };
+    try { window.sessionStorage.setItem(SENT_KEY, JSON.stringify(S.nlSent)); } catch (e) { /* not kept */ }
+  }
+  function sentFor(m) {
+    if (!S.nlSent) { try { S.nlSent = JSON.parse(window.sessionStorage.getItem(SENT_KEY) || 'null'); } catch (e) { S.nlSent = null; } }
+    var x = S.nlSent;
+    return x && m && x.issue_date === m.issue_date && x.hash === m.hash ? x : null;
+  }
+  // Progress (5 Nov, Jon): /admin/api/send-progress every 15 seconds while the note shows (up to an
+  // hour), redrawing only the note so the draft frame isn't reloaded.
+  function sentNote(x) {
+    var who = x.count + ' ' + (SEND_WORDS[x.mode] || 'subscribers');
+    if (x.mode === 'shadow') {
+      return h('div', { class: 'note ok sent-note' }, h('b', null, 'Shadow run started ✓ '), 'No emails go out; started ' + when(x.at) + '. Activity shows the "Newsletter build and send" run.');
+    }
+    var p = S.nlProgress && S.nlProgress.issue === x.issue_date ? S.nlProgress : null;
+    if (!p || !p.done) watchSend(x);
+    var line;
+    if (p && p.done) {
+      line = [h('b', null, 'Sent ✓ '), p.sent + ' of ' + (p.total || x.count) + ' sent' + (p.failed ? ', ' + p.failed + ' failed' : '') + (p.stuck ? ', ' + p.stuck + ' not sure (see the Sends tab)' : '') + (p.queued ? ', ' + p.queued + ' still waiting' : '') + '. This screen moves on to next week\'s draft shortly.'];
+    } else if (p && p.total) {
+      line = [h('b', null, 'Sending… '), p.sent + ' of ' + p.total + ' sent' + (p.failed ? ', ' + p.failed + ' failed' : '') + '; started ' + when(x.at) + '. It takes about a quarter of an hour.'];
+    } else {
+      line = [h('b', null, 'Send started ✓ '), 'The newsletter is going to ' + who + '; started ' + when(x.at) + '. The count appears here once the send gets going (a minute or two).'];
+    }
+    var total = p && p.total ? p.total : 0;
+    var pct = total ? Math.round(100 * (p.sent + p.failed + p.stuck) / total) : 0;
+    return h('div', { class: 'note ok sent-note' }, line,
+      total ? h('div', { class: 'send-bar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(pct) }, h('span', { style: 'width:' + pct + '%' })) : null);
+  }
+  function watchSend(x) {
+    if (S.sendTimer) return;
+    var tries = 0;
+    var tick = async function () {
+      tries += 1;
+      var r = await api('/admin/api/send-progress?i=' + encodeURIComponent(x.issue_date) + '&m=' + encodeURIComponent(x.mode || 'live'));
+      if (r.ok) {
+        var changed = JSON.stringify(r.json) !== JSON.stringify(S.nlProgress);
+        S.nlProgress = r.json;
+        if (r.json.done) toast('Newsletter sent: ' + r.json.sent + ' of ' + r.json.total + (r.json.failed ? ', ' + r.json.failed + ' failed' : ''), !!r.json.failed);
+        if (changed && S.view === 'draft') {
+          var old = document.querySelector('.sent-note');
+          if (old) { S.sendTimer = 'redraw'; old.replaceWith(sentNote(x)); }
+        }
+      }
+      if ((r.ok && r.json.done) || tries >= 240) { S.sendTimer = null; return; }
+      S.sendTimer = setTimeout(tick, 15000);
+    };
+    S.sendTimer = setTimeout(tick, 1000);
+  }
   function sendConfirm(m) {
     var c = rimmerData();
     var checked = c && c.last ? str(c.last.newsletter) : '';
@@ -3491,7 +3546,9 @@ export const CLIENT_JS = String.raw`
       var r = await api('/admin/api/newsletter', { action: 'send', issue_date: m.issue_date, hash: m.hash, count: m.send_count, mode: m.send_mode });
       closeOverlay();
       if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); return; }
+      markSent(m);
       toast(r.json.message || 'Send started');
+      render();
     } },
     h('p', null, h('b', null, 'Are you sure? '), 'This sends the ' + day(m.issue_date) + ' issue, exactly as built, to ' + who + '. It can\'t be undone.'),
     h('ul', { class: 'sum-l' },
@@ -3558,6 +3615,7 @@ export const CLIENT_JS = String.raw`
           (m.held ? ' · ' + m.held + ' held as late, for next week' : '')) : h('div', { class: 'meta' }, 'Tap Refresh to make the first one.'),
         m && m.subscribers !== undefined ? h('div', { class: 'meta' }, plural(m.subscribers, 'subscriber') + ' on the list') : null,
         m && m.mode === 'frozen' && !canSend(m) && m.status === 'built' ? h('div', { class: 'meta' }, 'Test send first: Send to all shows once the preview has gone to you.') : null,
+        sentFor(m) ? sentNote(sentFor(m)) : null,
         m ? h('div', { class: 'badges' }, m.mode === 'frozen'
           ? h('span', { class: 'badge ok' }, 'Built: as it will go out' + (m.status ? ' (' + m.status + ')' : ''))
           : h('span', { class: 'badge info' }, 'Live draft: changes as items are approved')) : null),
@@ -3565,7 +3623,7 @@ export const CLIENT_JS = String.raw`
         h('button', { class: 'btn primary', disabled: S.draftBusy ? true : null, onclick: refreshDraft }, S.draftBusy || 'Refresh'),
         m ? h('button', { class: 'btn', disabled: S.draftBusy ? true : null, title: 'Build this issue again now; sends nothing', onclick: function () { nlConfirm('rebuild', m); } }, 'Rebuild') : null,
         m && m.mode === 'frozen' ? h('button', { class: 'btn', disabled: S.draftBusy ? true : null, title: 'Email the preview, with its Send button, to you only', onclick: function () { nlConfirm('test', m); } }, 'Test send') : null,
-        canSend(m) ? h('button', { class: 'btn send-all', disabled: S.draftBusy ? true : null, title: 'Send this built issue to every subscriber (asks first)', onclick: function () { sendConfirm(m); } }, m.send_mode === 'live' ? 'Send to all' : m.send_mode === 'canary' ? 'Canary send' : 'Shadow run') : null,
+        canSend(m) && !sentFor(m) ? h('button', { class: 'btn send-all', disabled: S.draftBusy ? true : null, title: 'Send this built issue to every subscriber (asks first)', onclick: function () { sendConfirm(m); } }, m.send_mode === 'live' ? 'Send to all' : m.send_mode === 'canary' ? 'Canary send' : 'Shadow run') : null,
         m ? h('button', { class: S.draftEdit ? 'btn primary' : 'btn', title: 'Click an entry in the draft to change its wording or links (the website changes too)', 'aria-pressed': S.draftEdit ? 'true' : 'false',
           onclick: function () { S.draftEdit = !S.draftEdit; render(); } }, S.draftEdit ? 'Stop editing' : 'Edit text') : null,
         h('a', { class: 'btn link', href: S.draftEdit ? '/admin/draft-edit' : '/admin/draft', target: '_blank', rel: 'noopener' }, 'Open in new tab'))));
