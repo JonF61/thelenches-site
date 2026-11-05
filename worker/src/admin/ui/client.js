@@ -3385,7 +3385,7 @@ export const CLIENT_JS = String.raw`
         return h('tr', { class: x.date === cur ? 'sel' : null, tabindex: '0', role: 'button', title: 'Show this issue',
           onclick: function () { S.nlPick = x.date; S.nl = null; render(); },
           onkeydown: function (e) { if (e.key === 'Enter') { S.nlPick = x.date; S.nl = null; render(); } } },
-          h('td', null, day(x.date)), h('td', null, n(x.sent)), h('td', null, n(x.bounced)), h('td', null, n(x.opens)), h('td', null, n(x.clicks)));
+          h('td', null, day(x.date) + (x.early ? ' ★' : '')), h('td', null, n(x.sent)), h('td', null, n(x.bounced)), h('td', null, n(x.opens)), h('td', null, n(x.clicks)));
       })))));
     var d = t.detail;
     if (d) {
@@ -3393,6 +3393,7 @@ export const CLIENT_JS = String.raw`
       els.push(h('div', { class: 'card' },
         h('h2', null, day(d.date)),
         h('p', null, 'Sent ' + n(row.sent) + ' · Bounced ' + n(row.bounced) + ' · Opens ' + n(row.opens) + '* · Link clicks ' + n(row.clicks)),
+        row.early ? h('p', { class: 'meta' }, '★ Sent before counts began, so no opens or clicks were counted.') : null,
         d.days.length ? h('p', null, h('b', null, 'Opens by day: '), d.days.map(function (x) { return day(x.day) + ' ' + x.n; }).join(' · ')) : h('p', { class: 'meta' }, 'No opens counted yet.'),
         d.hours.length ? h('p', null, h('b', null, 'Busiest hours: '), d.hours.map(function (x) { return hourLabel(x.hour) + ' ' + x.n; }).join(' · ')) : null,
         h('h3', null, 'Most-clicked links'),
@@ -3400,6 +3401,7 @@ export const CLIENT_JS = String.raw`
           return h('tr', null, h('td', { class: 'run-t' }, String(l.n)), h('td', null, h('a', { href: l.url, target: '_blank', rel: 'noopener' }, l.url.replace(/^https?:\/\/(www\.)?/, ''))));
         }))) : h('p', { class: 'meta' }, 'No clicks counted yet.')));
     }
+    if (t.issues.some(function (x) { return x.early; })) els.push(h('p', { class: 'meta' }, '★ Sent before counts began (28 October), so no opens or clicks were counted.'));
     els.push(h('p', { class: 'meta' }, '* Opens are approximate: some email apps open every image automatically, others block images. Clicks may include link checkers in some email services. Counts are kept for about 3 months.'));
     return els;
   }

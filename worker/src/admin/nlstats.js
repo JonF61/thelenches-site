@@ -11,6 +11,9 @@ import { DATASET } from '../track.js';
 const ISSUE = /^\d{4}-\d{2}-\d{2}$/;
 const TZ = 'Europe/London';
 const MAX_ISSUES = 12;
+// Opens and clicks were counted from the 29 Oct issue on (track.js went live 28 Oct): earlier
+// issues are marked `early` and the panel stars them as sent before counts began (Jon, 5 Nov).
+export const COUNTS_FROM = '2026-10-28';
 const TOP_LINKS = 15;
 const str = (v) => String(v ?? '').trim();
 const ymd = (v) => (str(v).match(/^(\d{4}-\d{2}-\d{2})/) || [])[1] || '';
@@ -35,6 +38,7 @@ export function sentIssues(issues, sends, dns) {
       date,
       sent: sentBy.get(date) || Number(r.recipients) || 0,
       bounced: bounceDates.filter((d) => d >= date && d < end).length,
+      ...(date < COUNTS_FROM ? { early: true } : {}),
     });
   }
   return out.sort((a, b) => b.date.localeCompare(a.date)).slice(0, MAX_ISSUES);
