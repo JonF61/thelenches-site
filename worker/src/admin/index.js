@@ -198,7 +198,7 @@ import { editorPage, savePage, showsText } from './pageedit.js';
 import { entryInfo, saveEntry, entryStatus, draftEditPage } from './entryedit.js';
 import { recentRuns, buildStatus } from './runs.js';
 import {
-  nextIssue, failingRuns, subscriberChanges, lastSentDate, comingWeek, comingUpFile, devTasks,
+  nextIssue, failingRuns, subscriberChanges, lastSentDate, comingWeek, comingUpFile, devTasks, claudeSpend,
 } from './summary.js';
 import { visitors } from './visitors.js';
 import { visitorHistory } from './sitestats.js';
@@ -590,9 +590,10 @@ async function outreach(env) {
 // both outreach counts; organisations take the same Gmail look-ups as their own screen.
 async function summary(env) {
   const today = ukToday();
-  const [issues, pending, subs, dns, lessons, contacts, replies, orgTab, runs, coming, seen, sends] = await settled([
+  const [issues, pending, subs, dns, lessons, contacts, replies, orgTab, runs, coming, seen, sends, usage] = await settled([
     readTable(env, 'Issues'), readTable(env, 'Pending'), readTable(env, 'Subscribers'), readTable(env, 'Do Not Send'),
     readLessons(env), readTable(env, CONTACTS_TAB), readTable(env, 'Replies'), readOrgTab(env), recentRuns(env, 50), comingUpFile(env), visitors(env), readTable(env, 'Sends'),
+    readTable(env, 'Claude usage'),
   ]);
   const fail = (t) => (t && t.error ? { error: t.error } : null);
   const issueRows = issues.error ? [] : issues.rows;
@@ -624,6 +625,8 @@ async function summary(env) {
     orgs: orgsDue,
     lessons: lessons.error ? fail(lessons) : lessonRows(lessons).rows.filter((r) => r.status.toLowerCase() === 'proposed').map((r) => ({ id: r.id, lesson: r.lesson })),
     devTasks: devTasks(),
+    // Claude API spend (lib/claudeusage.js); no tab yet = no figures yet, not an error.
+    claudeSpend: usage.error ? { none: true } : claudeSpend(usage.rows, today),
     visitors: seen,
     // The last newsletter sent: sent, bounced, opens, clicks (no per-issue detail).
     lastSent: issues.error || sends.error || dns.error ? null

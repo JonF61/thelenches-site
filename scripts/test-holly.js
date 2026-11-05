@@ -20,10 +20,13 @@ process.env.APPROVAL_SIGNING_KEY = 'k';
 let answer = '';
 const prompts = [];
 const sdkPath = require.resolve('@anthropic-ai/sdk');
+const cachedSystems = [];
 class FakeAnthropic {
   constructor() {
     this.messages = {
       create: async (req) => {
+        // Cached system prompts arrive as one text block with cache_control (5 Nov): flattened here.
+        if (Array.isArray(req.system)) { cachedSystems.push(req.system.every((b) => b.cache_control && b.cache_control.type === 'ephemeral')); req = { ...req, system: req.system.map((b) => b.text).join('') }; }
         prompts.push(req);
         return { content: [{ type: 'text', text: typeof answer === 'function' ? answer(req) : answer }], stop_reason: 'end_turn', usage: {} };
       },
@@ -266,6 +269,7 @@ async function main() {
   ok(sent.length === 1 && logged.some((l) => /sent\. Gmail id/.test(l)), 'reply sent and logged');
   ok(!logged.some((l) => /PRIVATE WORDS|priv@example\.org/.test(l)), 'no sender text or address in the log');
 
+  ok(cachedSystems.length > 0 && cachedSystems.every(Boolean), 'system prompts are sent cached');
   console.log(`All Holly tests passed (${checks} checks).`);
 }
 

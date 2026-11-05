@@ -69,6 +69,7 @@ jobs:
         env:
           CHECK_SCOPE: ${{ steps.scope.outputs.scope }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NODE_OPTIONS: --require ./lib/claudeusage.js
           RIMMER_MODEL: ${{ vars.RIMMER_MODEL }}
           RIMMER_AUTOFIX: ${{ vars.RIMMER_AUTOFIX }}
           HOLLY_MODEL: ${{ vars.HOLLY_MODEL }}

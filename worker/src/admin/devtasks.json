@@ -127,6 +127,11 @@
       "task": "Listing check: 17 trades and eateries have no email address yet (10 websites without one, 7 with no website or only Facebook). They're under Contacts > Organisations > Commercial Listings > No email: add any you find with Add an email, or check by phone or Facebook.",
       "waiting": "Jon",
       "added": "2026-11-05"
+    },
+    {
+      "task": "Claude spend: after about a week of rows in the Claude usage tab, check the Summary's Claude spend card against the Console's Usage page, see whether the cache share rose for Ingest (Holly) and Rimmer fixes, and recommend to Jon whether Rimmer should move to Sonnet or have RIMMER_AUTOFIX off",
+      "added": "2026-11-05",
+      "kryten": true
     }
   ]
 }

@@ -45,6 +45,7 @@ jobs:
           # Jon's typed reason / edited text are read from the event file by the script, never
           # passed as env: a step's env is printed in the public log (1 Nov).
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NODE_OPTIONS: --require ./lib/claudeusage.js
           CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
           APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
           WORKER_URL: https://approvals.lenches.workers.dev

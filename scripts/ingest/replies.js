@@ -664,6 +664,11 @@ function claude() {
 // shared CLAUDE_MODEL variable never changes Holly by accident.
 const MODEL = () => process.env.HOLLY_MODEL || 'claude-opus-5-5';
 
+// Prompt caching (5 Nov): the system prompt (rules, lessons, voice guide) is the same for
+// every draft of one kind in a run, so it is cached for 5 minutes; a second draft of that
+// kind reads it at a twentieth of the price. Cost is logged per run (lib/claudeusage.js).
+const cachedSystem = (text) => [{ type: 'text', text, cache_control: { type: 'ephemeral' } }];
+
 const textOf = (res) => res.content.filter((b) => b.type === 'text').map((b) => b.text).join(' ');
 
 /* -------------------------------------------------------- clarification -- */
@@ -712,7 +717,7 @@ async function draftClarification(needs, anonymous, contact = null) {
     const res = await claude().messages.create({
       model: MODEL(),
       max_tokens: 400,
-      system: withVoice(CLARIFY_SYSTEM, contact),
+      system: cachedSystem(withVoice(CLARIFY_SYSTEM, contact)),
       messages: [{ role: 'user', content: JSON.stringify(input) }],
     });
     const text = sanitiseDraft(textOf(res));
@@ -766,7 +771,7 @@ async function draftAckLine({ contact, items, said }) {
     const res = await claude().messages.create({
       model: MODEL(),
       max_tokens: 200,
-      system: withVoice(ACK_LINE_SYSTEM, contact),
+      system: cachedSystem(withVoice(ACK_LINE_SYSTEM, contact)),
       messages: [{
         role: 'user',
         content: JSON.stringify({
@@ -1309,7 +1314,7 @@ async function draftAnswer({ emailClass, result, msg, said, hold, contact = null
     const res = await claude().messages.create({
       model: MODEL(),
       max_tokens: 900,
-      system: withVoice(ANSWER_SYSTEM, contact),
+      system: cachedSystem(withVoice(ANSWER_SYSTEM, contact)),
       messages: [{
         role: 'user',
         content: JSON.stringify({
@@ -1622,7 +1627,7 @@ async function triageFollowup(input, contact = null) {
     const res = await claude().messages.create({
       model: MODEL(),
       max_tokens: 800,
-      system: withVoice(FOLLOWUP_SYSTEM, contact),
+      system: cachedSystem(withVoice(FOLLOWUP_SYSTEM, contact)),
       messages: [{ role: 'user', content: JSON.stringify({ ...input, known_contact: promptContact(contact) }) }],
     });
     const raw = textOf(res);
@@ -2071,7 +2076,7 @@ async function redraftReply(replyId, instruction) {
   const res = await claude().messages.create({
     model: MODEL(),
     max_tokens: 900,
-    system: withVoice(REDRAFT_SYSTEM, contact),
+    system: cachedSystem(withVoice(REDRAFT_SYSTEM, contact)),
     messages: [{
       role: 'user',
       content: JSON.stringify({

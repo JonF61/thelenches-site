@@ -64,7 +64,8 @@ export const CLIENT_JS = String.raw`
     summary: [
       'Each box is one screen in short. Tap its heading to open that screen.',
       ['No action needed on…', 'the screens with nothing waiting for you.'],
-      ['Red numbers and badges', 'something needs you, e.g. a failed job or an urgent item.']],
+      ['Red numbers and badges', 'something needs you, e.g. a failed job or an urgent item.'],
+      ['Claude spend', 'what the Claude API has cost this month in US dollars (as Anthropic bills), worked out from each job\'s own counts at list prices, so it can differ from the Console by a few cents. Cache = text Claude had read moments before, charged at a fraction of the price.']],
     autonomy: [
       'Each kind of submission or reply counts your decisions on Holly\'s work.',
       ['As written / changed / rejected', 'approved unchanged, approved after your edits, or turned down.'],
@@ -4251,6 +4252,18 @@ export const CLIENT_JS = String.raw`
       line('+' + sb.joined + ' joined, −' + sb.left + ' unsubscribed or blocked', 'since the newsletter of ' + day(sb.since), []),
       line(plural(sb.total, 'subscriber') + ' on the list', '', [])
     ], { top: sb.error ? errorNote(sb, 'Subscribers') : null }));
+
+    // Claude API spend (the "Claude usage" tab, lib/claudeusage.js; 5 Nov). US dollars, as billed.
+    var cs = all.claudeSpend || {};
+    var usd = function (x) { return '$' + Number(x || 0).toFixed(2); };
+    var cl = [];
+    if (cs.none || cs.error) cl.push(line('No figures yet', 'each job that uses Claude adds a row to the Claude usage tab when it finishes', []));
+    else {
+      cl.push(line(usd(cs.total) + ' so far this month', plural(cs.calls, 'Claude call') + (cs.lastTotal ? ' · last month ' + usd(cs.lastTotal) : '') + (cs.since > cs.month + '-01' ? ' · counted from ' + day(cs.since) : ''), []));
+      if ((cs.jobs || []).length) cl.push(h('span', { class: 'meta' }, 'By job: ' + cs.jobs.slice(0, 6).map(function (j) { return j.job + ' ' + usd(j.cost); }).join(' · ')));
+      if (cs.calls) cl.push(h('span', { class: 'meta' }, cs.cacheShare + '% of what Claude read came from the cache (cheaper)'));
+    }
+    els.push(sumCard('Claude spend', null, cl, {}));
 
     // 12. Visitors (Cloudflare Web Analytics, admin/visitors.js).
     var vs = all.visitors || {};
