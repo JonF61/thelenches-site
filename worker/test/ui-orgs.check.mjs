@@ -129,7 +129,7 @@ try {
     }
 
     // Listings (5 Nov): their own list; a found address shows, Add an email saves one.
-    await main.getByRole('button', { name: 'Listings' }).click();
+    await main.getByRole('button', { name: 'Commercial Listings' }).click();
     await main.getByText(/Every Local trades and Where to eat entry/).waitFor();
     const ltext = await main.innerText();
     assert.match(ltext, /Boot Inn\s+·\s+Where to eat/);

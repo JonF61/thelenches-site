@@ -138,7 +138,7 @@ export const CLIENT_JS = String.raw`
       ['Quiet a year', 'Holly sends them nothing for 365 days.'],
       ['Other addresses', 'one person\'s extra email addresses, so they count as one contact.'],
       ['Outreach', 'who is due a friendly nudge; Draft nudge has Holly write one.'],
-      ['Organisations', 'the yearly check of each organisation\'s entry on the site; Draft check / Draft chaser. Its Listings button shows the same check for every Local trades and Where to eat entry, with Add an email for those without an address.'],
+      ['Organisations', 'the yearly check of each organisation\'s entry on the site; Draft check / Draft chaser. Its Commercial Listings button shows the same check for every Local trades and Where to eat entry, with Add an email for those without an address.'],
       'Every draft waits in Replies for your Approve; nothing is sent by itself.',
       ['Delete', 'removes the row; only new mail from them can bring them back.']],
     photos: [
@@ -2758,7 +2758,7 @@ export const CLIENT_JS = String.raw`
         list.length ? list.map(function (e) { return orgRow(e, o); }) : h('p', { class: 'empty' }, 'None at the moment.'));
     };
     return [
-      h('div', { class: 'actions' }, kindTab('orgs', 'Groups and services'), kindTab('listings', 'Listings')),
+      h('div', { class: 'actions' }, kindTab('orgs', 'Groups and services'), kindTab('listings', 'Commercial Listings')),
       kind === 'listings' ? h('p', { class: 'meta' }, 'Every Local trades and Where to eat entry. Holly tells them they are listed free, shows their entry and asks if they would like anything changed or added. Addresses come from the entry or their website (found by Kryten\'s address finder), or type one under Add an email.') : null,
       h('p', { class: 'meta' }, 'Once a year Holly asks each organisation to check its entry on the site. The draft appears under Replies for you to Approve, Edit, Redraft or Reject, and never goes by itself. '
         + o.count + ' of ' + o.cap + ' drafts used today. When someone replies, read it in Gmail, update the site if needed, then tap Done.'),
