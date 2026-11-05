@@ -3644,11 +3644,15 @@ export const CLIENT_JS = String.raw`
   S.fixNote = S.fixNote || {};
   // Apply all ticked (5 Nov, Jon): the ready fixes Jon has ticked, by finding id.
   S.fixTick = S.fixTick || {};
+  // Any finding not being worked on can be ticked (Send to Kryten / Dismiss); Apply takes the ready ones.
+  function tickable(f) { return FIX_BUSY.indexOf(f.fix_status) < 0; }
   function tickedIn(list) {
-    return list.filter(function (f) { return S.fixTick[f.id] && FIX_READY.indexOf(f.fix_status) >= 0; });
+    return list.filter(function (f) { return S.fixTick[f.id] && tickable(f); });
   }
+  function readyIn(list) { return list.filter(function (f) { return FIX_READY.indexOf(f.fix_status) >= 0; }); }
+  function findingWhere(f) { return [f.scope === 'newsletter' ? 'Newsletter' : f.page, f.where].filter(Boolean).join(' · '); }
   async function applyTicked(list) {
-    var picked = tickedIn(list);
+    var picked = readyIn(tickedIn(list));
     if (!picked.length || S.batchBusy) return;
     var lines = picked.map(function (f) { return '• ' + f.fix_label + (f.fix_field === 'remove' ? ' (take it off the website)' : f.fix_field ? ' (' + (FIX_WORDS[f.fix_field] || f.fix_field) + ')' : ''); });
     if (!window.confirm('Apply ' + plural(picked.length, 'fix', 'fixes') + ' together?\n\n' + lines.join('\n') + '\n\nThe site rebuilds once, in a few minutes. If this week\'s newsletter is already built, Rebuild it afterwards.')) return;
@@ -3662,18 +3666,49 @@ export const CLIENT_JS = String.raw`
     render();
     watchFixes();
   }
-  // The bar above a card's findings when two or more fixes are ready: Tick all, and Apply all ticked.
+  // Send to Kryten / Dismiss for every ticked finding (5 Nov, Jon): the same one-at-a-time
+  // stale-checked writes as the single buttons, in turn; any that fail are named.
+  async function closeTicked(list, what) {
+    var picked = tickedIn(list);
+    if (!picked.length || S.batchBusy) return;
+    var verb = what === 'kryten' ? 'Send ' + plural(picked.length, 'finding', 'findings') + ' to Kryten?' : 'Dismiss ' + plural(picked.length, 'finding', 'findings') + '? Rimmer won\'t raise them again.';
+    if (!window.confirm(verb + '\n\n' + picked.map(function (f) { return "• " + findingWhere(f); }).join('\n'))) return;
+    S.batchBusy = true; render();
+    var failed = 0;
+    for (var i = 0; i < picked.length; i += 1) {
+      var f = picked[i];
+      var note = str(S.fixNote[f.id]);
+      var r = await api(what === 'kryten' ? '/admin/api/rimmer-kryten' : '/admin/api/rimmer-dismiss', what === 'kryten' ? { id: f.id, note: note } : { id: f.id });
+      if (!r.ok) { failed += 1; continue; }
+      S.rimmer.open = S.rimmer.open.filter(function (x) { return x.id !== f.id; });
+      if (what === 'kryten') S.rimmer.kryten = [Object.assign({}, f, { fix_note: note })].concat(S.rimmer.kryten || []);
+      delete S.fixTick[f.id]; delete S.fixForm[f.id]; delete S.fixNote[f.id];
+    }
+    S.batchBusy = false;
+    var done = picked.length - failed;
+    toast((what === 'kryten' ? 'Sent to Kryten: ' : 'Dismissed: ') + done + (failed ? '; ' + failed + ' changed meanwhile, so left as they were' : ''), !!failed);
+    if (failed) S.rimmer = null;
+    render();
+  }
+  // The bar above a card's findings when two or more can be ticked: Tick all, Apply ticked fixes
+  // (ready fixes only), Send ticked to Kryten, Dismiss ticked.
   function batchBar(list) {
-    var ready = list.filter(function (f) { return FIX_READY.indexOf(f.fix_status) >= 0; });
-    if (ready.length < 2) return null;
-    var n = tickedIn(ready).length;
-    var all = n === ready.length;
+    var can = list.filter(tickable);
+    if (can.length < 2) return null;
+    var t = tickedIn(can);
+    var nFix = readyIn(t).length;
+    var all = t.length === can.length;
+    var busy = S.batchBusy ? true : null;
     return h('div', { class: 'batch-bar' },
-      h('span', { class: 'meta' }, n ? plural(n, 'fix', 'fixes') + ' ticked' : 'Tick the fixes you want, then apply them together.'),
+      h('span', { class: 'meta' }, t.length ? plural(t.length, 'finding', 'findings') + ' ticked' + (nFix ? ' (' + plural(nFix, 'fix', 'fixes') + ' ready)' : '') : 'Tick findings to deal with several at once.'),
       h('div', { class: 'actions' },
-        h('button', { class: 'btn link', onclick: function () { ready.forEach(function (f) { if (all) delete S.fixTick[f.id]; else S.fixTick[f.id] = true; }); render(); } }, all ? 'Untick all' : 'Tick all'),
-        h('button', { class: 'btn primary', disabled: !n || S.batchBusy ? true : null, title: 'Makes every ticked change in one go, with one site rebuild',
-          onclick: function () { applyTicked(ready); } }, S.batchBusy ? 'Applying…' : 'Apply all ticked' + (n ? ' (' + n + ')' : ''))));
+        h('button', { class: 'btn link', onclick: function () { can.forEach(function (f) { if (all) delete S.fixTick[f.id]; else S.fixTick[f.id] = true; }); render(); } }, all ? 'Untick all' : 'Tick all'),
+        h('button', { class: 'btn primary', disabled: !nFix || busy, title: 'Makes every ticked fix Holly has ready in one go, with one site rebuild',
+          onclick: function () { applyTicked(can); } }, S.batchBusy ? 'Working…' : 'Apply ticked fixes' + (nFix ? ' (' + nFix + ')' : '')),
+        h('button', { class: 'btn', disabled: !t.length || busy, title: 'For anything needing judgement or code; any note you typed goes with it',
+          onclick: function () { closeTicked(can, 'kryten'); } }, 'Send ticked to Kryten' + (t.length ? ' (' + t.length + ')' : '')),
+        h('button', { class: 'btn', disabled: !t.length || busy, title: 'Close them; Rimmer won\'t raise them again',
+          onclick: function () { closeTicked(can, 'dismiss'); } }, 'Dismiss ticked' + (t.length ? ' (' + t.length + ')' : ''))));
   }
   async function loadRimmer() {
     S.ckLoading = true;
@@ -3783,9 +3818,6 @@ export const CLIENT_JS = String.raw`
     if (st === 'applying') return h('div', { class: 'note info' }, 'Applying the fix… the site rebuilds in a few minutes.');
     if (FIX_READY.indexOf(st) >= 0) {
       return h('div', { class: 'fix-proposal' },
-        h('label', { class: 'fix-tick' },
-          h('input', { type: 'checkbox', checked: S.fixTick[f.id] ? true : null, onchange: function (e) { if (e.target.checked) S.fixTick[f.id] = true; else delete S.fixTick[f.id]; render(); } }),
-          ' Tick to apply with the others'),
         h('div', null, h('b', null, st === 'offered' ? 'Holly\'s fix (drafted with Rimmer\'s check): ' : 'Holly\'s fix: '),
           f.fix_label + (f.fix_field ? ' (' + (FIX_WORDS[f.fix_field] || f.fix_field) + ')' : '')),
         h('div', { class: 'fix-diff' },
@@ -3807,6 +3839,9 @@ export const CLIENT_JS = String.raw`
   function findingEl(f) {
     var busy = FIX_BUSY.indexOf(f.fix_status) >= 0;
     return h('div', { class: 'finding' },
+      busy ? null : h('label', { class: 'fix-tick' },
+        h('input', { type: 'checkbox', 'aria-label': 'Tick this finding', checked: S.fixTick[f.id] ? true : null, onchange: function (e) { if (e.target.checked) S.fixTick[f.id] = true; else delete S.fixTick[f.id]; render(); } }),
+        ' Tick'),
       h('div', null, h('span', { class: 'badge ' + (f.severity === 'problem' ? 'bad' : 'warn') }, f.severity === 'problem' ? 'Problem' : 'Check'), ' ',
         h('b', null, [f.scope === 'newsletter' ? '' : f.page, f.where].filter(Boolean).join(' · '))),
       h('div', null, f.problem),
@@ -3832,7 +3867,7 @@ export const CLIENT_JS = String.raw`
         li('Check', 'it may be wrong: have a look.'),
         li('Now / After', 'the entry as it is, and as it would be with Holly\'s fix. A fix changes one thing: some wording, an event\'s date or end date, the date a notice is hidden from, a link, or takes a whole entry off the website.'),
         li('Apply', 'makes the change (after you confirm); the website rebuilds in a few minutes. If this week\'s newsletter is already built, tap Rebuild on the draft afterwards.'),
-        li('Tick / Apply all ticked', 'when several fixes are ready, tick the ones you want (or Tick all) and tap Apply all ticked: they are all made in one go, with one website rebuild. One that changed meanwhile is skipped and the rest still go ahead.'),
+        li('Tick', 'to deal with several findings at once: tick them (or Tick all), then Apply ticked fixes (the ticked ones with a fix ready, all made in one go with one website rebuild), Send ticked to Kryten or Dismiss ticked. One that changed meanwhile is skipped and the rest still go ahead.'),
         li('Discard fix', 'throws Holly\'s fix away but keeps the finding open.'),
         li('Fix… / Ask again…', 'type what it should say (a phone number, the right date, the web address) and Holly drafts again. She never adds details nobody gave her, and official statements only get typos corrected.'),
         li('Holly couldn\'t fix it', 'says why; usually she needs a detail from you, or it is something only Kryten can change.'),

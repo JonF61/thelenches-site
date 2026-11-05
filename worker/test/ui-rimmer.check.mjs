@@ -146,9 +146,9 @@ try {
     assert.match(text, /Check\s+\/events\/ · Quiz night/);
     assert.match(text, /Newsletter last checked/);
     // Two fixes ready: the batch bar, Apply all ticked off until one is ticked.
-    assert.match(text, /Tick the fixes you want, then apply them together\./);
-    assert.equal(await card.locator('.batch-bar button', { hasText: 'Apply all ticked' }).isDisabled(), true);
-    assert.equal(await card.locator('.fix-tick input').count(), 2);
+    assert.match(text, /Tick findings to deal with several at once\./);
+    for (const b of ['Apply ticked fixes', 'Send ticked to Kryten', 'Dismiss ticked']) assert.equal(await card.locator('.batch-bar button', { hasText: b }).isDisabled(), true, b);
+    assert.equal(await card.locator('.fix-tick input').count(), 4);
     const wide = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     assert.equal(wide, false, 'no sideways scroll');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `rimmer-summary-${name}.png`), fullPage: true });
@@ -215,19 +215,38 @@ try {
     await card.locator('.finding').first().waitFor();
     await card.locator('.finding', { hasText: 'Handbell' }).locator('.fix-tick input').check();
     const bar = card.locator('.batch-bar');
-    assert.match(await bar.innerText(), /1 fix ticked[\s\S]*Tick all[\s\S]*Apply all ticked \(1\)/);
-    await bar.locator('button', { hasText: 'Tick all' }).click();
-    assert.match(await bar.innerText(), /2 fixes ticked[\s\S]*Untick all[\s\S]*Apply all ticked \(2\)/);
+    assert.match(await bar.innerText(), /1 finding ticked \(1 fix ready\)[\s\S]*Tick all[\s\S]*Apply ticked fixes \(1\)/);
+    await card.locator('.finding', { hasText: 'Severn Trent' }).locator('.fix-tick input').check();
+    assert.match(await bar.innerText(), /2 findings ticked \(2 fixes ready\)[\s\S]*Apply ticked fixes \(2\)[\s\S]*Send ticked to Kryten \(2\)[\s\S]*Dismiss ticked \(2\)/);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `rimmer-batch-${name}.png`), fullPage: true });
-    await bar.locator('button', { hasText: 'Apply all ticked' }).click();
+    await bar.locator('button', { hasText: 'Apply ticked fixes' }).click();
     assert.match(asked, /Apply 2 fixes together\?[\s\S]*Event: Handbell concert \(date\)[\s\S]*Notice: Severn Trent works \(take it off the website\)[\s\S]*rebuilds once/);
     assert.deepEqual(posts.at(-1), ['/admin/api/rimmer-apply-many', { items: [{ id: 'K1-l2', expected: 'offered' }, { id: 'K1-l3', expected: 'offered' }] }]);
     await card.locator('.finding', { hasText: 'Handbell' }).waitFor({ state: 'detached' });
     await card.locator('.finding', { hasText: 'Severn Trent' }).waitFor({ state: 'detached' });
     assert.match(await card.innerText(), /Rimmer \(2\)/);
+    // The other two (no fix ready): Tick all, then Send ticked to Kryten; then a fresh check, Dismiss ticked.
+    await bar.locator('button', { hasText: 'Tick all' }).click();
+    assert.match(await bar.innerText(), /2 findings ticked\s[\s\S]*Apply ticked fixes/);
+    assert.equal(await bar.locator('button', { hasText: 'Apply ticked fixes' }).isDisabled(), true);
+    await bar.locator('button', { hasText: 'Send ticked to Kryten' }).click();
+    assert.match(asked, /Send 2 findings to Kryten\?[\s\S]*Newsletter · Website update[\s\S]*\/events\/ · Quiz night/);
+    await card.locator('.finding').first().waitFor({ state: 'detached' });
+    assert.deepEqual(posts.slice(-2).map((p) => p[0]), ['/admin/api/rimmer-kryten', '/admin/api/rimmer-kryten']);
+    assert.equal(rimmer.kryten.length, 2);
     assert.equal(await card.locator('.batch-bar').count(), 0);
     const wide = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     assert.equal(wide, false, 'no sideways scroll');
+    // Dismiss ticked
+    rimmer.open.push(F('K3-s1', 'site', 'check', '/bins/', 'Bins', 'One.'), F('K3-s2', 'site', 'check', '/bins/', 'Footnote', 'Two.'));
+    await page.reload();
+    const c2 = page.locator('.main .card.rimmer');
+    await c2.locator('.finding').first().waitFor();
+    await c2.locator('.batch-bar button', { hasText: 'Tick all' }).click();
+    await c2.locator('.batch-bar button', { hasText: 'Dismiss ticked' }).click();
+    assert.match(asked, /Dismiss 2 findings\? Rimmer won't raise them again\./);
+    await c2.locator('.finding').first().waitFor({ state: 'detached' });
+    assert.deepEqual(posts.slice(-2), [['/admin/api/rimmer-dismiss', { id: 'K3-s1' }], ['/admin/api/rimmer-dismiss', { id: 'K3-s2' }]]);
     assert.deepEqual(errors, []);
     await page.close();
   }
