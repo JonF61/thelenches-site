@@ -2655,8 +2655,11 @@ export const CLIENT_JS = String.raw`
   }
 
   // One next_check write (stale-checked against what the list loaded), then a fresh list.
-  async function gNext(e, value, what) {
-    var res = await api('/admin/api/orgnext', { id: e.id, expected: e.next_check, value: value });
+  // confirm (Done): also records today as the day they confirmed their entry.
+  async function gNext(e, value, what, confirm) {
+    var body = { id: e.id, expected: e.next_check, value: value };
+    if (confirm) { body.confirm = true; body.expected_confirmed = e.confirmed || ''; }
+    var res = await api('/admin/api/orgnext', body);
     toast(res.ok ? what : (res.json.error || ('HTTP ' + res.status)), !res.ok);
     S.orgs = null;
     render();
@@ -2719,7 +2722,7 @@ export const CLIENT_JS = String.raw`
     if (e.state === 'held') {
       if (e.next_check) acts.push(h('button', { class: 'btn link', onclick: function () { gNext(e, '', 'Cleared: ' + e.name); } }, 'Clear'));
     } else if (e.state !== 'noemail' && e.state !== 'draft' && e.state !== 'regular') {
-      acts.push(h('button', { class: 'btn link', onclick: function () { gNext(e, addMonths(o.today, 12), 'Done: ' + e.name + ' is next due in a year'); } }, 'Done'));
+      acts.push(h('button', { class: 'btn link', onclick: function () { gNext(e, addMonths(o.today, 12), 'Done: ' + e.name + ' is next due in a year', true); } }, 'Done'));
       if (e.state === 'due') acts.push(h('button', { class: 'btn link', onclick: function () { gNext(e, addMonths(o.today, 3), 'Snoozed for 3 months'); } }, 'Snooze 3 months'));
       acts.push(h('button', { class: 'btn link', onclick: function () {
         if (window.confirm('Never check ' + e.name + '?\n\nThey drop off the organisation lists for good (Clear undoes it). Nothing else changes.')) gNext(e, 'never', 'Never: ' + e.name);

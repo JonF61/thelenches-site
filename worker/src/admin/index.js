@@ -727,7 +727,11 @@ async function doOrgNext(env, body) {
   if (!ORGS.some((o) => o.id === id)) return json({ ok: false, error: 'No such organisation: reload the page' }, 404);
   const plan = planNext(body.value);
   if (plan.error) return json({ ok: false, ...plan }, 400);
-  return orgWrite(env, id, 'next_check', body.expected, plan.value);
+  const res = await orgWrite(env, id, 'next_check', body.expected, plan.value);
+  // Done (5 Nov): also record the day they confirmed, shown as "Confirmed <day>".
+  if (!body.confirm || res.status !== 200) return res;
+  const c = await orgWrite(env, id, 'confirmed', body.expected_confirmed, ukToday());
+  return c.status === 200 ? res : json({ ok: true, value: plan.value, note: 'Saved; the confirmed date was not updated' });
 }
 
 async function doOrgEmails(env, body) {
