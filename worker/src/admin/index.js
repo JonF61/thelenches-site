@@ -123,6 +123,8 @@
 //   POST /admin/api/rimmer-fix     { id, op: propose|apply|discard, note, expected }: Fix… (Holly
 //                                   proposes one change; decide() rfix), Apply (decide() rfix_ok),
 //                                   Discard; each one stale-checked write of fix_status first
+//   POST /admin/api/rimmer-apply-many { items: [{ id, expected }] }: Apply all ticked (5 Nov): each
+//                                   stale-checked to applying, then one decide() rfix_all
 //   POST /admin/api/rimmer-run     { scope: newsletter|listings|site }: Check now
 //                                   (repository_dispatch "rimmer"); reads and reports, changes nothing
 //   GET  /admin/api/runs            Activity: the latest 20 GitHub Actions runs (runs.js; read-only)
@@ -185,7 +187,7 @@ import {
 } from './lessons.js';
 import { ITEM_TAB, REPLY_TAB, autonomyStats, planIgnore } from './autonomy.js';
 import { submissionHistory } from './history.js';
-import { RIMMER_TAB, CHECK_SCOPES, rimmerRows, planDismiss, planKryten, planFix } from './rimmer.js';
+import { RIMMER_TAB, CHECK_SCOPES, rimmerRows, planDismiss, planKryten, planFix, planApplyMany, batchId } from './rimmer.js';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 import { PAGEEDIT_JS, PAGEEDIT_CSS, PAGEEDIT_VERSION } from './ui/pageedit.js';
@@ -811,6 +813,34 @@ async function doRimmer(env, body, what) {
   return json({ ok: true, value: plan.value, message: msg });
 }
 
+// Apply all ticked (5 Nov, Jon): each ticked fix stale-checked to applying (as Apply does), then one
+// decide() rfix_all for those that moved, so rimmer-fix.yml applies them with one commit and build.
+// A finding that changed meanwhile is skipped and named; the rest go ahead.
+async function doRimmerMany(env, body) {
+  const { rows } = await readOptional(env, RIMMER_TAB);
+  const planned = planApplyMany(rows, body.items);
+  if (planned.error) return json({ ok: false, ...planned }, planned.status);
+  const moved = [];
+  const skipped = [];
+  for (const { id, plan } of planned.plans) {
+    if (plan.error) { skipped.push({ id, error: plan.error }); continue; }
+    const r = await checkedWrite(env, { tab: RIMMER_TAB, keyCol: 'id', key: id, field: plan.field, expected: plan.expected, value: plan.value });
+    if (r.ok) moved.push({ id, plan }); else skipped.push({ id, error: r.error || 'Changed since you loaded the page' });
+  }
+  if (!moved.length) return json({ ok: false, error: 'None of those fixes could be applied: reload the page', skipped }, 409);
+  if (!(await decide(env, { a: 'rfix_all', i: batchId(), b: moved.map((m) => m.id).join(',') }))) {
+    for (const { id, plan } of moved) {
+      await checkedWrite(env, { tab: RIMMER_TAB, keyCol: 'id', key: id, field: plan.field, expected: plan.value, value: plan.expected }).catch(() => {});
+    }
+    return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
+  }
+  const n = moved.length;
+  return json({
+    ok: true, applied: moved.map((m) => m.id), skipped,
+    message: `Applying ${n} fix${n === 1 ? '' : 'es'} together: the site rebuilds once, in a few minutes.${skipped.length ? ` ${skipped.length} skipped (changed meanwhile).` : ''}`,
+  });
+}
+
 async function doLesson(env, body) {
   const op = String(body.op || '');
   const id = String(body.id ?? '');
@@ -1032,6 +1062,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/rimmer-dismiss') return await doRimmer(env, body, 'dismiss');
       if (path === '/admin/api/rimmer-kryten') return await doRimmer(env, body, 'kryten');
       if (path === '/admin/api/rimmer-fix') return await doRimmer(env, body, 'fix');
+      if (path === '/admin/api/rimmer-apply-many') return await doRimmerMany(env, body);
       if (path === '/admin/api/rimmer-run') {
         const scope = String(body.scope || '');
         if (!CHECK_SCOPES.includes(scope)) return json({ ok: false, error: 'Unknown check' }, 400);

@@ -66,3 +66,29 @@ test('rfix / rfix_ok: panel only, to rimmer-fix with the finding id only', () =>
   assert.equal(validPayload({ a: 'rfix', i: 'K202611031853-n1' }), true);
   assert.equal(validPayload({ a: 'rfix', i: 'bad id!' }), false);
 });
+
+test('Apply all ticked: each ticked fix planned as Apply, one rfix_all decision for the batch', async () => {
+  const { planApplyMany, batchId, MAX_BATCH } = await import('../src/admin/rimmer.js');
+  const rows = [
+    row('a', 'listings', 'open', 'check', '', { fix_status: 'offered' }),
+    row('b', 'listings', 'open', 'check', '', { fix_status: 'proposed' }),
+    row('c', 'listings', 'fixed', 'check', '', { fix_status: 'applied' }),
+  ];
+  const { plans } = planApplyMany(rows, [{ id: 'a', expected: 'offered' }, { id: 'b', expected: 'offered' }, { id: 'c', expected: 'applied' }]);
+  assert.deepEqual(plans[0], { id: 'a', plan: { field: 'fix_status', expected: 'offered', value: 'applying', action: 'rfix_ok' } });
+  assert.equal(plans[1].plan.status, 409); // changed since loaded
+  assert.equal(plans[2].plan.status, 409); // already fixed
+  assert.equal(planApplyMany(rows, []).status, 400);
+  assert.equal(planApplyMany(rows, [{ id: 'a' }, { id: 'a' }]).status, 400);
+  assert.equal(planApplyMany(rows, [{ id: 'a,b' }]).status, 400);
+  assert.equal(planApplyMany(rows, Array.from({ length: MAX_BATCH + 1 }, (_, i) => ({ id: `x${i}` }))).status, 400);
+  const id = batchId(1762300000000, 0.5);
+  assert.match(id, /^rb[a-z0-9]+$/);
+  const p = { a: 'rfix_all', i: id, b: 'K1-l2,K1-l3' };
+  assert.equal(validPayload(p), true);
+  assert.equal(validPayload({ ...p, b: '' }), false);
+  assert.equal(validPayload({ ...p, b: 'a,,b' }), false);
+  assert.equal(validPayload({ ...p, b: Array.from({ length: 21 }, (_, i) => `x${i}`).join(',') }), false);
+  assert.deepEqual(dispatchFor(p), ['rimmer-fix', { action: 'apply_many', id, ids: ['K1-l2', 'K1-l3'] }]);
+  assert.ok(PANEL_ONLY.includes('rfix_all'));
+});

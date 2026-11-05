@@ -10,6 +10,9 @@
 //   apply    re-checks that the field still holds what Holly saw, writes the new text (a repo file,
 //            committed by the workflow, which then runs the site build; or a Pending cell, after
 //            which the workflow runs Publish) and marks the finding fixed.
+//   apply_many  Apply all ticked (5 Nov, Jon): the same apply for each finding in turn, in one
+//            checkout, so the workflow makes one commit and one site build (and at most one Publish).
+//            One that fails is marked failed with its reason; the others still go ahead.
 // Jon's instruction is read from the row's fix_note (written by the panel), never from env.
 // Logs print the source kind and counts only (logs are public).
 'use strict';
@@ -484,6 +487,24 @@ async function apply(id, { g, root = ROOT }) {
   return { ok: true };
 }
 
+// Several fixes in one run: each applied in turn against the files as the previous one left them,
+// so a second fix to the same entry still checks it holds what Holly saw.
+async function applyMany(ids, { g, root = ROOT }) {
+  const out = [];
+  for (const id of ids) {
+    try {
+      out.push((await apply(id, { g, root })) || { ok: false, reason: 'no fix waiting' });
+    } catch (e) {
+      console.error(`Rimmer fix ${id}: error (${e && e.message ? e.message : e}).`);
+      const row = await findRow(g, id).catch(() => null);
+      if (row && str(row.fix_status) === 'applying') await g.updateRow(TAB, row._row, { fix_status: 'failed', fix_reason: 'Something went wrong while applying it. Try again.' }).catch(() => {});
+      out.push({ ok: false, reason: 'error' });
+    }
+  }
+  console.log(`Rimmer fixes: ${out.filter((r) => r.ok).length} of ${ids.length} applied.`);
+  return out;
+}
+
 async function main() {
   let p = {};
   if (process.env.GITHUB_EVENT_PATH) {
@@ -493,6 +514,11 @@ async function main() {
   const action = str(p.action || process.env.FIX_ACTION);
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) throw new Error('Bad finding id');
   const g = require('../ingest/google');
+  if (action === 'apply_many') {
+    const ids = (Array.isArray(p.ids) ? p.ids : []).map(str);
+    if (!ids.length || ids.length > 20 || ids.some((x) => !/^[A-Za-z0-9_-]{1,100}$/.test(x)) || new Set(ids).size !== ids.length) throw new Error('Bad list of finding ids');
+    return applyMany(ids, { g });
+  }
   if (action === 'apply') {
     try {
       return await apply(id, { g });
@@ -522,5 +548,5 @@ if (require.main === module) {
 
 module.exports = {
   sources, candidates, fixRequest, checkProposal, fixFields, draftFix, newFacts, dateMentioned, linkKnown, editDistance, valueOf, typeOf,
-  writeRepoField, writeRepoChange, removeArrayEntry, propose, apply, SYSTEM, TOOL, PENDING_FIELDS, PENDING_LINKS,
+  writeRepoField, writeRepoChange, removeArrayEntry, propose, apply, applyMany, SYSTEM, TOOL, PENDING_FIELDS, PENDING_LINKS,
 };

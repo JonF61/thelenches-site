@@ -3642,6 +3642,39 @@ export const CLIENT_JS = String.raw`
   }
   S.fixForm = S.fixForm || {};
   S.fixNote = S.fixNote || {};
+  // Apply all ticked (5 Nov, Jon): the ready fixes Jon has ticked, by finding id.
+  S.fixTick = S.fixTick || {};
+  function tickedIn(list) {
+    return list.filter(function (f) { return S.fixTick[f.id] && FIX_READY.indexOf(f.fix_status) >= 0; });
+  }
+  async function applyTicked(list) {
+    var picked = tickedIn(list);
+    if (!picked.length || S.batchBusy) return;
+    var lines = picked.map(function (f) { return '• ' + f.fix_label + (f.fix_field === 'remove' ? ' (take it off the website)' : f.fix_field ? ' (' + (FIX_WORDS[f.fix_field] || f.fix_field) + ')' : ''); });
+    if (!window.confirm('Apply ' + plural(picked.length, 'fix', 'fixes') + ' together?\n\n' + lines.join('\n') + '\n\nThe site rebuilds once, in a few minutes. If this week\'s newsletter is already built, Rebuild it afterwards.')) return;
+    S.batchBusy = true; render();
+    var r = await api('/admin/api/rimmer-apply-many', { items: picked.map(function (f) { return { id: f.id, expected: f.fix_status }; }) });
+    S.batchBusy = false;
+    if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); if (r.status === 409) { S.rimmer = null; } render(); return; }
+    (r.json.applied || []).forEach(function (id) { replaceFinding(id, { fix_status: 'applying' }); delete S.fixTick[id]; });
+    toast(r.json.message || 'Applying', !!(r.json.skipped || []).length);
+    if ((r.json.skipped || []).length) S.rimmer = null;
+    render();
+    watchFixes();
+  }
+  // The bar above a card's findings when two or more fixes are ready: Tick all, and Apply all ticked.
+  function batchBar(list) {
+    var ready = list.filter(function (f) { return FIX_READY.indexOf(f.fix_status) >= 0; });
+    if (ready.length < 2) return null;
+    var n = tickedIn(ready).length;
+    var all = n === ready.length;
+    return h('div', { class: 'batch-bar' },
+      h('span', { class: 'meta' }, n ? plural(n, 'fix', 'fixes') + ' ticked' : 'Tick the fixes you want, then apply them together.'),
+      h('div', { class: 'actions' },
+        h('button', { class: 'btn link', onclick: function () { ready.forEach(function (f) { if (all) delete S.fixTick[f.id]; else S.fixTick[f.id] = true; }); render(); } }, all ? 'Untick all' : 'Tick all'),
+        h('button', { class: 'btn primary', disabled: !n || S.batchBusy ? true : null, title: 'Makes every ticked change in one go, with one site rebuild',
+          onclick: function () { applyTicked(ready); } }, S.batchBusy ? 'Applying…' : 'Apply all ticked' + (n ? ' (' + n + ')' : ''))));
+  }
   async function loadRimmer() {
     S.ckLoading = true;
     var r = await api('/admin/api/rimmer');
@@ -3750,6 +3783,9 @@ export const CLIENT_JS = String.raw`
     if (st === 'applying') return h('div', { class: 'note info' }, 'Applying the fix… the site rebuilds in a few minutes.');
     if (FIX_READY.indexOf(st) >= 0) {
       return h('div', { class: 'fix-proposal' },
+        h('label', { class: 'fix-tick' },
+          h('input', { type: 'checkbox', checked: S.fixTick[f.id] ? true : null, onchange: function (e) { if (e.target.checked) S.fixTick[f.id] = true; else delete S.fixTick[f.id]; render(); } }),
+          ' Tick to apply with the others'),
         h('div', null, h('b', null, st === 'offered' ? 'Holly\'s fix (drafted with Rimmer\'s check): ' : 'Holly\'s fix: '),
           f.fix_label + (f.fix_field ? ' (' + (FIX_WORDS[f.fix_field] || f.fix_field) + ')' : '')),
         h('div', { class: 'fix-diff' },
@@ -3796,6 +3832,7 @@ export const CLIENT_JS = String.raw`
         li('Check', 'it may be wrong: have a look.'),
         li('Now / After', 'the entry as it is, and as it would be with Holly\'s fix. A fix changes one thing: some wording, an event\'s date or end date, the date a notice is hidden from, a link, or takes a whole entry off the website.'),
         li('Apply', 'makes the change (after you confirm); the website rebuilds in a few minutes. If this week\'s newsletter is already built, tap Rebuild on the draft afterwards.'),
+        li('Tick / Apply all ticked', 'when several fixes are ready, tick the ones you want (or Tick all) and tap Apply all ticked: they are all made in one go, with one website rebuild. One that changed meanwhile is skipped and the rest still go ahead.'),
         li('Discard fix', 'throws Holly\'s fix away but keeps the finding open.'),
         li('Fix… / Ask again…', 'type what it should say (a phone number, the right date, the web address) and Holly drafts again. She never adds details nobody gave her, and official statements only get typos corrected.'),
         li('Holly couldn\'t fix it', 'says why; usually she needs a detail from you, or it is something only Kryten can change.'),
@@ -3824,7 +3861,7 @@ export const CLIENT_JS = String.raw`
       intro ? h('p', { class: 'meta' }, intro) : null,
       rimmerHelp(),
       !c ? h('p', { class: 'meta' }, 'Loading…') : c.error ? errorNote(c, 'The Rimmer tab')
-        : list.length ? list.map(findingEl) : h('p', { class: 'meta' }, lastRun ? 'Nothing found.' : 'Not checked yet.'),
+        : list.length ? [batchBar(list), list.map(findingEl)] : h('p', { class: 'meta' }, lastRun ? 'Nothing found.' : 'Not checked yet.'),
       lastRun ? h('p', { class: 'meta' }, lastRun) : null,
       kr.length ? h('div', { class: 'kryten-list' }, h('h3', null, 'Sent to Kryten (' + kr.length + ')'),
         h('ul', { class: 'sum-l' }, kr.map(function (f) {
