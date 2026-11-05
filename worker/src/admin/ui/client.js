@@ -77,7 +77,7 @@ export const CLIENT_JS = String.raw`
       ['Rebuild', 're-makes a built issue with anything approved since. It sends nothing.'],
       ['Test send', 'emails the preview of the built issue to you only.'],
       ['Edit text', 'outlines each event, notice, regular activity and submission in the draft in blue: click one to change its wording or links, then Save and publish. It changes the website too (Saving → Building → Live ✓). Titles, dates and official statements stay with Kryten. If the issue is already built it is rebuilt with the change, so Test send again before Send to all.'],
-      ['Send to all', 'sends the built issue to every subscriber, once it has had a Test send. It first shows when it was last rebuilt and tested and when Rimmer last checked it, and asks you to confirm. After a Rebuild, Test send again before sending. The preview email\'s Send button still works too.'],
+      ['Send to all', 'sends the built issue to every subscriber, once it has had a Test send. It first shows when it was last rebuilt and tested and when Rimmer last checked it, and asks you to confirm. Once it starts, the button goes and a bar shows how many have been sent, until it says Sent ✓. After a Rebuild, Test send again before sending. The preview email\'s Send button still works too.'],
       ['Rimmer', 'his notes on the issue sit above the draft (open How this works on his card).']],
     stats: [
       ['Sent', 'how many addresses the issue went to.'],
@@ -3490,10 +3490,47 @@ export const CLIENT_JS = String.raw`
     var x = S.nlSent;
     return x && m && x.issue_date === m.issue_date && x.hash === m.hash ? x : null;
   }
+  // Progress (5 Nov, Jon): /admin/api/send-progress every 15 seconds while the note shows (up to an
+  // hour), redrawing only the note so the draft frame isn't reloaded.
   function sentNote(x) {
     var who = x.count + ' ' + (SEND_WORDS[x.mode] || 'subscribers');
-    return h('div', { class: 'note ok sent-note' }, h('b', null, (x.mode === 'shadow' ? 'Shadow run started' : 'Sending') + ' ✓ '),
-      (x.mode === 'shadow' ? 'No emails go out; ' : 'The newsletter is going to ' + who + '; ') + 'started ' + when(x.at) + '. It takes a few minutes: Activity shows the "Newsletter build and send" run, and once it finishes this screen moves on to next week\'s draft.');
+    if (x.mode === 'shadow') {
+      return h('div', { class: 'note ok sent-note' }, h('b', null, 'Shadow run started ✓ '), 'No emails go out; started ' + when(x.at) + '. Activity shows the "Newsletter build and send" run.');
+    }
+    var p = S.nlProgress && S.nlProgress.issue === x.issue_date ? S.nlProgress : null;
+    if (!p || !p.done) watchSend(x);
+    var line;
+    if (p && p.done) {
+      line = [h('b', null, 'Sent ✓ '), p.sent + ' of ' + (p.total || x.count) + ' sent' + (p.failed ? ', ' + p.failed + ' failed' : '') + (p.stuck ? ', ' + p.stuck + ' not sure (see the Sends tab)' : '') + (p.queued ? ', ' + p.queued + ' still waiting' : '') + '. This screen moves on to next week\'s draft shortly.'];
+    } else if (p && p.total) {
+      line = [h('b', null, 'Sending… '), p.sent + ' of ' + p.total + ' sent' + (p.failed ? ', ' + p.failed + ' failed' : '') + '; started ' + when(x.at) + '. It takes about a quarter of an hour.'];
+    } else {
+      line = [h('b', null, 'Send started ✓ '), 'The newsletter is going to ' + who + '; started ' + when(x.at) + '. The count appears here once the send gets going (a minute or two).'];
+    }
+    var total = p && p.total ? p.total : 0;
+    var pct = total ? Math.round(100 * (p.sent + p.failed + p.stuck) / total) : 0;
+    return h('div', { class: 'note ok sent-note' }, line,
+      total ? h('div', { class: 'send-bar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(pct) }, h('span', { style: 'width:' + pct + '%' })) : null);
+  }
+  function watchSend(x) {
+    if (S.sendTimer) return;
+    var tries = 0;
+    var tick = async function () {
+      tries += 1;
+      var r = await api('/admin/api/send-progress?i=' + encodeURIComponent(x.issue_date) + '&m=' + encodeURIComponent(x.mode || 'live'));
+      if (r.ok) {
+        var changed = JSON.stringify(r.json) !== JSON.stringify(S.nlProgress);
+        S.nlProgress = r.json;
+        if (r.json.done) toast('Newsletter sent: ' + r.json.sent + ' of ' + r.json.total + (r.json.failed ? ', ' + r.json.failed + ' failed' : ''), !!r.json.failed);
+        if (changed && S.view === 'draft') {
+          var old = document.querySelector('.sent-note');
+          if (old) { S.sendTimer = 'redraw'; old.replaceWith(sentNote(x)); }
+        }
+      }
+      if ((r.ok && r.json.done) || tries >= 240) { S.sendTimer = null; return; }
+      S.sendTimer = setTimeout(tick, 15000);
+    };
+    S.sendTimer = setTimeout(tick, 1000);
   }
   function sendConfirm(m) {
     var c = rimmerData();

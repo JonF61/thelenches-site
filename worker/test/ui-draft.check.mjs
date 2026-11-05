@@ -45,6 +45,12 @@ const liveRows = draftRows(draft.meta, draft.html, '2026-10-28T12:00:00.000Z');
 let rows = liveRows;
 let refreshed = 0;
 const nlPosts = [];
+let progressCalls = 0;
+const PROGRESS = [
+  { total: 0, sent: 0, failed: 0, stuck: 0, queued: 0, sending: 0, status: 'tested', done: false },
+  { total: 2, sent: 1, failed: 0, stuck: 0, queued: 0, sending: 1, status: 'sending', done: false },
+  { total: 2, sent: 2, failed: 0, stuck: 0, queued: 0, sending: 0, status: 'sent', done: true },
+];
 let signedOut = false;
 const entrySaves = [];
 let entryChecks = 0;
@@ -67,6 +73,11 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/admin/api/session') return send({ email: 'admin@example.org', csrf: 'c' });
   if (url.pathname === '/admin/api/state') return send(stateData());
   if (url.pathname === '/admin/api/summary') return send({ error: 'not in this check' }, 'application/json', 500);
+  if (url.pathname === '/admin/api/send-progress') {
+    progressCalls += 1;
+    const p = PROGRESS[Math.min(progressCalls - 1, PROGRESS.length - 1)];
+    return send({ issue: url.searchParams.get('i'), mode: url.searchParams.get('m'), ...p });
+  }
   if (url.pathname === '/admin/api/draft') return signedOut ? send('Forbidden', 'text/plain', 403) : send({ meta: draftMeta(rows) });
   if (url.pathname === '/admin/api/draft-refresh' && req.method === 'POST') {
     refreshed += 1;
@@ -233,10 +244,22 @@ try {
     await page.locator('text=Send started.').waitFor();
     assert.deepEqual(nlPosts.pop(), { action: 'send', issue_date: draft.meta.issue_date, hash: SEND.hash, count: 2, mode: 'live' });
     // After it (5 Nov, Jon): the bar says it is sending and Send to all goes, also after a reload.
-    await main.locator('.sent-note', { hasText: 'Sending ✓' }).waitFor();
-    assert.match(await main.locator('.sent-note').innerText(), /going to 2 subscribers; started .*Newsletter build and send/);
+    // Progress: started, then 1 of 2 with a bar, then Sent ✓.
+    progressCalls = 0;
+    await main.locator('.sent-note', { hasText: 'Send started ✓' }).waitFor();
     assert.equal(await main.locator('button', { hasText: 'Send to all' }).count(), 0);
+    await page.clock.runFor(2000);
+    await main.locator('.sent-note', { hasText: 'going to 2 subscribers' }).waitFor();
+    await page.clock.runFor(16000);
+    await main.locator('.sent-note', { hasText: '1 of 2 sent' }).waitFor();
+    assert.equal(await main.locator('.sent-note .send-bar').getAttribute('aria-valuenow'), '50');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `draft-sent-${name}.png`), fullPage: false });
+    await page.clock.runFor(16000);
+    await main.locator('.sent-note', { hasText: 'Sent ✓ 2 of 2 sent.' }).waitFor();
+    await page.locator('text=Newsletter sent: 2 of 2').waitFor();
+    const calls = progressCalls;
+    await page.clock.runFor(60000);
+    assert.equal(progressCalls, calls, 'stops watching once sent');
     rows = liveRows;
     // Signed out of Cloudflare: a message and Reload instead of a blocked frame.
     signedOut = true;

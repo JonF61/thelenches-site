@@ -116,6 +116,7 @@
 //                                   (repository_dispatch "ingest", as the Worker's cron does); feeds
 //                                   are read only at their usual hours. Publishes or sends nothing
 //                                   beyond what any ingest run does (acknowledgements).
+//   GET  /admin/api/send-progress?i=<issue>&m=live|canary  counts of that send's Sends rows (sendprogress.js)
 //   GET  /admin/api/rimmer         Rimmer's open findings and each scope's last run (rimmer.js)
 //   POST /admin/api/rimmer-dismiss { id }: one stale-checked write of that finding's status
 //                                   (open -> dismissed); the next check is told not to raise it again
@@ -200,6 +201,7 @@ import {
 import { visitors } from './visitors.js';
 import { visitorHistory } from './sitestats.js';
 import { nlStats } from './nlstats.js';
+import { sendProgress, PROGRESS_MODES } from './sendprogress.js';
 import { DRAFT_TAB, DRAFT_RANGE, DRAFT_META_RANGE, draftMeta, draftHtml, draftPage } from './draft.js';
 
 const MAX_BODY = 60000;
@@ -1013,6 +1015,13 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/nlstats') {
         const [issues, sends, dns] = await Promise.all([readTable(env, 'Issues'), readTable(env, 'Sends'), readTable(env, 'Do Not Send')]);
         return json(await nlStats(env, { issues: issues.rows, sends: sends.rows, dns: dns.rows }, String(url.searchParams.get('i') || '')));
+      }
+      if (path === '/admin/api/send-progress') {
+        const i = String(url.searchParams.get('i') || '');
+        const m = String(url.searchParams.get('m') || 'live');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(i) || !PROGRESS_MODES.includes(m)) return json({ error: 'Bad issue or mode' }, 400);
+        const [issues, sends] = await Promise.all([readTable(env, 'Issues'), readTable(env, 'Sends')]);
+        return json(sendProgress(sends.rows, issues.rows, i, m));
       }
       if (path === '/admin/api/rimmer') return json(rimmerRows(await readOptional(env, RIMMER_TAB)));
       if (path === '/admin/api/runs') return json({ runs: await recentRuns(env, 20) });

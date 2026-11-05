@@ -134,7 +134,7 @@ textarea.f{min-height:120px;resize:vertical;line-height:1.4}
 .note{font-size:.88rem;padding:8px 10px;border-radius:8px;background:var(--info-bg);color:var(--info);margin:8px 0}
 .sg-said{display:grid;grid-template-columns:max-content 1fr;gap:2px 10px;margin:6px 0}.sg-said dt{font-weight:600;color:var(--muted, #666)}.sg-said dd{margin:0;overflow-wrap:anywhere}
 .sg-tags .chk{display:block;margin:4px 0}
-.note.ok{background:var(--ok-bg,#e5f4e4);color:var(--good,#1e7b34)}.sent-note{margin-top:6px}.note.warn{background:var(--warn-bg);color:var(--warn)}
+.note.ok{background:var(--ok-bg,#e5f4e4);color:var(--good,#1e7b34)}.sent-note{margin-top:6px}.send-bar{height:8px;border-radius:4px;background:#fff;margin-top:6px;overflow:hidden}.send-bar span{display:block;height:100%;background:var(--good,#1e7b34)}.note.warn{background:var(--warn-bg);color:var(--warn)}
 .note.bad{background:var(--bad-bg);color:var(--bad)}
 .empty{color:var(--muted);padding:24px 8px;text-align:center}
 .section{margin-top:8px;font-size:1rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
