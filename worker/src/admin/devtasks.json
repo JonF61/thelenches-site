@@ -119,8 +119,7 @@
       "kryten": true
     },
     {
-      "task": "Thank the suggester of John (electrician), approved before thank-you emails existed: count their recommendation and send the thank-you (address is in the 4 Nov confirmation in Sent mail).",
-      "waiting": "Jon's go-ahead",
+      "task": "Plan doc Build history: add the entry for PRs 271-272 (listing suggestion thank-you email with first recommendation, per-card anchors, star under the name, one-off thank run).",
       "added": "2026-11-05",
       "kryten": true
     }

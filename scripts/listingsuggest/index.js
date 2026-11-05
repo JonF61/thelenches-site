@@ -18,6 +18,12 @@
 //             the row "approved" (decided_at, entry = the new id) and wipes the address.
 //   reject    decide() sug_no: "rejected", Jon's optional reason (event file) in reject_reason,
 //             address wiped. Nothing is sent back to the suggester.
+//   thank / thanked  one-off, by hand (workflow_dispatch with the row id, or kind:entry
+//             such as trades:john): for a suggestion
+//             approved before thank-you emails existed (result "added"). The address was wiped,
+//             so it is found again from our own confirmation email in Sent mail (exactly one
+//             match, or nothing is done). "thank" counts the recommendation (the workflow
+//             commits recommends.json), "thanked" sends the thank-you and sets result.
 // Every run also wipes addresses 30 days (KEEP_DAYS) after the request was made, if never
 // confirmed ("expired"), or after confirming. The address and "why" are never logged, put in
 // env or committed; logs print the action and result only (Actions logs are public).
@@ -142,10 +148,32 @@ async function firstRecommendation(deps, kind, entryId, email, ms, countsFile) {
   return true;
 }
 
+// The address our confirmation email for this row went to (Sent mail, within a day of
+// sent_at, naming the entry): exactly one, else ''. Never logged.
+async function sentAddress(deps, row, label) {
+  const name = str(row.name);
+  const d = new Date(`${str(row.sent_at).slice(0, 10)}T12:00:00Z`);
+  if (!name || Number.isNaN(d.getTime())) return '';
+  const day = (n) => { const x = new Date(d.getTime() + n * 86400e3); return `${x.getUTCFullYear()}/${x.getUTCMonth() + 1}/${x.getUTCDate()}`; };
+  const ids = await deps.g.searchMessageIds(`in:sent subject:"Please confirm your suggestion" after:${day(-1)} before:${day(2)}`, 50);
+  const found = new Set();
+  const want = `suggested ${name} for the ${label} page`;
+  for (const mid of ids) {
+    const m = await deps.g.getMessage(mid);
+    if (lc(m.fromAddress) !== FROM || !String(m.text || '').includes(want)) continue;
+    for (const part of String(m.recipients || '').split(',')) {
+      const a = lc(deps.g.addressOf ? deps.g.addressOf(part) : part);
+      if (a && a.includes('@')) found.add(a);
+    }
+  }
+  return found.size === 1 ? [...found][0] : '';
+}
+
 async function run({ action, id, ms = Date.now(), dataDir = DATA_DIR, typed = null, stateFile = '' }, deps = { g, signToken }) {
-  if (!['send', 'confirm', 'approve', 'approved', 'reject'].includes(action)) throw new Error('ACTION must be send, confirm, approve, approved or reject');
+  if (!['send', 'confirm', 'approve', 'approved', 'reject', 'thank', 'thanked'].includes(action)) throw new Error('ACTION must be send, confirm, approve, approved, reject, thank or thanked');
   const R = await rules();
-  if (!R.SUGGEST_ID.test(String(id || ''))) throw new Error('SUGGEST_ID is missing or malformed');
+  const byEntry = (action === 'thank' || action === 'thanked') ? String(id || '').match(/^(trades|eat):([a-z0-9-]{1,80})$/) : null;
+  if (!byEntry && !R.SUGGEST_ID.test(String(id || ''))) throw new Error('SUGGEST_ID is missing or malformed');
   const TAB = R.SUGGEST_TAB;
   await deps.g.ensureTab(TAB, R.SUGGEST_HEADERS);
   const rows = await deps.g.readTable(TAB);
@@ -153,7 +181,9 @@ async function run({ action, id, ms = Date.now(), dataDir = DATA_DIR, typed = nu
   const wiped = await tidy(deps, TAB, rows, ms);
   if (wiped) console.log(`${wiped} suggestion address(es) over ${KEEP_DAYS} days: wiped.`);
 
-  const row = rows.find((r) => str(r.id) === id);
+  const row = byEntry
+    ? rows.find((r) => r.kind === byEntry[1] && str(r.entry) === byEntry[2] && lc(r.status) === 'approved')
+    : rows.find((r) => str(r.id) === id);
   if (!row) { console.log('No Listing suggestions row has this id. Nothing to do.'); return 'missing'; }
   const status = lc(row.status);
   const kind = Object.prototype.hasOwnProperty.call(R.KINDS, row.kind) ? row.kind : '';
@@ -187,6 +217,29 @@ async function run({ action, id, ms = Date.now(), dataDir = DATA_DIR, typed = nu
     await deps.g.updateRow(TAB, row._row, { status: 'rejected', decided_at: now, email: '', reject_reason: reason });
     console.log(`Rejected${reason ? ' (reason saved)' : ''}.`);
     return 'rejected';
+  }
+
+  if (action === 'thank' || action === 'thanked') {
+    const entry = str(row.entry);
+    if (status !== 'approved' || !entry || lc(row.result) !== 'added') { console.log(`Row is "${status}" / "${str(row.result)}": not an approved suggestion waiting for thanks. Nothing to do.`); return 'skipped'; }
+    const k = R.KINDS[kind];
+    const listed = (JSON.parse(fs.readFileSync(path.join(dataDir, k.file), 'utf8'))[k.list] || []).find((x) => x.id === entry);
+    if (!listed) { console.log('Entry no longer listed. Nothing to do.'); return 'skipped'; }
+    const email = await sentAddress(deps, row, k.label);
+    if (!email) { console.log('Could not find exactly one confirmation email for this row. Nothing done.'); return 'notfound'; }
+    if (action === 'thank') {
+      await firstRecommendation(deps, kind, entry, email, ms, path.join(dataDir, 'recommends.json'));
+      console.log('Recommendation counted.');
+      return 'counted';
+    }
+    const { settings } = await deps.g.readSettings();
+    await deps.g.sendMail({
+      to: email, ...thanksEmail({ kind, name: listed.name, section: kind === 'eat' ? listed.area : listed.trade, page: k.page, anchor: anchorFor(kind, entry) }),
+      from: FROM, fromName: deps.g.fromNameFor(settings), headers: { 'Auto-Submitted': 'auto-generated' },
+    });
+    await deps.g.updateRow(TAB, row._row, { result: 'added, thanked' });
+    console.log('Thank-you email sent.');
+    return 'thanked';
   }
 
   if (action === 'approve') {
