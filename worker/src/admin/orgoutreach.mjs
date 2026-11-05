@@ -294,9 +294,12 @@ export function orgLists(orgs, { replies = [], contacts = [], orgRows = [], hasT
 
 // Those to look up in Gmail (would otherwise be due, or held by a date, today):
 // [{ id, addresses }].
+// Listings are left out (5 Nov): one Gmail search each took the panel past the Worker's
+// subrequest limit; their regular contact comes from their Contacts row only.
 export function dueOrgs(orgs, { replies = [], contacts = [], orgRows = [], today }) {
   const byId = new Map((orgRows || []).map((r) => [str(r.id), r]));
   return orgs.filter((o) => {
+    if (o.listing) return false;
     const orgRow = byId.get(o.id) || null;
     const { state } = orgState(o, { replies, contacts, orgRow, today });
     return state === 'due' || (state === 'held' && low(orgRow && orgRow.next_check) !== 'never');

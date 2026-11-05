@@ -88,7 +88,7 @@ async function draftOrgCheck(id) {
   const today = londonDate(Date.now());
   const ctx = { replies: rows, contacts, orgRow: orgTab.find((r) => String(r.id || '').trim() === id) || null, today };
   // In regular contact (emailed us in the last 3 months): no check, as on the panel.
-  if (org && R.orgState(org, ctx).state === 'due'
+  if (org && !org.listing && R.orgState(org, ctx).state === 'due'
     && (await g.searchMessageIds(R.recentQuery(R.addressesFor(org, ctx.orgRow, contacts)), 1)).length) {
     ctx.recent = new Set([org.id]);
   }
