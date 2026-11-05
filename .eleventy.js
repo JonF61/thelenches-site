@@ -248,6 +248,12 @@ module.exports = async function (eleventyConfig) {
   // True for items in the five Lenches ("Lenches" badge on Events; lib/lenches.js)
   const { inLenches } = require("./lib/lenches.js");
   eleventyConfig.addFilter("inLenches", inLenches);
+  // Prefilled Google Calendar page for an event (Events page, beside the .ics download; 5 Nov 2026).
+  eleventyConfig.addFilter("googleCal", (e, siteUrl) => {
+    const { googleCalendarUrl } = require("./lib/ics.js");
+    const id = require("./lib/anchors.js").slug("ev-" + e.date + "-" + e.title);
+    return googleCalendarUrl(e, { url: `${siteUrl}/events/#${id}` });
+  });
 
   // Drop pipeline notices past their expiry date (between publish runs)
   eleventyConfig.addFilter("current", (items) => {
