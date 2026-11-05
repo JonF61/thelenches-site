@@ -30,6 +30,7 @@ const { loadOffList } = require('./subscriptions');
 const itemFeedback = require('./itemfeedback');
 const { primeWriteups } = require('./extract');
 const dupes = require('./duplicates');
+const logsafe = require('../../lib/logsafe'); // public logs: no contact details
 
 const MAX_RETRIES = 3;            // after this, a failing message is left for the diagnostic
 const MAX_MESSAGES_PER_RUN = 25;  // caps run time and spend; the rest wait for the next run
@@ -418,7 +419,7 @@ async function main() {
         error: String((err && err.message) || err).slice(0, 500),
         retries,
       };
-      console.error(`${id}: ${outcome.error}`);
+      console.error(`${id}: ${logsafe.scrub(outcome.error)}`);
     }
     const fields = {
       message_id: id,
@@ -432,7 +433,8 @@ async function main() {
     };
     if (prev) await g.updateRow('Log', prev._row, fields);
     else await g.appendRows('Log', [fields]);
-    console.log(`${id}: ${outcome.status}, ${outcome.items} item(s)${outcome.error ? ` — ${outcome.error}` : ''}`);
+    const note = logsafe.outcomeNote(outcome.error);
+    console.log(`${id}: ${outcome.status}, ${outcome.items} item(s)${note ? ` — ${note}` : ''}`);
   }
 
   if (todo.length > batch.length) console.log(`${todo.length - batch.length} left for the next run.`);
