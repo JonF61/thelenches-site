@@ -31,6 +31,7 @@ function world(rows) {
     readTable: async (tab) => tabs[tab].map((r, i) => ({ _row: i + 2, ...r })),
     readSettings: async () => ({ settings: { from_name: 'The Lenches Website and Newsletter Team' } }),
     fromNameFor: (s) => s.from_name,
+    addressOf: require('./ingest/google').addressOf,
     sendMail: async (m) => { sent.push(m); return 'msg1'; },
     appendRows: async (tab, objs) => { tabs[tab].push(...objs); },
     updateRow: async (tab, row, fields) => { Object.assign(tabs[tab][row - 2], fields); },
@@ -112,6 +113,25 @@ console.log = (...a) => { logs.push(a.join(' ')); };
   assert.match(ty.html, /Best wishes,<br>Holly<br>Lenches website assistant/);
   assert.ok(w.tabs[TAB][0].decided_at);
   assert.equal(await sg.run({ action: 'approve', id: ID, ms: MS, dataDir: tmp, typed: { body: '' }, stateFile }, w.deps), 'skipped', 'a replay adds nothing');
+
+  // one-off thank for an older approval (address wiped): found again from Sent mail
+  const old = (extra) => world([base({ status: 'approved', entry: 'smith-electrical', result: 'added', email: '', sent_at: '2026-11-03 10:00', ...extra })]);
+  const conf = { id: 'm1', fromAddress: 'website@thelenches.org.uk', recipients: 'Reader <Reader@Example.org>', text: 'Hello,\n\nSomeone, hopefully you, suggested Smith Electrical for the Local trades page of thelenches.org.uk.' };
+  const withMail = (wd, msgs) => { wd.deps.g.searchMessageIds = async (q) => { assert.match(q, /after:2026\/11\/2 before:2026\/11\/5/); return msgs.map((x) => x.id); }; wd.deps.g.getMessage = async (mid) => msgs.find((x) => x.id === mid); return wd; };
+  fs.writeFileSync(path.join(tmp, 'recommends.json'), '{"trades":{},"eat":{}}\n');
+  w = withMail(old(), [conf, { ...conf, id: 'm2', text: 'suggested Someone Else for the Local trades page' }]);
+  assert.equal(await sg.run({ action: 'thank', id: 'trades:smith-electrical', ms: MS, dataDir: tmp }, w.deps), 'counted');
+  assert.equal(w.tabs.Recommendations[0].key, require('./recommend').emailKey('reader@example.org'));
+  assert.equal(JSON.parse(fs.readFileSync(path.join(tmp, 'recommends.json'), 'utf8')).trades['smith-electrical'], 1);
+  assert.equal(w.sent.length, 0);
+  assert.equal(await sg.run({ action: 'thanked', id: 'trades:smith-electrical', ms: MS, dataDir: tmp }, w.deps), 'thanked');
+  assert.equal(w.sent[0].to, 'reader@example.org');
+  assert.match(w.sent[0].text, /#trade-smith-electrical/);
+  assert.equal(w.tabs[TAB][0].result, 'added, thanked');
+  assert.equal(await sg.run({ action: 'thank', id: 'trades:smith-electrical', ms: MS, dataDir: tmp }, w.deps), 'skipped', 'thanked once only');
+  w = withMail(old(), [conf, { ...conf, id: 'm3', recipients: 'other@example.org' }]);
+  assert.equal(await sg.run({ action: 'thank', id: 'trades:smith-electrical', ms: MS, dataDir: tmp }, w.deps), 'notfound', 'two addresses: nothing done');
+  assert.equal(w.tabs.Recommendations.length, 0);
 
   // approve as edited (eat): a taken id gets -2, placed in its area in name order
   const eatBefore = JSON.parse(fs.readFileSync(path.join(tmp, 'eat.json'), 'utf8'));

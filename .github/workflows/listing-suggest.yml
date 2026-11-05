@@ -11,9 +11,17 @@ name: Listing suggestion (Local trades / Where to eat)
 #   action "reject"   (decide() sug_no, panel only) mark the row rejected
 # The payload's id is a row id; Jon's edited entry and reason are read from the event file by
 # the script, never passed as env (a step's env is printed in this public log).
+#   manual run        one-off thank-you for a suggestion approved before they existed: input
+#                     the row id (sg-…) or kind:entry (e.g. trades:john); the address is found from our own
+#                     confirmation email in Sent mail, never typed or logged
 on:
   repository_dispatch:
     types: [listing-suggest]
+  workflow_dispatch:
+    inputs:
+      id:
+        description: Row id (sg-…) or kind:entry, e.g. trades:john
+        required: true
 
 permissions:
   contents: write
@@ -21,7 +29,7 @@ permissions:
 
 # One queue per suggestion: a shared group would let a newer run cancel a waiting one.
 concurrency:
-  group: listing-suggest-${{ github.event.client_payload.id }}
+  group: listing-suggest-${{ github.event.client_payload.id || inputs.id }}
   cancel-in-progress: false
 
 jobs:
@@ -34,7 +42,7 @@ jobs:
       GMAIL_USER: jon@thelenches.org.uk
       APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
       WORKER_URL: https://approvals.lenches.workers.dev
-      SUGGEST_ID: ${{ github.event.client_payload.id }}
+      SUGGEST_ID: ${{ github.event.client_payload.id || inputs.id }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -46,7 +54,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
 
       - name: Send, confirm or reject
-        if: ${{ github.event.client_payload.action != 'approve' }}
+        if: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.action != 'approve' }}
         run: node scripts/listingsuggest/index.js
         env:
           ACTION: ${{ github.event.client_payload.action }}
@@ -86,3 +94,32 @@ jobs:
         run: |
           gh workflow run build.yml --ref main
           gh workflow run deploy-worker.yml --ref main
+
+      # Manual one-off: count the suggester's recommendation, commit, then thank them.
+      - name: Count the recommendation
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: node scripts/listingsuggest/index.js
+        env:
+          ACTION: thank
+      - name: Commit counts
+        id: tcommit
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          git add src/_data/recommends.json
+          if git diff --cached --quiet; then echo "Nothing to commit."; echo "pushed=no" >> "$GITHUB_OUTPUT"; exit 0; fi
+          git config user.name "Lenches Pipeline"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Recommendation counts"
+          for n in 1 2 3 4; do
+            if git pull --rebase origin main && git push origin HEAD:main; then echo "pushed=yes" >> "$GITHUB_OUTPUT"; exit 0; fi
+            sleep $((n * 5))
+          done
+          echo "Push failed"; exit 1
+      - name: Build the site, then thank them
+        if: ${{ github.event_name == 'workflow_dispatch' && steps.tcommit.outputs.pushed == 'yes' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ACTION: thanked
+        run: |
+          gh workflow run build.yml --ref main
+          node scripts/listingsuggest/index.js
