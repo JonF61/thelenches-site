@@ -26,7 +26,7 @@ const stateData = () => ({
 });
 const issues = [
   { date: '2026-10-29', sent: 425, bounced: 2, opens: 231, clicks: 64 },
-  { date: '2026-10-22', sent: 420, bounced: 0, opens: null, clicks: null },
+  { date: '2026-10-22', sent: 420, bounced: 0, opens: null, clicks: null, early: true },
 ];
 const detail = (date) => (date === '2026-10-22'
   ? { date, days: [], hours: [], links: [] }
@@ -70,7 +70,9 @@ try {
     const text = await main.innerText();
     assert.match(text, /^How each newsletter did/m);
     assert.match(text, /Thu 29 Oct\s+425\s+2\s+231\s+64/);
-    assert.match(text, /Thu 22 Oct\s+420\s+0\s+–\s+–/);
+    assert.match(text, /Thu 22 Oct ★\s+420\s+0\s+–\s+–/);
+    assert.match(text, /★ Sent before counts began \(28 October\), so no opens or clicks were counted\./);
+    assert.doesNotMatch(text, /Thu 29 Oct ★/);
     assert.match(text, /Opens by day: Thu 29 Oct 168 · Fri 30 Oct 41/);
     assert.match(text, /Busiest hours: 8–9am 74 · 9–10am 39 · 7–8pm 18/);
     assert.match(text, /41\s+thelenches\.org\.uk\/events\//);
@@ -78,7 +80,7 @@ try {
     // Picking another issue.
     await main.locator('table.nlstats tr', { hasText: 'Thu 22 Oct' }).click();
     await main.locator('h2', { hasText: 'Thu 22 Oct' }).waitFor();
-    assert.match(await main.innerText(), /No opens counted yet\.[\s\S]*No clicks counted yet\./);
+    assert.match(await main.innerText(), /★ Sent before counts began, so no opens or clicks were counted\.[\s\S]*No opens counted yet\.[\s\S]*No clicks counted yet\./);
     assert.deepEqual(errors, []);
     await page.close();
   }
