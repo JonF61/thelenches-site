@@ -132,6 +132,16 @@
         "text": "tapcast.co.uk",
         "url": "https://www.tapcast.co.uk"
       }
+    },
+    {
+      "id": "john",
+      "name": "John",
+      "trade": "Electrician",
+      "base": "Worcester",
+      "website": {
+        "text": "ismelectricalsolutions.com",
+        "url": "https://www.ismelectricalsolutions.com/"
+      }
     }
   ]
 }
