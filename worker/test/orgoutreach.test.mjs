@@ -157,4 +157,6 @@ test('listings: every trade and eatery, linked to its own card, address from the
   const sent = sentCheck('eat-boot-inn', 'info@thebootinn.com', '2026-09-01');
   assert.equal(orgState(boot, { orgRow: row, replies: [sent], today: TODAY }).state, 'chase');
   assert.ok(planOrgCheck(boot, { orgRow: row, replies: [], today: TODAY }).ok);
+  // No Gmail search for listings (the Worker's subrequest limit).
+  assert.deepEqual(dueOrgs([...ORGS, ...L], { orgRows: [row], today: TODAY }).filter((d) => /^(trade|eat)-/.test(d.id)), []);
 });
