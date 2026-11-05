@@ -122,6 +122,11 @@
       "task": "Plan doc Build history: add the entry for PRs 271-272 (listing suggestion thank-you email with first recommendation, per-card anchors, star under the name, one-off thank run).",
       "added": "2026-11-05",
       "kryten": true
+    },
+    {
+      "task": "Listing check: after the first Find listing emails run, list the trades and eateries still without an address (Facebook-only ones as a Chrome job) for Jon; then Jon starts sending checks from Contacts > Organisations > Listings (10 a day).",
+      "added": "2026-11-05",
+      "kryten": true
     }
   ]
 }

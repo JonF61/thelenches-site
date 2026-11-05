@@ -124,3 +124,37 @@ test('orgcheck goes to approval.yml with the slug only', () => {
   assert.ok(validPayload({ a: 'orgcheck', i: 'lenches-club' }));
   assert.deepEqual(dispatchFor({ a: 'orgcheck', i: 'lenches-club' }), ['approval', { id: 'lenches-club', action: 'orgcheck' }]);
 });
+
+// Listings (5 Nov): Local trades and Where to eat entries get the same yearly check.
+test('listings: every trade and eatery, linked to its own card, address from the entry or the tab', async () => {
+  const { listingEntries, emailOf, planListingEmail } = await import('../src/admin/orgoutreach.mjs');
+  const ld = Object.fromEntries(['trades', 'eat'].map((n) => [n, JSON.parse(fs.readFileSync(new URL(`../../src/_data/${n}.json`, import.meta.url)))]));
+  const L = listingEntries(ld);
+  assert.equal(L.length, ld.trades.trades.length + ld.eat.places.length);
+  const ids = new Set([...ORGS, ...L].map((o) => o.id));
+  assert.equal(ids.size, ORGS.length + L.length, 'no clash with organisation ids');
+  for (const e of L) {
+    assert.match(e.id, /^(trade|eat)-[a-z0-9-]+$/);
+    assert.ok(PAGE_NAMES[e.page] && e.pageUrl.includes(`#${e.id}`), e.id);
+    assert.ok(e.shown.length, e.id);
+  }
+  const tomes = L.find((e) => e.id === 'trade-b-tomes-son');
+  assert.equal(tomes.email, 'b.tomesandson@gmail.com');
+  const boot = L.find((e) => e.id === 'eat-boot-inn');
+  assert.equal(emailOf(boot, null), '');
+  assert.equal(orgState(boot, { today: TODAY }).state, 'noemail');
+  const row = { id: 'eat-boot-inn', email: 'Info@TheBootInn.com', email_source: 'website' };
+  assert.equal(emailOf(boot, row), 'info@thebootinn.com');
+  assert.equal(orgState(boot, { orgRow: row, today: TODAY }).state, 'due');
+  assert.equal(emailOf(boot, { email: 'not an address' }), '');
+  assert.equal(emailOf(org('glads'), { email: 'x@y.org' }), '', 'organisations never take the tab email');
+  const lists = orgLists([boot], { orgRows: [row], today: TODAY });
+  assert.equal(lists.lists.due[0].email, 'info@thebootinn.com');
+  assert.equal(lists.lists.due[0].email_cell, 'Info@TheBootInn.com');
+  assert.deepEqual(planListingEmail(' A@B.co.uk '), { value: 'a@b.co.uk' });
+  assert.deepEqual(planListingEmail(''), { value: '' });
+  assert.ok(planListingEmail('nope').error);
+  const sent = sentCheck('eat-boot-inn', 'info@thebootinn.com', '2026-09-01');
+  assert.equal(orgState(boot, { orgRow: row, replies: [sent], today: TODAY }).state, 'chase');
+  assert.ok(planOrgCheck(boot, { orgRow: row, replies: [], today: TODAY }).ok);
+});

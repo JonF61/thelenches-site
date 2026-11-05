@@ -12,7 +12,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { CLIENT_JS } from '../src/admin/ui/client.js';
 import { CLIENT_CSS } from '../src/admin/ui/css.js';
-import { orgEntries, orgLists } from '../src/admin/orgoutreach.mjs';
+import { orgEntries, listingEntries, orgLists } from '../src/admin/orgoutreach.mjs';
 
 const require = createRequire(import.meta.url);
 let chromium;
@@ -25,6 +25,7 @@ const SHOTS = process.env.SHOTS || '';
 const data = Object.fromEntries(['contacts', 'council', 'schools', 'health', 'transport']
   .map((n) => [n, JSON.parse(fs.readFileSync(new URL(`../../src/_data/${n}.json`, import.meta.url)))]));
 const ORGS = orgEntries(data);
+const LISTINGS = listingEntries(Object.fromEntries(['trades', 'eat'].map((n) => [n, JSON.parse(fs.readFileSync(new URL(`../../src/_data/${n}.json`, import.meta.url)))])));
 const TODAY = '2026-10-27';
 const email = (id) => ORGS.find((o) => o.id === id).email;
 const sent = (id, day, kind = 'check') => ({ reply_id: `r-${id}-${kind}`, type: 'outreach', to: email(id), status: 'sent',
@@ -35,9 +36,9 @@ function reset() {
   replies = [sent('tennis', '2026-10-01'), sent('cricket', '2026-10-20'), sent('walking', '2026-08-01'), sent('walking', '2026-09-01', 'chase'),
     sent('preschool', '2026-10-01'), { reply_id: 'm1-ack', message_id: 'm1', to: email('preschool'), type: 'ack', status: 'sent', created_at: '2026-10-05 10:00' },
     { ...sent('orchard', TODAY), status: 'awaiting' }];
-  orgRows = [{ id: 'grey-gable', next_check: '2027-01-27' }];
+  orgRows = [{ id: 'grey-gable', next_check: '2027-01-27' }, { id: 'eat-boot-inn', email: 'info@thebootinn.com', email_source: 'website' }];
 }
-const view = (count = 1) => ({ ...orgLists(ORGS, { replies, contacts: [], orgRows, hasTab: true, today: TODAY, recent: new Set(['rous-lench-hall']) }), count });
+const view = (count = 1) => ({ ...orgLists([...ORGS, ...LISTINGS], { replies, contacts: [], orgRows, hasTab: true, today: TODAY, recent: new Set(['rous-lench-hall']) }), count });
 
 let count = 1;
 const posts = [];
@@ -126,6 +127,26 @@ try {
       await page.locator('.crow', { hasText: 'Lenches Cricket Club' }).getByText('Other addresses').click();
       await page.locator('.crow', { hasText: 'Lenches Cricket Club' }).screenshot({ path: path.join(SHOTS, 'orgs-emails.png') });
     }
+
+    // Listings (5 Nov): their own list; a found address shows, Add an email saves one.
+    await main.getByRole('button', { name: 'Listings' }).click();
+    await main.getByText(/Every Local trades and Where to eat entry/).waitFor();
+    const ltext = await main.innerText();
+    assert.match(ltext, /Boot Inn\s+·\s+Where to eat/);
+    assert.match(ltext, /info@thebootinn\.com · Not checked yet/);
+    assert.match(ltext, /B Tomes & Son/);
+    assert.doesNotMatch(ltext, /Lenches Tennis Club/, 'organisations not in the Listings list');
+    assert.equal(await page.locator('.crow', { hasText: 'B Tomes & Son' }).getByText('Add an email').count(), 0, 'own address: no box');
+    const boot = page.locator('.crow', { hasText: 'Boot Inn' });
+    await boot.getByText('Email (found on their website)').waitFor();
+    const mysuru = page.locator('.crow', { hasText: 'Mysuru' });
+    await mysuru.getByText('Add an email').click();
+    await mysuru.locator('input[type=email]').fill('hello@mysuru.co.uk');
+    await mysuru.getByRole('button', { name: 'Save email' }).click();
+    await page.locator('.toast', { hasText: 'Saved: email for' }).waitFor();
+    assert.deepEqual(posts.pop(), { path: '/admin/api/listingemail', id: 'eat-mysuru', expected: '', expected_source: '', value: 'hello@mysuru.co.uk' });
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `orgs-listings-${name}.png`), fullPage: true });
+    await main.getByRole('button', { name: 'Groups and services' }).click();
 
     // Daily cap: Draft goes, Done stays.
     count = 10;

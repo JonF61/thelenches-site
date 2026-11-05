@@ -388,6 +388,20 @@ async function readHeaders(tab) {
   return headerCache[tab];
 }
 
+// Adds one header at column index (0-based) of row 1: only at the end of the headers (new
+// columns go at the END only).
+async function setHeader(tab, index, name) {
+  const headers = await readHeaders(tab);
+  if (index !== headers.length) throw new Error(`New header ${name} must go at the end of ${tab}`);
+  await sheets().spreadsheets.values.update({
+    spreadsheetId: spreadsheetId(),
+    range: `'${tab}'!${colLetter(index)}1`,
+    valueInputOption: 'RAW',
+    requestBody: { values: [[name]] },
+  });
+  headerCache[tab] = [...headers, name];
+}
+
 // Rows as objects keyed by header, each with _row (1-based Sheet row number).
 async function readTable(tab) {
   const rows = await getValues(`'${tab}'!A1:AZ`);
@@ -507,6 +521,7 @@ module.exports = {
   sendMail,
   readTable,
   readHeaders,
+  setHeader,
   readSettings,
   fromNameFor,
   getSheetGid,

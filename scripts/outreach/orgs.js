@@ -39,7 +39,13 @@ async function rules() {
 
 const readData = (name) => JSON.parse(fs.readFileSync(path.join(DATA, `${name}.json`), 'utf8'));
 function siteData() {
-  return Object.fromEntries(['contacts', 'council', 'schools', 'health', 'transport'].map((n) => [n, readData(n)]));
+  return Object.fromEntries(['contacts', 'council', 'schools', 'health', 'transport', 'trades', 'eat'].map((n) => [n, readData(n)]));
+}
+
+// Every organisation and listing (Local trades, Where to eat) the yearly check covers.
+async function allEntries(data = siteData()) {
+  const R = await rules();
+  return [...R.orgEntries(data), ...R.listingEntries(data)];
 }
 
 // A missing Org outreach tab is the same as an empty one.
@@ -54,6 +60,12 @@ async function orgRows(R) {
 
 // { subject, body } for one organisation (kind: check | chase).
 function orgEmail(org, kind, R) {
+  if (org.listing) {
+    // Listings (5 Nov, wording approved by Jon): no opt-out line; the check says how to come off.
+    const vars = { name: org.name, page: org.pageName, page_url: org.pageUrl, entry: [org.name, ...org.shown].join('\n') };
+    const parts = [replies.greeting(org.greet), replies.fill(kind === 'chase' ? 'listing_chase' : 'listing_check', vars), replies.fill('signature')];
+    return { subject: kind === 'chase' ? `Re: ${R.LISTING_SUBJECT}` : R.LISTING_SUBJECT, body: parts.join('\n\n') };
+  }
   const vars = { organisation: org.name, page: org.pageName, page_url: org.pageUrl, entry: [org.name, ...org.shown].join('\n') };
   const parts = [replies.greeting(org.greet), replies.fill(kind === 'chase' ? 'org_chase' : 'org_check', vars)];
   if (kind !== 'chase') parts.push(replies.fill('outreach_optout'));
@@ -71,7 +83,7 @@ async function draftOrgCheck(id) {
     console.log('Organisation outreach: replies_mode is off; nothing drafted.');
     return null;
   }
-  const org = R.orgEntries(siteData()).find((o) => o.id === id) || null;
+  const org = (await allEntries()).find((o) => o.id === id) || null;
   const [rows, contacts, orgTab] = await Promise.all([g.readTable('Replies'), g.readTable('Contacts'), orgRows(R)]);
   const today = londonDate(Date.now());
   const ctx = { replies: rows, contacts, orgRow: orgTab.find((r) => String(r.id || '').trim() === id) || null, today };
@@ -91,7 +103,7 @@ async function draftOrgCheck(id) {
     reply_id: `org-${id}-${plan.kind}-${londonDateTime(now).replace(/\D/g, '')}`,
     message_id: '',
     thread_id: '',
-    to: org.email,
+    to: R.emailOf(org, ctx.orgRow),
     type: R.ORG_TYPE,
     class: 'outreach',
     class_confidence: '',
@@ -101,7 +113,9 @@ async function draftOrgCheck(id) {
     body,
     status: mode === 'shadow' ? 'shadow' : 'awaiting',
     created_at: londonDateTime(now),
-    notes: plan.kind === 'chase'
+    notes: org.listing
+      ? `Listing ${plan.kind === 'chase' ? 'check chaser' : 'check'} for ${org.name} (${org.pageName} page), as you asked in the panel${plan.kind === 'chase' ? '; it goes on the same thread as the check' : ''}`
+      : plan.kind === 'chase'
       ? `Organisation check chaser for ${org.name} (${org.pageName} page), as you asked in the panel; it goes on the same thread as the check`
       : `Organisation check for ${org.name} (${org.pageName} page), as you asked in the panel`,
   };
@@ -111,4 +125,4 @@ async function draftOrgCheck(id) {
   return fresh;
 }
 
-module.exports = { draftOrgCheck, orgEmail, siteData };
+module.exports = { draftOrgCheck, orgEmail, siteData, allEntries, orgRows, rules };
