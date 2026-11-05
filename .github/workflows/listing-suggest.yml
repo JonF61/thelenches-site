@@ -5,8 +5,9 @@ name: Listing suggestion (Local trades / Where to eat)
 #   action "confirm"  (Worker /sg?t=) the suggester pressed the link's button: it now waits on
 #                     the admin panel's Suggestions screen
 #   action "approve"  (decide() sug_ok, panel only) add the entry to src/_data/trades.json or
-#                     eat.json, commit it, mark the row approved, then build the site and
-#                     redeploy the Worker (it bundles both files)
+#                     eat.json with the suggester's recommendation counted (recommends.json),
+#                     commit them, email the suggester a thank-you, mark the row approved, then
+#                     build the site and redeploy the Worker (it bundles both files)
 #   action "reject"   (decide() sug_no, panel only) mark the row rejected
 # The payload's id is a row id; Jon's edited entry and reason are read from the event file by
 # the script, never passed as env (a step's env is printed in this public log).
@@ -62,7 +63,7 @@ jobs:
         id: commit
         if: ${{ github.event.client_payload.action == 'approve' }}
         run: |
-          git add src/_data/trades.json src/_data/eat.json
+          git add src/_data/trades.json src/_data/eat.json src/_data/recommends.json
           if git diff --cached --quiet; then echo "Nothing to commit."; echo "pushed=no" >> "$GITHUB_OUTPUT"; exit 0; fi
           git config user.name "Lenches Pipeline"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

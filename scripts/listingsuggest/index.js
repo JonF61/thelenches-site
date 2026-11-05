@@ -9,9 +9,15 @@
 //             is the payload's body, read from the event file): the entry, with a fixed id from
 //             lib/listings.js listingId, is added to src/_data/trades.json or eat.json. The
 //             workflow commits it, then runs this again with "approved" to mark the row.
-//   approved  marks the row "approved" (decided_at, entry = the new id) and wipes the address.
+//             The suggestion also counts as the entry's first recommendation: a "counted"
+//             Recommendations row (key = the address's hash, as scripts/recommend makes, so the
+//             same address can't recommend it again; no address) is added, and
+//             src/_data/recommends.json is rewritten for the same commit.
+//   approved  sends the suggester one fixed thank-you email (thanksEmail: the page link to the
+//             entry's own anchor, lib/listings.js anchorFor, and where the star is), then marks
+//             the row "approved" (decided_at, entry = the new id) and wipes the address.
 //   reject    decide() sug_no: "rejected", Jon's optional reason (event file) in reject_reason,
-//             address wiped. Nothing is ever sent back to the suggester.
+//             address wiped. Nothing is sent back to the suggester.
 // Every run also wipes addresses 30 days (KEEP_DAYS) after the request was made, if never
 // confirmed ("expired"), or after confirming. The address and "why" are never logged, put in
 // env or committed; logs print the action and result only (Actions logs are public).
@@ -25,9 +31,11 @@ const { pathToFileURL } = require('url');
 const g = require('../ingest/google');
 const { signToken, linksEnabled } = require('../ingest/links');
 const { emailHtml, stamp, ageDays } = require('../signup');
-const { listingId } = require('../../lib/listings');
+const { listingId, anchorFor } = require('../../lib/listings');
+const rec = require('../recommend');
 
 const FROM = 'website@thelenches.org.uk';
+const SITE = 'https://thelenches.org.uk';
 const LINK_DAYS = 7;
 const KEEP_DAYS = 30;
 const DATA_DIR = path.join(__dirname, '..', '..', 'src', '_data');
@@ -62,6 +70,28 @@ function confirmEmail(name, label, url) {
   };
 }
 
+// After Jon approves (wording approved by Jon 5 Nov). Fixed text, no Claude.
+function thanksEmail({ kind, name, section, page, anchor }) {
+  const url = `${SITE}${page}#${anchor}`;
+  const where = kind === 'eat'
+    ? `They're now listed on our Where to eat page, in ${section}`
+    : `They're now listed on our Local trades page under ${section}`;
+  const paras = [
+    'Hi,',
+    `Thanks for suggesting ${name}. ${where}:`,
+  ];
+  const after = [
+    'We\'ve counted your suggestion as a recommendation, so you\'ll see "★ Recommended by 1 person" just under their name.',
+  ];
+  const sign = ['Best wishes,', 'Holly', 'Lenches website assistant'];
+  return {
+    subject: `Thanks — ${name} is now on the website`,
+    html: emailHtml(paras, { text: 'See it on the website', url }, [...after, sign.join('\n')])
+      .replace(/Best wishes,\nHolly\nLenches website assistant/, 'Best wishes,<br>Holly<br>Lenches website assistant'),
+    text: `${paras[0]}\n\n${paras[1]} ${url}\n\n${after[0]}\n\n${sign.join('\n')}\n`,
+  };
+}
+
 /* ------------------------------------------------------------------ run -- */
 
 // Jon's edited entry (body) and reject reason, from the event file, never env.
@@ -87,6 +117,29 @@ async function tidy(deps, tab, rows, ms) {
     }
   }
   return n;
+}
+
+// The suggestion counts as the new entry's first recommendation (unless this address has
+// already got one counted for it, e.g. a replayed approve). No address is stored in the row.
+async function firstRecommendation(deps, kind, entryId, email, ms, countsFile) {
+  if (!str(email)) return false;
+  await deps.g.ensureTab(rec.TAB, rec.HEADERS);
+  const rows = await deps.g.readTable(rec.TAB);
+  const key = rec.emailKey(email);
+  const has = rows.some((r) => lc(r.status) === 'counted' && r.kind === kind && r.entry === entryId && r.key === key);
+  if (!has) {
+    const now = stamp(ms);
+    const d = new Date(ms);
+    const day = `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
+    const row = {
+      id: `rc-${day}-${require('crypto').randomBytes(4).toString('hex').slice(0, 6)}`,
+      requested: now, kind, entry: entryId, email: '', key, status: 'counted', confirmed_at: now, result: 'suggested it',
+    };
+    await deps.g.appendRows(rec.TAB, [row]);
+    rows.push(row);
+  }
+  rec.writeCounts(rows, countsFile);
+  return true;
 }
 
 async function run({ action, id, ms = Date.now(), dataDir = DATA_DIR, typed = null, stateFile = '' }, deps = { g, signToken }) {
@@ -155,25 +208,48 @@ async function run({ action, id, ms = Date.now(), dataDir = DATA_DIR, typed = nu
     const entry = { id: listingId(c.entry.name, list.map((x) => x.id)), ...c.entry };
     const file = path.join(dataDir, R.KINDS[kind].file);
     fs.writeFileSync(file, `${JSON.stringify(R.insertEntry(kind, data, entry), null, 2)}\n`);
-    if (stateFile) fs.writeFileSync(stateFile, JSON.stringify({ id, entry: entry.id }));
-    console.log(`Entry ${entry.id} added to ${R.KINDS[kind].file}${body ? ' (as edited)' : ''}.`);
+    const starred = await firstRecommendation(deps, kind, entry.id, row.email, ms, path.join(dataDir, 'recommends.json'));
+    const section = kind === 'eat' ? entry.area : entry.trade;
+    if (stateFile) fs.writeFileSync(stateFile, JSON.stringify({ id, entry: entry.id, kind, name: entry.name, section, starred }));
+    console.log(`Entry ${entry.id} added to ${R.KINDS[kind].file}${body ? ' (as edited)' : ''}${starred ? ', with its first recommendation' : ''}.`);
     return 'added';
   }
 
   // approved: after the commit is pushed.
   if (status !== 'confirmed') { console.log(`Row is "${status}", not waiting. Nothing to do.`); return 'skipped'; }
-  let entry = '';
+  let st = {};
   try {
     const s = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
-    if (s.id === id) entry = String(s.entry || '');
-  } catch { entry = ''; }
+    if (s.id === id) st = s;
+  } catch { st = {}; }
+  const entry = String(st.entry || '');
   if (!entry) throw new Error('No new entry id from the approve step');
-  await deps.g.updateRow(TAB, row._row, { status: 'approved', decided_at: now, email: '', entry, result: 'added' });
+  let result = 'added';
+  const email = lc(row.email);
+  if (email && st.starred && st.name && st.section) {
+    try {
+      const { settings } = await deps.g.readSettings();
+      const fromName = deps.g.fromNameFor(settings);
+      const k = R.KINDS[kind];
+      await deps.g.sendMail({
+        to: email, ...thanksEmail({ kind, name: st.name, section: st.section, page: k.page, anchor: anchorFor(kind, entry) }),
+        from: FROM, fromName, headers: { 'Auto-Submitted': 'auto-generated' },
+      });
+      result = 'added, thanked';
+      console.log('Thank-you email sent.');
+    } catch (err) {
+      result = 'added, thanks not sent';
+      console.log(`Thank-you email failed: ${err && err.message ? err.message : err}`);
+    }
+  } else {
+    console.log('No thank-you email (no address or no recommendation).');
+  }
+  await deps.g.updateRow(TAB, row._row, { status: 'approved', decided_at: now, email: '', entry, result });
   console.log(`Marked approved (entry ${entry}).`);
   return 'approved';
 }
 
-module.exports = { run, confirmEmail, LINK_DAYS, KEEP_DAYS };
+module.exports = { run, confirmEmail, thanksEmail, LINK_DAYS, KEEP_DAYS };
 
 if (require.main === module) {
   run({

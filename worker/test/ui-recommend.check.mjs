@@ -50,8 +50,12 @@ for (const [name, viewport] of [['desktop', { width: 1200, height: 900 }], ['pho
   });
   await page.route(/cloudflareinsights|static\.cloudflare/, (route) => route.abort());
 
-  for (const [url, kind, n] of [['/living-here/trades/', 'trades', 13], ['/living-here/eat/', 'eat', 25]]) {
+  const nTrades = require('../../src/_data/trades.json').trades.length;
+  const nEat = require('../../src/_data/eat.json').places.length;
+  for (const [url, kind, n] of [['/living-here/trades/', 'trades', nTrades], ['/living-here/eat/', 'eat', nEat]]) {
     await page.goto(base + url);
+    // each card has its own anchor (the suggester's thank-you email links to it)
+    assert.equal(await page.locator(`.card[id^="${kind === 'eat' ? 'eat' : 'trade'}-"]`).count(), n, `${url}: one anchor per card`);
     const buttons = page.locator('.rec-btn');
     assert.equal(await buttons.count(), n, `${url}: one button per card`);
     assert.ok(await buttons.first().isVisible(), `${url}: buttons shown with JavaScript`);
