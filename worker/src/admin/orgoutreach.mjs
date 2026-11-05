@@ -29,7 +29,7 @@
 // At most DAY_CAP organisation drafts a day. Ids are slugs, so logs never show an address.
 
 export const ORG_TAB = 'Org outreach';
-export const ORG_HEADERS = ['id', 'next_check', 'notes', 'other_emails', 'email', 'email_source'];
+export const ORG_HEADERS = ['id', 'next_check', 'notes', 'other_emails', 'email', 'email_source', 'confirmed'];
 export const ORG_TYPE = 'outreach';
 export const CHASE_DAYS = 21;
 export const CYCLE_DAYS = 365;
@@ -236,6 +236,20 @@ export function recentQuery(addresses) {
   return `${from} newer_than:${REGULAR_DAYS}d`;
 }
 
+// A year on from a day (as the panel's Done sets next_check).
+export const yearOn = (d) => {
+  const t = new Date(ms(d));
+  t.setUTCMonth(t.getUTCMonth() + 12);
+  return t.toISOString().slice(0, 10);
+};
+
+// Held by a date: "Confirmed <day> · next check <day>" when Done set it (the Org outreach
+// `confirmed` cell, 5 Nov, and next_check a year on from it), else "Done or snoozed until".
+function heldWhy(next, orgRow) {
+  const c = str(orgRow && orgRow.confirmed);
+  return isDay(c) && yearOn(c) === next ? `Confirmed ${c} · next check ${next}` : `Done or snoozed until ${next}`;
+}
+
 // One organisation's state today: { state, why, check?, chase? }. recent: ids of organisations
 // that emailed us in the last REGULAR_DAYS (Gmail, any of their addresses), or null.
 export function orgState(org, { replies = [], contacts = [], orgRow = null, today, recent = null }) {
@@ -249,7 +263,7 @@ export function orgState(org, { replies = [], contacts = [], orgRow = null, toda
   const addresses = addressesFor(org, orgRow, contacts);
   const regular = (recent && recent.has(org.id)) || contactRecent(addresses, contacts, today);
   const REGULAR = { state: 'regular', why: 'Emailed us in the last 3 months: no check needed' };
-  if (isDay(next) && next > today) return regular ? REGULAR : { state: 'held', why: `Done or snoozed until ${next}` };
+  if (isDay(next) && next > today) return regular ? REGULAR : { state: 'held', why: heldWhy(next, orgRow) };
   const rows = rowsFor(org.id, replies);
   if (rows.some((r) => low(r.status) === 'awaiting')) return { state: 'draft', why: 'A draft is waiting for you' };
   const check = rows.find((r) => !isChase(r) && SENT.includes(low(r.status)));
@@ -286,7 +300,7 @@ export function orgLists(orgs, { replies = [], contacts = [], orgRows = [], hasT
   for (const o of orgs) {
     const orgRow = byId.get(o.id) || null;
     const s = orgState(o, { replies, contacts, orgRow, today, recent });
-    lists[s.state].push({ ...o, email: emailOf(o, orgRow), email_cell: str(orgRow && orgRow.email), email_source: str(orgRow && orgRow.email_source), state: s.state, why: s.why, next_check: str(orgRow && orgRow.next_check), hasRow: !!orgRow,
+    lists[s.state].push({ ...o, email: emailOf(o, orgRow), email_cell: str(orgRow && orgRow.email), email_source: str(orgRow && orgRow.email_source), state: s.state, why: s.why, next_check: str(orgRow && orgRow.next_check), confirmed: str(orgRow && orgRow.confirmed), hasRow: !!orgRow,
       other_emails: str(orgRow && orgRow.other_emails), addresses: addressesFor(o, orgRow, contacts).length });
   }
   return { today, count: dayCount(replies, today), cap: DAY_CAP, hasTab, lists };

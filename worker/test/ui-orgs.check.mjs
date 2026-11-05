@@ -36,7 +36,8 @@ function reset() {
   replies = [sent('tennis', '2026-10-01'), sent('cricket', '2026-10-20'), sent('walking', '2026-08-01'), sent('walking', '2026-09-01', 'chase'),
     sent('preschool', '2026-10-01'), { reply_id: 'm1-ack', message_id: 'm1', to: email('preschool'), type: 'ack', status: 'sent', created_at: '2026-10-05 10:00' },
     { ...sent('orchard', TODAY), status: 'awaiting' }];
-  orgRows = [{ id: 'grey-gable', next_check: '2027-01-27' }, { id: 'eat-boot-inn', email: 'info@thebootinn.com', email_source: 'website' }];
+  orgRows = [{ id: 'grey-gable', next_check: '2027-01-27' }, { id: 'eat-boot-inn', email: 'info@thebootinn.com', email_source: 'website' },
+    { id: 'trade-cannins', email: 'info@cannins.co.uk', next_check: '2027-10-20', confirmed: '2026-10-20' }];
 }
 const view = (count = 1) => ({ ...orgLists([...ORGS, ...LISTINGS], { replies, contacts: [], orgRows, hasTab: true, today: TODAY, recent: new Set(['rous-lench-hall']) }), count });
 
@@ -99,7 +100,7 @@ try {
     await main.getByText(/^Replied \(1\)$/).waitFor();
     await page.locator('.crow', { hasText: 'The Lenches Pre-school' }).getByRole('button', { name: 'Done' }).click();
     await page.locator('.toast', { hasText: 'next due in a year' }).waitFor();
-    assert.deepEqual(posts.pop(), { path: '/admin/api/orgnext', id: 'preschool', expected: '', value: '2027-10-27' });
+    assert.deepEqual(posts.pop(), { path: '/admin/api/orgnext', id: 'preschool', expected: '', value: '2027-10-27', confirm: true, expected_confirmed: '' });
 
     await page.locator('.crow', { hasText: 'Lenches Cricket Club' }).getByRole('button', { name: 'Never' }).click();
     await page.locator('.toast', { hasText: 'Never: Lenches Cricket Club' }).waitFor();
@@ -135,6 +136,7 @@ try {
     assert.match(ltext, /Boot Inn\s+·\s+Where to eat/);
     assert.match(ltext, /info@thebootinn\.com · Not checked yet/);
     assert.match(ltext, /B Tomes & Son/);
+    assert.match(ltext, /Confirmed 20 Oct 2026 · next check 20 Oct 2027|Confirmed .*20.* · next check .*2027/);
     assert.doesNotMatch(ltext, /Lenches Tennis Club/, 'organisations not in the Listings list');
     assert.equal(await page.locator('.crow', { hasText: 'B Tomes & Son' }).getByText('Add an email').count(), 0, 'own address: no box');
     const boot = page.locator('.crow', { hasText: 'Boot Inn' });

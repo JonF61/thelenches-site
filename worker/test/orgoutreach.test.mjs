@@ -157,6 +157,10 @@ test('listings: every trade and eatery, linked to its own card, address from the
   const sent = sentCheck('eat-boot-inn', 'info@thebootinn.com', '2026-09-01');
   assert.equal(orgState(boot, { orgRow: row, replies: [sent], today: TODAY }).state, 'chase');
   assert.ok(planOrgCheck(boot, { orgRow: row, replies: [], today: TODAY }).ok);
+  // Done records the day they confirmed (5 Nov); a snooze or an older Done keeps the old words.
+  assert.equal(orgState(boot, { orgRow: { ...row, next_check: '2027-10-27', confirmed: '2026-10-27' }, today: TODAY }).why, 'Confirmed 2026-10-27 · next check 2027-10-27');
+  assert.equal(orgState(boot, { orgRow: { ...row, next_check: '2027-01-27', confirmed: '2026-10-27' }, today: TODAY }).why, 'Done or snoozed until 2027-01-27');
+  assert.equal(orgState(boot, { orgRow: { ...row, next_check: '2027-10-27' }, today: TODAY }).why, 'Done or snoozed until 2027-10-27');
   // No Gmail search for listings (the Worker's subrequest limit).
   assert.deepEqual(dueOrgs([...ORGS, ...L], { orgRows: [row], today: TODAY }).filter((d) => /^(trade|eat)-/.test(d.id)), []);
 });
