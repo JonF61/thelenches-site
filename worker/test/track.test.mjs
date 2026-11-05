@@ -74,7 +74,7 @@ test('stats: sent issues, bounces in the week after, opens by UK day and hour', 
   ];
   const sends = [{ issue_id: '2026-10-22', status: 'sent' }, { issue_id: '2026-10-22', status: 'sent' }, { issue_id: '2026-10-22:canary', status: 'sent' }];
   const dns = [{ reason: 'Hard bounce (daily diagnostic)', added_at: '2026-10-24T02:07:00Z' }, { reason: 'unsubscribe link', date: '2026-10-23' }];
-  assert.deepEqual(sentIssues(issues, sends, dns), [{ date: '2026-10-22', sent: 2, bounced: 1 }, { date: '2026-10-15', sent: 410, bounced: 0 }]);
+  assert.deepEqual(sentIssues(issues, sends, dns), [{ date: '2026-10-22', sent: 2, bounced: 1, early: true }, { date: '2026-10-15', sent: 410, bounced: 0, early: true }]);
   const t = openTimes([{ h: '2026-10-22 07:00:00', n: '10' }, { h: '2026-10-22 08:00:00', n: 5 }, { h: '2026-10-23 07:00:00', n: 2 }]);
   assert.deepEqual(t.days, [{ day: '2026-10-22', n: 15 }, { day: '2026-10-23', n: 2 }]);
   assert.deepEqual(t.hours[0], { hour: 8, n: 12 }); // 07:00 UTC is 8am BST
@@ -98,7 +98,7 @@ test('stats: Analytics Engine totals and one issue in detail (SQL mocked)', asyn
     const s = await nlStats({ CF_ANALYTICS_TOKEN: 'tok', CF_ACCOUNT_ID: 'a'.repeat(32) },
       { issues: [{ issue_date: '2026-10-22', status: 'sent', recipients: '425' }], sends: [], dns: [] }, '2026-10-22');
     assert.equal(s.on, true);
-    assert.deepEqual(s.issues[0], { date: '2026-10-22', sent: 425, bounced: 0, opens: 231, clicks: 64 });
+    assert.deepEqual(s.issues[0], { date: '2026-10-22', sent: 425, bounced: 0, early: true, opens: 231, clicks: 64 });
     assert.deepEqual(s.detail.links, [{ url: 'https://thelenches.org.uk/events/', n: 41 }]);
     assert.deepEqual(s.detail.hours, [{ hour: 8, n: 74 }]);
     assert.match(asked[0].url, /\/accounts\/a{32}\/analytics_engine\/sql$/);
