@@ -8,7 +8,7 @@
 'use strict';
 
 const crypto = require('crypto');
-const { anchorUrl, calendarUrl } = require('../../lib/anchors');
+const { anchorUrl, calendarUrl, googleCalendarLink } = require('../../lib/anchors');
 
 const SITE = 'https://thelenches.org.uk';
 const UNSUB_MARK = '%%UNSUBSCRIBE_URL%%';
@@ -155,7 +155,9 @@ function linkLine(link, link2) {
 // The event's own link (if any) and "Add to calendar" on one line, as on the Events page.
 function eventLinks(ev) {
   const cal = calendarUrl(ev);
-  const parts = [ev.link ? fieldLink(a(ev.link.url, ev.link.text, C.accentText), 'link') : '', ev.link2 ? fieldLink(a(ev.link2.url, ev.link2.text, C.accentText), 'link2') : '', cal ? a(cal, 'Add to calendar', C.accentText) : ''].filter(Boolean);
+  const gcal = googleCalendarLink(ev);
+  // Two calendar links (5 Nov 2026): Google's own page, and the .ics for Outlook / Apple.
+  const parts = [ev.link ? fieldLink(a(ev.link.url, ev.link.text, C.accentText), 'link') : '', ev.link2 ? fieldLink(a(ev.link2.url, ev.link2.text, C.accentText), 'link2') : '', gcal ? a(gcal, 'Google Calendar', C.accentText) : '', cal ? a(cal, 'Other calendar (Outlook, Apple)', C.accentText) : ''].filter(Boolean);
   return parts.length ? `<div style="margin-top:6px;font-family:${SANS};font-size:13px;">${parts.join(' &nbsp;&middot;&nbsp; ')}</div>` : '';
 }
 
