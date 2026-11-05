@@ -10,6 +10,7 @@ import fs from 'node:fs';
 
 import {
   orgEntries, orgState, orgLists, planOrgCheck, planNext, dayCount, dueOrgs, recentQuery, addressesFor, planOtherEmails, PAGE_NAMES, DAY_CAP,
+  domainCounts, isTheirs,
 } from '../src/admin/orgoutreach.mjs';
 import { dispatchFor, validPayload, ACTIONS } from '../src/core.js';
 
@@ -163,4 +164,30 @@ test('listings: every trade and eatery, linked to its own card, address from the
   assert.equal(orgState(boot, { orgRow: { ...row, next_check: '2027-10-27' }, today: TODAY }).why, 'Done or snoozed until 2027-10-27');
   // No Gmail search for listings (the Worker's subrequest limit).
   assert.deepEqual(dueOrgs([...ORGS, ...L], { orgRows: [row], today: TODAY }).filter((d) => /^(trade|eat)-/.test(d.id)), []);
+});
+
+test('own domain: a reply from another address at the organisation\'s own domain counts', () => {
+  const school = org('first-school');
+  assert.equal(school.email, 'office@churchlench.worcs.sch.uk');
+  const domains = domainCounts(ORGS, []);
+  const addrs = addressesFor(school, null, [], domains);
+  assert.ok(addrs.includes('@churchlench.worcs.sch.uk'));
+  assert.ok(isTheirs(new Set(addrs), 'Head@ChurchLench.worcs.sch.uk'));
+  assert.ok(!isTheirs(new Set(addrs), 'someone@worcs.sch.uk'), 'a parent domain is not theirs');
+  const head = { reply_id: 'h1-ack', message_id: 'h1', to: 'head@churchlench.worcs.sch.uk', type: 'ack', status: 'sent', created_at: '2026-10-21 14:02' };
+  const replies = [sentCheck('first-school', school.email, '2026-10-21'), head];
+  assert.equal(orgState(school, { replies, contacts: [], today: TODAY, domains }).state, 'replied');
+  assert.equal(orgState(school, { replies, contacts: [], today: TODAY }).state, 'waiting', 'without domains: exact addresses only');
+  const lists = orgLists(ORGS, { replies, contacts: [], orgRows: [], today: TODAY });
+  const card = lists.lists.replied.find((o) => o.id === 'first-school');
+  assert.deepEqual(card.domains, ['churchlench.worcs.sch.uk']);
+  // Free mail and shared domains never count.
+  assert.ok(!addressesFor(org('lenches-club'), null, [], domains).some((a) => a.startsWith('@')), 'gmail.com never');
+  assert.ok(!addressesFor(org('grey-gable'), null, [], domains).some((a) => a.startsWith('@')), 'nhs.net never');
+  for (const o of ORGS) {
+    for (const a of addressesFor(o, null, [], domains).filter((x) => x.startsWith('@'))) {
+      assert.equal(ORGS.filter((x) => x.email && x.email.toLowerCase().endsWith(a)).length, 1, `${a} is one organisation's own`);
+    }
+  }
+  assert.equal(recentQuery(['office@x.sch.uk', '@x.sch.uk']), '{from:office@x.sch.uk from:x.sch.uk} newer_than:91d');
 });

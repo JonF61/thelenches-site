@@ -142,7 +142,7 @@ async function main() {
   reset();
   tables['Org outreach'] = [pick('Org outreach', { id: 'tennis', other_emails: 'sec@example.org' })];
   recentMail = ['sec@example.org'];
-  ok(await orgs.draftOrgCheck('tennis') === null && searches.pop() === '{from:lenchestc@gmail.com from:sec@example.org} newer_than:91d', 'mail from another address: regular contact');
+  ok(await orgs.draftOrgCheck('tennis') === null && searches.pop() === '{from:lenchestc@gmail.com from:sec@example.org from:example.org} newer_than:91d', 'mail from another address: regular contact (its own domain searched too)');
   reset();
   tables.Contacts.push(pick('Contacts', { email: 'chair@example.org', organisation: 'Lenches Cricket Club', status: 'organiser', last_contact: shift(-10) }));
   ok(await orgs.draftOrgCheck('cricket') === null && tables.Replies.length === 0, 'a member in Contacts: regular contact');

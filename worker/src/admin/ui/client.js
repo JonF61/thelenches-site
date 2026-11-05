@@ -139,7 +139,7 @@ export const CLIENT_JS = String.raw`
       ['Quiet a year', 'Holly sends them nothing for 365 days.'],
       ['Other addresses', 'one person\'s extra email addresses, so they count as one contact.'],
       ['Outreach', 'who is due a friendly nudge; Draft nudge has Holly write one.'],
-      ['Organisations', 'the yearly check of each organisation\'s entry on the site; Draft check / Draft chaser. Its Commercial Listings button shows the same check for every Local trades and Where to eat entry, with Add an email for those without an address.'],
+      ['Organisations', 'the yearly check of each organisation\'s entry on the site; Draft check / Draft chaser. Its Commercial Listings button shows the same check for every Local trades and Where to eat entry, with Add an email for those without an address. Mail from anyone at an organisation\'s own domain (e.g. head@ when the check went to office@) counts as their reply; never gmail.com and the like, or a domain two listed organisations share.'],
       'Every draft waits in Replies for your Approve; nothing is sent by itself.',
       ['Delete', 'removes the row; only new mail from them can bring them back.']],
     photos: [
@@ -2748,6 +2748,7 @@ export const CLIENT_JS = String.raw`
         h('div', { class: 'meta' }, [e.email, e.why].filter(Boolean).join(' · ').replace(/\d{4}-\d{2}-\d{2}/g, cDay)),
         h('div', { class: 'meta' }, e.shown.join(' · ')),
         e.addresses > 1 ? h('div', { class: 'meta' }, (e.addresses - 1) + ' other address' + (e.addresses > 2 ? 'es' : '') + ' count as this group') : null,
+        (e.domains || []).length ? h('div', { class: 'meta' }, 'Anyone @' + e.domains.join(', @') + ' counts as this group too') : null,
         acts.length ? h('div', { class: 'actions' }, acts) : null,
         e.listing && !e.shown.some(function (l) { return l === e.email; }) ? listingEmail(e) : null,
         e.state !== 'noemail' ? orgEmails(e) : null));

@@ -83,13 +83,15 @@ async function draftOrgCheck(id) {
     console.log('Organisation outreach: replies_mode is off; nothing drafted.');
     return null;
   }
-  const org = (await allEntries()).find((o) => o.id === id) || null;
+  const entries = await allEntries();
+  const org = entries.find((o) => o.id === id) || null;
   const [rows, contacts, orgTab] = await Promise.all([g.readTable('Replies'), g.readTable('Contacts'), orgRows(R)]);
   const today = londonDate(Date.now());
-  const ctx = { replies: rows, contacts, orgRow: orgTab.find((r) => String(r.id || '').trim() === id) || null, today };
+  const ctx = { replies: rows, contacts, orgRow: orgTab.find((r) => String(r.id || '').trim() === id) || null, today,
+    domains: R.domainCounts(entries, orgTab) };
   // In regular contact (emailed us in the last 3 months): no check, as on the panel.
   if (org && !org.listing && R.orgState(org, ctx).state === 'due'
-    && (await g.searchMessageIds(R.recentQuery(R.addressesFor(org, ctx.orgRow, contacts)), 1)).length) {
+    && (await g.searchMessageIds(R.recentQuery(R.addressesFor(org, ctx.orgRow, contacts, ctx.domains)), 1)).length) {
     ctx.recent = new Set([org.id]);
   }
   const plan = R.planOrgCheck(org, ctx);
