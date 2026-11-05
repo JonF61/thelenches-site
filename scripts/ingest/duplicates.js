@@ -214,7 +214,7 @@ async function check(item, list, { messageId = '', text = '' } = {}) {
     const { block } = await callTool(claude(), {
       model: MODEL,
       max_tokens: 2000,
-      system: SYSTEM,
+      system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }], // tools + system cached across a run's checks
       tools: [TOOL],
       messages: [{ role: 'user', content: `<submission>\n${given}\n</submission>\n<listings>\n${JSON.stringify(listed)}\n</listings>` }],
     }, 'record_match');

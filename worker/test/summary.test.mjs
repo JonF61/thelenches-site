@@ -5,7 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  issueDateFor, lastSentDate, nextIssue, failingRuns, subscriberChanges, comingWeek, ukInstant, minuteKey, devTasks,
+  issueDateFor, lastSentDate, nextIssue, failingRuns, subscriberChanges, comingWeek, ukInstant, minuteKey, devTasks, claudeSpend,
 } from '../src/admin/summary.js';
 
 test('issueDateFor: this Thursday, or next week once it has gone out', () => {
@@ -89,4 +89,23 @@ test('comingWeek: events and works on any of the next 7 days', () => {
 
 test('devTasks: the bundled list', () => {
   for (const t of devTasks()) assert.ok(t.task);
+});
+
+test('claudeSpend: this month by job, last month, cache share', () => {
+  const rows = [
+    { at: '2026-10-31T23:30:00Z', job: 'Ingest', calls: '2', input: '100', cache_write: '0', cache_read: '0', output: '10', cost_usd: '0.5000' },
+    { at: '2026-11-02T08:00:00Z', job: 'Ingest', calls: '3', input: '100', cache_write: '100', cache_read: '800', output: '10', cost_usd: '0.2500' },
+    { at: '2026-11-03T08:00:00Z', job: 'Rimmer', calls: '1', input: '1000', cache_write: '0', cache_read: '0', output: '10', cost_usd: '0.9000' },
+    { at: '2026-11-04T08:00:00Z', job: 'Ingest', calls: '1', input: '0', cache_write: '0', cache_read: '0', output: '0', cost_usd: '0.0100' },
+    { at: 'not a date', job: 'X', cost_usd: '9' },
+  ];
+  const s = claudeSpend(rows, '2026-11-05');
+  assert.equal(s.total, 1.16);
+  assert.equal(s.calls, 5);
+  assert.equal(s.lastMonth, '2026-10');
+  assert.equal(s.lastTotal, 0.5);
+  assert.deepEqual(s.jobs.map((j) => [j.job, j.cost]), [['Rimmer', 0.9], ['Ingest', 0.26]]);
+  assert.equal(s.cacheShare, 40); // 800 of 2000 tokens read
+  assert.equal(s.since, '2026-10-31');
+  assert.equal(claudeSpend([], '2026-01-10').lastMonth, '2025-12');
 });

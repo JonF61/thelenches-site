@@ -20,9 +20,12 @@ let answer = null;
 let feedItemOut = null;
 const prompts = [];
 const sdkPath = require.resolve('@anthropic-ai/sdk');
+const cachedSystems = [];
 class FakeAnthropic {
   constructor() {
     this.messages = { create: async (req) => {
+      // Cached system prompts arrive as one text block with cache_control (5 Nov): flattened here.
+      if (Array.isArray(req.system)) { cachedSystems.push(req.system.every((b) => b.cache_control && b.cache_control.type === 'ephemeral')); req = { ...req, system: req.system.map((b) => b.text).join('') }; }
       prompts.push(req);
       if (req.tools && req.tools[0].name === 'record_items') {
         return { stop_reason: 'tool_use', usage: {}, content: [{ type: 'tool_use', name: 'record_items', input: {
@@ -246,5 +249,6 @@ async function testFeed() {
   await testMerge(d);
   testSender();
   await testLive();
+  ok(cachedSystems.length > 0 && cachedSystems.every(Boolean), 'system prompts are sent cached');
   console.log(`All duplicate and live-notice tests passed (${checks} checks).`);
 })().catch((err) => { console.error(err); process.exit(1); });

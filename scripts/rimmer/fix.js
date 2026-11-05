@@ -209,7 +209,7 @@ function fixRequest(finding, note, cands, today = ukToday()) {
     candidates: cands.map(candidateView),
   }, null, 1);
   const cal = rimmer.calendar(today, 180, 14);
-  return { model: MODEL(), max_tokens: 8000, system: SYSTEM, tools: [TOOL], messages: [{ role: 'user', content: `${user}\n\nCalendar:\n${cal}` }] };
+  return { model: MODEL(), max_tokens: 8000, system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }], tools: [TOOL], messages: [{ role: 'user', content: `${user}\n\nCalendar:\n${cal}` }] };
 }
 
 // Phone numbers, emails, links and other figures in the new text that are not in the old text or

@@ -48,6 +48,7 @@ jobs:
         run: node scripts/contacts/index.js
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NODE_OPTIONS: --require ./lib/claudeusage.js
           GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
           SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
           GMAIL_USER: jon@thelenches.org.uk

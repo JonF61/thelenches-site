@@ -255,7 +255,10 @@ async function checkClaude() {
     await new Promise((ok) => setTimeout(ok, 15000));
     res = await claudeOnce();
   }
-  if (res.status === 200) return;
+  if (res.status === 200) {
+    try { const j = JSON.parse(res.body); require('../../lib/claudeusage').record(j.model || CLAUDE_MODEL, j.usage); } catch { /* counts only */ }
+    return;
+  }
   if (res.status === 401 || res.status === 403) problem('Claude API: key rejected', res.body);
   else if (res.status === 400 && /credit|billing|balance/i.test(res.body)) problem('Claude API: out of credit (billing)', res.body);
   else if (res.status >= 500) notes.push(`Claude API temporarily unavailable (HTTP ${res.status}); not alerted`);
