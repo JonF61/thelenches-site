@@ -18,6 +18,8 @@ seoTitle: "Where to eat in and around the Lenches — pubs, cafés and restauran
 .rec-btn[aria-expanded="true"]{background:#eef3ea}
 .rec-form{margin-top:.5rem}.rec-row{display:flex;gap:.4rem}.rec-row input{flex:1;min-width:0;padding:.35rem .5rem}
 .rec-help{margin:.3rem 0 0;color:#555}.rec-status{margin:.3rem 0 0}.rec-status.bad{color:#a12a1f}.rec-status.ok{color:#2f4a22}
+.card[id]{scroll-margin-top:1rem}
+.card:target{outline:3px solid #c8860b;outline-offset:2px}
 </style>
 <main class="container">
   <div class="page-head">
@@ -31,7 +33,7 @@ seoTitle: "Where to eat in and around the Lenches — pubs, cafés and restauran
     <h2>{{ a }}</h2>
     <div class="ea-grid">
     {% for p in eat.places %}{% if p.area == a %}
-      <div class="card"{% if p.id %} data-entry="e:{{ p.id }}" data-label="Where to eat: {{ p.name | escape }}"{% endif %}>
+      <div class="card"{% if p.id %} id="eat-{{ p.id }}" data-entry="e:{{ p.id }}" data-label="Where to eat: {{ p.name | escape }}"{% endif %}>
         <h3>{{ p.name }}</h3>
         <p class="ea-where" data-field="type where">{{ p.type }} &middot; {{ p.where }}</p>
         {% if p.food %}<p class="mt0" data-field="food">{{ p.food }}</p>{% endif %}

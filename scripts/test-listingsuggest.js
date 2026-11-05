@@ -24,7 +24,7 @@ const TAB = 'Listing suggestions';
 const DATA = path.join(__dirname, '..', 'src', '_data');
 
 function world(rows) {
-  const tabs = { [TAB]: rows };
+  const tabs = { [TAB]: rows, Recommendations: [] };
   const sent = [];
   const g = {
     ensureTab: async () => false,
@@ -32,6 +32,7 @@ function world(rows) {
     readSettings: async () => ({ settings: { from_name: 'The Lenches Website and Newsletter Team' } }),
     fromNameFor: (s) => s.from_name,
     sendMail: async (m) => { sent.push(m); return 'msg1'; },
+    appendRows: async (tab, objs) => { tabs[tab].push(...objs); },
     updateRow: async (tab, row, fields) => { Object.assign(tabs[tab][row - 2], fields); },
   };
   return { tabs, sent, deps: { g, signToken } };
@@ -90,11 +91,25 @@ console.log = (...a) => { logs.push(a.join(' ')); };
   assert.deepEqual(after.trades[lastSweep + 1], { id: 'smith-electrical', name: 'Smith Electrical', trade: 'Chimney sweeps', base: 'Rous Lench', phone: '07700 900123' });
   assert.ok(fs.readFileSync(path.join(tmp, 'trades.json'), 'utf8').endsWith('}\n'));
   assert.equal(w.tabs[TAB][0].status, 'confirmed', 'not marked until the commit is pushed');
-  assert.deepEqual(JSON.parse(fs.readFileSync(stateFile, 'utf8')), { id: ID, entry: 'smith-electrical' });
+  assert.deepEqual(JSON.parse(fs.readFileSync(stateFile, 'utf8')), { id: ID, entry: 'smith-electrical', kind: 'trades', name: 'Smith Electrical', section: 'Chimney sweeps', starred: true });
+  // the suggestion is the entry's first recommendation: a counted row (hash only) and the counts file
+  const recs = w.tabs.Recommendations;
+  assert.equal(recs.length, 1);
+  assert.match(recs[0].id, /^rc-20261103-[a-z0-9]{6}$/);
+  assert.deepEqual([recs[0].kind, recs[0].entry, recs[0].email, recs[0].status, recs[0].key], ['trades', 'smith-electrical', '', 'counted', require('./recommend').emailKey('reader@example.org')]);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(tmp, 'recommends.json'), 'utf8')).trades['smith-electrical'], 1);
+  assert.equal(w.sent.length, 1, 'nothing sent before the commit is pushed');
 
-  // approved: marked, address wiped
+  // approved: thank-you email, marked, address wiped
   assert.equal(await sg.run({ action: 'approved', id: ID, ms: MS, stateFile }, w.deps), 'approved');
-  assert.deepEqual([w.tabs[TAB][0].status, w.tabs[TAB][0].entry, w.tabs[TAB][0].email, w.tabs[TAB][0].result], ['approved', 'smith-electrical', '', 'added']);
+  assert.deepEqual([w.tabs[TAB][0].status, w.tabs[TAB][0].entry, w.tabs[TAB][0].email, w.tabs[TAB][0].result], ['approved', 'smith-electrical', '', 'added, thanked']);
+  const ty = w.sent[1];
+  assert.equal(ty.to, 'reader@example.org');
+  assert.equal(ty.subject, 'Thanks — Smith Electrical is now on the website');
+  assert.equal(ty.text, 'Hi,\n\nThanks for suggesting Smith Electrical. They\'re now listed on our Local trades page under Chimney sweeps: https://thelenches.org.uk/living-here/trades/#trade-smith-electrical\n\n'
+    + 'We\'ve counted your suggestion as a recommendation, so you\'ll see "★ Recommended by 1 person" just under their name.\n\nBest wishes,\nHolly\nLenches website assistant\n');
+  assert.match(ty.html, /href="https:\/\/thelenches\.org\.uk\/living-here\/trades\/#trade-smith-electrical"/);
+  assert.match(ty.html, /Best wishes,<br>Holly<br>Lenches website assistant/);
   assert.ok(w.tabs[TAB][0].decided_at);
   assert.equal(await sg.run({ action: 'approve', id: ID, ms: MS, dataDir: tmp, typed: { body: '' }, stateFile }, w.deps), 'skipped', 'a replay adds nothing');
 
@@ -108,6 +123,8 @@ console.log = (...a) => { logs.push(a.join(' ')); };
   const added = eatAfter.places.find((p) => p.id === `${taken.id}-2`);
   assert.deepEqual(added, { id: `${taken.id}-2`, name: taken.name, area: 'Evesham', type: 'Pub', website: { text: 'x.co.uk', url: 'https://x.co.uk' }, dogs: true });
   assert.deepEqual(eatAfter.areas, eatBefore.areas);
+  assert.equal(sg.thanksEmail({ kind: 'eat', name: 'The Bell', section: 'Evesham', page: '/living-here/eat/', anchor: 'eat-the-bell' }).text.split('\n')[2],
+    'Thanks for suggesting The Bell. They\'re now listed on our Where to eat page, in Evesham: https://thelenches.org.uk/living-here/eat/#eat-the-bell');
 
   // a bad edited entry is refused, nothing written
   w = world([base({ status: 'confirmed', kind: 'eat' })]);
@@ -120,6 +137,7 @@ console.log = (...a) => { logs.push(a.join(' ')); };
   assert.equal(await sg.run({ action: 'reject', id: ID, ms: MS, typed: { reason: ' Not  local ' } }, w.deps), 'rejected');
   assert.deepEqual([w.tabs[TAB][0].status, w.tabs[TAB][0].reject_reason, w.tabs[TAB][0].email], ['rejected', 'Not local', '']);
   assert.equal(w.sent.length, 0);
+  assert.equal(w.tabs.Recommendations.length, 0, 'a rejection counts nothing');
 
   // reject reason read from the event file
   const ev = path.join(tmp, 'event.json');
