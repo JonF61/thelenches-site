@@ -156,8 +156,8 @@ async function main() {
   tables['Org outreach'][1].next_check = shift(-1);
   ok(await orgs.draftOrgCheck('cricket'), 'next_check passed: due again');
   reset();
-  for (let i = 0; i < 10; i += 1) tables.Replies.push(pick('Replies', { reply_id: `o${i}`, type: 'outreach', to: `p${i}@example.org`, status: 'skipped', policy_codes: `org_check_x${i}`, created_at: `${today} 09:0${i}` }));
-  ok(await orgs.draftOrgCheck('tennis') === null && tables.Replies.length === 10, 'daily cap of 10');
+  for (let i = 0; i < 25; i += 1) tables.Replies.push(pick('Replies', { reply_id: `o${i}`, type: 'outreach', to: `p${i}@example.org`, status: 'skipped', policy_codes: `org_check_x${i}`, created_at: `${today} 09:${String(i).padStart(2, '0')}` }));
+  ok(await orgs.draftOrgCheck('tennis') === null && tables.Replies.length === 25, 'daily cap of 25');
   const { weekCount } = await import('../worker/src/admin/outreach.mjs');
   ok(weekCount(tables.Replies, today) === 0, 'organisation drafts don\'t use the nudge weekly cap');
   reset();
