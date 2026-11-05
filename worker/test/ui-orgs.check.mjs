@@ -92,6 +92,8 @@ try {
     await page.locator('.crow', { hasText: 'The Lenches Club' }).getByRole('button', { name: 'Draft check' }).click();
     await page.locator('.toast', { hasText: 'Check requested' }).waitFor();
     assert.deepEqual(posts.pop(), { path: '/admin/api/orgcheck', id: 'lenches-club' });
+    await page.locator('.crow', { hasText: 'The Lenches Club' }).getByText(/Check requested at \d+:\d\d\. Holly is drafting it/).waitFor();
+    assert.equal(await page.locator('.crow', { hasText: 'The Lenches Club' }).getByRole('button', { name: 'Draft check' }).count(), 0, 'no second Draft check');
     await page.locator('.crow', { hasText: 'Lenches Tennis Club' }).getByRole('button', { name: 'Draft chaser' }).click();
     await page.locator('.toast', { hasText: 'requested' }).last().waitFor();
     assert.deepEqual(posts.pop(), { path: '/admin/api/orgcheck', id: 'tennis' });

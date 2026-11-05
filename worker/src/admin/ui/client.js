@@ -2667,9 +2667,15 @@ export const CLIENT_JS = String.raw`
 
   async function gDraft(e, btn) {
     btn.disabled = true;
+    btn.textContent = 'Requesting…';
     var res = await api('/admin/api/orgcheck', { id: e.id });
     toast(res.ok ? res.json.message : (res.json.error || ('HTTP ' + res.status)), !res.ok);
-    if (res.ok) watchDraft('check for ' + (e.name || e.id), '');
+    if (res.ok) {
+      watchDraft('check for ' + (e.name || e.id), '');
+      // Shown on the card until the draft lands (the list still says due until then).
+      S.gAsked = S.gAsked || {};
+      S.gAsked[e.id] = { at: Date.now(), chase: e.state === 'chase' };
+    }
     S.orgs = null;
     render();
   }
@@ -2715,7 +2721,13 @@ export const CLIENT_JS = String.raw`
 
   function orgRow(e, o) {
     var acts = [];
-    if ((e.state === 'due' || e.state === 'chase') && o.count < o.cap) {
+    var asked = S.gAsked && S.gAsked[e.id];
+    if (asked && (e.state !== 'due' && e.state !== 'chase' || Date.now() - asked.at > 10 * 60 * 1000)) { delete S.gAsked[e.id]; asked = null; }
+    if (asked) {
+      var t = new Date(asked.at);
+      acts.push(h('div', { class: 'note' }, (asked.chase ? 'Chaser' : 'Check') + ' requested at ' + t.getHours() + ':' + ('0' + t.getMinutes()).slice(-2)
+        + '. Holly is drafting it: it appears under Replies in a minute or two for you to Approve.'));
+    } else if ((e.state === 'due' || e.state === 'chase') && o.count < o.cap) {
       var draft = h('button', { class: 'btn', onclick: function () { gDraft(e, draft); } }, e.state === 'chase' ? 'Draft chaser' : 'Draft check');
       acts.push(draft);
     }
