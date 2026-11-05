@@ -2747,7 +2747,7 @@ export const CLIENT_JS = String.raw`
           h('a', { href: e.pageUrl, target: '_blank', rel: 'noopener' }, e.pageName)),
         h('div', { class: 'meta' }, [e.email, e.why].filter(Boolean).join(' · ').replace(/\d{4}-\d{2}-\d{2}/g, cDay)),
         h('div', { class: 'meta' }, e.shown.join(' · ')),
-        e.addresses > 1 ? h('div', { class: 'meta' }, (e.addresses - 1) + ' other address' + (e.addresses > 2 ? 'es' : '') + ' count as this group') : null,
+        e.addresses > 1 ? h('div', { class: 'meta' }, (e.addresses - 1) + ' other address' + (e.addresses > 2 ? 'es count' : ' counts') + ' as this group') : null,
         (e.domains || []).length ? h('div', { class: 'meta' }, 'Anyone @' + e.domains.join(', @') + ' counts as this group too') : null,
         acts.length ? h('div', { class: 'actions' }, acts) : null,
         e.listing && !e.shown.some(function (l) { return l === e.email; }) ? listingEmail(e) : null,

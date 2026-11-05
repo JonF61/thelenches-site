@@ -191,3 +191,12 @@ test('own domain: a reply from another address at the organisation\'s own domain
   }
   assert.equal(recentQuery(['office@x.sch.uk', '@x.sch.uk']), '{from:office@x.sch.uk from:x.sch.uk} newer_than:91d');
 });
+
+test('in regular contact with a date set: the card still shows the next check', () => {
+  const hall = org('church-lench-hall');
+  const contacts = [{ email: hall.email, status: 'organiser', last_contact: '2026-10-20' }];
+  const s = orgState(hall, { replies: [], contacts, orgRow: { id: hall.id, next_check: '2027-01-15' }, today: TODAY });
+  assert.equal(s.state, 'regular');
+  assert.match(s.why, /no check needed · next check 2027-01-15$/);
+  assert.equal(orgState(hall, { replies: [], contacts, orgRow: null, today: TODAY }).why, 'Emailed us in the last 3 months: no check needed');
+});
