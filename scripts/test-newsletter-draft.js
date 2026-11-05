@@ -81,3 +81,14 @@ assert.ok(parts.every((r) => r[1].length <= CHUNK));
 assert.strictEqual(zlib.inflateSync(Buffer.from(parts.map((r) => r[1]).join(''), 'base64')).toString('utf8'), big);
 
 console.log('newsletter draft: all tests passed');
+
+// A Lenches event whose place line only says "Lenches" drops it (the badge says so); a real village stays (5 Nov).
+{
+  const ev = (id, village) => ({ id, title: `Rugby ${id} — The Lenches Club`, body: 'Drinks offer.', category: 'event', event_date: '2026-10-31', event_time: '7pm', village, status: 'approved', received: '2026-10-26 10:00', decided_at: '2026-10-26 11:00' });
+  const m = select({ ...base, pending: [ev('x', 'Lenches'), ev('y', 'Rous Lench'), ev('z', 'The Lenches')], issueDate: '2026-10-29', cutoff: '2026-10-28 18:00' });
+  const meta = Object.fromEntries(m.events.map((e) => [e.key, [e.meta, e.lenches]]));
+  assert.deepStrictEqual(meta['p:x'], ['7pm', true]);
+  assert.deepStrictEqual(meta['p:y'], ['Rous Lench · 7pm', true]);
+  assert.deepStrictEqual(meta['p:z'], ['7pm', true]);
+  console.log('Lenches place line: ok');
+}

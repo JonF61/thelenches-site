@@ -52,6 +52,10 @@ assert.equal(nr[0].id, 'K202611041900-n1');
 assert.equal(nr[0].status, 'open');
 for (const k of Object.keys(nr[0])) assert.ok(c.HEADERS.includes(k), k);
 // mailto: targets are shown; table cells are not pipe-separated (3 Nov: two false alarms).
+// The Lenches badge reads as a marker, on the site and in the newsletter (5 Nov).
+assert.equal(c.htmlToText('<h3>Quiz — The Lenches Club <span class="lenches-badge" data-pagefind-ignore>Lenches</span></h3>'), '### Quiz — The Lenches Club [Lenches badge]');
+assert.match(c.htmlToText('<table><tr><td style="x">Quiz</td><td><table><tr><td bgcolor="#fbe6d6" style="background:#fbe6d6;">Lenches</td></tr></table></td></tr></table>'), /^Quiz \[Lenches badge\]$/);
+assert.match(c.SYSTEM, /\[Lenches badge\]/);
 assert.equal(c.htmlToText('<p><a href="mailto:bids@club.org">Bid: email the club</a></p>'), 'Bid: email the club (bids@club.org)');
 assert.equal(c.htmlToText('<table><tr><td>The Club</td><td></td><td>Lenches</td></tr></table>'), 'The Club Lenches');
 

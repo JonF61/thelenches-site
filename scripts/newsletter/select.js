@@ -294,7 +294,9 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     if (cat === 'event' && date) {
       if (inWindow(date) && count < MAX_APPEARANCES) {
         const lenches = inLenches({ title: row.title, body: base.body, village: row.village });
-        events.push({ ...base, lenches, image: imageFor(row, key) });
+        // A place line that only says "Lenches" repeats the Lenches badge above it: left out (5 Nov, Jon).
+        const meta = lenches ? base.meta.split(' · ').filter((x) => !/^(?:the\s+)?lenches$/i.test(x)).join(' · ') : base.meta;
+        events.push({ ...base, meta, lenches, image: imageFor(row, key) });
         pendingEvents.add(`${normTitle(row.title)}|${date}`);
       }
       continue;

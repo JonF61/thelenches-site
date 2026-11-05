@@ -63,6 +63,10 @@ function htmlToText(html) {
   let t = String(html || '')
     .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/<(script|style|noscript|template|svg)\b[\s\S]*?<\/\1>/gi, '')
+    // The orange "Lenches" badge on an event's title (site .lenches-badge; newsletter titleWithBadge,
+    // a #fbe6d6 cell): shown as a marker, so it never reads as a stray word in the heading (5 Nov).
+    .replace(/<span\b[^>]*\blenches-badge\b[^>]*>[\s\S]*?<\/span>/gi, ' [Lenches badge] ')
+    .replace(/<td\b[^>]*#fbe6d6[^>]*>\s*Lenches\s*<\/td>/gi, ' [Lenches badge] ')
     .replace(/<img\b[^>]*?\balt="([^"]*)"[^>]*>/gi, (m, alt) => (alt ? ` [image: ${alt}] ` : ' '))
     .replace(/<a\b[^>]*?\bhref="([^"]*)"[^>]*>([\s\S]*?)<\/a>/gi, (m, href, inner) => {
       const words = inner.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -152,6 +156,8 @@ Report only concrete problems, for example:
   given where it looks unintended, anything that could embarrass or upset a reader.
 Do not report matters of taste or style, British spellings, the order of items, things you merely
 would have written differently, or anything you would have to look up outside what you are given.
+"[Lenches badge]" after a title is the small label that marks an event in the Lenches villages: it
+is meant to be there, so never report it as a stray or repeated word.
 Statements from parish councils, councillors and other official bodies are kept in their own
 words on purpose: report only obvious typos or broken links in them.
 Use severity "problem" when you are sure it is wrong, "check" when it may be wrong and a person
