@@ -6,6 +6,8 @@ name: Rimmer fix
 #                    event whose date moved is renamed, a removed entry's file deleted; Local trades
 #                    or Where to eat also redeploy the Worker, which bundles them) or a Pending cell
 #                    (then Publish, which rebuilds pipeline.json and the site)
+#   apply_many (rfix_all, 5 Nov)  Apply all ticked: several fixes applied in turn, then one commit,
+#                    one site build and at most one Publish; the finding ids ride in the payload
 # Jon's instruction is read from the Rimmer tab row, never from env (a step's env is public).
 on:
   repository_dispatch:
@@ -15,7 +17,7 @@ permissions:
   contents: write
   actions: write
 
-# One queue per finding, so every tap runs (a shared group drops waiting runs).
+# One queue per finding (or per batch of ticked fixes), so every tap runs (a shared group drops waiting runs).
 concurrency:
   group: rimmer-fix-${{ github.event.client_payload.id }}
   cancel-in-progress: false
@@ -55,7 +57,7 @@ jobs:
           if git diff --cached --quiet; then echo "No files changed."; exit 0; fi
           git config user.name "Lenches Pipeline"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Fix from Rimmer's check (admin panel)"
+          git commit -m "${{ github.event.client_payload.action == 'apply_many' && 'Fixes' || 'Fix' }} from Rimmer's check (admin panel)"
           git pull --rebase
           git push
           gh workflow run build.yml --ref main

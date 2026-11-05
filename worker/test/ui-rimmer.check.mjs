@@ -88,6 +88,12 @@ const server = http.createServer(async (req, res) => {
       }
       return send({ ok: false }, 'application/json', 400);
     }
+    if (url.pathname === '/admin/api/rimmer-apply-many') {
+      const ids = body.items.map((x) => x.id);
+      for (const f of rimmer.open) if (ids.includes(f.id)) f.fix_status = 'applying';
+      setTimeout(() => { rimmer.open = rimmer.open.filter((x) => !ids.includes(x.id)); }, 50);
+      return send({ ok: true, applied: ids, skipped: [], message: `Applying ${ids.length} fixes together` });
+    }
     if (url.pathname === '/admin/api/rimmer-run') {
       setTimeout(() => {
         rimmer.last = { ...rimmer.last, [body.scope]: '2026-11-02 10:00' };
@@ -139,6 +145,10 @@ try {
     assert.match(text, /Problem\s+Website update\s+The same two pages are announced twice\.\s+"There are two new pages"\s+Suggested fix: Remove one of the two\./);
     assert.match(text, /Check\s+\/events\/ · Quiz night/);
     assert.match(text, /Newsletter last checked/);
+    // Two fixes ready: the batch bar, Apply all ticked off until one is ticked.
+    assert.match(text, /Tick the fixes you want, then apply them together\./);
+    assert.equal(await card.locator('.batch-bar button', { hasText: 'Apply all ticked' }).isDisabled(), true);
+    assert.equal(await card.locator('.fix-tick input').count(), 2);
     const wide = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     assert.equal(wide, false, 'no sideways scroll');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `rimmer-summary-${name}.png`), fullPage: true });
@@ -188,6 +198,36 @@ try {
     await hc.locator('.finding', { hasText: 'Two different collection days' }).waitFor({ state: 'detached' });
     assert.deepEqual(posts.at(-1), ['/admin/api/rimmer-dismiss', { id: 'K2-s1' }]);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `rimmer-health-${name}.png`), fullPage: true });
+    assert.deepEqual(errors, []);
+    await page.close();
+  }
+  // Apply all ticked (5 Nov): tick one, then Tick all, one post for both, both go.
+  for (const [name, viewport] of [['desktop', { width: 1280, height: 900 }], ['phone', { width: 390, height: 844 }]]) {
+    reset();
+    const page = await browser.newPage({ viewport });
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    let asked = '';
+    page.on('dialog', (d) => { asked = d.message(); d.accept(); });
+    await page.addInitScript(() => { const st = window.setTimeout; window.setTimeout = (f, ms, ...a) => st(f, Math.min(ms, 200), ...a); });
+    await page.goto(`${base}/admin`);
+    const card = page.locator('.main .card.rimmer');
+    await card.locator('.finding').first().waitFor();
+    await card.locator('.finding', { hasText: 'Handbell' }).locator('.fix-tick input').check();
+    const bar = card.locator('.batch-bar');
+    assert.match(await bar.innerText(), /1 fix ticked[\s\S]*Tick all[\s\S]*Apply all ticked \(1\)/);
+    await bar.locator('button', { hasText: 'Tick all' }).click();
+    assert.match(await bar.innerText(), /2 fixes ticked[\s\S]*Untick all[\s\S]*Apply all ticked \(2\)/);
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `rimmer-batch-${name}.png`), fullPage: true });
+    await bar.locator('button', { hasText: 'Apply all ticked' }).click();
+    assert.match(asked, /Apply 2 fixes together\?[\s\S]*Event: Handbell concert \(date\)[\s\S]*Notice: Severn Trent works \(take it off the website\)[\s\S]*rebuilds once/);
+    assert.deepEqual(posts.at(-1), ['/admin/api/rimmer-apply-many', { items: [{ id: 'K1-l2', expected: 'offered' }, { id: 'K1-l3', expected: 'offered' }] }]);
+    await card.locator('.finding', { hasText: 'Handbell' }).waitFor({ state: 'detached' });
+    await card.locator('.finding', { hasText: 'Severn Trent' }).waitFor({ state: 'detached' });
+    assert.match(await card.innerText(), /Rimmer \(2\)/);
+    assert.equal(await card.locator('.batch-bar').count(), 0);
+    const wide = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
+    assert.equal(wide, false, 'no sideways scroll');
     assert.deepEqual(errors, []);
     await page.close();
   }

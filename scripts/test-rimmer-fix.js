@@ -179,6 +179,24 @@ async function wider() {
   assert.equal(out.ok, true);
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, 'src/_data/trades.json'), 'utf8')).trades.map((t) => t.id), ['b-builder']);
   assert.match(fs.readFileSync(process.env.GITHUB_OUTPUT, 'utf8'), /worker=true/);
+  // Apply all ticked (5 Nov): several fixes in one run, in turn against the files as the previous
+  // one left them; two to the same entry both apply, a stale one fails, the rest still go.
+  put('src/items/regulars.json', { regulars: [{ day: 'Monday', time: '9am', what: 'Yoga', where: 'Hall' }, { day: 'Friday', time: '7pm', what: 'Quizz', where: 'Club' }] });
+  const batch = [
+    ['B1', 'r:0', 'what', 'Yoga', 'Gentle yoga'],
+    ['B2', 'r:0', 'time', '9am', '9.30am'],
+    ['B3', 'r:1', 'what', 'Quiz night', 'Quiz'],
+    ['B4', 'r:1', 'what', 'Quizz', 'Quiz'],
+  ];
+  for (const [id, src, field, old, nw] of batch) rows.push({ _row: 200 + rows.length, id, status: 'open', fix_status: 'applying', fix_source: src, fix_field: field, fix_old: old, fix_new: nw, fix_label: 'Regular' });
+  fs.writeFileSync(process.env.GITHUB_OUTPUT, '');
+  const many = await fix.applyMany(['B1', 'B2', 'B3', 'B4'], { g: g2, root });
+  assert.deepEqual(many.map((r) => r.ok), [true, true, false, true]);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, 'src/items/regulars.json'), 'utf8')).regulars.map((r) => [r.time, r.what]), [['9.30am', 'Gentle yoga'], ['7pm', 'Quiz']]);
+  assert.deepEqual(['B1', 'B2', 'B3', 'B4'].map((id) => rows.find((r) => r.id === id).fix_status), ['applied', 'applied', 'failed', 'applied']);
+  assert.match(fs.readFileSync(process.env.GITHUB_OUTPUT, 'utf8'), /commit=true/);
+  // A finding no longer waiting is left alone.
+  assert.deepEqual((await fix.applyMany(['B1'], { g: g2, root })).map((r) => r.ok), [false]);
   // Holly is told about dates, links and removing, with a calendar.
   const req = fix.fixRequest({ where: 'w', problem: 'p' }, '', by(hb.replace('2026-11-29', '2026-12-06')), today);
   assert.match(req.messages[0].content, /Calendar:\n/);

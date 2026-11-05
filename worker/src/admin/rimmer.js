@@ -7,6 +7,9 @@
 //   Apply           a proposed fix (Jon's Fix…, "proposed", or drafted in Rimmer's own run,
 //                   "offered"): fix_status -> applying, then decide() rfix_ok writes it
 //   Discard         a proposal Jon doesn't want: fix_status -> discarded
+//   Apply all ticked (5 Nov, Jon) several ready fixes at once: each stale-checked to applying as
+//                   Apply does, then ONE decide() rfix_all: rimmer-fix.yml applies them in turn,
+//                   with one commit and one site build (planApplyMany)
 // A fix changes one text field, an event's date / endDate (its file renamed), a notice's
 // expires, a link or second link, or removes a whole entry (scripts/rimmer/fix.js).
 //   Send to Kryten  status -> kryten (with Jon's note): Kryten picks these up each session
@@ -91,3 +94,27 @@ export function planFix(row, { op, note, expected }) {
   }
   return { error: `Unknown operation "${op}"`, status: 400 };
 }
+
+// Apply all ticked (5 Nov, Jon): [{ id, expected }] -> each one's planFix apply, at most MAX_BATCH,
+// no id twice. { error } when the list itself is unusable; otherwise { plans: [{ id, plan }] },
+// where a plan may itself be { error } (that finding is skipped, the rest go ahead).
+export const MAX_BATCH = 20;
+export function planApplyMany(rows, items) {
+  if (!Array.isArray(items) || !items.length) return { error: 'Tick at least one fix', status: 400 };
+  if (items.length > MAX_BATCH) return { error: `At most ${MAX_BATCH} fixes at once`, status: 400 };
+  const seen = new Set();
+  const plans = [];
+  for (const it of items) {
+    const id = s(it && it.id);
+    if (!/^[A-Za-z0-9_-]{1,100}$/.test(id) || seen.has(id)) return { error: 'Bad list of fixes: reload the page', status: 400 };
+    seen.add(id);
+    const matches = (rows || []).filter((r) => s(r.id) === id);
+    const plan = matches.length > 1 ? { error: 'More than one Rimmer row for this id', status: 409 }
+      : planFix(matches[0], { op: 'apply', expected: it.expected });
+    plans.push({ id, plan });
+  }
+  return { plans };
+}
+
+// The batch's own id (rimmer-fix.yml's concurrency group and run): never a finding id.
+export const batchId = (nowMs = Date.now(), rand = Math.random()) => `rb${nowMs.toString(36)}${Math.floor(rand * 1679616).toString(36).padStart(4, '0')}`;
