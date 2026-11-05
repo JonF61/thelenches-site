@@ -949,3 +949,14 @@ test('Add details (merge): only for an already-listed item, panel only, fields a
   assert.equal(mergeBody({ body: '' }), '{}');
   assert.equal(validPayload({ a: 'merge', i: 'm1-1' }), false);
 });
+
+test('Newsletter draft meta range covers every meta row (Send to all needs hash, send_mode, send_count)', async () => {
+  const { draftMeta, DRAFT_META_RANGE } = await import('../src/admin/draft.js');
+  const last = Number(/B(\d+)$/.exec(DRAFT_META_RANGE)[1]);
+  const keys = ['as_of', 'issue_date', 'mode', 'status', 'subject', 'items', 'events', 'notices', 'roads', 'elsewhere', 'held', 'cutoff', 'subscribers', 'built_at', 'tested_at', 'hash', 'send_mode', 'send_count'];
+  assert.ok(keys.length + 1 + 5 <= last, 'room for the header, every key and a few more');
+  const rows = [['key', 'value'], ...keys.map((k) => [k, k === 'send_count' ? '450' : 'x'])].slice(0, last);
+  const m = draftMeta(rows);
+  assert.equal(m.hash, 'x');
+  assert.equal(m.send_count, 450);
+});

@@ -200,7 +200,7 @@ import {
 import { visitors } from './visitors.js';
 import { visitorHistory } from './sitestats.js';
 import { nlStats } from './nlstats.js';
-import { DRAFT_TAB, DRAFT_RANGE, draftMeta, draftHtml, draftPage } from './draft.js';
+import { DRAFT_TAB, DRAFT_RANGE, DRAFT_META_RANGE, draftMeta, draftHtml, draftPage } from './draft.js';
 
 const MAX_BODY = 60000;
 const SECURITY_HEADERS = {
@@ -321,7 +321,7 @@ async function state(env, email) {
     readTable(env, 'Pending'), readTable(env, 'Replies'), photosRead,
     readSettingsPairs(env), readTable(env, 'Health'), readTable(env, 'Issues'), sheetGids(env),
     readSources(env), readTable(env, 'Image fetch'), watchdog(env), folderList(env), photoPages(env),
-    binList(env, photosRead), readTable(env, SUGGEST_TAB), readFeedback(env), readDraft(env, `'${DRAFT_TAB}'!A1:B13`),
+    binList(env, photosRead), readTable(env, SUGGEST_TAB), readFeedback(env), readDraft(env, DRAFT_META_RANGE),
     readOptional(env, LISTING_TAB),
   ]);
   const suggested = suggestionsByItem(sugg);
@@ -996,7 +996,7 @@ export async function handleAdmin(request, env) {
         const q = (k) => String(url.searchParams.get(k) || '');
         return fromResult(await entryStatus(env, { id: q('id'), at: q('at'), page: q('p'), text: q('text').slice(0, 200) }));
       }
-      if (path === '/admin/api/draft') return json({ meta: draftMeta(await readDraft(env, `'${DRAFT_TAB}'!A1:B13`)) });
+      if (path === '/admin/api/draft') return json({ meta: draftMeta(await readDraft(env, DRAFT_META_RANGE)) });
       if (path === '/admin/api/mail-images') return await mailImages(env, url);
       if (path === '/admin/api/mail-text') return await mailText(env, url);
       if (path === '/admin/api/session') return json({ email: auth.email, csrf: await makeCsrf(env, auth.email) });
@@ -1085,7 +1085,7 @@ export async function handleAdmin(request, env) {
       }
       if (path === '/admin/api/page-save') return fromResult(await savePage(env, body));
       if (path === '/admin/api/entry-save') {
-        return fromResult(await saveEntry(env, body, { meta: draftMeta(await readDraft(env, `'${DRAFT_TAB}'!A1:B13`)) }));
+        return fromResult(await saveEntry(env, body, { meta: draftMeta(await readDraft(env, DRAFT_META_RANGE)) }));
       }
       return json({ ok: false, error: 'Not found' }, 404);
     }

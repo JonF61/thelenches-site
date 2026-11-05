@@ -10,6 +10,10 @@
 
 export const DRAFT_TAB = 'Newsletter draft';
 export const DRAFT_RANGE = `'${DRAFT_TAB}'!A1:B60`;
+// Enough rows for every META_KEYS row (draft.js writes them first, then html_N). It was A1:B13
+// until 5 Nov, which cut off hash / send_mode / send_count, so after Refresh or a Test send the
+// panel's newer copy of the meta hid Send to all.
+export const DRAFT_META_RANGE = `'${DRAFT_TAB}'!A1:B30`;
 const META_KEYS = ['as_of', 'issue_date', 'mode', 'status', 'subject', 'items', 'events', 'notices', 'roads', 'elsewhere', 'held', 'cutoff',
   'subscribers', 'built_at', 'tested_at', 'hash', 'send_mode', 'send_count'];
 const NUMBERS = new Set(['items', 'events', 'notices', 'roads', 'elsewhere', 'held', 'subscribers', 'send_count']);
