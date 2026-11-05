@@ -64,6 +64,8 @@
 //   POST /admin/api/orgnext         { id, expected, value }: Done / Snooze / Never / Clear, one
 //                                   stale-checked next_check write (the tab and row are made if
 //                                   missing)
+//   POST /admin/api/listingemail    { id, expected, expected_source, value }: a Local trades /
+//                                   Where to eat listing's address (Org outreach email)
 //   POST /admin/api/orgemails       { id, expected, value }: the organisation's other addresses
 //                                   (Org outreach other_emails, comma separated; same rules)
 //   GET  /admin/api/lessons         the Holly lessons tab, newest first (lessons.js)
@@ -175,7 +177,7 @@ import {
 import { history, historyQuery, MAX_MESSAGES } from './messages.js';
 import { outreachLists, planNudge, idFor, sentRows, planContactEmail, cleanBrief } from './outreach.mjs';
 import {
-  ORG_TAB, ORG_HEADERS, orgEntries, orgLists, planOrgCheck, planNext, planOtherEmails, dueOrgs, recentQuery,
+  ORG_TAB, ORG_HEADERS, orgEntries, listingEntries, planListingEmail, orgLists, planOrgCheck, planNext, planOtherEmails, dueOrgs, recentQuery,
 } from './orgoutreach.mjs';
 // The site's own data, bundled at deploy (deploy-worker.yml also deploys when these change).
 import contactsData from '../../../src/_data/contacts.json' with { type: 'json' };
@@ -657,7 +659,11 @@ async function doContactMail(env, body) {
 }
 
 // Organisation outreach.
-const ORGS = orgEntries({ contacts: contactsData, council: councilData, schools: schoolsData, health: healthData, transport: transportData });
+// Listings (Local trades, Where to eat; 5 Nov) get the same yearly check (listingEntries).
+const ORGS = [
+  ...orgEntries({ contacts: contactsData, council: councilData, schools: schoolsData, health: healthData, transport: transportData }),
+  ...listingEntries({ trades: tradesData, eat: eatData }),
+];
 
 // The Org outreach tab, or { headers: [], rows: [], missing: true } if it doesn't exist yet.
 async function readOrgTab(env) {
@@ -730,6 +736,20 @@ async function doOrgEmails(env, body) {
   const plan = planOtherEmails(body.value);
   if (plan.error) return json({ ok: false, ...plan }, 400);
   return orgWrite(env, id, 'other_emails', body.expected, plan.value);
+}
+
+// A listing's address (Org outreach email; typed by Jon, or found on their website). Saving it
+// by hand marks email_source "panel".
+async function doListingEmail(env, body) {
+  const id = String(body.id ?? '');
+  if (!ORGS.some((o) => o.id === id && o.listing)) return json({ ok: false, error: 'No such listing: reload the page' }, 404);
+  const plan = planListingEmail(body.value);
+  if (plan.error) return json({ ok: false, ...plan }, 400);
+  const res = await orgWrite(env, id, 'email', body.expected, plan.value);
+  if (res.status !== 200) return res;
+  // "panel" even when cleared, so the address finder never refills a cell Jon emptied.
+  const src = await orgWrite(env, id, 'email_source', body.expected_source, 'panel');
+  return src.status === 200 ? json({ ok: true, value: plan.value }) : json({ ok: true, value: plan.value, note: 'Saved; email_source was not updated' });
 }
 
 // The Holly lessons tab, or an empty list if it doesn't exist yet.
@@ -1061,6 +1081,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/orgcheck') return await doOrgCheck(env, body);
       if (path === '/admin/api/orgnext') return await doOrgNext(env, body);
       if (path === '/admin/api/orgemails') return await doOrgEmails(env, body);
+      if (path === '/admin/api/listingemail') return await doListingEmail(env, body);
       if (path === '/admin/api/lesson') return await doLesson(env, body);
       if (path === '/admin/api/autonomy-ignore') return await doAutonomyIgnore(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(env, body);

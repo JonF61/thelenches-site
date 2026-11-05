@@ -128,6 +128,18 @@ Could you let me know if anything needs changing? And if there's anything you'd 
 ## org_chase
 Just following up on my note about {organisation}'s entry on our {page} page. If everything's still correct, there's no need to reply, and we'll assume it's all fine. If anything has changed, a quick reply is all we need.
 
+## listing_check
+I help look after thelenches.org.uk, the community website and weekly newsletter for the Lenches villages. {name} is listed free of charge on our {page} page:
+{page_url}
+
+This is what it shows at the moment:
+{entry}
+
+Could you check it's right? If you'd like anything changed or added, such as what you do, the areas you cover or your website, just reply to this email. If you'd rather not be listed, let me know and we'll take it off.
+
+## listing_chase
+Just following up on my note about {name}'s free listing on our {page} page. If everything's correct, there's no need to reply. If anything has changed, a quick reply is all we need.
+
 ## signature
 Best wishes,
 Holly

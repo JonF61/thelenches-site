@@ -138,7 +138,7 @@ export const CLIENT_JS = String.raw`
       ['Quiet a year', 'Holly sends them nothing for 365 days.'],
       ['Other addresses', 'one person\'s extra email addresses, so they count as one contact.'],
       ['Outreach', 'who is due a friendly nudge; Draft nudge has Holly write one.'],
-      ['Organisations', 'the yearly check of each organisation\'s entry on the site; Draft check / Draft chaser.'],
+      ['Organisations', 'the yearly check of each organisation\'s entry on the site; Draft check / Draft chaser. Its Listings button shows the same check for every Local trades and Where to eat entry, with Add an email for those without an address.'],
       'Every draft waits in Replies for your Approve; nothing is sent by itself.',
       ['Delete', 'removes the row; only new mail from them can bring them back.']],
     photos: [
@@ -2690,6 +2690,26 @@ export const CLIENT_JS = String.raw`
       box, h('div', { class: 'actions' }, save));
   }
 
+  // A listing's address (Org outreach email): saved as typed, stale-checked.
+  async function gListingEmail(e, value, btn) {
+    btn.disabled = true;
+    var res = await api('/admin/api/listingemail', { id: e.id, expected: e.email_cell, expected_source: e.email_source, value: value });
+    toast(res.ok ? 'Saved: email for ' + e.name : (res.json.error || ('HTTP ' + res.status)), !res.ok);
+    btn.disabled = false;
+    if (res.ok) { S.orgs = null; render(); }
+  }
+
+  // Listings whose address isn't in the repo: the address Holly writes to, typed or found.
+  function listingEmail(e) {
+    var box = h('input', { class: 'f', type: 'email', 'aria-label': 'Email for ' + e.name, placeholder: 'name@example.co.uk', value: e.email_cell || '' });
+    var save = h('button', { class: 'btn', onclick: function () { gListingEmail(e, box.value, save); } }, 'Save email');
+    var src = e.email_source === 'website' ? 'found on their website' : e.email_source === 'panel' ? 'typed by you' : e.email_source;
+    return h('details', { class: 'org-emails' },
+      h('summary', null, e.email_cell ? 'Email (' + src + ')' : 'Add an email'),
+      h('p', { class: 'meta' }, 'The address Holly writes to for this listing. Kept in the Sheet only, never shown on the site. Leave blank to clear it.'),
+      box, h('div', { class: 'actions' }, save));
+  }
+
   function orgRow(e, o) {
     var acts = [];
     if ((e.state === 'due' || e.state === 'chase') && o.count < o.cap) {
@@ -2713,6 +2733,7 @@ export const CLIENT_JS = String.raw`
         h('div', { class: 'meta' }, e.shown.join(' · ')),
         e.addresses > 1 ? h('div', { class: 'meta' }, (e.addresses - 1) + ' other address' + (e.addresses > 2 ? 'es' : '') + ' count as this group') : null,
         acts.length ? h('div', { class: 'actions' }, acts) : null,
+        e.listing && !e.shown.some(function (l) { return l === e.email; }) ? listingEmail(e) : null,
         e.state !== 'noemail' ? orgEmails(e) : null));
   }
 
@@ -2723,12 +2744,22 @@ export const CLIENT_JS = String.raw`
       return [h('p', { class: 'loading' }, 'Loading organisations…')];
     }
     if (o.error) return [errorNote(o, 'Organisations'), h('button', { class: 'btn', onclick: function () { S.orgs = null; render(); } }, 'Try again')];
-    var L = o.lists;
+    // Organisations or Listings (Local trades and Where to eat, 5 Nov): the same check, two lists.
+    var kind = S.gKind === 'listings' ? 'listings' : 'orgs';
+    var L = {};
+    Object.keys(o.lists).forEach(function (k) {
+      L[k] = o.lists[k].filter(function (e) { return kind === 'listings' ? !!e.listing : !e.listing; });
+    });
+    var kindTab = function (k, label) {
+      return h('button', { class: 'btn' + (kind === k ? '' : ' link'), 'aria-pressed': kind === k ? 'true' : 'false', onclick: function () { S.gKind = k; render(); } }, label);
+    };
     var section = function (title, hint, list) {
       return h('div', null, h('h2', { class: 'section' }, title + ' (' + list.length + ')'), h('p', { class: 'meta' }, hint),
         list.length ? list.map(function (e) { return orgRow(e, o); }) : h('p', { class: 'empty' }, 'None at the moment.'));
     };
     return [
+      h('div', { class: 'actions' }, kindTab('orgs', 'Groups and services'), kindTab('listings', 'Listings')),
+      kind === 'listings' ? h('p', { class: 'meta' }, 'Every Local trades and Where to eat entry. Holly tells them they are listed free, shows their entry and asks if they would like anything changed or added. Addresses come from the entry or their website (found by Kryten\'s address finder), or type one under Add an email.') : null,
       h('p', { class: 'meta' }, 'Once a year Holly asks each organisation to check its entry on the site. The draft appears under Replies for you to Approve, Edit, Redraft or Reject, and never goes by itself. '
         + o.count + ' of ' + o.cap + ' drafts used today. When someone replies, read it in Gmail, update the site if needed, then tap Done.'),
       o.count >= o.cap ? h('div', { class: 'note' }, 'Today\'s ' + o.cap + ' drafts are used: Draft check comes back tomorrow.') : null,
@@ -2740,7 +2771,7 @@ export const CLIENT_JS = String.raw`
       section('No reply', 'Chased 3 weeks ago or more with no reply: taken as all fine until next year.', L.noreply),
       section('In regular contact', 'They emailed us in the last 3 months, so no check is needed (it lapses 3 months after their last email).', L.regular || []),
       section('Done, snoozed or never', 'Held back until the date shown, or for good.', L.held),
-      section('No email', 'No address to write to: check these by phone or on their website.', L.noemail)
+      section('No email', kind === 'listings' ? 'No address yet: add one if you find it, or check by phone or Facebook.' : 'No address to write to: check these by phone or on their website.', L.noemail)
     ];
   }
 

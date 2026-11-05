@@ -7,7 +7,8 @@ name: Listing suggestion (Local trades / Where to eat)
 #   action "approve"  (decide() sug_ok, panel only) add the entry to src/_data/trades.json or
 #                     eat.json with the suggester's recommendation counted (recommends.json),
 #                     commit them, email the suggester a thank-you, mark the row approved, then
-#                     build the site and redeploy the Worker (it bundles both files)
+#                     build the site and redeploy the Worker (it bundles both files); an entry
+#                     with no address gets one looked up on its website (scripts/listingcontacts)
 #   action "reject"   (decide() sug_no, panel only) mark the row rejected
 # The payload's id is a row id; Jon's edited entry and reason are read from the event file by
 # the script, never passed as env (a step's env is printed in this public log).
@@ -86,6 +87,13 @@ jobs:
         run: node scripts/listingsuggest/index.js
         env:
           ACTION: approved
+          SUGGEST_STATE: ${{ runner.temp }}/suggest-state.json
+      # No address in the entry: look for one on its website for the yearly listing check.
+      - name: Find the listing's email
+        if: ${{ github.event.client_payload.action == 'approve' && steps.commit.outputs.pushed == 'yes' }}
+        continue-on-error: true
+        run: node scripts/listingcontacts/index.js
+        env:
           SUGGEST_STATE: ${{ runner.temp }}/suggest-state.json
       - name: Build the site and redeploy the Worker
         if: ${{ github.event.client_payload.action == 'approve' && steps.commit.outputs.pushed == 'yes' }}

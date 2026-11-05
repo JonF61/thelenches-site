@@ -29,13 +29,14 @@
 // At most DAY_CAP organisation drafts a day. Ids are slugs, so logs never show an address.
 
 export const ORG_TAB = 'Org outreach';
-export const ORG_HEADERS = ['id', 'next_check', 'notes', 'other_emails'];
+export const ORG_HEADERS = ['id', 'next_check', 'notes', 'other_emails', 'email', 'email_source'];
 export const ORG_TYPE = 'outreach';
 export const CHASE_DAYS = 21;
 export const CYCLE_DAYS = 365;
 export const DAY_CAP = 10;
 export const REGULAR_DAYS = 91;
 export const SUBJECT = 'Your entry on thelenches.org.uk';
+export const LISTING_SUBJECT = 'Your listing on thelenches.org.uk';
 export const SITE = 'https://thelenches.org.uk';
 export const PAGE_NAMES = {
   '/groups/': 'Groups & Clubs',
@@ -46,6 +47,8 @@ export const PAGE_NAMES = {
   '/living-here/schools/': 'Schools',
   '/living-here/health/': 'Health & emergencies',
   '/living-here/getting-around/': 'Getting around',
+  '/living-here/trades/': 'Local trades',
+  '/living-here/eat/': 'Where to eat',
 };
 const SENT = ['queued', 'sending', 'sent'];
 
@@ -118,6 +121,58 @@ export function orgEntries(data) {
   return out;
 }
 
+// Listings (5 Nov, Jon): every Local trades and Where to eat entry gets the same yearly check,
+// with its own wording (templates.md listing_check / listing_chase). Ids are "trade-<id>" /
+// "eat-<id>" (lib/listings.js anchorFor, so the link goes to the card itself). The address is
+// the entry's own public email, else the Org outreach tab's `email` cell (found on their
+// website by scripts/listingcontacts, or typed by Jon in the panel; private).
+// data: { trades, eat } (src/_data trades.json, eat.json).
+export function listingEntries(data) {
+  const { trades = {}, eat = {} } = data || {};
+  const out = [];
+  const web = (w) => str(w && w.url);
+  for (const t of trades.trades || []) {
+    if (!t || !t.id) continue;
+    out.push({
+      id: `trade-${t.id}`, listing: 'trades', name: str(t.name), email: low(t.email), greet: firstWord(t.contact),
+      page: '/living-here/trades/', pageName: PAGE_NAMES['/living-here/trades/'], pageUrl: `${SITE}/living-here/trades/#trade-${t.id}`,
+      website: web(t.website),
+      shown: [
+        str(t.trade), str(t.what), t.covers ? `Covers: ${str(t.covers)}` : '', t.base ? `Based: ${str(t.base)}` : '',
+        t.contact ? `Contact: ${str(t.contact)}` : '', [str(t.phone), str(t.phone2)].filter(Boolean).join(' or '),
+        str(t.email), str(t.other), web(t.website),
+      ].filter(Boolean),
+    });
+  }
+  for (const p of eat.places || []) {
+    if (!p || !p.id) continue;
+    const tags = [p.garden ? 'Garden' : '', p.children ? 'Children welcome' : '', p.dogs ? 'Dogs welcome' : ''].filter(Boolean).join(', ');
+    out.push({
+      id: `eat-${p.id}`, listing: 'eat', name: str(p.name), email: low(p.email), greet: '',
+      page: '/living-here/eat/', pageName: PAGE_NAMES['/living-here/eat/'], pageUrl: `${SITE}/living-here/eat/#eat-${p.id}`,
+      website: web(p.website),
+      shown: [str(p.where), str(p.type), str(p.food), str(p.note), tags, str(p.phone), web(p.website)].filter(Boolean),
+    });
+  }
+  return out;
+}
+
+// The address Holly writes to: the entry's own, else the Org outreach tab's email cell
+// (listings only: an organisation's address always comes from the repo).
+export function emailOf(org, orgRow) {
+  if (org.email) return org.email;
+  if (!org.listing) return '';
+  const e = low(orgRow && orgRow.email);
+  return /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(e) ? e : '';
+}
+
+// Email for a listing from the panel: { value } (lower case) or { error }. Blank clears it.
+export function planListingEmail(value) {
+  const v = low(value);
+  if (v && !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(v)) return { error: `Not an email address: ${str(value)}` };
+  return { value: v };
+}
+
 // This organisation's outreach rows in Replies, newest first.
 export function rowsFor(id, replies) {
   return (replies || []).filter((r) => r.type === ORG_TYPE
@@ -137,7 +192,7 @@ const splitEmails = (v) => str(v).split(/[\s,;]+/).map(low).filter((e) => /^[^\s
 // organisation is its name (the same, or the name plus more words, e.g. "Lenches Club
 // committee"; never the other way round, so "Church Lench" is not the village hall).
 export function addressesFor(org, orgRow, contacts) {
-  const out = new Set([low(org.email), ...splitEmails(orgRow && orgRow.other_emails)].filter(Boolean));
+  const out = new Set([emailOf(org, orgRow), ...splitEmails(orgRow && orgRow.other_emails)].filter(Boolean));
   const names = [normName(org.name)].filter((n) => n.length >= 4);
   for (const c of contacts || []) {
     if (low(c.status) === 'ignore') continue;
@@ -184,7 +239,11 @@ export function recentQuery(addresses) {
 // One organisation's state today: { state, why, check?, chase? }. recent: ids of organisations
 // that emailed us in the last REGULAR_DAYS (Gmail, any of their addresses), or null.
 export function orgState(org, { replies = [], contacts = [], orgRow = null, today, recent = null }) {
-  if (!org.email) return { state: 'noemail', why: 'No email: check by phone or their website' };
+  if (!emailOf(org, orgRow)) {
+    return { state: 'noemail', why: org.listing
+      ? (org.website && !/facebook\.com/i.test(org.website) ? 'No email found yet: type one below, or check by phone' : 'No email: type one below, or check by phone or Facebook')
+      : 'No email: check by phone or their website' };
+  }
   const next = low(orgRow && orgRow.next_check);
   if (next === 'never') return { state: 'held', why: 'Set to never' };
   const addresses = addressesFor(org, orgRow, contacts);
@@ -227,7 +286,7 @@ export function orgLists(orgs, { replies = [], contacts = [], orgRows = [], hasT
   for (const o of orgs) {
     const orgRow = byId.get(o.id) || null;
     const s = orgState(o, { replies, contacts, orgRow, today, recent });
-    lists[s.state].push({ ...o, state: s.state, why: s.why, next_check: str(orgRow && orgRow.next_check), hasRow: !!orgRow,
+    lists[s.state].push({ ...o, email: emailOf(o, orgRow), email_cell: str(orgRow && orgRow.email), email_source: str(orgRow && orgRow.email_source), state: s.state, why: s.why, next_check: str(orgRow && orgRow.next_check), hasRow: !!orgRow,
       other_emails: str(orgRow && orgRow.other_emails), addresses: addressesFor(o, orgRow, contacts).length });
   }
   return { today, count: dayCount(replies, today), cap: DAY_CAP, hasTab, lists };

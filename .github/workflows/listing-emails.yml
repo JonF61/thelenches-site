@@ -1,0 +1,44 @@
+name: Find listing emails
+
+# Listing address finder (scripts/listingcontacts): for each Local trades / Where to eat entry
+# with no address yet, looks on its own website (home page and contact pages) for a public
+# email address and saves it to the Org outreach tab (email, email_source "website"), for
+# Holly's yearly listing check (admin panel Contacts > Organisations > Listings). It never
+# overwrites a cell with a value and sends nothing. The log shows listing ids and counts only.
+# listing-suggest.yml runs the same script for each approved suggestion.
+on:
+  workflow_dispatch:
+    inputs:
+      id:
+        description: One listing id (e.g. trade-john or eat-boot-inn), or all
+        required: false
+        default: all
+
+permissions:
+  contents: read
+
+concurrency:
+  group: listing-emails
+  cancel-in-progress: false
+
+jobs:
+  find:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+      SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+      GMAIL_USER: jon@thelenches.org.uk
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Find addresses
+        run: node scripts/listingcontacts/index.js
+        env:
+          LISTING_ID: ${{ inputs.id }}
