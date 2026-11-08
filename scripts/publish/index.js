@@ -173,6 +173,34 @@ async function imageFor(row, failures, suggestions) {
   }
 }
 
+// Where a published row goes and its last day shown (expires). Events: their date. Notices:
+// at least NOTICE_DAYS from the decision (or their date if later); one.network roadworks to
+// their end_date if later; any other notice with an end_date (8 Nov, Jon: notices about
+// Saturday's fireworks stayed up 21 days) to that day, the last day it matters.
+// worker/src/admin/history.js siteWindow mirrors this.
+function windowFor(row, today) {
+  const date = ymd(row.event_date);
+  const start = ymd(row.decided_at) || ymd(row.received) || today;
+  const cat = str(row.category).toLowerCase();
+  let list;
+  let expires;
+  if (cat === 'event' && date) {
+    list = 'events';
+    expires = date;
+  } else {
+    // notice, the old "news", or an event with no date
+    list = 'notices';
+    expires = later(date, addDays(start, NOTICE_DAYS));
+  }
+  const url = safeUrl(row.link_url);
+  const road = isRoad({ link: { url } });
+  const end = road ? ymd(row.end_date) : '';
+  if (end) expires = later(expires, end);
+  const until = !road && list === 'notices' ? ymd(row.end_date) : '';
+  if (until) expires = until;
+  return { date, start, list, expires, end, url, road };
+}
+
 async function main() {
   const today = londonDate(Date.now());
   const rows = (await g.readTable('Pending'))
@@ -196,23 +224,7 @@ async function main() {
   const roadsWanted = [];
 
   for (const row of byKey.values()) {
-    const date = ymd(row.event_date);
-    const start = ymd(row.decided_at) || ymd(row.received) || today;
-    const cat = str(row.category).toLowerCase();
-    let list;
-    let expires;
-    if (cat === 'event' && date) {
-      list = 'events';
-      expires = date;
-    } else {
-      // notice, the old "news", or an event with no date
-      list = 'notices';
-      expires = later(date, addDays(start, NOTICE_DAYS));
-    }
-    const url = safeUrl(row.link_url);
-    const road = isRoad({ link: { url } });
-    const end = road ? ymd(row.end_date) : '';
-    if (end) expires = later(expires, end);
+    const { date, start, list, expires, end, url, road } = windowFor(row, today);
     if (expires < today) continue;
 
     const item = { id: row.id, title: str(row.title), body: bodyOf(row) };
@@ -292,4 +304,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { imageFor, chosenImage };
+module.exports = { imageFor, chosenImage, windowFor };

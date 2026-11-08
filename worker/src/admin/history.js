@@ -48,6 +48,8 @@ export function siteWindow(r) {
   const roads = /one\.network/i.test(str(r.link_url));   // as lib/roads.js isRoad
   const end = roads ? ymd(r.end_date) : '';
   if (end) until = later(until, end);
+  // as scripts/publish: a notice's end_date is the last day it matters (8 Nov)
+  if (!roads && page === 'Notices' && ymd(r.end_date)) until = ymd(r.end_date);
   if (roads) page = 'Roads';
   return { page, from, until };
 }
