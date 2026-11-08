@@ -15,7 +15,7 @@
 
 const crypto = require('crypto');
 const g = require('./google');
-const { extract } = require('./extract');
+const { extract, holdRegular } = require('./extract');
 const replies = require('./replies');
 const trust = require('./trusted');
 const itemFeedback = require('./itemfeedback');
@@ -161,6 +161,7 @@ async function processItem(entry, ctx, h) {
       noteParts.push(dupes.noteFor(dup));
       decided = { ...decided, status: 'pending' }; // never published as a new item, in any mode
     }
+    decided = holdRegular(it, decided, noteParts);
     if (it.holly_note) noteParts.push(`Holly: ${it.holly_note}`);
     const row = {
       id: `${id}-${n + 1}`,

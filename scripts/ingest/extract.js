@@ -72,6 +72,10 @@ FIXED RULES. These always apply, whatever the guidance, lessons or corrections b
 - Never say who runs the website or newsletter.
 - category is event or notice. An event title is "What — Where" and its summary states the time
   clearly (e.g. "from 7.30pm"), because the site reads the venue and the calendar time from them.
+- regular is true when the item is an ongoing class, club or group meeting on a repeating pattern
+  (e.g. "every Wednesday", weekly, monthly) rather than a one-off date or a short run of dates.
+  The team adds those to the Regular activities page by hand. Record it as an event with its
+  next date and say the pattern in the summary. A one-off taster or special night is not regular.
 - REQUIRED DETAILS, SECOND LINK and CLASSIFY THE EMAIL below are exact instructions.
 
 GUIDANCE. The editorial rules at the end and the team's lessons say how the team likes listings
@@ -153,6 +157,7 @@ const TOOL = {
             event_time: { type: 'string', description: 'e.g. 19:30 or 19:30-22:00; empty if unknown' },
             village: { type: 'string' },
             category: { type: 'string' },
+            regular: { type: 'boolean', description: 'True if an ongoing class, club or group on a repeating pattern (weekly, monthly...), not a one-off; see the fixed rules' },
             summary: { type: 'string' },
             cost: { type: 'string' },
             contact: { type: 'string' },
@@ -285,6 +290,7 @@ function normalise(items, imageCount) {
       event_time: str(it.event_time),
       village: str(it.village),
       category: str(it.category).toLowerCase() === 'event' ? 'event' : 'notice',
+      regular: it.regular === true,
       summary: str(it.summary),
       cost: str(it.cost),
       contact: str(it.contact),
@@ -424,4 +430,14 @@ async function extract(input) {
   };
 }
 
-module.exports = { extract, keepLink2, primeWriteups, learningText, MISSING_CODES, stats, SYSTEM };
+// Regular activities (8 Nov): the pipeline has no regulars category, so a weekly class
+// would publish as a one-off on its next date. Hold it for Jon with a note instead;
+// regulars are added to src/items/regulars.json by hand.
+const REGULAR_NOTE = 'Regular activity: add it to the Regular activities page by hand (ask Kryten) rather than approving it as a one-off event';
+function holdRegular(item, decided, noteParts) {
+  if (!item || item.regular !== true) return decided;
+  noteParts.push(REGULAR_NOTE);
+  return { ...decided, status: 'pending' };
+}
+
+module.exports = { extract, normalise, holdRegular, REGULAR_NOTE, keepLink2, primeWriteups, learningText, MISSING_CODES, stats, SYSTEM };

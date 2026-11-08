@@ -14,7 +14,7 @@
 'use strict';
 
 const g = require('./google');
-const { extract, stats: claudeStats } = require('./extract');
+const { extract, holdRegular, stats: claudeStats } = require('./extract');
 const { prepareAttachments, hashDistance } = require('./images');
 const { sendUrgentAlerts } = require('./urgent');
 const replies = require('./replies');
@@ -255,6 +255,7 @@ async function processMessage(id, ctx) {
       noteParts.push(dupes.noteFor(dup));
       decided = { ...decided, status: 'pending' }; // never published as a new item, in any mode
     }
+    decided = holdRegular(item, decided, noteParts);
     if (item.holly_note) noteParts.push(`Holly: ${item.holly_note}`);
     if (spam) noteParts.push(`Possible spam (confidence ${result.classConfidence})`);
     const row = {
