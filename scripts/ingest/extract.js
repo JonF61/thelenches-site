@@ -76,6 +76,10 @@ FIXED RULES. These always apply, whatever the guidance, lessons or corrections b
   (e.g. "every Wednesday", weekly, monthly) rather than a one-off date or a short run of dates.
   The team adds those to the Regular activities page by hand. Record it as an event with its
   next date and say the pattern in the summary. A one-off taster or special night is not regular.
+- A notice about something on a particular day or over a set period (a reminder about Saturday's
+  fireworks, an auction or survey with a closing date, works from 5 to 7 November) sets end_date to
+  the last day it matters, written in or worked out from the text, so it comes down the day after.
+  Leave end_date empty for notices with no such day.
 - REQUIRED DETAILS, SECOND LINK and CLASSIFY THE EMAIL below are exact instructions.
 
 GUIDANCE. The editorial rules at the end and the team's lessons say how the team likes listings
@@ -183,7 +187,7 @@ const TOOL = {
             notes: { type: 'string', description: 'For the editor: missing details, doubts, reasons for flags' },
             holly_note: { type: 'string', description: 'One short sentence: where you departed from the guidance for this item and why; empty if you followed it' },
             road: { type: 'string', description: "Road items only (closures and roadworks, e.g. one.network alerts): the road's name as on a map, e.g. 'Ab Lench Road' or 'A435'; empty otherwise" },
-            end_date: { type: 'string', description: 'Road items only: YYYY-MM-DD, the last day of the works as given in the text; empty if not given' },
+            end_date: { type: 'string', description: 'YYYY-MM-DD. Road items: the last day of the works as given in the text. Other notices tied to a day or period (see the fixed rules): the last day the notice matters. Empty if not given or not tied to a date' },
             road_coords: { type: 'string', description: "Road items only: 'lat,lon' in decimal degrees if the email or a link in it gives the works' location as coordinates; never guess; empty otherwise" },
           },
           required: ['title', 'village', 'category', 'summary', 'confidence', 'urgent',
