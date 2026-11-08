@@ -41,6 +41,7 @@ const crypto = require('crypto');
 const { inLenches } = require('../../lib/lenches');
 const { bodyOf } = require('../../lib/wording');
 const { localSource } = require('../../lib/sources');
+const anchors = require('../../lib/anchors');
 
 const WINDOW_DAYS = 14;
 const MAX_APPEARANCES = 3;
@@ -356,7 +357,12 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     // Weekly regulars (src/items/regulars.json), every issue; older snapshots hold a string.
     // Only the one-line fields go in the snapshot (the rest is for the /regulars/ page).
     regulars: (w.regulars || []).length
-      ? w.regulars.map(({ day, time, what, where, note, link, frequency }) => ({ day, time, what, where, note, link, ...(frequency ? { frequency } : {}) }))
+      ? w.regulars.map((r) => {
+        const { day, time, what, where, note, link, frequency } = r;
+        // more (8 Nov, Jon): a link to the entry's card on /regulars/ when it has details there.
+        return { day, time, what, where, note, link, ...(frequency ? { frequency } : {}),
+          ...(anchors.regularHasDetails(r) ? { more: anchors.regularUrl(r) } : {}) };
+      })
       : str(w.eventsFootnote),
     news: [],
     notices: notices.map(strip),
