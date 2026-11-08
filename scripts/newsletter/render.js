@@ -271,7 +271,8 @@ function renderHtml(m, subject) {
         + g.items.map((r) => `<div style="margin:0 0 3px;"${entryAttrs(r, 'Regular activity')}${TAGS && TAGS[r.key] ? fieldAttr('time frequency where note') : ''}>${esc(r.what)}${regularTime(r) ? ` · ${esc(regularTime(r))}` : ''}`
           + `${r.where ? ` · <span style="color:${C.muted};">${esc(r.where)}</span>` : ''}`
           + `${r.note ? ` <span style="color:${C.muted};">(${esc(r.note)})</span>` : ''}`
-          + `${r.link ? ` · ${a(siteUrl(r.link.url), r.link.text, C.accentText)}` : ''}</div>`).join('')).join('')
+          + `${r.link ? ` · ${a(siteUrl(r.link.url), r.link.text, C.accentText)}` : ''}`
+          + `${r.more ? ` · ${a(r.more, 'More', C.accentText)}` : ''}</div>`).join('')).join('')
       + `</td></tr>`);
   }
   // No News section since 21 Oct 2026 (select.js gives news: []); kept for older snapshots.
@@ -350,7 +351,8 @@ function renderText(m) {
       out.push(...(i ? [''] : []), g.day);
       for (const r of g.items) {
         out.push([r.what, regularTime(r), r.where].filter(Boolean).join(' · ')
-          + (r.note ? ` (${r.note})` : '') + (r.link ? ` · ${r.link.text}: ${siteUrl(r.link.url)}` : ''));
+          + (r.note ? ` (${r.note})` : '') + (r.link ? ` · ${r.link.text}: ${siteUrl(r.link.url)}` : '')
+          + (r.more ? ` · More: ${r.more}` : ''));
       }
     });
     out.push('');
