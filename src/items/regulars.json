@@ -211,6 +211,30 @@
       "tile": "coffee",
       "frequency": "2nd Tuesday of the month, September to July",
       "about": "Talks, demonstrations, crafts, outings and socials, organised in turn by members. Newcomers to the area are especially welcome."
+    },
+    {
+      "day": "Wednesday",
+      "time": "7.45-8.45pm",
+      "what": "Pilates",
+      "where": "Church Lench Village Hall",
+      "runBy": "Michele Collett",
+      "phone": "07813 084575",
+      "email": "micheleselect@hotmail.com",
+      "booking": "Contact Michele to book",
+      "tile": "fitness",
+      "checked": "2026-11"
+    },
+    {
+      "day": "Thursday",
+      "time": "5.30-7pm",
+      "what": "Joint-freeing yoga",
+      "where": "Church Lench Village Hall",
+      "runBy": "Karen Wilcox",
+      "phone": "07969 209495",
+      "email": "thumitherapy@gmail.com",
+      "booking": "Contact Karen to book",
+      "tile": "yoga",
+      "checked": "2026-11"
     }
   ]
 }
