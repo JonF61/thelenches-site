@@ -1,30 +1,6 @@
 {
   "events": [
     {
-      "id": "1a1b0c3b44b22710-1",
-      "title": "Pilates — Church Lench Village Hall",
-      "body": "Weekly Pilates class every Wednesday, 7.45pm to 8.45pm, at Church Lench Village Hall, run by Michele Collett. Booking is through Michele on 07813 084575 or micheleselect@hotmail.com.",
-      "date": "2026-11-11",
-      "village": "Church Lench",
-      "expires": "2026-11-11",
-      "link": {
-        "text": "Book: email Michele",
-        "url": "mailto:micheleselect@hotmail.com"
-      }
-    },
-    {
-      "id": "1a1b0c3b44b22710-2",
-      "title": "Joint-Freeing Yoga — Church Lench Village Hall",
-      "body": "Weekly joint-freeing yoga class every Thursday, 5.30pm to 7pm, at Church Lench Village Hall, run by Karen Wilcox. Booking is through Karen on 07969 209495 or thumitherapy@gmail.com.",
-      "date": "2026-11-12",
-      "village": "Church Lench",
-      "expires": "2026-11-12",
-      "link": {
-        "text": "Book: email Karen",
-        "url": "mailto:thumitherapy@gmail.com"
-      }
-    },
-    {
       "id": "1a1a66e59dc04bd0-1",
       "title": "Cash Bingo — The Lenches Club",
       "body": "Cash bingo at The Lenches Club on Friday 13 November from 7.30pm, with tickets on sale from 7.15pm and eyes down at 8pm. Books are £5, the cash flyer is £5 and the bonus ball is £1 a square. Winner takes all, and the more people who come, the bigger the prizes. Over-18s only.",
