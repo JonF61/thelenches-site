@@ -1,22 +1,6 @@
 {
   "events": [
     {
-      "id": "1a1a22b6da2a820a-2",
-      "title": "Fireworks Night — The Lenches Club",
-      "body": "The Lenches Club's annual fireworks night is on Saturday 7 November, with the club open from 12 noon and the display at 7.30pm. Free entry and everyone welcome. Expect a live LED and fire poi performance, food stalls, a glow-in-the-dark playground and a children's stall with pick 'n' mix, glow sticks and soft drinks, then a disco till late.",
-      "date": "2026-11-07",
-      "village": "Lenches",
-      "expires": "2026-11-07",
-      "link": {
-        "text": "The Lenches Club",
-        "url": "https://thelenchesclub.co.uk/"
-      },
-      "image": {
-        "url": "/images/items/1a1a22b6da2a820a-2.webp",
-        "alt": "Poster for Fireworks Night at the Lenches Club with fireworks, free entry, disco and food stalls"
-      }
-    },
-    {
       "id": "1a1a66e59dc04bd0-1",
       "title": "Cash Bingo — The Lenches Club",
       "body": "Cash bingo at The Lenches Club on Friday 13 November from 7.30pm, with tickets on sale from 7.15pm and eyes down at 8pm. Books are £5, the cash flyer is £5 and the bonus ball is £1 a square. Winner takes all, and the more people who come, the bigger the prizes. Over-18s only.",
@@ -494,19 +478,6 @@
       "link": {
         "text": "Read more at Evesham Journal",
         "url": "https://www.eveshamjournal.co.uk/news/26628510.eight-worcestershire-areas-affected-landline-changes/"
-      }
-    },
-    {
-      "id": "rss-33730ff885264367-1",
-      "title": "Police appeal after night burglaries in Inkberrow area",
-      "body": "Police have issued an appeal for information following a series of burglaries in Inkberrow and Bradley Green, in which windows were smashed to gain entry overnight.",
-      "village": "Inkberrow",
-      "expires": "2026-11-07",
-      "added": "2026-10-17",
-      "source": "Evesham Journal",
-      "link": {
-        "text": "Read more at Evesham Journal",
-        "url": "https://www.eveshamjournal.co.uk/news/26646396.burglaries-inkberrow-bradley-green-police-warning/"
       }
     }
   ]
