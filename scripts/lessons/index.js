@@ -96,7 +96,7 @@ const clip = (t, n) => { const f = String(t || '').replace(/\s+/g, ' ').trim(); 
 async function propose(corrections, existing, approved = [], listings = []) {
   const res = await replies.claude().messages.create({
     model: replies.MODEL(),
-    max_tokens: 1800,
+    max_tokens: 4000, // 1800 cut the JSON off on 9 Nov (weekly lessons plus review)
     system: SYSTEM,
     messages: [{ role: 'user', content: JSON.stringify({
       corrections, listing_corrections: listings, existing, approved, fixed_rules: replies.FIXED_RULES, voice_guide: replies.voiceGuide(),
@@ -107,7 +107,7 @@ async function propose(corrections, existing, approved = [], listings = []) {
   try {
     out = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
   } catch {
-    throw new Error('Claude gave no usable lessons');
+    throw new Error(`Claude gave no usable lessons (stop_reason ${res.stop_reason || 'unknown'})`);
   }
   const known = new Set([...corrections.map((c) => c.reply_id), ...listings.map((c) => c.item_id)]);
   const ids = new Set(approved.map((a) => a.id));
