@@ -174,9 +174,9 @@ test('Mark implemented: no email, no draft; a bad or failed draft falls back to 
   assert.strictEqual(w.calls.prompts.length, 0);
 
   const prev = process.env.GMAIL_USER;
-  process.env.GMAIL_USER = 'jon@thelenches.org.uk';
+  process.env.GMAIL_USER = 'team@thelenches.org.uk';
   // 1 Nov: naming Jon is fine; only his address is refused.
-  for (const answer of ['No link in this one.', 'Email jon@thelenches.org.uk.\nhttps://thelenches.org.uk/halls/', new Error('overloaded')]) {
+  for (const answer of ['No link in this one.', 'Email team@thelenches.org.uk.\nhttps://thelenches.org.uk/halls/', new Error('overloaded')]) {
     w = world([row({ status: 'approved' })], { claude: [answer] });
     await rf.decide('fb-20261025-abc123', 'fb_done');
     assert.ok(w.table[0].reply_draft.includes('Thanks for your correction about "Village halls". We\'ve updated the page:\nhttps://thelenches.org.uk/halls/'),
@@ -329,8 +329,8 @@ test('addToConversation drops the oldest messages when the cell is full', () => 
 
 test('Send refuses a reply that gives Jon\'s address (anonymity)', async () => {
   const prev = process.env.GMAIL_USER;
-  process.env.GMAIL_USER = 'jon@thelenches.org.uk';
-  const w = world([row({ status: 'implemented', reply_draft: 'Hi there,\n\nJon has fixed it: write to jon@thelenches.org.uk.' })]);
+  process.env.GMAIL_USER = 'team@thelenches.org.uk';
+  const w = world([row({ status: 'implemented', reply_draft: 'Hi there,\n\nJon has fixed it: write to team@thelenches.org.uk.' })]);
   await assert.rejects(rf.decide('fb-20261025-abc123', 'fb_send'), /anonymity/);
   assert.strictEqual(w.calls.sent.length, 0);
   process.env.GMAIL_USER = prev;

@@ -22,7 +22,7 @@ test('same rules as the workflows', () => {
   }
   assert.equal(k.MAX_CELLS, sheetwrite.MAX_CELLS);
   assert.deepEqual(k.LOG_HEADERS, sheetwrite.LOG_HEADERS);
-  assert.equal(k.maskEmails('jon@thelenches.org.uk'), sheettab.maskEmails('jon@thelenches.org.uk'));
+  assert.equal(k.maskEmails('team@thelenches.org.uk'), sheettab.maskEmails('team@thelenches.org.uk'));
   assert.deepEqual(k.targetRange('B5', [['x', 'y']]), sheetwrite.targetRange('B5', [['x', 'y']]));
   assert.deepEqual(k.parseValues('["a","b"]'), sheetwrite.parseValues('["a","b"]'));
 });

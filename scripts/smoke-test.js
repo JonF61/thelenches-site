@@ -74,10 +74,10 @@ function testGoogle() {
     email: 'smoke@example.iam.gserviceaccount.com',
     key: privateKey,
     scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
-    subject: 'jon@thelenches.org.uk',
+    subject: 'team@thelenches.org.uk',
   });
   assert.strictEqual(auth.email, 'smoke@example.iam.gserviceaccount.com', 'JWT email option ignored');
-  assert.strictEqual(auth.subject, 'jon@thelenches.org.uk', 'JWT subject (delegation) ignored');
+  assert.strictEqual(auth.subject, 'team@thelenches.org.uk', 'JWT subject (delegation) ignored');
   const gmail = google.gmail({ version: 'v1', auth });
   for (const fn of [gmail.users.messages.list, gmail.users.messages.get, gmail.users.messages.send,
     gmail.users.messages.attachments.get, gmail.users.settings.sendAs.list]) {
