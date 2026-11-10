@@ -324,14 +324,15 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     // Converted from news (shown once under its old key): not repeated.
     if (shown.get(whatsonKey('news', it))) continue;
     if (notices.some((x) => x.key === key)) continue;
-    notices.push({ key, title: str(it.title), body: str(it.body), meta: '', link: linkOf(it.link && it.link.text, it.link && it.link.url), ...link2Of(it), date: '', sortStart: '', image: whatsonImage(it, key) });
+    notices.push({ key, title: str(it.title), body: str(it.body), meta: '', link: linkOf(it.link && it.link.text, it.link && it.link.url), ...link2Of(it), date: '', sortStart: '', image: whatsonImage(it, key), ...(it.pinned ? { pinned: true } : {}) });
   }
 
   // ---- Deterministic order.
   events.sort((a, b) => cmp(a.date, b.date) || cmp(a.title, b.title) || cmp(a.key, b.key));
   // Newest Pending items first, then whatson items in title order.
   const newestFirst = (a, b) => cmp(b.sortStart, a.sortStart) || cmp(a.title, b.title) || cmp(a.key, b.key);
-  notices.sort(newestFirst);
+  // A hand-written notice with "pinned": true leads the Notices section, as on the site (10 Nov).
+  notices.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || newestFirst(a, b));
   roads.sort((a, b) => cmp(a.date || '9999', b.date || '9999') || cmp(a.title, b.title) || cmp(a.key, b.key));
   elsewhere.sort((a, b) => cmp(a.source, b.source) || cmp(a.title, b.title) || cmp(a.key, b.key));
 
@@ -341,7 +342,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
   const keys = [...all.map((x) => x.key), ...siteUpdates.map((x) => x.key)];
   const imageKeys = all.filter((x) => x.image).map((x) => x.key);
   const strip = (x) => {
-    const { sortStart, ...rest } = x;
+    const { sortStart, pinned, ...rest } = x;
     return rest;
   };
 
