@@ -173,6 +173,22 @@
       }
     },
     {
+      "id": "1a1c605c25d4b905-7",
+      "title": "Christmas Wreath Workshop — The Lenches Club",
+      "body": "Amulet Blooms is running a Christmas wreath workshop at The Lenches Club on Friday 11 December at 7pm, using fresh and dried materials from its flower farm. It costs £45 per person, including a glass of fizz and a mince pie. Book at amuletblooms.co.uk. Returning customers get 10% off and can email info@amuletblooms.co.uk if they haven't had their discount link.",
+      "date": "2026-12-11",
+      "village": "Lenches",
+      "expires": "2026-12-11",
+      "link": {
+        "text": "Book: Amulet Blooms",
+        "url": "https://amuletblooms.co.uk"
+      },
+      "image": {
+        "url": "/images/items/1a1c605c25d4b905-7.webp",
+        "alt": "Poster for the Amulet Blooms Christmas wreath workshop showing a wreath of fir, pine cones and dried flowers"
+      }
+    },
+    {
       "id": "1a17d10d5d56383f-6",
       "title": "Children's Christmas Party — The Vale Golf & Country Club",
       "body": "A Christmas party for children with Santa at The Vale Golf and Country Club, Bishampton. Sunday 13 December, 11am-2.30pm, £20 per child. Booking via the club's website.",
@@ -186,6 +202,22 @@
       "image": {
         "url": "/images/items/1a17d10d5d56383f-6.webp",
         "alt": "Santa with children and adults celebrating with confetti at a Christmas party"
+      }
+    },
+    {
+      "id": "1a1c605c25d4b905-8",
+      "title": "Carols with Avonbank Brass Band — The Lenches Club",
+      "body": "Avonbank Brass Band returns to The Lenches Club on Monday 21 December at 7pm to play Christmas carols, with song sheets for anyone who wants to sing along. Entry is free and includes a mince pie and a small mulled wine on arrival. Donations to the band are welcome.",
+      "date": "2026-12-21",
+      "village": "Lenches",
+      "expires": "2026-12-21",
+      "link": {
+        "text": "Email Rhona",
+        "url": "mailto:rhona.cresswell@yahoo.co.uk"
+      },
+      "image": {
+        "url": "/images/items/1a1c605c25d4b905-8.webp",
+        "alt": "Poster for an evening of carols with Avonbank Brass Band at The Lenches Club, with Father Christmas and candles"
       }
     },
     {
