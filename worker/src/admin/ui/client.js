@@ -836,7 +836,9 @@ export const CLIENT_JS = String.raw`
     var fill = function (all) {
       box.replaceChildren();
       var mine = all.filter(function (p) { return p.partId === str(r.image_part_id); });
-      var list = mine.length ? mine : all;
+      // An item with no image of its own shows none, even when another item from the
+      // same email has loaded them (10 Nov: a hamper draw showed all of a club's images).
+      var list = mine.length ? mine : (str(r.image_part_id) || truthy(r.people_in_image) ? all : []);
       if (!list.length) return;
       list.forEach(function (p) {
         var src = '/admin/img/mail/' + m + '/' + p.partId;

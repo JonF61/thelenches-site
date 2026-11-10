@@ -57,6 +57,9 @@ function stateData() {
         { id: 'm1-1#3', source: 'library', rank: '3', caption: 'Photo by Ann Lee on Pexels', credit: 'Ann Lee / Pexels', page: 'https://www.pexels.com/photo/1/', licence: 'https://www.pexels.com/license/', people: 'unknown', thumb: T.pexels, alt: 'People at a quiz', status: '' },
       ] }),
       { ...row('m2-1', 'Christmas fair — Atch Lench', { _suggest: [] }), _row: 3, village: 'Atch Lench', message_id: 'm2', gmail_link: 'https://mail.google.com/mail/u/0/#search/rfc822msgid:x' },
+      // Two items from one email: only the one with its own image shows an image (10 Nov).
+      { ...row('m3abcd-1', 'Bonfire night — Lenches Club', { image_part_id: '2' }), _row: 4, message_id: 'm3abcd' },
+      { ...row('m3abcd-2', 'Christmas hamper draw — Lenches Club', { category: 'notice' }), _row: 5, message_id: 'm3abcd' },
     ] },
     replies: { headers: [], rows: [] }, owed: [], photos: { headers: [], rows: [] }, photoFolders: [], photosRoot: 'r', today: '2026-10-24', toDelete: [],
   };
@@ -73,6 +76,8 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/admin/app.css') return send(CLIENT_CSS, 'text/css');
   if (url.pathname === '/admin/api/session') return send({ email: 'admin@example.org', csrf: 'c' });
   if (url.pathname === '/admin/api/state') return send(stateData());
+  if (url.pathname === '/admin/api/mail-images') return send({ images: [1, 2, 3].map((n) => ({ partId: String(n), filename: `img${n}.jpg` })) });
+  if (url.pathname.startsWith('/admin/img/mail/')) return send(Buffer.from(T.hall.split(',')[1], 'base64'), 'image/jpeg');
   let body = '';
   for await (const c of req) body += c;
   const b = body ? JSON.parse(body) : {};
@@ -161,6 +166,18 @@ async function check(viewport, tag) {
   await page.locator('section.suggest').first().locator('figure.sg').nth(0).getByRole('button', { name: 'Choose' }).click();
   await page.locator('.toast.bad').waitFor();
   await page.waitForFunction(() => document.querySelectorAll('section.suggest')[0].querySelectorAll('figure.sg')[0].classList.contains('chosen'));
+
+  // An item without its own image shows none of the email's images, even after another
+  // item from the same email has loaded them (desktop: open one, then the other).
+  if (tag === 'desktop') {
+    const open = async (t) => { await page.locator('.card[role=button]', { hasText: t }).click(); return page.locator('.card.sel ~ *, .detail .card, .card').filter({ has: page.locator('h2', { hasText: t }) }).last(); };
+    const bonfire = await open('Bonfire night');
+    await bonfire.locator('.imgs img').first().waitFor({ state: 'attached' });
+    assert.equal(await bonfire.locator('.imgs img').count(), 1, `${tag}: own image only`);
+    const hamper = await open('Christmas hamper draw');
+    await hamper.locator('.imgs').first().waitFor({ state: 'attached' });
+    assert.equal(await hamper.locator('.imgs img').count(), 0, `${tag}: no borrowed images`);
+  }
 
   // An event the run found nothing for says so.
   if (tag === 'phone') {
