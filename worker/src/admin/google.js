@@ -113,9 +113,21 @@ export async function accessToken(env, scope, sub = '') {
   return j.access_token;
 }
 
+// Google's per-minute quotas (Sheets: about 60 reads a minute for the
+// service account, shared with the pipeline jobs) answer 429 when used up.
+// A 429 means nothing was done, so it is safe to wait and try again, as the
+// pipeline scripts already do (scripts/ingest/google.js).
+export const RETRY_WAITS = [5000, 10000, 20000];
+export const retry = { wait: (ms) => new Promise((res) => setTimeout(res, ms)) };
+
+function retryAfter(r, fallback) {
+  const s = Number(r.headers.get('retry-after'));
+  return Number.isFinite(s) && s > 0 ? Math.min(s * 1000, 30000) : fallback;
+}
+
 async function google(env, scope, url, init = {}, sub = '') {
   const token = await accessToken(env, scope, sub);
-  const r = await fetch(url, {
+  const send = () => fetch(url, {
     ...init,
     headers: {
       authorization: `Bearer ${token}`,
@@ -123,6 +135,13 @@ async function google(env, scope, url, init = {}, sub = '') {
       ...(init.headers || {}),
     },
   });
+  let r = await send();
+  for (const ms of RETRY_WAITS) {
+    if (r.status !== 429) break;
+    await r.body?.cancel?.();
+    await retry.wait(retryAfter(r, ms));
+    r = await send();
+  }
   if (!r.ok) {
     const err = new Error(`Google API: HTTP ${r.status} ${(await r.text()).slice(0, 200)}`);
     err.status = r.status;
