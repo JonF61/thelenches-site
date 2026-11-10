@@ -3983,7 +3983,7 @@ export const CLIENT_JS = String.raw`
         li('Holly couldn\'t fix it', 'says why; usually she needs a detail from you, or it is something only Kryten can change.'),
         li('Send to Kryten', 'for anything needing judgement or code; your note goes with it.'),
         li('Dismiss', 'closes the finding; Rimmer won\'t raise it again.')),
-      h('p', { class: 'meta' }, 'Rimmer checks the newsletter on Wednesday evenings, the listings pages on Sundays and the whole site on the 1st of each month; the Check buttons run him now. A newer check replaces findings you haven\'t acted on.'));
+      h('p', { class: 'meta' }, 'Rimmer checks the newsletter on Wednesday evenings (and that it agrees with the website\'s Events, Notices, Roads and Regular activities pages), the listings pages on Sundays and the whole site on the 1st of each month; the Check buttons run him now. A newer check replaces findings you haven\'t acted on.'));
   }
   // A card of findings for the given scopes, with Check buttons (and, when asked, the list sent to Kryten).
   function rimmerCard(title, scopes, buttons, intro, showKryten) {

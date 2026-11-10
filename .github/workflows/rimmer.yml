@@ -60,8 +60,9 @@ jobs:
 
       - run: npm ci --no-audit --no-fund
 
+      # The newsletter check reads the built events, notices, roads and regulars pages too,
+      # to check the issue agrees with the website (10 Nov).
       - name: Build the site
-        if: steps.scope.outputs.scope != 'newsletter'
         run: npx @11ty/eleventy --quiet
 
       - name: Check
