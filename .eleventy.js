@@ -133,7 +133,9 @@ module.exports = async function (eleventyConfig) {
     const p = pipeline || {};
     const w = whatson || {};
     return [...(p.notices || []), ...(p.news || []), ...(w.notices || []), ...(w.news || [])]
-      .filter((i) => i && i.title && (!i.expires || i.expires >= now));
+      .filter((i) => i && i.title && (!i.expires || i.expires >= now))
+      // "pinned": true (hand-written notices) goes first, before pipeline items (10 Nov).
+      .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   });
 
   // Home page: notices added (approved) in the last 7 days. Pipeline items carry "added";
