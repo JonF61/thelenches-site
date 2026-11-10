@@ -36,7 +36,8 @@ const FROM = 'website@thelenches.org.uk';
 const SNAPSHOT_MAX = 45000; // a Sheets cell holds 50,000 characters
 // Hard limits: a Sheet edit can never point a test or preview at anyone else.
 const TEST_ALLOWED = ['jon@alphaquad.co.uk'];
-const PREVIEW_ALLOWED = ['jon@thelenches.org.uk'];
+// The team inbox only (repo secret GMAIL_USER, so the address isn't in the public repo or logs).
+const PREVIEW_ALLOWED = [String(process.env.GMAIL_USER || '').trim().toLowerCase()].filter(Boolean);
 
 const str = (v) => String(v ?? '').trim();
 const londonDate = (ms) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(ms);

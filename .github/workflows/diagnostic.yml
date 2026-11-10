@@ -38,6 +38,6 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           NODE_OPTIONS: --require ./lib/claudeusage.js
           SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
-          GMAIL_USER: jon@thelenches.org.uk
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_LABEL: "Lenches Website/2 Pipeline"
           WORKER_URL: https://approvals.lenches.workers.dev

@@ -20,7 +20,7 @@ test('history: newest first, who wrote it, padding cut', () => {
       "Hi Sue,\n\nIt's on Saturday at 10am.\n\nBest wishes,\nHolly\nLenches website assistant"),
     m('h2', '2026-10-31T10:00:00Z', 'Lenches <website@thelenches.org.uk>',
       "Hi Sue,\n\nYour class is listed.\n\nIf you'd rather we didn't get in touch like this, just say and we won't.\n\nBest wishes,\nHolly\nLenches website assistant"),
-    m('y1', '2026-11-01T08:00:00Z', 'Jon <jon@thelenches.org.uk>', 'Thanks Sue, see you there.\n\nOn Sat, Sue wrote:\n> When is it?'),
+    m('y1', '2026-11-01T08:00:00Z', 'Jon <team@thelenches.org.uk>', 'Thanks Sue, see you there.\n\nOn Sat, Sue wrote:\n> When is it?'),
     m('w1', '2026-11-01T09:00:00Z', 'Sue <sue@work.example>', 'Great, thanks!'),
     m('n1', '2026-10-29T07:00:00Z', 'website@thelenches.org.uk', 'Newsletter', { subject: 'The Lenches Newsletter – Thursday 29 October' }),
     m('s1', '2026-10-28T07:00:00Z', 'website@thelenches.org.uk', 'Confirm', { auto: 'auto-generated' }),

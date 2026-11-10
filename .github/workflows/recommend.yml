@@ -36,7 +36,7 @@ jobs:
         env:
           GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
           SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
-          GMAIL_USER: jon@thelenches.org.uk
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
           APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
           WORKER_URL: https://approvals.lenches.workers.dev
           ACTION: ${{ github.event.client_payload.action }}

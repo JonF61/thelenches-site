@@ -14,7 +14,8 @@ const { buttons } = require('./actions');
 const { actionsBlock, dateParts } = require('./render');
 
 const TZ = 'Europe/London';
-const PREVIEW_ALLOWED = ['jon@thelenches.org.uk'];
+// The team inbox only (repo secret GMAIL_USER, so the address isn't in the public repo or logs).
+const PREVIEW_ALLOWED = [String(process.env.GMAIL_USER || '').trim().toLowerCase()].filter(Boolean);
 const TRUE = /^(true|yes|y|on|1)$/i;
 
 const str = (v) => String(v ?? '').trim();
