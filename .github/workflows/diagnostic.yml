@@ -1,10 +1,11 @@
 name: Daily diagnostic
 
 on:
-  schedule:
-    # 02:07 UTC = 2.07am UK in winter, 3.07am in summer (Jon asked for 2am, 26 Oct; 7 past
-    # the hour because GitHub delays or drops many runs queued on the hour). No gate needed.
-    - cron: "7 2 * * *"
+  # 05:17 UK every day, fired by the Cloudflare Worker's cron (repository_dispatch
+  # "diagnostic"): GitHub's own cron (02:07 UTC) ran about 7.5 hours late (10 Nov).
+  # Before Kryten's 05:53 failed-runs check. Run workflow kept for manual runs.
+  repository_dispatch:
+    types: [diagnostic]
   workflow_dispatch:
 
 permissions:
