@@ -2,6 +2,14 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Lenches Club hamper draw (Pending row 139, image set by hand to the email's 9th picture): once approved, check it publishes with the hamper poster, not another of the club's posters",
+      "added": "2026-11-10"
+    },
+    {
+      "task": "Panel 429 retry: check that approving several items quickly now just goes slower instead of failing; if 429s still get through, cut the Sheet reads per Approve",
+      "added": "2026-11-10"
+    },
+    {
       "task": "Listing edits, faster (Jon to decide once he knows how he edits): (1) the panel saves hand-written events, notices, regular activities, Where to eat and Local trades straight to the repo, as page wording does, skipping the ~20s Listing edit job; (2) edit sessions: edits held as drafts in the panel (kept in a Sheet tab) with one Publish all at the end, so several edits cost one build and deploy instead of 2-3 minutes each",
       "waiting": "Jon",
       "added": "2026-11-04"
