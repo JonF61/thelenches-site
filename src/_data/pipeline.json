@@ -139,6 +139,62 @@
   ],
   "notices": [
     {
+      "id": "1a1c3ae234a8adb0-1",
+      "title": "Road closure — Ab Lench Road, Ab Lench",
+      "body": "Ab Lench Road will be closed from Monday 16 to Friday 20 November while Worcestershire County Council repairs a damaged section of carrier pipe outside Easter House. A diversion will run between Rous Lench and Ab Lench, and delays are likely.",
+      "date": "2026-11-16",
+      "village": "Ab Lench",
+      "start": "2026-11-16",
+      "end": "2026-11-20",
+      "road": "Ab Lench Road",
+      "expires": "2026-12-01",
+      "added": "2026-11-10",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB152647813"
+      },
+      "link2": {
+        "text": "Diversion route",
+        "url": "https://one.network?GBTMI47847273"
+      }
+    },
+    {
+      "id": "1a1c3ae234a8adb0-2",
+      "title": "Road closure — Abbots Morton Road, Abbots Morton",
+      "body": "Abbots Morton Road will be closed for carriageway patching and resurfacing on 3 days between Monday 16 and Tuesday 24 November, ahead of surface dressing by Worcestershire County Council. A diversion will use Alcester Road, and delays are likely.",
+      "date": "2026-11-16",
+      "village": "Abbots Morton",
+      "start": "2026-11-16",
+      "end": "2026-11-24",
+      "road": "Abbots Morton Road",
+      "expires": "2026-12-01",
+      "added": "2026-11-10",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB152541040"
+      },
+      "link2": {
+        "text": "Diversion route",
+        "url": "https://one.network?GBTMI47739297"
+      }
+    },
+    {
+      "id": "1a1c3ae234a8adb0-3",
+      "title": "Roadworks — Rectory Close, Harvington",
+      "body": "Openreach plans works in Rectory Close, Harvington, on Thursday 12 November. A temporary obstruction may cause delays of up to 15 minutes.",
+      "date": "2026-11-12",
+      "village": "Harvington",
+      "start": "2026-11-12",
+      "end": "2026-11-12",
+      "road": "Rectory Close",
+      "expires": "2026-12-01",
+      "added": "2026-11-10",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB153499694"
+      }
+    },
+    {
       "id": "1a19f9a2c5331db0-1",
       "title": "Abbots Morton Road closed — Abbots Morton",
       "body": "Abbots Morton Road in Abbots Morton will be closed from Wednesday 4 to Friday 6 November while Openreach carries out works. A signed diversion will be in place, so expect delays.",

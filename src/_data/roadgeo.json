@@ -1,4 +1,59 @@
 {
+  "ab lench road|ab lench": {
+    "road": "Ab Lench Road",
+    "village": "Ab Lench",
+    "looked_up": "2026-11-10",
+    "source": "nominatim",
+    "geometry": {
+      "type": "LineString",
+      "coordinates": [
+        [
+          -1.98333,
+          52.16447
+        ],
+        [
+          -1.98286,
+          52.16442
+        ],
+        [
+          -1.98162,
+          52.16348
+        ],
+        [
+          -1.98037,
+          52.16339
+        ],
+        [
+          -1.97917,
+          52.16317
+        ],
+        [
+          -1.97575,
+          52.16214
+        ],
+        [
+          -1.97453,
+          52.16185
+        ],
+        [
+          -1.97377,
+          52.16148
+        ],
+        [
+          -1.9711,
+          52.15962
+        ],
+        [
+          -1.97015,
+          52.15947
+        ],
+        [
+          -1.96875,
+          52.15941
+        ]
+      ]
+    }
+  },
   "ab lench road|church lench": {
     "road": "Ab Lench Road",
     "village": "Church Lench",
@@ -430,6 +485,29 @@
             -1.92765,
             52.14265
           ]
+        ]
+      ]
+    }
+  },
+  "rectory close|harvington": {
+    "road": "Rectory Close",
+    "village": "Harvington",
+    "looked_up": "2026-11-10",
+    "source": "nominatim",
+    "geometry": {
+      "type": "LineString",
+      "coordinates": [
+        [
+          -1.92147,
+          52.1381
+        ],
+        [
+          -1.92108,
+          52.13818
+        ],
+        [
+          -1.92115,
+          52.13858
         ]
       ]
     }
