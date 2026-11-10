@@ -36,6 +36,7 @@
 //   cron HOURLY_CRON    :17 past even UK hours 06-22: fires repository_dispatch "ingest"
 //                       (GitHub's own cron ran hours late; it stays in ingest.yml as a backup).
 //                       07:00 UK every day: fires "daily-approvals" (daily approvals email).
+//                       05:17 UK every day: fires "diagnostic" (daily diagnostic).
 //                       One cron string for both keeps the Worker within Cloudflare's
 //                       5-cron-per-account free limit.
 // Actions: approve/reject (Pending items), approve_own/approve_rewrite (approve with the
@@ -66,7 +67,7 @@ const enc = new TextEncoder();
 const dec = new TextDecoder();
 
 const INGEST_STALE_HOURS = 9;        // ingestion pauses overnight for about 8 hours
-const DIAGNOSTIC_STALE_HOURS = 30;   // daily run, plus slack for GitHub cron delays
+const DIAGNOSTIC_STALE_HOURS = 30;   // daily run, plus slack
 const NEWSLETTER_DUE_HM = '07:30';   // UK, Thursdays: the 06:30 build should have started
 const ISSUE_TITLE = 'Watchdog alert';
 const WATCHDOG_CRON = '23 */3 * * *';
@@ -78,6 +79,7 @@ const NIGHTLY_HM = '00:10';          // UK time; BST fires on the 23:10 UTC slot
 const HOURLY_CRON = '0,17 * * * *';
 const INGEST_MINUTE = '17';
 const DAILY_HM = '07:00';            // UK time, every day: daily approvals email
+const DIAG_HM = '05:17';             // UK time, every day: daily diagnostic (GitHub's cron ran ~7.5h late)
 const INGEST_HOURS = [6, 8, 10, 12, 14, 16, 18, 20, 22]; // UK hours, as ingest.yml's gate
 
 // UK times. payload(date) gets the UK date (YYYY-MM-DD) of the slot.
@@ -438,6 +440,15 @@ async function runDaily(env, ms) {
   if (!ok) await alertDispatchFailed(env, `Daily approvals email at ${uk.hm} UK could not be sent to GitHub`);
 }
 
+// Daily diagnostic at 05:17 UK, before Kryten's 05:53 failed-runs check (Jon, 10 Nov).
+async function runDiagnostic(env, ms) {
+  const uk = ukNow(ms);
+  if (uk.hm !== DIAG_HM) return;
+  const ok = await dispatch(env, 'diagnostic', { date: uk.date }, 3);
+  console.log(`${uk.date} ${uk.hm} UK: daily diagnostic ${ok ? 'dispatched' : 'FAILED'}`);
+  if (!ok) await alertDispatchFailed(env, `Daily diagnostic at ${uk.hm} UK could not be started on GitHub`);
+}
+
 // Ingestion at :17 past the even UK hours 06-22. ingest.yml treats the dispatch like a
 // scheduled run (RSS only on its feed hours). A late GitHub cron run as well is harmless:
 // the concurrency group queues it and the Log tab stops anything being processed twice.
@@ -510,7 +521,8 @@ async function checkNewsletterBuild(env, problems) {
 }
 
 // Tolerates diagnostic.yml not existing yet (404 = not deployed, no alert), and a
-// newly added workflow with no scheduled run yet (measured from its creation time).
+// newly added workflow with no run yet (measured from its creation time). Any run counts
+// (Worker-fired since 10 Nov, or manual).
 async function checkDiagnostic(env, problems) {
   try {
     const w = await github(env, `/repos/${env.REPO}/actions/workflows/diagnostic.yml`);
@@ -523,7 +535,7 @@ async function checkDiagnostic(env, problems) {
       return;
     }
     const wf = await w.json();
-    const r = await github(env, `/repos/${env.REPO}/actions/workflows/diagnostic.yml/runs?event=schedule&per_page=1`);
+    const r = await github(env, `/repos/${env.REPO}/actions/workflows/diagnostic.yml/runs?per_page=1`);
     if (!r.ok) {
       problems.push(`GitHub API returned HTTP ${r.status} when checking diagnostic runs`);
       return;
@@ -533,8 +545,8 @@ async function checkDiagnostic(env, problems) {
     const hours = (Date.now() - since) / 3600000;
     if (hours > DIAGNOSTIC_STALE_HOURS) {
       problems.push(run
-        ? `No scheduled diagnostic run for ${Math.floor(hours)} hours (GitHub may have paused the schedule)`
-        : `Diagnostic workflow added ${Math.floor(hours)} hours ago but has never run on schedule`);
+        ? `No daily diagnostic run for ${Math.floor(hours)} hours (check the Worker's cron)`
+        : `Diagnostic workflow added ${Math.floor(hours)} hours ago but has never been started by the Worker`);
     }
   } catch (e) {
     problems.push(`Diagnostic check failed: ${e.message}`);
@@ -634,6 +646,7 @@ export default {
     else if (event.cron === HOURLY_CRON) {
       ctx.waitUntil(runIngest(env, event.scheduledTime));
       ctx.waitUntil(runDaily(env, event.scheduledTime));
+      ctx.waitUntil(runDiagnostic(env, event.scheduledTime));
     }
     else ctx.waitUntil(watchdog(env));
   },
