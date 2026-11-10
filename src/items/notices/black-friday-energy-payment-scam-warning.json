@@ -6,5 +6,7 @@
     "text": "Read more at Harvington PC",
     "url": "https://harvington-pc.gov.uk/news/west-mercias-fraud-and-scam-bulletin-november-2026"
   },
-  "added": "2026-11-10"
+  "added": "2026-11-10",
+  "pinned": true,
+  "order": 2
 }

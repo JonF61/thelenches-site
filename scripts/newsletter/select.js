@@ -317,6 +317,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     if ((shown.get(key) || 0) >= MAX_APPEARANCES) continue;
     events.push({ key, title: str(ev.title), body: str(ev.body), meta: '', link: linkOf(ev.link && ev.link.text, ev.link && ev.link.url), ...link2Of(ev), date, sortStart: '', lenches: inLenches(ev), image: whatsonImage(ev, key, true) });
   }
+  let pins = 0; // pinned notices keep the site's order (lib/whatson.js: "order", then file name)
   for (const it of [...(w.notices || []), ...(w.news || [])]) {
     if (!str(it.title)) continue;
     const key = whatsonKey('notices', it);
@@ -324,7 +325,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     // Converted from news (shown once under its old key): not repeated.
     if (shown.get(whatsonKey('news', it))) continue;
     if (notices.some((x) => x.key === key)) continue;
-    notices.push({ key, title: str(it.title), body: str(it.body), meta: '', link: linkOf(it.link && it.link.text, it.link && it.link.url), ...link2Of(it), date: '', sortStart: '', image: whatsonImage(it, key), ...(it.pinned ? { pinned: true } : {}) });
+    notices.push({ key, title: str(it.title), body: str(it.body), meta: '', link: linkOf(it.link && it.link.text, it.link && it.link.url), ...link2Of(it), date: '', sortStart: '', image: whatsonImage(it, key), ...(it.pinned ? { pinned: ++pins } : {}) });
   }
 
   // ---- Deterministic order.
@@ -332,7 +333,8 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
   // Newest Pending items first, then whatson items in title order.
   const newestFirst = (a, b) => cmp(b.sortStart, a.sortStart) || cmp(a.title, b.title) || cmp(a.key, b.key);
   // A hand-written notice with "pinned": true leads the Notices section, as on the site (10 Nov).
-  notices.sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || newestFirst(a, b));
+  // Several pinned: in the site's order.
+  notices.sort((a, b) => ((a.pinned || Infinity) - (b.pinned || Infinity)) || newestFirst(a, b));
   roads.sort((a, b) => cmp(a.date || '9999', b.date || '9999') || cmp(a.title, b.title) || cmp(a.key, b.key));
   elsewhere.sort((a, b) => cmp(a.source, b.source) || cmp(a.title, b.title) || cmp(a.key, b.key));
 
