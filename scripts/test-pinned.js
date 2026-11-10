@@ -16,3 +16,11 @@ assert.ok(m.notices.every((n) => !('pinned' in n)), 'pinned is not passed on');
 m = select({ ...base, pending, whatson: { events: [], notices: [{ title: 'Alpha notice', body: 'a' }] } });
 assert.deepStrictEqual(m.notices.map((n) => n.title), ['Pipeline notice', 'Alpha notice'], 'unchanged without a pin');
 console.log('pinned notices: all tests passed');
+
+// Two pinned: in the site's order (whatson's order), not by title (10 Nov).
+{
+  const two = [{ title: 'Zulu first', body: 'z', pinned: true }, { title: 'Alpha second', body: 'a', pinned: true }, { title: 'Mike', body: 'm' }];
+  const m2 = select({ ...base, pending, whatson: { events: [], notices: two } });
+  assert.deepStrictEqual(m2.notices.map((n) => n.title), ['Zulu first', 'Alpha second', 'Pipeline notice', 'Mike']);
+  console.log('pinned notices: order kept');
+}
