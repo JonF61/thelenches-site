@@ -125,3 +125,18 @@ assert.equal(c.htmlToText('<table><tr><td>The Club</td><td></td><td>Lenches</td>
   assert.ok(sent.max_tokens >= 16000, 'room to think');
   console.log('rimmer: all tests passed');
 })().catch((e) => { console.error(e); process.exit(1); });
+
+// Newsletter check reads the website pages beside the issue and compares them (10 Nov).
+{
+  const both = c.buildRequest({ scope: 'newsletter', docs: [{ page: 'newsletter', text: 'Body' }, { page: '/events/', text: 'Site' }], today: '2026-11-10', dismissed: [], issueDate: '2026-11-12' });
+  assert.match(both.messages[0].content, /Check the newsletter against them/);
+  assert.match(both.messages[0].content, /never report website items that are not in the newsletter/);
+  assert.match(both.messages[0].content, /=== \/events\/ ===\nSite/);
+  const alone = c.buildRequest({ scope: 'newsletter', docs: [{ page: 'newsletter', text: 'Body' }], today: '2026-11-10', dismissed: [], issueDate: '2026-11-12' });
+  assert.doesNotMatch(alone.messages[0].content, /Check the newsletter against them/);
+  const docs = [{ page: 'newsletter' }, { page: '/events/' }];
+  assert.equal(c.cleanFindings({ findings: [{ page: '/events/', problem: 'p' }] }, 'newsletter', docs)[0].page, '/events/');
+  assert.equal(c.cleanFindings({ findings: [{ page: '/elsewhere/', problem: 'p' }] }, 'newsletter', docs)[0].page, 'newsletter');
+  assert.deepEqual(c.NEWSLETTER_SITE_PAGES, ['/events/', '/notices/', '/living-here/roads/', '/regulars/']);
+  console.log('rimmer newsletter-vs-site: ok');
+}

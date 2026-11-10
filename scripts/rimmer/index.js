@@ -25,6 +25,9 @@ const TAB = 'Rimmer';
 const HEADERS = ['id', 'created_at', 'scope', 'target', 'page', 'where', 'severity', 'problem', 'quote', 'suggestion', 'status',
   'fix_status', 'fix_note', 'fix_source', 'fix_label', 'fix_field', 'fix_old', 'fix_new', 'fix_reason', 'fixed_at'];
 const SCOPES = ['newsletter', 'listings', 'site'];
+// The website pages the newsletter's sections come from: read beside it so Rimmer can check the
+// two agree (Jon, 10 Nov).
+const NEWSLETTER_SITE_PAGES = ['/events/', '/notices/', '/living-here/roads/', '/regulars/'];
 const LISTING_PAGES = ['/events/', '/notices/', '/living-here/roads/', '/regulars/', '/living-here/eat/', '/living-here/trades/'];
 const SKIP_PAGES = new Set(['/search/']);
 const MAX_FINDINGS = 15;
@@ -196,6 +199,7 @@ const TOOL = {
 function buildRequest({ scope, docs, today, dismissed, issueDate }) {
   const what = scope === 'newsletter'
     ? `The next newsletter issue (${issueDate}), as subscribers will receive it. It is sent on the morning of ${issueDate}; judge "coming up" and dates from that day.`
+      + (docs.length > 1 ? `\nAlso given: the website pages the newsletter's sections come from (events, notices, roads, regular activities), as they stand now. Check the newsletter against them: an item in both should give the same title, date, time, place, price, contact details and links; report any difference, saying which wording looks right. Also report an item in the newsletter that is missing from the website or shows there as past or withdrawn. The newsletter shows only some of the website's items (events in the next two weeks, notices new since the last issue), so never report website items that are not in the newsletter, and do not check the website pages for other problems: only how they agree with the newsletter. Give the page as "newsletter" when the newsletter wording is wrong, or the website page's path when the website is wrong.` : '')
     : scope === 'listings'
       ? 'The website\'s listings pages (events, notices, roads, regular activities, places to eat, local trades). Check each page and across pages.'
       : 'Every page of the website. Check each page and across pages (the same facts on two pages should agree).';
@@ -216,7 +220,7 @@ function cleanFindings(input, scope, docs) {
   const list = Array.isArray(input && input.findings) ? input.findings : [];
   return list.slice(0, MAX_FINDINGS).map((f) => ({
     severity: f && f.severity === 'problem' ? 'problem' : 'check',
-    page: scope === 'newsletter' ? 'newsletter' : (pages.has(str(f && f.page)) ? str(f.page) : clip(f && f.page, 80)),
+    page: pages.has(str(f && f.page)) ? str(f.page) : (scope === 'newsletter' ? 'newsletter' : clip(f && f.page, 80)),
     where: clip(f && f.where, 120),
     quote: clip(f && f.quote, 300),
     problem: clip(f && f.problem, 600),
@@ -230,7 +234,10 @@ async function docsFor(scope, g) {
   if (scope === 'newsletter') {
     const { buildDraft, loadInputs } = require('../newsletter/draft');
     const { meta, html } = buildDraft(await loadInputs(g));
-    return { target: meta.issue_date, issueDate: meta.issue_date, docs: [{ page: 'newsletter', text: `Subject: ${meta.subject}\n\n${htmlToText(html)}` }] };
+    const docs = [{ page: 'newsletter', text: `Subject: ${meta.subject}\n\n${htmlToText(html)}` }];
+    // The website pages, when the site is built (rimmer.yml builds it), for the consistency check.
+    if (fs.existsSync(path.join(SITE_DIR, 'index.html'))) docs.push(...readPages(NEWSLETTER_SITE_PAGES));
+    return { target: meta.issue_date, issueDate: meta.issue_date, docs };
   }
   if (!fs.existsSync(path.join(SITE_DIR, 'index.html'))) throw new Error('No built site in _site: run Eleventy first');
   const docs = readPages(scope === 'listings' ? LISTING_PAGES : sitePages());
@@ -326,7 +333,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = {
+module.exports = { NEWSLETTER_SITE_PAGES,
   run, htmlToText, pageContent, sitePages, readPages, calendar, buildRequest, cleanFindings, dismissedFor, newRows,
   TAB, HEADERS, SCOPES, LISTING_PAGES, SYSTEM, TOOL, BUSY_FIX, ukStamp, str, clip, draftFixes,
 };
