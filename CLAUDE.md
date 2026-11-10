@@ -124,7 +124,7 @@ Minimal notice (`src/items/notices/hall-car-park-resurfacing.json`):
 
 **Kryten's to-do** (4 Nov, Jon: so work carries over between sessions): anything Kryten owes for later (a Build history entry put off, a check after the next live run) goes in devtasks.json with `"kryten": true` (the Summary shows a Kryten badge). At the start of every session, read devtasks.json's `kryten` entries and do them (or ask Jon), then remove each in that job's PR.
 
-**Failed runs** (10 Nov, Jon: fix them proactively and report the resolution): a daily routine "Kryten: daily failed-runs check" (10:13 UK, fresh cloud session, push notification) lists the last 26 hours' failed runs, fixes code/workflow causes in a PR and merges it, re-runs only read-only workflows, gives Jon click-by-click steps for anything only he can do, and reports. In any session, also deal with failed runs you see without being asked, then report.
+**Failed runs** (10 Nov, Jon: fix them proactively and report the resolution): a daily routine "Kryten: daily failed-runs check" (05:53 UK, fresh cloud session, GitHub connector, push notification) lists the last 26 hours' failed runs, fixes code/workflow causes in a PR and merges it, re-runs only read-only workflows, gives Jon click-by-click steps for anything only he can do, and reports. In any session, also deal with failed runs you see without being asked, then report.
 
 **Rimmer's findings for Kryten**: at the start of every session, read the Rimmer tab (Read Sheet tab, columns A:L plus fix_note) for rows with status `kryten`; deal with each (or ask Jon), then set its status to `fixed` or `dismissed` with Write Sheet cells (with Jon's go-ahead for the write).
 
