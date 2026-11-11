@@ -54,6 +54,7 @@ const anchors = require('../../lib/anchors');
 const WINDOW_DAYS = 14;
 const MAX_APPEARANCES = 3;
 const MAX_IMAGE = 2;
+const TEXT_ONLY_TITLES = [/\bbingo\b/i];
 const BINS_DAYS = 7;
 const DEADLINE_HM = '18:00'; // Wednesday before the issue, UK time (submission guidelines)
 const COUNTED = new Set(['sent', 'shadow']);
@@ -313,9 +314,12 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, car
     }
     return null;
   }
-  const imageFor = (row, key) => emailImage(row.image_url, row.alt_text, key, row.flyer_count, row.image_credit, row.image_credit_url)
+  // Text only in the newsletter (Jon, 11 Nov: the bingo posters are repetitive): items whose title
+  // matches never carry a picture in the email; the website still shows it.
+  const textOnly = (title) => TEXT_ONLY_TITLES.some((re) => re.test(str(title)));
+  const imageFor = (row, key) => textOnly(row.title) ? null : emailImage(row.image_url, row.alt_text, key, row.flyer_count, row.image_credit, row.image_credit_url)
     || (str(row.image_url) || str(row.category).toLowerCase() !== 'event' ? null : standingImage(row.title, key, row.flyer_count));
-  const whatsonImage = (it, key, isEvent) => (it.image ? emailImage(it.image.url, it.image.alt, key, 0, it.image.credit, it.image.creditUrl)
+  const whatsonImage = (it, key, isEvent) => textOnly(it.title) ? null : (it.image ? emailImage(it.image.url, it.image.alt, key, 0, it.image.credit, it.image.creditUrl)
     : (isEvent ? standingImage(it.title, key, 0) : null));
 
   // ---- Pending: approved/auto rows; later rows win, as on the site.

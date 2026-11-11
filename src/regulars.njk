@@ -14,9 +14,10 @@ seoTitle: "Weekly classes and clubs in the Lenches, near Evesham"
   .reg-card{margin:.7rem 0 0;display:flow-root}
   .reg-card h3{margin:0 0 .2rem}
   .reg-when{margin:0 0 .5rem;font-weight:600;color:var(--accent-text)}
-  .reg-img{float:right;width:150px;margin:0 0 .6rem 1rem}
+  .reg-img{float:right;width:auto;max-width:150px;margin:0 0 .6rem 1rem}
   .reg-card > .tile{float:right;margin:0 0 .6rem 1rem}
-  .reg-img img{display:block;width:100%;height:auto;border:1px solid #e6e1d6;border-radius:4px}
+  .reg-img img{display:block;width:auto;max-width:100%;height:auto;max-height:105px;border:1px solid #e6e1d6;border-radius:4px}
+  .reg-img .enlarge-hint{text-align:right}
   .reg-facts{display:grid;grid-template-columns:9rem 1fr;gap:.25rem 1rem;margin:.6rem 0 0}
   .reg-facts dt{font-weight:600}
   .reg-facts dd{margin:0}
@@ -25,7 +26,8 @@ seoTitle: "Weekly classes and clubs in the Lenches, near Evesham"
   @media (max-width:559px){
     .reg-facts{grid-template-columns:1fr;gap:0}
     .reg-facts dd{margin:0 0 .35rem}
-    .reg-img{width:110px}
+    .reg-img{max-width:110px}
+    .reg-img img{max-height:78px}
   }
 </style>
 <main class="container">

@@ -309,8 +309,11 @@ function renderHtml(m, subject) {
     for (const it of m.news) rows.push(storyBlock(it, 16, 'news'));
   }
   // The week's cartoon (select.js cartoonFor; 11 Nov, Jon): no heading, just the picture and its
-  // caption, just before Notices.
+  // caption, just before Notices. A rule above it keeps it apart from the section before (Jon, 11 Nov:
+  // it read as part of Regular activities).
   if (m.cartoon) {
+    rows.push(`<tr><td class="px" style="padding:28px 24px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>`
+      + `<td height="1" bgcolor="${C.line}" style="height:1px;background:${C.line};font-size:0;line-height:0;">&nbsp;</td></tr></table></td></tr>`);
     rows.push(`<tr><td class="px" align="center" style="padding:24px 24px 4px;text-align:center;">`
       + `<img src="${esc(m.cartoon.src)}" width="460" alt="${esc(m.cartoon.alt)}" `
       + `style="display:block;margin:0 auto;width:100%;max-width:460px;height:auto;border:1px solid ${C.line};outline:none;text-decoration:none;">`
