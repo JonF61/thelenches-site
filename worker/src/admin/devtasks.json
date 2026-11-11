@@ -140,6 +140,11 @@
       "task": "Claude spend: after about a week of rows in the Claude usage tab, check the Summary's Claude spend card against the Console's Usage page, see whether the cache share rose for Ingest (Holly) and Rimmer fixes, and recommend to Jon whether Rimmer should move to Sonnet or have RIMMER_AUTOFIX off",
       "added": "2026-11-05",
       "kryten": true
+    },
+    {
+      "task": "Check the first issue with the new Regular activities section (button, count, Newly listed lines) renders well in Outlook and Gmail, and that Rimmer's newsletter check doesn't flag the shorter section.",
+      "added": "2026-11-11",
+      "kryten": true
     }
   ]
 }
