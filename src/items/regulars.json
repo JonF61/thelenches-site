@@ -222,7 +222,8 @@
       "email": "micheleselect@hotmail.com",
       "booking": "Contact Michele to book",
       "tile": "fitness",
-      "checked": "2026-11"
+      "checked": "2026-11",
+      "added": "2026-11-08"
     },
     {
       "day": "Thursday",
@@ -234,7 +235,8 @@
       "email": "thumitherapy@gmail.com",
       "booking": "Contact Karen to book",
       "tile": "yoga",
-      "checked": "2026-11"
+      "checked": "2026-11",
+      "added": "2026-11-08"
     },
     {
       "day": "Wednesday",
@@ -245,17 +247,8 @@
       "about": "Speakers, demonstrations, trips and refreshments.",
       "phone": "07768 130641",
       "booking": "Contact Lesley",
-      "checked": "2026-11"
-    },
-    {
-      "day": "Tuesday",
-      "time": "7.30pm",
-      "what": "Harvington Ukulele Group",
-      "where": "Egwin's Club, 117 High Street, Evesham WR11 4EQ",
-      "about": "Free tuition.",
-      "phone": "01386 871743",
-      "bring": "Your own ukulele",
-      "checked": "2026-11"
+      "checked": "2026-11",
+      "added": "2026-11-08"
     }
   ]
 }

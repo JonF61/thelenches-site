@@ -36,6 +36,13 @@ function regularDays(regs) {
   return out;
 }
 const REGULARS_MORE = 'Who runs them, costs, contacts and flyers are on our';
+// Since 11 Nov (Jon): an intro, a button to the page and only the recently listed entries.
+const REGULARS_INTRO = 'Classes, clubs and groups that meet every week or month in and around the Lenches: when and where, who runs them, costs and contacts.';
+const REGULARS_BUTTON = (n) => `See all ${n} regular activities`;
+const FRESH_LABEL = { new: 'New activity', listed: 'Newly listed' };
+// New activities first, then newly listed; each "What · Day time (frequency) · where".
+const freshRegulars = (regs) => (Array.isArray(regs) ? ['new', 'listed'].flatMap((k) => regs.filter((r) => (r.fresh || 'listed') === k)) : []);
+const freshWhen = (r) => [r.day, regularTime(r)].filter(Boolean).join(' ');
 const siteUrl = (u) => (/^\//.test(String(u || '')) ? `${SITE}${u}` : String(u || ''));
 
 const C = {
@@ -98,6 +105,25 @@ function summaryLine(m) {
 }
 
 /* ----------------------------------------------------------------- HTML -- */
+
+// Regular activities band (11 Nov): intro, a bulletproof button (table cell with bgcolor, so classic
+// Outlook keeps it) and the recently listed entries.
+function regularsBand(m) {
+  const url = siteUrl('/regulars/');
+  const btn = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:10px 0 2px;"><tr>`
+    + `<td bgcolor="${C.green}" style="background:${C.green};border-radius:4px;padding:10px 18px;">`
+    + `<a href="${esc(url)}" style="color:#ffffff;font-family:${SANS};font-size:15px;font-weight:bold;text-decoration:none;">${esc(REGULARS_BUTTON(m.regularsCount))} &rarr;</a>`
+    + `</td></tr></table>`;
+  const fresh = freshRegulars(m.regulars || []).map((r) => `<div style="margin:6px 0 0;"${entryAttrs(r, 'Regular activity')}${TAGS && TAGS[r.key] ? fieldAttr('time frequency where note') : ''}>`
+    + `<span style="font-weight:bold;color:${C.accentText};">${esc(FRESH_LABEL[r.fresh] || FRESH_LABEL.listed)}:</span> ${esc(r.what)}`
+    + `${freshWhen(r) ? ` · ${esc(freshWhen(r))}` : ''}`
+    + `${r.where ? ` · <span style="color:${C.muted};">${esc(r.where)}</span>` : ''}`
+    + `${r.note ? ` <span style="color:${C.muted};">(${esc(r.note)})</span>` : ''}`
+    + `${r.more ? ` · ${a(r.more, 'More', C.accentText)}` : (r.link ? ` · ${a(siteUrl(r.link.url), r.link.text, C.accentText)}` : '')}</div>`).join('');
+  return sectionHead('Regular activities')
+    + `<tr><td class="px" style="padding:6px 24px 0;font-family:${SANS};font-size:14px;line-height:1.5;color:${C.ink};">`
+    + `${esc(REGULARS_INTRO)}${btn}${fresh}</td></tr>`;
+}
 
 const a = (url, text, color) => `<a href="${esc(url)}" style="color:${color};text-decoration:underline;">${esc(text)}</a>`;
 
@@ -264,7 +290,9 @@ function renderHtml(m, subject) {
   // Regular activities (weekly regulars until 30 Oct): their own section, one line each, Monday
   // first (lib/whatson.js sorts them); the link to the full /regulars/ page sits under the heading.
   const regs = Array.isArray(m.regulars) ? m.regulars : [];
-  if (regs.length) {
+  if (Number.isFinite(m.regularsCount) && m.regularsCount > 0) {
+    rows.push(regularsBand(m));
+  } else if (regs.length) {
     rows.push(sectionHead('Regular activities', `${esc(REGULARS_MORE)} ${a(siteUrl('/regulars/'), 'Regular activities page', C.accentText)}.`));
     rows.push(`<tr><td class="px" style="padding:6px 24px 0;font-family:${SANS};font-size:14px;line-height:1.5;color:${C.ink};">`
       + regularDays(regs).map((g) => `<div style="font-weight:bold;color:${C.green};margin:8px 0 2px;">${esc(g.day)}</div>`
@@ -344,7 +372,17 @@ function renderText(m) {
     }
     if (oldRegs) out.push(paras(oldRegs).join('\n\n'), '');
   }
-  if (Array.isArray(m.regulars) && m.regulars.length) {
+  if (Number.isFinite(m.regularsCount) && m.regularsCount > 0) {
+    head('Regular activities');
+    out.push(REGULARS_INTRO, `${REGULARS_BUTTON(m.regularsCount)}: ${siteUrl('/regulars/')}`);
+    const fresh = freshRegulars(m.regulars || []);
+    if (fresh.length) out.push('');
+    for (const r of fresh) {
+      out.push(`${FRESH_LABEL[r.fresh] || FRESH_LABEL.listed}: ${[r.what, freshWhen(r), r.where].filter(Boolean).join(' · ')}`
+        + (r.note ? ` (${r.note})` : '') + (r.more ? ` · More: ${r.more}` : (r.link ? ` · ${r.link.text}: ${siteUrl(r.link.url)}` : '')));
+    }
+    out.push('');
+  } else if (Array.isArray(m.regulars) && m.regulars.length) {
     head('Regular activities');
     out.push(`${REGULARS_MORE} Regular activities page: ${siteUrl('/regulars/')}`, '');
     regularDays(m.regulars).forEach((g, i) => {
