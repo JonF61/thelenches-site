@@ -38,4 +38,12 @@ assert.strictEqual(m.events[0].image, null);
 assert.strictEqual(select({ ...base, jpegFor: () => '', pending: [] }).events[0].image, null);
 assert.strictEqual(select({ ...base, photos: undefined, pending: [] }).events[0].image, null);
 
+// Bingo is text only in the newsletter (Jon, 11 Nov): own image or standing photo, either source.
+m = select({ ...base, whatson: { events: [{ date: '2026-10-30', title: 'Cash Bingo — The Lenches Club', body: 'x', image: { url: '/images/items/b.webp', alt: 'b' } }], notices: [] },
+  pending: [{ id: 'p2', title: 'Christmas Prize Bingo — The Lenches Club', body: 'z', category: 'event', status: 'approved', event_date: '2026-10-31', received: '2026-10-26 10:00', image_url: '/images/items/p2.webp', alt_text: 'p' }] });
+assert.strictEqual(m.events.length, 2);
+assert.ok(m.events.every((e) => e.image === null), 'bingo never has a picture');
+m = select({ ...base, pending: [], whatson: { events: [{ date: '2026-10-30', title: 'Christmas hamper bingo callers card — The Lenches Club', body: 'x', image: { url: '/images/items/h.webp', alt: 'h' } }], notices: [] } });
+assert.ok(m.events[0].image, 'hamper card keeps its picture');
+
 console.log('standing images: all tests passed');

@@ -11,21 +11,23 @@ seoTitle: "What's on in the Lenches and near Evesham — Events"
 {#- Image: the item's own, else a standing photo (Photos tab target event:<key>, eventImage filter), else a tile -#}
 {#- Any image (own, organiser's or standing photo) shows beside the text on desktop, 360px wide and floated right so the text wraps
     down its left side (26 Oct: images below the text left a lot of white space); on phones it sits below the text, up to 420px wide.
-    It opens full size when clicked (data-viewer); a credit shows under it -#}
+    It opens full size when clicked (data-viewer); a credit shows under it. Portrait images are held to a landscape one's height
+    (240px on desktop, 200px on phones; Jon, 11 Nov) and base.njk adds "Click to enlarge" under them -#}
 <style>
   .item-card .item-body{display:flow-root}
   .item-body > .tile{float:right;margin:0 0 .4rem .9rem}
   .lenches-badge{display:inline-block;vertical-align:middle;margin-left:.35rem;padding:0 .45rem;border-radius:4px;background:#fbe6d6;color:#8a3e0c;font-size:.7rem;font-weight:600;line-height:1.6;white-space:nowrap}
   .ev-img{margin:0}
   .ev-img a{display:block}
-  .ev-img img{display:block;width:100%;height:auto;border:1px solid #e6e1d6;border-radius:4px}
+  .ev-img img{display:block;width:auto;max-width:100%;height:auto;max-height:200px;border:1px solid #e6e1d6;border-radius:4px}
   .img-credit{margin:.3rem 0 0}
   .cal-add{margin:.5rem 0 0;font-size:.9rem}
   .cal-add{display:flex;flex-wrap:wrap;align-items:center;gap:.35rem}
   .cal-sep{color:var(--muted,#777)}
   @media (min-width:760px){
-    .item-body > .ev-img{float:right;width:360px;margin:0 0 .5rem 1.2rem}
-    .ev-img .img-credit{text-align:right}
+    .item-body > .ev-img{float:right;width:auto;max-width:360px;margin:0 0 .5rem 1.2rem}
+    .ev-img img{max-height:240px}
+    .ev-img .img-credit,.ev-img .enlarge-hint{text-align:right}
   }
   @media (max-width:759px){
     .item-card .item-body:has(> .ev-img){display:flex;flex-direction:column}
