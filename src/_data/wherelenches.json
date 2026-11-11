@@ -1,0 +1,10 @@
+{
+  "_help": "Where in the Lenches? (11 Nov, Jon): a close-up puzzle in the newsletter, just for fun (no replies asked for), with the answer in the next issue. One entry per issue, keyed by issue date (YYYY-MM-DD): puzzle = a square close-up JPEG in src/images/where/ (cropped from a photo, about 460px), photo = the whole photo's JPEG (shown small with the answer), answer = one plain sentence using only facts we already know (never guessed history or details). The answer shows in the first issue after the puzzle's, within 14 days. Frozen in the issue snapshot when built.",
+  "entries": {
+    "2026-11-12": {
+      "puzzle": "/images/where/2026-11-12-rous-lench-door-hinges.jpg",
+      "photo": "/images/photos/rous-lench-img-3120.jpg",
+      "answer": "The scrolled iron hinges on the door of St Peter's Church, Rous Lench."
+    }
+  }
+}
