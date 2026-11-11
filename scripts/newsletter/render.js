@@ -308,6 +308,15 @@ function renderHtml(m, subject) {
     rows.push(sectionHead('News'));
     for (const it of m.news) rows.push(storyBlock(it, 16, 'news'));
   }
+  // The week's cartoon (select.js cartoonFor; 11 Nov, Jon): no heading, just the picture and its
+  // caption, just before Notices.
+  if (m.cartoon) {
+    rows.push(`<tr><td class="px" align="center" style="padding:24px 24px 4px;text-align:center;">`
+      + `<img src="${esc(m.cartoon.src)}" width="460" alt="${esc(m.cartoon.alt)}" `
+      + `style="display:block;margin:0 auto;width:100%;max-width:460px;height:auto;border:1px solid ${C.line};outline:none;text-decoration:none;">`
+      + `<div style="font-family:${SERIF};font-size:16px;font-style:italic;line-height:1.45;color:${C.ink};padding:10px 16px 0;max-width:460px;margin:0 auto;">${esc(m.cartoon.caption)}</div>`
+      + `</td></tr>`);
+  }
   if (m.notices.length) {
     rows.push(sectionHead('Notices'));
     for (const it of m.notices) rows.push(storyBlock(it, 15, 'notice'));
@@ -399,6 +408,7 @@ function renderText(m) {
     head('News');
     for (const it of m.news) item(it.title, it.meta, it.body, it.link);
   }
+  if (m.cartoon) out.push('', `This week's cartoon: ${m.cartoon.caption}`, `See it here: ${m.cartoon.src}`, '');
   if (m.notices.length) {
     head('Notices');
     for (const it of m.notices) item(it.title, it.meta, it.body, it.link, it.link2);

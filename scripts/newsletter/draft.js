@@ -66,7 +66,7 @@ function buildDraft(inputs) {
   if (!model) {
     model = select({
       issueDate, pending: inputs.pending, issues, settings: inputs.settings, sources: inputs.sources, jpegFor: inputs.jpegFor,
-      cutoff: deadlineFor(issueDate), whatson: inputs.whatson, bins: inputs.bins, siteupdates: inputs.siteupdates, onthisday: inputs.onthisday, photos: inputs.photos,
+      cutoff: deadlineFor(issueDate), whatson: inputs.whatson, bins: inputs.bins, siteupdates: inputs.siteupdates, onthisday: inputs.onthisday, cartoons: inputs.cartoons, photos: inputs.photos,
     });
   }
   const tagged = editTags(model, inputs);
@@ -142,7 +142,7 @@ async function loadInputs(g) {
   ]);
   return {
     today, pending, issues, settings, sources, jpegFor, whatson: loadWhatson(), subscribers, dns,
-    bins: readJson('src/_data/bins.json'), siteupdates: readJson('src/_data/siteupdates.json'), onthisday: readJson('src/_data/onthisday.json'),
+    bins: readJson('src/_data/bins.json'), siteupdates: readJson('src/_data/siteupdates.json'), onthisday: readJson('src/_data/onthisday.json'), cartoons: readJson('src/_data/cartoons.json'),
     photos: readJson('src/_data/photos.json'),
   };
 }

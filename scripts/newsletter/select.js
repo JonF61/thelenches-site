@@ -21,6 +21,8 @@
 //   Site        src/_data/siteupdates.json: a linked line under the header from its
 //               "from" date (to "until", if set) until one issue carrying it is sent
 //               live. Shadow, canary and test copies don't count, so it stays due.
+//   Cartoon     src/_data/cartoons.json: the entry keyed by the issue date, picture (its file
+//               must be in the repo) and caption, just before Notices; none = nothing (11 Nov 2026).
 //   On this day src/_data/onthisday.json: the entry keyed by the issue's MM-DD (any year),
 //               one italic line under the header; none = no line (28 Oct 2026).
 //   Images      Pending and whatson items: the JPEG copy of an /images/items/*.webp
@@ -184,7 +186,18 @@ function onThisDayFor(onthisday, issueDate) {
   return text ? { text } : null;
 }
 
-function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, issues, settings, sources, jpegFor, cutoff, photos }) {
+// The issue's cartoon (src/_data/cartoons.json, keyed YYYY-MM-DD): absolute image URL, alt and
+// caption, or null when there is none, its caption is blank or its image isn't in the repo.
+function cartoonFor(cartoons, issueDate, jpegFor) {
+  const e = cartoons && cartoons.entries && cartoons.entries[issueDate];
+  const image = str(e && e.image);
+  const caption = str(e && e.caption);
+  if (!image || !caption || !/^\/images\/[\w./-]+\.jpe?g$/i.test(image) || typeof jpegFor !== 'function') return null;
+  const src = jpegFor(image);
+  return src ? { src, alt: str(e.alt) || 'Cartoon', caption } : null;
+}
+
+function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, cartoons, issues, settings, sources, jpegFor, cutoff, photos }) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate || '')) throw new Error(`Bad issue date "${issueDate}"`);
   const deadline = str(cutoff);
   if (deadline && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(deadline)) throw new Error(`Bad cutoff "${cutoff}"`);
@@ -360,6 +373,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     holiday,
     siteUpdates,
     onThisDay: onThisDayFor(onthisday, issueDate),
+    cartoon: cartoonFor(cartoons, issueDate, jpegFor),
     lastIssue,
     cutoff: deadline,
     held,

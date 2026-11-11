@@ -118,7 +118,7 @@ async function main() {
     whatson: loadWhatson(),
     bins: readJson('src/_data/bins.json'),
     siteupdates: readJson('src/_data/siteupdates.json'),
-    onthisday: readJson('src/_data/onthisday.json'),
+    onthisday: readJson('src/_data/onthisday.json'), cartoons: readJson('src/_data/cartoons.json'),
     photos: readJson('src/_data/photos.json'),
   });
   const issue = render(model);
