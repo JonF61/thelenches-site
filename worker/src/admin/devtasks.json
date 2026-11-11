@@ -145,6 +145,11 @@
       "task": "Check the first issue with the new Regular activities section (button, count, Newly listed lines) renders well in Outlook and Gmail, and that Rimmer's newsletter check doesn't flag the shorter section.",
       "added": "2026-11-11",
       "kryten": true
+    },
+    {
+      "task": "Newsletter cartoon: each week Kryten writes 2–3 gags from that week's items plus an image prompt; Jon makes the picture with an image tool and attaches it; Kryten adds it to src/_data/cartoons.json. Consider automating with an image API if the feature sticks",
+      "waiting": "Jon",
+      "added": "2026-11-11"
     }
   ]
 }

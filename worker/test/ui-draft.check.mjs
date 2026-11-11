@@ -29,7 +29,7 @@ const data = (f) => require(`../../src/_data/${f}`);
 
 const draft = buildDraft({
   today: '2026-10-28', settings: {}, sources: [], jpegFor: () => '', whatson: loadWhatson({ today: '2026-10-28' }),
-  bins: data('bins.json'), siteupdates: data('siteupdates.json'), onthisday: data('onthisday.json'),
+  bins: data('bins.json'), siteupdates: data('siteupdates.json'), onthisday: data('onthisday.json'), cartoons: data('cartoons.json'),
   pending: [
     { id: 'a', title: 'Hall quiz night results', summary: 'Well done to every team, and thanks to all who came.', category: 'notice', status: 'approved', received: '2026-10-26 10:00', decided_at: '2026-10-26 11:00' },
     { id: 'b', title: 'Too late notice', body: 'x', category: 'notice', status: 'approved', received: '2026-10-28 19:00', decided_at: '2026-10-28 19:30' },
