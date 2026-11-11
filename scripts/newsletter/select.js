@@ -27,6 +27,8 @@
 //               two lead events, Lenches ones first, those in the issue's first 7 days first, then
 //               by date; subjectMore when the issue has anything else. render.js puts them in the
 //               subject. Older snapshots have no subjectTeaser and keep the date-only subject.
+//   Where?      src/_data/wherelenches.json (11 Nov 2026, Jon): this issue's close-up puzzle, and
+//               the answer to the latest earlier puzzle from the last 14 days. Just for fun.
 //   On this day src/_data/onthisday.json: the entry keyed by the issue's MM-DD (any year),
 //               one italic line under the header; none = no line (28 Oct 2026).
 //   Images      Pending and whatson items: the JPEG copy of an /images/items/*.webp
@@ -224,7 +226,26 @@ function subjectTeaserFor(events, issueDate) {
   return names;
 }
 
-function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, cartoons, issues, settings, sources, jpegFor, cutoff, photos }) {
+// Where in the Lenches? (wherelenches.json): { puzzle: {src}, answer: {src, text} }, either part
+// null when there is none or its image isn't in the repo; null when both are.
+const JPEG_PATH = /^\/images\/[\w./-]+\.jpe?g$/i;
+function whereFor(data, issueDate, jpegFor) {
+  const entries = (data && data.entries) || {};
+  const img = (u) => (JPEG_PATH.test(str(u)) && typeof jpegFor === 'function' ? jpegFor(str(u)) : '');
+  const today = entries[issueDate];
+  const puzzleSrc = today ? img(today.puzzle) : '';
+  const earlier = Object.keys(entries).filter((k) => /^\d{4}-\d{2}-\d{2}$/.test(k)
+    && k < issueDate && k >= addDays(issueDate, -14)).sort().pop();
+  const prev = earlier && entries[earlier];
+  const answerSrc = prev && str(prev.answer) ? img(prev.photo) : '';
+  const out = {
+    puzzle: puzzleSrc ? { src: puzzleSrc } : null,
+    answer: answerSrc ? { src: answerSrc, text: str(prev.answer) } : null,
+  };
+  return out.puzzle || out.answer ? out : null;
+}
+
+function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, cartoons, wherelenches, issues, settings, sources, jpegFor, cutoff, photos }) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate || '')) throw new Error(`Bad issue date "${issueDate}"`);
   const deadline = str(cutoff);
   if (deadline && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(deadline)) throw new Error(`Bad cutoff "${cutoff}"`);
@@ -404,6 +425,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, car
     siteUpdates,
     onThisDay: onThisDayFor(onthisday, issueDate),
     cartoon: cartoonFor(cartoons, issueDate, jpegFor),
+    where: whereFor(wherelenches, issueDate, jpegFor),
     lastIssue,
     cutoff: deadline,
     held,

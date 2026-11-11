@@ -321,6 +321,28 @@ function renderHtml(m, subject) {
     rows.push(sectionHead('Notices'));
     for (const it of m.notices) rows.push(storyBlock(it, 15, 'notice'));
   }
+  // Where in the Lenches? (select.js whereFor; 11 Nov, Jon): last puzzle's answer, then this week's
+  // close-up, after Notices. Just for fun: no replies asked for.
+  if (m.where) {
+    const w = m.where;
+    rows.push(sectionHead('Where in the Lenches?', w.puzzle ? esc(WHERE_INTRO) : ''));
+    if (w.answer) {
+      rows.push(`<tr><td class="px" style="padding:12px 24px 0;">`
+        + `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>`
+        + `<td width="160" valign="top" style="width:160px;"><img src="${esc(w.answer.src)}" width="160" alt="${esc(w.answer.text)}" `
+        + `style="display:block;width:160px;height:auto;border:0;outline:none;text-decoration:none;"></td>`
+        + `<td valign="top" style="padding-left:14px;font-family:${SERIF};font-size:15px;line-height:1.5;color:${C.ink};">`
+        + `<div style="font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1px;color:${C.accentText};padding-bottom:2px;">LAST WEEK'S ANSWER</div>`
+        + `${esc(w.answer.text)}</td></tr></table></td></tr>`);
+    }
+    if (w.puzzle) {
+      rows.push(`<tr><td class="px" align="center" style="padding:${w.answer ? 18 : 12}px 24px 0;text-align:center;">`
+        + (w.answer ? `<div style="font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1px;color:${C.accentText};padding-bottom:6px;text-align:left;">THIS WEEK</div>` : '')
+        + `<img src="${esc(w.puzzle.src)}" width="460" alt="A close-up for this week's Where in the Lenches? puzzle" `
+        + `style="display:block;margin:0 auto;width:100%;max-width:460px;height:auto;border:1px solid ${C.line};outline:none;text-decoration:none;">`
+        + `</td></tr>`);
+    }
+  }
   rows.push(sectionHead(m.roads.length ? 'Bins and roads' : 'Bins'));
   rows.push(binsBox(m));
   const roadRows = roadsAndBins(m);
@@ -413,6 +435,11 @@ function renderText(m) {
     head('Notices');
     for (const it of m.notices) item(it.title, it.meta, it.body, it.link, it.link2);
   }
+  if (m.where) {
+    head('Where in the Lenches?');
+    if (m.where.answer) out.push(`Last week's answer: ${m.where.answer.text}`, '');
+    if (m.where.puzzle) out.push(WHERE_INTRO, `See this week's close-up: ${m.where.puzzle.src}`, '');
+  }
   head(m.roads.length ? 'Bins and roads' : 'Bins');
   const bl = binLines(m.bins);
   if (bl.length) out.push('Bins this week:', ...bl, `Check your day on our Bins page: ${LINKS.bins}`, '');
@@ -433,6 +460,8 @@ function renderText(m) {
 // Subject line (11 Nov 2026, Jon): "The Lenches Newsletter – 12 Nov: Liz's Quiz, Christmas Fayre and
 // more" from select.js subjectTeaser; snapshots from before it (no subjectTeaser) or an issue with no
 // events keep "The Lenches Newsletter – Thursday 12 November".
+const WHERE_INTRO = "Can you place this close-up? The answer is in next week's newsletter.";
+
 function subjectFor(model) {
   const p = dateParts(model.issueDate);
   const names = Array.isArray(model.subjectTeaser) ? model.subjectTeaser.filter(Boolean) : [];
