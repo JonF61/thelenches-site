@@ -255,6 +255,19 @@
   ],
   "notices": [
     {
+      "id": "rss-8d20b44ee05df9cf-1",
+      "title": "Emergency closure of Hughes Lane — Harvington",
+      "body": "Hughes Lane in Harvington is shut to vehicles between Village Street and Ragley Road so that a burst water main can be repaired. The closure began on Tuesday 10 November and is expected to last about two days, though the order allows up to 21 days. Drivers should use Village Street and Ragley Road instead. People on foot can still reach homes and premises on the lane.",
+      "date": "2026-11-10",
+      "village": "Harvington",
+      "expires": "2026-12-02",
+      "added": "2026-11-11",
+      "link": {
+        "text": "Read more at Harvington PC",
+        "url": "https://harvington-pc.gov.uk/news/proposed-road-closure-hughes-road-harvington-10-november-2026"
+      }
+    },
+    {
       "id": "1a1c3ae234a8adb0-1",
       "title": "Road closure — Ab Lench Road, Ab Lench",
       "body": "Ab Lench Road will be closed from Monday 16 to Friday 20 November while Worcestershire County Council repairs a damaged section of carrier pipe outside Easter House. A diversion will run between Rous Lench and Ab Lench, and delays are likely.",
