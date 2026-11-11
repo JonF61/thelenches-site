@@ -99,6 +99,13 @@ function addDays(day, n) {
 }
 
 // Submission deadline for an issue: the day before at 18:00 UK ("YYYY-MM-DD HH:MM").
+// Regular activities first listed in the 14 days up to the issue (added, YYYY-MM-DD), list order.
+const REGULARS_NEW_DAYS = 14;
+function recentRegulars(list, issueDate) {
+  const from = addDays(issueDate, -(REGULARS_NEW_DAYS - 1));
+  return list.filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(String(r.added || '')) && r.added >= from && r.added <= issueDate);
+}
+
 function deadlineFor(issueDate) {
   return `${addDays(issueDate, -1)} ${DEADLINE_HM}`;
 }
@@ -357,16 +364,18 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     cutoff: deadline,
     held,
     events: events.map(strip),
-    // Weekly regulars (src/items/regulars.json), every issue; older snapshots hold a string.
-    // Only the one-line fields go in the snapshot (the rest is for the /regulars/ page).
-    regulars: (w.regulars || []).length
-      ? w.regulars.map((r) => {
-        const { day, time, what, where, note, link, frequency } = r;
-        // more (8 Nov, Jon): a link to the entry's card on /regulars/ when it has details there.
-        return { day, time, what, where, note, link, ...(frequency ? { frequency } : {}),
-          ...(anchors.regularHasDetails(r) ? { more: anchors.regularUrl(r) } : {}) };
-      })
-      : str(w.eventsFootnote),
+    // Regular activities (11 Nov, Jon: the full list each week was repetitive): the newsletter shows
+    // a button to /regulars/ with the page's count, plus the entries listed in the last 14 days
+    // (added), each marked new activity (newActivity) or newly listed. Only the one-line fields go in
+    // the snapshot. Snapshots before 11 Nov have no regularsCount and hold the whole list (or, before
+    // 28 Oct, a string).
+    regularsCount: (w.regularsPage || w.regulars || []).length,
+    regulars: recentRegulars(w.regularsPage || w.regulars || [], issueDate).map((r) => {
+      const { day, time, what, where, note, link, frequency } = r;
+      return { day, time, what, where, note, link, ...(frequency ? { frequency } : {}),
+        fresh: r.newActivity ? 'new' : 'listed',
+        ...(anchors.regularHasDetails(r) ? { more: anchors.regularUrl(r) } : {}) };
+    }),
     news: [],
     notices: notices.map(strip),
     roads: roads.map(strip),
