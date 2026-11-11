@@ -271,7 +271,7 @@ function renderHtml(m, subject) {
   const site = m.siteUpdates || [];
   if (site.length) {
     rows.push(`<tr><td class="px" style="background:${C.cream};padding:10px 24px;border-bottom:1px solid ${C.line};">`
-      + `<div style="font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1px;color:${C.accentText};">WEBSITE UPDATE</div>`
+      + `<div style="font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1px;color:${C.accentText};">WEBSITE AND NEWSLETTER UPDATE</div>`
       + siteTexts(site).map((t, i, all) => `<div style="font-family:${SANS};font-size:13px;line-height:1.5;color:${C.ink};padding-top:${i ? 8 : 2}px;">${esc(t)}`
         + (i === all.length - 1 ? ` Have a look at ${a(LINKS.site, 'thelenches.org.uk', C.accentText)}.` : '') + `</div>`).join('')
       + `</td></tr>`);
@@ -394,7 +394,7 @@ function renderText(m) {
 
   out.push('THE LENCHES NEWSLETTER', 'Church · Rous · Ab · Atch · Sheriffs', `${p.long} · ${LINKS.site}`, '');
   if (m.onThisDay) out.push(`On this day: ${m.onThisDay.text}`, '');
-  if ((m.siteUpdates || []).length) out.push('Website update:', ...siteTexts(m.siteUpdates).flatMap((t) => [t, '']), `Have a look at ${LINKS.site}`, '');
+  if ((m.siteUpdates || []).length) out.push('Website and newsletter update:', ...siteTexts(m.siteUpdates).flatMap((t) => [t, '']), `Have a look at ${LINKS.site}`, '');
   out.push(summaryLine(m));
   const oldRegs = typeof m.regulars === 'string' ? m.regulars : '';
   if (m.events.length || oldRegs) {

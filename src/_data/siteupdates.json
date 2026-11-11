@@ -73,6 +73,27 @@
       "from": "2026-11-12",
       "link": "https://thelenches.org.uk/events/",
       "text": "Every event on the website and in this newsletter now has an \"Add to\" link for Google Calendar, plus one for other calendars such as Outlook and Apple."
+    },
+    {
+      "key": "nl-a-cartoon-2026-11",
+      "from": "2026-11-12",
+      "link": "https://thelenches.org.uk/newsletter/",
+      "text": "New this week: a cartoon, just for fun. You'll find it further down, just before Notices.",
+      "until": "2026-11-12"
+    },
+    {
+      "key": "nl-b-where-2026-11",
+      "from": "2026-11-12",
+      "link": "https://thelenches.org.uk/newsletter/",
+      "text": "Also new: Where in the Lenches?, a close-up photo of somewhere in the villages to puzzle over, with the answer in next week's issue. You'll find it just after Notices.",
+      "until": "2026-11-12"
+    },
+    {
+      "key": "nl-c-regulars-2026-11",
+      "from": "2026-11-12",
+      "link": "https://thelenches.org.uk/regulars/",
+      "text": "The Regular activities section is now shorter: it shows newly listed activities, with a button to the full list on the website.",
+      "until": "2026-11-12"
     }
   ]
 }
