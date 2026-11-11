@@ -54,7 +54,8 @@ const anchors = require('../../lib/anchors');
 const WINDOW_DAYS = 14;
 const MAX_APPEARANCES = 3;
 const MAX_IMAGE = 2;
-const TEXT_ONLY_TITLES = [/\bbingo\b/i];
+// Bingo nights, but not the Christmas hamper callers card (Jon, 11 Nov).
+const TEXT_ONLY_TITLES = [/^(?!.*\bhamper\b).*\bbingo\b/i];
 const BINS_DAYS = 7;
 const DEADLINE_HM = '18:00'; // Wednesday before the issue, UK time (submission guidelines)
 const COUNTED = new Set(['sent', 'shadow']);
