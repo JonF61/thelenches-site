@@ -258,6 +258,8 @@ function renderHtml(m, subject) {
     + `<div style="font-family:${SANS};font-size:22px;font-weight:bold;color:${C.green};">The Lenches Newsletter</div>`
     + `<div style="font-family:${SANS};font-size:12px;color:${C.muted};">Church · Rous · Ab · Atch · Sheriffs</div>`
     + `<div style="font-family:${SANS};font-size:13px;color:${C.accentText};margin-top:8px;">${esc(p.long)} · ${a(LINKS.site, 'thelenches.org.uk', C.accentText)}</div>`
+    // Contributions line at the top (Jon, 11 Nov; the footer keeps its own).
+    + `<div style="font-family:${SANS};font-size:13px;line-height:1.5;color:${C.ink};margin-top:8px;"><strong>Got something for the newsletter?</strong> Email ${a(`mailto:${LINKS.submit}`, LINKS.submit, C.accentText)} by 6pm Wednesday for the next issue.</div>`
     + `</td></tr>`);
   // "On this day" line (select.js onThisDay); no row when there is none, as for site updates.
   if (m.onThisDay) {
@@ -392,7 +394,7 @@ function renderText(m) {
     out.push('');
   };
 
-  out.push('THE LENCHES NEWSLETTER', 'Church · Rous · Ab · Atch · Sheriffs', `${p.long} · ${LINKS.site}`, '');
+  out.push('THE LENCHES NEWSLETTER', 'Church · Rous · Ab · Atch · Sheriffs', `${p.long} · ${LINKS.site}`, '', `Got something for the newsletter? Email ${LINKS.submit} by 6pm Wednesday for the next issue.`, '');
   if (m.onThisDay) out.push(`On this day: ${m.onThisDay.text}`, '');
   if ((m.siteUpdates || []).length) out.push('Website and newsletter update:', ...siteTexts(m.siteUpdates).flatMap((t) => [t, '']), `Have a look at ${LINKS.site}`, '');
   out.push(summaryLine(m));
