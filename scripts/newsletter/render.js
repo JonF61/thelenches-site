@@ -430,8 +430,22 @@ function renderText(m) {
 
 /* ------------------------------------------------------------ Render API -- */
 
+// Subject line (11 Nov 2026, Jon): "The Lenches Newsletter – 12 Nov: Liz's Quiz, Christmas Fayre and
+// more" from select.js subjectTeaser; snapshots from before it (no subjectTeaser) or an issue with no
+// events keep "The Lenches Newsletter – Thursday 12 November".
+function subjectFor(model) {
+  const p = dateParts(model.issueDate);
+  const names = Array.isArray(model.subjectTeaser) ? model.subjectTeaser.filter(Boolean) : [];
+  if (!names.length) return `The Lenches Newsletter – ${p.subject}`;
+  // A name with its own "and" (e.g. "Liz's Quiz and pub night") gets a comma before the next "and".
+  const hasAnd = names.some((n) => /\sand\s/i.test(n));
+  const list = model.subjectMore ? `${names.join(', ')}${hasAnd ? ',' : ''} and more`
+    : names.join(hasAnd ? ', ' : ' and ');
+  return `The Lenches Newsletter – ${p.date} ${p.mon}: ${list}`;
+}
+
 function render(model, { entries = null } = {}) {
-  const subject = `The Lenches Newsletter – ${dateParts(model.issueDate).subject}`;
+  const subject = subjectFor(model);
   TAGS = entries && typeof entries === 'object' ? entries : null;
   let html;
   try { html = renderHtml(model, subject); } finally { TAGS = null; }
@@ -500,4 +514,4 @@ function wrapPreview(rendered, info) {
   };
 }
 
-module.exports = { render, wrapPreview, actionsBlock, dateParts, UNSUB_MARK };
+module.exports = { subjectFor, render, wrapPreview, actionsBlock, dateParts, UNSUB_MARK };

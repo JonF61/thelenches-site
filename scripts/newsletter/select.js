@@ -23,6 +23,10 @@
 //               live. Shadow, canary and test copies don't count, so it stays due.
 //   Cartoon     src/_data/cartoons.json: the entry keyed by the issue date, picture (its file
 //               must be in the repo) and caption, just before Notices; none = nothing (11 Nov 2026).
+//   Subject     (11 Nov 2026, Jon) subjectTeaser: the short names (title before " — ") of up to
+//               two lead events, Lenches ones first, those in the issue's first 7 days first, then
+//               by date; subjectMore when the issue has anything else. render.js puts them in the
+//               subject. Older snapshots have no subjectTeaser and keep the date-only subject.
 //   On this day src/_data/onthisday.json: the entry keyed by the issue's MM-DD (any year),
 //               one italic line under the header; none = no line (28 Oct 2026).
 //   Images      Pending and whatson items: the JPEG copy of an /images/items/*.webp
@@ -197,6 +201,29 @@ function cartoonFor(cartoons, issueDate, jpegFor) {
   return src ? { src, alt: str(e.alt) || 'Cartoon', caption } : null;
 }
 
+// Short name for the subject line: the title before " — " / " – " / " - " (titles are "What — Where").
+function shortName(title) {
+  return str(String(title || '').split(/\s+[—–-]\s+/)[0]).replace(/[.:;,]+$/, '');
+}
+const SUBJECT_MAX_NAMES = 2;
+const SUBJECT_NAME_MAX = 32; // longer names are left out, so the subject stays readable on a phone
+
+function subjectTeaserFor(events, issueDate) {
+  const weekEnd = addDays(issueDate, 6);
+  const ranked = events.filter((e) => e.date && e.date >= issueDate)
+    .map((e) => ({ e, name: shortName(e.title) }))
+    .filter((x) => x.name && x.name.length <= SUBJECT_NAME_MAX)
+    .sort((a, b) => (b.e.lenches ? 1 : 0) - (a.e.lenches ? 1 : 0)
+      || (a.e.date <= weekEnd ? 0 : 1) - (b.e.date <= weekEnd ? 0 : 1)
+      || cmp(a.e.date, b.e.date) || cmp(a.name, b.name));
+  const names = [];
+  for (const x of ranked) {
+    if (names.length >= SUBJECT_MAX_NAMES) break;
+    if (!names.some((n) => n.toLowerCase() === x.name.toLowerCase())) names.push(x.name);
+  }
+  return names;
+}
+
 function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, cartoons, issues, settings, sources, jpegFor, cutoff, photos }) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate || '')) throw new Error(`Bad issue date "${issueDate}"`);
   const deadline = str(cutoff);
@@ -368,8 +395,11 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, car
     return rest;
   };
 
+  const subjectTeaser = subjectTeaserFor(events, issueDate);
   return {
     issueDate,
+    subjectTeaser,
+    subjectMore: all.length > subjectTeaser.length,
     holiday,
     siteUpdates,
     onThisDay: onThisDayFor(onthisday, issueDate),
@@ -401,4 +431,4 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, car
   };
 }
 
-module.exports = { select, whatsonKey, ymd, addDays, minuteKey, deadlineFor };
+module.exports = { shortName, select, whatsonKey, ymd, addDays, minuteKey, deadlineFor };
