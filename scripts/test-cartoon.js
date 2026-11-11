@@ -33,7 +33,7 @@ const base = {
 };
 
 const withToon = select({ ...base, issueDate: '2026-11-12' });
-ok(withToon.cartoon && withToon.cartoon.src === `${SITE}/images/cartoons/2026-11-12-evesham-road-fountain.jpg`, 'cartoon on 12 Nov');
+ok(withToon.cartoon && withToon.cartoon.src === `${SITE}/images/cartoons/2026-11-12-evesham-road-fountain-signed.jpg`, 'cartoon on 12 Nov');
 ok(/Severn Trent/.test(withToon.cartoon.caption), 'caption carried');
 ok(select({ ...base, issueDate: '2026-11-19' }).cartoon === null, 'no entry = null');
 ok(select({ ...base, cartoons: undefined, issueDate: '2026-11-12' }).cartoon === null, 'no file = null');
@@ -43,7 +43,7 @@ ok(select({ ...base, cartoons: { entries: { '2026-11-12': { image: 'https://evil
 
 const a = render(withToon);
 const b = render(select({ ...base, issueDate: '2026-11-19' }));
-const imgAt = a.html.indexOf('2026-11-12-evesham-road-fountain.jpg');
+const imgAt = a.html.indexOf('2026-11-12-evesham-road-fountain-signed.jpg');
 const noticesAt = a.html.indexOf('>Notices<');
 ok(imgAt > 0 && noticesAt > imgAt, 'cartoon sits just before Notices');
 ok(a.html.slice(imgAt, noticesAt).includes('Neighbourhood Plan'), 'caption under the picture');

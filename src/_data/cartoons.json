@@ -2,7 +2,7 @@
   "_help": "Newsletter cartoon (11 Nov, Jon): one entry per issue, keyed by the issue date (YYYY-MM-DD, a Thursday). Shown just before Notices with no heading: the picture (a JPEG in src/images/cartoons/, about 920px wide, Outlook can't show WebP) and the caption in italics underneath, never lettering in the picture itself. alt describes the scene for screen readers. Gag written by Kryten, picture made by Jon with an image tool from Kryten's prompt; caption approved by Jon. No entry, or the image file missing = no cartoon. Frozen in the issue snapshot when the issue is built.",
   "entries": {
     "2026-11-12": {
-      "image": "/images/cartoons/2026-11-12-evesham-road-fountain.jpg",
+      "image": "/images/cartoons/2026-11-12-evesham-road-fountain-signed.jpg",
       "alt": "Cartoon: on a country lane by an Evesham Rd sign, a burst water main shoots a tall fountain into the air over a big puddle with a duck in it, watched by a man in a flat cap with a spaniel and a woman in a headscarf and wellies.",
       "caption": "“I gather the parish council’s given up waiting for Severn Trent and put it in the Neighbourhood Plan as a water feature.”"
     }
