@@ -50,6 +50,16 @@ const ukStamp = (ms) => {
 /* ------------------------------------------------------------ text -- */
 
 const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ', ndash: '–', mdash: '—', hellip: '…', rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“', pound: '£', middot: '·', times: '×' };
+// "Google Calendar, prefilled: title; dates; place" for a calendar.google.com/calendar/render link, else ''.
+function gcalSummary(url) {
+  let u;
+  try { u = new URL(url); } catch { return ''; }
+  if (u.hostname !== 'calendar.google.com' || !u.pathname.startsWith('/calendar/render')) return '';
+  const q = u.searchParams;
+  const parts = [q.get('text'), q.get('dates'), q.get('location')].filter(Boolean);
+  return parts.length ? `Google Calendar, prefilled: ${parts.join('; ')}` : 'Google Calendar, nothing prefilled';
+}
+
 function decode(t) {
   return t.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => {
     if (e[0] === '#') {
@@ -75,6 +85,10 @@ function htmlToText(html) {
       const words = inner.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
       const url = decode(href);
       if (!words) return ` (${url}) `;
+      // A prefilled Google Calendar link: show what it fills in, not the bare address (12 Nov 2026:
+      // with its query cut off, Rimmer reported every calendar link as empty).
+      const gcal = gcalSummary(url);
+      if (gcal) return ` ${words} (${gcal}) `;
       // mailto:/tel: shown as the address or number itself, so the reader-visible target is never hidden.
       const shown = url.replace(/^(mailto:|tel:)/i, '').replace(/\?.*$/, '');
       return words.includes(shown.replace(/^https?:\/\//, '').replace(/\/$/, '')) ? ` ${words} ` : ` ${words} (${shown}) `;

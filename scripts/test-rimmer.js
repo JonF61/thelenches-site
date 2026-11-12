@@ -13,6 +13,9 @@ const c = require('./rimmer');
 const t = c.htmlToText('<h2>Events</h2><p>Quiz &amp; chips <a href="https://ex.org/q">Book here</a>, '
   + '<a href="https://thebootinn.com/">thebootinn.com</a> <a href="mailto:a@b.org">a@b.org</a></p><script>x()</script><ul><li>One</li><li>Two</li></ul>');
 assert.equal(t, '## Events\nQuiz & chips Book here (https://ex.org/q) , thebootinn.com a@b.org\n\n- One\n- Two');
+// Google Calendar links show what they prefill, not the bare address (12 Nov 2026).
+assert.equal(c.htmlToText('<p><a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Quiz+%E2%80%94+Hall&amp;dates=20261114T193000%2F20261114T203000&amp;location=Hall&amp;ctz=Europe%2FLondon">Google Calendar</a></p>'),
+  'Google Calendar (Google Calendar, prefilled: Quiz — Hall; 20261114T193000/20261114T203000; Hall)');
 assert.equal(c.pageContent('<nav>menu</nav><div data-src="./src/x.njk"><p>Hello</p></div><footer>foot</footer>'), 'Hello');
 
 // calendar: weekdays worked out by code
