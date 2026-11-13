@@ -2,6 +2,12 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Dependency updates (Dependabot PRs #187 sharp + Eleventy minor, #188 googleapis 181 to 188, #189 @anthropic-ai/sdk 0.128 to 1.3): test each (npm ci, build, offline tests, a check of Gmail/Sheets/Drive and Claude calls) and merge, in a session while Jon is at his PC",
+      "waiting": "Jon at his PC",
+      "added": "2026-11-13",
+      "kryten": true
+    },
+    {
       "task": "Lenches Club hamper draw (Pending row 139, image set by hand to the email's 9th picture): once approved, check it publishes with the hamper poster, not another of the club's posters",
       "added": "2026-11-10"
     },
