@@ -1,38 +1,6 @@
 {
   "events": [
     {
-      "id": "1a1c605c25d4b905-3",
-      "title": "Autumn Internationals: France v South Africa — The Lenches Club",
-      "body": "The Lenches Club is showing France v South Africa live on Friday 13 November, with kick-off at 8.10pm. It is the first of a weekend of Autumn Internationals rugby at the club.",
-      "date": "2026-11-13",
-      "village": "Lenches",
-      "expires": "2026-11-13",
-      "link": {
-        "text": "Email Rhona",
-        "url": "mailto:rhona.cresswell@yahoo.co.uk"
-      },
-      "image": {
-        "url": "/images/items/1a1c605c25d4b905-3.webp",
-        "alt": "Poster for France v South Africa, 13 November 2026, kick-off 8.10pm, at The Lenches Club, showing a rugby line-out"
-      }
-    },
-    {
-      "id": "1a1c605c25d4b905-2",
-      "title": "Cash Bingo — The Lenches Club",
-      "body": "Cash bingo in the lounge at The Lenches Club on Friday 13 November. Tickets go on sale from 7.15pm and eyes down is at 8pm. Books are £5, the cash flyer is £5 and the bonus ball is £1 a square. Cash only, over-18s only. Further bingo nights are on 27 November and 13 December.",
-      "date": "2026-11-13",
-      "village": "Lenches",
-      "expires": "2026-11-13",
-      "link": {
-        "text": "Email Rhona",
-        "url": "mailto:rhona.cresswell@yahoo.co.uk"
-      },
-      "image": {
-        "url": "/images/items/1a1c605c25d4b905-2.webp",
-        "alt": "Green-and-white striped poster for cash bingo on Friday 13 November, eyes down 8pm, 18+"
-      }
-    },
-    {
       "id": "1a1c605c25d4b905-4",
       "title": "Autumn Internationals rugby — The Lenches Club",
       "body": "Four matches will be shown live at The Lenches Club on Saturday 14 November: Italy v Argentina (11.40am), Wales v New Zealand (2.10pm), England v Japan (4.40pm) and Ireland v Fiji (8.10pm).",
