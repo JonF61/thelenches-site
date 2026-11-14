@@ -71,7 +71,7 @@
     {#- Home page places its own sign-up card (near the top) and feedback form (below the
         map); every other page gets both at the bottom, the form above the sign-up band
         (which links to /newsletter/, so that page has the feedback form only). -#}
-    {% if page.url != "/" %}<div class="container signup-foot">{% if feedback !== false %}{% include "feedback.njk" %}{% endif %}{% if page.url != "/newsletter/" %}{% include "signup.njk" %}{% endif %}</div>{% endif %}
+    {% if page.url != "/" %}<div class="container signup-foot">{% if feedback !== false %}{% include "feedback.njk" %}{% endif %}{% if page.url != "/newsletter/" and signup !== false %}{% include "signup.njk" %}{% endif %}</div>{% endif %}
   </div>
 
   <footer class="site-footer">
