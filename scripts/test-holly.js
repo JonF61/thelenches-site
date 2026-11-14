@@ -13,16 +13,20 @@ const assert = require('assert');
 
 process.env.GMAIL_USER = 'owner@thelenches.org.uk';
 process.env.ANTHROPIC_API_KEY = 'test';
+process.env.LEARN_FROM_TEST = '2026-01-01 00:00'; // fixtures predate the 2 Nov clear-down
 process.env.WORKER_URL = 'https://w.example';
 process.env.APPROVAL_SIGNING_KEY = 'k';
 
 let answer = '';
 const prompts = [];
 const sdkPath = require.resolve('@anthropic-ai/sdk');
+const cachedSystems = [];
 class FakeAnthropic {
   constructor() {
     this.messages = {
       create: async (req) => {
+        // Cached system prompts arrive as one text block with cache_control (5 Nov): flattened here.
+        if (Array.isArray(req.system)) { cachedSystems.push(req.system.every((b) => b.cache_control && b.cache_control.type === 'ephemeral')); req = { ...req, system: req.system.map((b) => b.text).join('') }; }
         prompts.push(req);
         return { content: [{ type: 'text', text: typeof answer === 'function' ? answer(req) : answer }], stop_reason: 'end_turn', usage: {} };
       },
@@ -156,7 +160,7 @@ async function main() {
   const { rows, flagged } = await lessons.run({ now });
   const input = JSON.parse(prompts[0].messages[0].content);
   ok(input.corrections.length === 1 && input.corrections[0].reply_id === 'a1' && input.existing[0].status === 'rejected', 'last 7 days only; existing passed');
-  ok(input.fixed_rules.length >= 5 && /Never name anyone on the team/.test(input.fixed_rules[0]) && /Voice guide/.test(input.voice_guide)
+  ok(input.fixed_rules.length >= 5 && /never name anyone else on the team/.test(input.fixed_rules[0]) && /Voice guide/.test(input.voice_guide)
     && input.approved.map((a) => a.id).join() === 'L20261020-1,L20261020-2', 'checked against fixed rules, voice guide and lessons in use');
   ok(rows.length === 1 && rows[0].id === 'L20261026-2' && rows[0].status === 'proposed' && rows[0].evidence === 'a1', 'one clean lesson, next free id, real evidence only');
   ok(rows[0].notes === 'Check: Overlaps the voice guide rule on checking.', 'a proposal\'s conflict noted');
@@ -190,7 +194,7 @@ async function main() {
   const capped = replies.withVoice('BASE');
   ok(capped.includes('Lesson number 24') && !capped.includes('Lesson number 4 ') && (capped.match(/Lesson number/g) || []).length === replies.MAX_LESSONS_USED, 'newest 20 only');
   ok(capped.indexOf('never over the rules above or these fixed rules') < capped.indexOf('Lessons:')
-    && capped.indexOf('Never name anyone on the team') < capped.indexOf('Lesson number'), 'fixed rules come first');
+    && capped.indexOf('never name anyone else on the team') < capped.indexOf('Lesson number'), 'fixed rules come first');
 
   // 5. Personalising from Contacts: known_contact in drafts (never notes), the name
   // fallback, and the personal line on an acknowledgement.
@@ -233,7 +237,7 @@ async function main() {
   const quiz = [{ title: 'Quiz night', event_date: '2026-11-20', policy_flags: '', missing: '' }];
   const ack = await replies.planReply({ msg: sue('p3'), sourceName: 'website', result: { emailClass: 'submission' }, rows: quiz, ctx: ctxFor() });
   const paras = ack.body.split('\n\n');
-  ok(ack.type === 'ack' && ack.status === 'queued' && paras[0] === 'Hi Sue,' && /^Thanks for sending "Quiz night"/.test(paras[1])
+  ok(ack.type === 'ack' && ack.status === 'awaiting' && paras[0] === 'Hi Sue,' && /^Thanks for sending "Quiz night"/.test(paras[1])
     && paras[2] === 'Lovely to hear from the Lenches Club again.', 'personal line after the thanks');
   ok(/Personal line from their Contacts row/.test(ack.notes), 'ack note');
   for (const bad of ['We noticed you send this every year.', 'See you on 20 November at the quiz.', 'Hope Sue enjoys the evening as always.',
@@ -265,6 +269,7 @@ async function main() {
   ok(sent.length === 1 && logged.some((l) => /sent\. Gmail id/.test(l)), 'reply sent and logged');
   ok(!logged.some((l) => /PRIVATE WORDS|priv@example\.org/.test(l)), 'no sender text or address in the log');
 
+  ok(cachedSystems.length > 0 && cachedSystems.every(Boolean), 'system prompts are sent cached');
   console.log(`All Holly tests passed (${checks} checks).`);
 }
 

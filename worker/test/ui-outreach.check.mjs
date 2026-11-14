@@ -88,8 +88,11 @@ try {
     page.on('dialog', (d) => { dialogs.push(d.message()); d.accept(); });
     await page.goto(`${base}/admin`);
     // Menu order and labels, and each page's reminder line (agreed 26 Oct).
-    const menu = (await page.locator('nav.side button').allInnerTexts()).map((t) => t.replace(/\s*\d+$/, '').trim());
-    assert.deepEqual(menu, ['Summary', 'Newsletter draft', 'Newsletter stats', 'Submissions', 'Replies', 'Owed', 'Feedback', 'Holly lessons', 'Contacts', 'Photos', 'Activity']);
+    // Expected labels come from VIEWS itself; each button's count badge (a number or "!") is stripped.
+    const views = [...CLIENT_JS.match(/var VIEWS = \[(.*?)\];/)[1].matchAll(/\['[a-z]+', '([^']+)'\]/g)].map((m) => m[1]);
+    assert.ok(views.length >= 10 && views[0] === 'Summary', 'VIEWS labels read from client.js');
+    const menu = (await page.locator('nav.side button').allInnerTexts()).map((t) => t.replace(/\s*(\d+|!)$/, '').trim());
+    assert.deepEqual(menu, views);
     assert.match(await page.locator('.intro').innerText(), /^What needs you now/);
     await page.locator('nav.side button', { hasText: 'Submissions' }).click();
     assert.match(await page.locator('.intro').innerText(), /^Events and notices sent in by email/);

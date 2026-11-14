@@ -1,0 +1,58 @@
+---
+layout: base.njk
+title: Local trades
+description: Plumbers, electricians, builders, gardeners and other local tradespeople in and around the Lenches.
+seoTitle: "Local trades in and around the Lenches — plumbers, builders, electricians"
+---
+<style>
+.tr-jump{display:flex;flex-wrap:wrap;gap:.4rem;list-style:none;padding:0;margin:.5rem 0 1rem}
+.tr-jump a{display:inline-block;padding:.35rem .7rem;border-radius:999px;background:#fdf0dc;color:#7a4a06;text-decoration:none;font-weight:600}
+.tr-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.75rem}
+.tr-grid .card{margin:0}
+.tr-grid h3{margin:0 0 .15rem}
+.tr-facts{margin:.2rem 0 0}.tr-facts dt{font-weight:700;float:left;clear:left;margin-right:.35rem}.tr-facts dd{margin:0 0 .2rem}
+.tr-note{background:#fff8e8;border-left:4px solid #e0a43a;padding:.6rem .8rem;border-radius:6px}
+.rec-count{margin:-.35rem 0 .45rem;font-weight:600;color:#7a4a06}
+.rec-btn{margin-top:.5rem;padding:.3rem .8rem;border:1px solid #c8b48a;border-radius:999px;background:#fff;color:#3F5233;font-weight:600;cursor:pointer}
+.rec-btn[aria-expanded="true"]{background:#eef3ea}
+.rec-form{margin-top:.5rem}.rec-row{display:flex;gap:.4rem}.rec-row input{flex:1;min-width:0;padding:.35rem .5rem}
+.rec-help{margin:.3rem 0 0;color:#555}.rec-status{margin:.3rem 0 0}.rec-status.bad{color:#a12a1f}.rec-status.ok{color:#2f4a22}
+.card[id]{scroll-margin-top:1rem}
+.card:target{outline:3px solid #c8860b;outline-offset:2px}
+</style>
+<main class="container">
+  <div class="page-head">
+    <h1>Local trades</h1>
+    <p class="page-intro">{{ trades.intro }}</p>
+    {% if site.suggestUrl and site.turnstileSiteKey %}<p class="small">Know a good local tradesperson? You can suggest them using the <a href="#suggest">form at the bottom of this page</a>.</p>{% endif %}
+  </div>
+  {% set groups = [] %}{% for t in trades.trades %}{% if t.trade not in groups %}{% set groups = (groups.push(t.trade), groups) %}{% endif %}{% endfor %}
+  <ul class="tr-jump" aria-label="Jump to a trade">{% for g in groups | sort %}<li><a href="#{{ g | slugify }}">{{ g }}</a></li>{% endfor %}</ul>
+  {% for g in groups | sort %}
+  <section id="{{ g | slugify }}">
+    <h2>{{ g }}</h2>
+    <div class="tr-grid">
+    {% for t in trades.trades %}{% if t.trade == g %}
+      <div class="card"{% if t.id %} id="trade-{{ t.id }}" data-entry="t:{{ t.id }}" data-label="Local trades: {{ t.name | escape }}"{% endif %}>
+        <h3>{{ t.name }}</h3>
+        {% set n = recommends.trades[t.id] %}{% if n %}<p class="rec-count">&#9733; Recommended by {{ n }} {{ "person" if n == 1 else "people" }}</p>{% endif %}
+        <dl class="tr-facts small">
+          {% if t.what %}<dt>Does</dt><dd data-field="what">{{ t.what }}</dd>{% endif %}
+          {% if t.covers %}<dt>Covers</dt><dd data-field="covers">{{ t.covers }}</dd>{% endif %}
+          {% if t.base %}<dt>Based</dt><dd data-field="base">{{ t.base }}</dd>{% endif %}
+          {% if t.contact %}<dt>Contact</dt><dd data-field="contact">{{ t.contact }}</dd>{% endif %}
+          {% if t.phone %}<dt>Phone</dt><dd data-field="phone phone2"><a href="tel:{{ t.phone | replace(' ', '') }}">{{ t.phone }}</a>{% if t.phone2 %} or <a href="tel:{{ t.phone2 | replace(' ', '') }}">{{ t.phone2 }}</a>{% endif %}</dd>{% endif %}
+          {% if t.email %}<dt>Email</dt><dd data-field="email"><a href="mailto:{{ t.email }}">{{ t.email }}</a></dd>{% endif %}
+          {% if t.other %}<dt>Contact</dt><dd data-field="other">{{ t.other }}</dd>{% endif %}
+          {% if t.website %}<dt>Website</dt><dd><a href="{{ t.website.url }}">{{ t.website.text }}</a></dd>{% endif %}
+        </dl>
+        {% if site.recommendUrl and site.turnstileSiteKey %}<button type="button" class="rec-btn" data-kind="trades" data-entry="{{ t.id }}" aria-expanded="false" hidden>Recommend</button>{% endif %}
+      </div>
+    {% endif %}{% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+  {% if site.suggestUrl and site.turnstileSiteKey %}{% set suggestKind = "trades" %}{% include "suggest-form.njk" %}{% else %}
+  <p class="tr-note small">Know a good local tradesperson we should list? <a href="mailto:{{ site.email }}?subject=Local%20trades">Tell us</a> their name, trade and how to contact them.</p>{% endif %}
+</main>
+{% include "recommend.njk" %}

@@ -10,6 +10,7 @@ import fs from 'node:fs';
 
 import {
   orgEntries, orgState, orgLists, planOrgCheck, planNext, dayCount, dueOrgs, recentQuery, addressesFor, planOtherEmails, PAGE_NAMES, DAY_CAP,
+  domainCounts, isTheirs,
 } from '../src/admin/orgoutreach.mjs';
 import { dispatchFor, validPayload, ACTIONS } from '../src/core.js';
 
@@ -123,4 +124,79 @@ test('orgcheck goes to approval.yml with the slug only', () => {
   assert.ok(ACTIONS.orgcheck);
   assert.ok(validPayload({ a: 'orgcheck', i: 'lenches-club' }));
   assert.deepEqual(dispatchFor({ a: 'orgcheck', i: 'lenches-club' }), ['approval', { id: 'lenches-club', action: 'orgcheck' }]);
+});
+
+// Listings (5 Nov): Local trades and Where to eat entries get the same yearly check.
+test('listings: every trade and eatery, linked to its own card, address from the entry or the tab', async () => {
+  const { listingEntries, emailOf, planListingEmail } = await import('../src/admin/orgoutreach.mjs');
+  const ld = Object.fromEntries(['trades', 'eat'].map((n) => [n, JSON.parse(fs.readFileSync(new URL(`../../src/_data/${n}.json`, import.meta.url)))]));
+  const L = listingEntries(ld);
+  assert.equal(L.length, ld.trades.trades.length + ld.eat.places.length);
+  const ids = new Set([...ORGS, ...L].map((o) => o.id));
+  assert.equal(ids.size, ORGS.length + L.length, 'no clash with organisation ids');
+  for (const e of L) {
+    assert.match(e.id, /^(trade|eat)-[a-z0-9-]+$/);
+    assert.ok(PAGE_NAMES[e.page] && e.pageUrl.includes(`#${e.id}`), e.id);
+    assert.ok(e.shown.length, e.id);
+  }
+  const tomes = L.find((e) => e.id === 'trade-b-tomes-son');
+  assert.equal(tomes.email, 'b.tomesandson@gmail.com');
+  const boot = L.find((e) => e.id === 'eat-boot-inn');
+  assert.equal(emailOf(boot, null), '');
+  assert.equal(orgState(boot, { today: TODAY }).state, 'noemail');
+  const row = { id: 'eat-boot-inn', email: 'Info@TheBootInn.com', email_source: 'website' };
+  assert.equal(emailOf(boot, row), 'info@thebootinn.com');
+  assert.equal(orgState(boot, { orgRow: row, today: TODAY }).state, 'due');
+  assert.equal(emailOf(boot, { email: 'not an address' }), '');
+  assert.equal(emailOf(org('glads'), { email: 'x@y.org' }), '', 'organisations never take the tab email');
+  const lists = orgLists([boot], { orgRows: [row], today: TODAY });
+  assert.equal(lists.lists.due[0].email, 'info@thebootinn.com');
+  assert.equal(lists.lists.due[0].email_cell, 'Info@TheBootInn.com');
+  assert.deepEqual(planListingEmail(' A@B.co.uk '), { value: 'a@b.co.uk' });
+  assert.deepEqual(planListingEmail(''), { value: '' });
+  assert.ok(planListingEmail('nope').error);
+  const sent = sentCheck('eat-boot-inn', 'info@thebootinn.com', '2026-09-01');
+  assert.equal(orgState(boot, { orgRow: row, replies: [sent], today: TODAY }).state, 'chase');
+  assert.ok(planOrgCheck(boot, { orgRow: row, replies: [], today: TODAY }).ok);
+  // Done records the day they confirmed (5 Nov); a snooze or an older Done keeps the old words.
+  assert.equal(orgState(boot, { orgRow: { ...row, next_check: '2027-10-27', confirmed: '2026-10-27' }, today: TODAY }).why, 'Confirmed 2026-10-27 · next check 2027-10-27');
+  assert.equal(orgState(boot, { orgRow: { ...row, next_check: '2027-01-27', confirmed: '2026-10-27' }, today: TODAY }).why, 'Done or snoozed until 2027-01-27');
+  assert.equal(orgState(boot, { orgRow: { ...row, next_check: '2027-10-27' }, today: TODAY }).why, 'Done or snoozed until 2027-10-27');
+  // No Gmail search for listings (the Worker's subrequest limit).
+  assert.deepEqual(dueOrgs([...ORGS, ...L], { orgRows: [row], today: TODAY }).filter((d) => /^(trade|eat)-/.test(d.id)), []);
+});
+
+test('own domain: a reply from another address at the organisation\'s own domain counts', () => {
+  const school = org('first-school');
+  assert.equal(school.email, 'office@churchlench.worcs.sch.uk');
+  const domains = domainCounts(ORGS, []);
+  const addrs = addressesFor(school, null, [], domains);
+  assert.ok(addrs.includes('@churchlench.worcs.sch.uk'));
+  assert.ok(isTheirs(new Set(addrs), 'Head@ChurchLench.worcs.sch.uk'));
+  assert.ok(!isTheirs(new Set(addrs), 'someone@worcs.sch.uk'), 'a parent domain is not theirs');
+  const head = { reply_id: 'h1-ack', message_id: 'h1', to: 'head@churchlench.worcs.sch.uk', type: 'ack', status: 'sent', created_at: '2026-10-21 14:02' };
+  const replies = [sentCheck('first-school', school.email, '2026-10-21'), head];
+  assert.equal(orgState(school, { replies, contacts: [], today: TODAY, domains }).state, 'replied');
+  assert.equal(orgState(school, { replies, contacts: [], today: TODAY }).state, 'waiting', 'without domains: exact addresses only');
+  const lists = orgLists(ORGS, { replies, contacts: [], orgRows: [], today: TODAY });
+  const card = lists.lists.replied.find((o) => o.id === 'first-school');
+  assert.deepEqual(card.domains, ['churchlench.worcs.sch.uk']);
+  // Free mail and shared domains never count.
+  assert.ok(!addressesFor(org('lenches-club'), null, [], domains).some((a) => a.startsWith('@')), 'gmail.com never');
+  assert.ok(!addressesFor(org('grey-gable'), null, [], domains).some((a) => a.startsWith('@')), 'nhs.net never');
+  for (const o of ORGS) {
+    for (const a of addressesFor(o, null, [], domains).filter((x) => x.startsWith('@'))) {
+      assert.equal(ORGS.filter((x) => x.email && x.email.toLowerCase().endsWith(a)).length, 1, `${a} is one organisation's own`);
+    }
+  }
+  assert.equal(recentQuery(['office@x.sch.uk', '@x.sch.uk']), '{from:office@x.sch.uk from:x.sch.uk} newer_than:91d');
+});
+
+test('in regular contact with a date set: the card still shows the next check', () => {
+  const hall = org('church-lench-hall');
+  const contacts = [{ email: hall.email, status: 'organiser', last_contact: '2026-10-20' }];
+  const s = orgState(hall, { replies: [], contacts, orgRow: { id: hall.id, next_check: '2027-01-15' }, today: TODAY });
+  assert.equal(s.state, 'regular');
+  assert.match(s.why, /no check needed · next check 2027-01-15$/);
+  assert.equal(orgState(hall, { replies: [], contacts, orgRow: null, today: TODAY }).why, 'Emailed us in the last 3 months: no check needed');
 });

@@ -45,6 +45,15 @@ module.exports = async function (eleventyConfig) {
   // Join two lists, e.g. hand-written src/items/ items plus pipeline.json items
   eleventyConfig.addFilter("merge", (a, b) => [...(a || []), ...(b || [])]);
 
+  // Edit page "edit everything" (4 Nov): the entry's source key for data-entry (as in
+  // scripts/rimmer/fix.js sources(): p:<Pending id> for published submissions, h:events/<file>,
+  // h:notices/<file>, r:<index> from lib/whatson.js). '' for official statements (Ask Kryten).
+  eleventyConfig.addFilter("entryKey", (item) => {
+    if (!item || item.official === true || /^(true|yes)$/i.test(String(item.official || ""))) return "";
+    if (item.id) return `p:${item.id}`;
+    return require("./lib/whatson.js").entryKeyOf(item);
+  });
+
   // Split a body into paragraphs at blank lines ("\n\n" in the JSON). Returns plain strings,
   // so templates still escape each one; always at least one (possibly empty) paragraph.
   eleventyConfig.addFilter("paras", (text) => {
@@ -91,23 +100,25 @@ module.exports = async function (eleventyConfig) {
     const current = (i) => i && i.title && roads.isRoad(i);
     const p = pipeline || {};
     const w = whatson || {};
-    const works = [
+    const works = roads.dedupeRoads([
       ...[...(p.notices || []), ...(p.news || [])]
         .filter((i) => current(i) && (!i.expires || i.expires >= now))
         .map((i) => roads.mapEntry(i, roadgeo, true)),
       ...[...(w.notices || []), ...(w.news || [])]
         .filter(current)
         .map((i) => roads.mapEntry(i, roadgeo, false)),
-    ];
+    ]);
     return { home: roads.HOME_BOUNDS, centre: roads.HOME_CENTRE, works };
   });
 
   // Split road items by start date ("start", else "date"): { now: started or undated,
-  // soon: starting after today }
+  // soon: starting after today }. Works whose last day (roads.endOf: "end", else a date in the
+  // text) has passed are left out, and the same works reported twice are shown once (3 Nov).
   eleventyConfig.addFilter("roadSplit", (items) => {
     const now = today();
     const from = (i) => i.start || i.date || "";
-    const list = (items || []).slice().sort((a, b) => from(a).localeCompare(from(b)));
+    const list = roads.dedupeRoads(items).filter((i) => { const e = roads.endOf(i); return !e || e >= now; })
+      .sort((a, b) => from(a).localeCompare(from(b)));
     return {
       now: list.filter((i) => !from(i) || from(i) <= now),
       soon: list.filter((i) => from(i) && from(i) > now),
@@ -122,7 +133,9 @@ module.exports = async function (eleventyConfig) {
     const p = pipeline || {};
     const w = whatson || {};
     return [...(p.notices || []), ...(p.news || []), ...(w.notices || []), ...(w.news || [])]
-      .filter((i) => i && i.title && (!i.expires || i.expires >= now));
+      .filter((i) => i && i.title && (!i.expires || i.expires >= now))
+      // "pinned": true (hand-written notices) goes first, before pipeline items (10 Nov).
+      .sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
   });
 
   // Home page: notices added (approved) in the last 7 days. Pipeline items carry "added";
@@ -237,6 +250,12 @@ module.exports = async function (eleventyConfig) {
   // True for items in the five Lenches ("Lenches" badge on Events; lib/lenches.js)
   const { inLenches } = require("./lib/lenches.js");
   eleventyConfig.addFilter("inLenches", inLenches);
+  // Prefilled Google Calendar page for an event (Events page, beside the .ics download; 5 Nov 2026).
+  eleventyConfig.addFilter("googleCal", (e, siteUrl) => {
+    const { googleCalendarUrl } = require("./lib/ics.js");
+    const id = require("./lib/anchors.js").slug("ev-" + e.date + "-" + e.title);
+    return googleCalendarUrl(e, { url: `${siteUrl}/events/#${id}` });
+  });
 
   // Drop pipeline notices past their expiry date (between publish runs)
   eleventyConfig.addFilter("current", (items) => {

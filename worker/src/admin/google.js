@@ -113,9 +113,21 @@ export async function accessToken(env, scope, sub = '') {
   return j.access_token;
 }
 
+// Google's per-minute quotas (Sheets: about 60 reads a minute for the
+// service account, shared with the pipeline jobs) answer 429 when used up.
+// A 429 means nothing was done, so it is safe to wait and try again, as the
+// pipeline scripts already do (scripts/ingest/google.js).
+export const RETRY_WAITS = [5000, 10000, 20000];
+export const retry = { wait: (ms) => new Promise((res) => setTimeout(res, ms)) };
+
+function retryAfter(r, fallback) {
+  const s = Number(r.headers.get('retry-after'));
+  return Number.isFinite(s) && s > 0 ? Math.min(s * 1000, 30000) : fallback;
+}
+
 async function google(env, scope, url, init = {}, sub = '') {
   const token = await accessToken(env, scope, sub);
-  const r = await fetch(url, {
+  const send = () => fetch(url, {
     ...init,
     headers: {
       authorization: `Bearer ${token}`,
@@ -123,6 +135,13 @@ async function google(env, scope, url, init = {}, sub = '') {
       ...(init.headers || {}),
     },
   });
+  let r = await send();
+  for (const ms of RETRY_WAITS) {
+    if (r.status !== 429) break;
+    await r.body?.cancel?.();
+    await retry.wait(retryAfter(r, ms));
+    r = await send();
+  }
   if (!r.ok) {
     const err = new Error(`Google API: HTTP ${r.status} ${(await r.text()).slice(0, 200)}`);
     err.status = r.status;
@@ -305,6 +324,22 @@ export async function gmailText(env, messageId) {
   if (!sub) throw new Error('GMAIL_USER is not set');
   const url = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(messageId)}?format=full`;
   return messageText(await (await google(env, SCOPES.gmail, url, {}, sub)).json());
+}
+
+// A contact's history (messages.js): up to `max` messages matching a Gmail search, each as
+// messageText plus { id, to, auto (Auto-Submitted), internalDate }. Fetched in parallel.
+export async function gmailSearchTexts(env, q, max = 25) {
+  const sub = String(env.GMAIL_USER || '').trim();
+  if (!sub) throw new Error('GMAIL_USER is not set');
+  const list = await (await google(env, SCOPES.gmail,
+    `https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=${max}&q=${encodeURIComponent(q)}`, {}, sub)).json();
+  const ids = (list.messages || []).map((m) => m.id).slice(0, max);
+  return Promise.all(ids.map(async (id) => {
+    const msg = await (await google(env, SCOPES.gmail,
+      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${encodeURIComponent(id)}?format=full`, {}, sub)).json();
+    const h = Object.fromEntries(((msg.payload && msg.payload.headers) || []).map((x) => [String(x.name).toLowerCase(), String(x.value)]));
+    return { ...messageText(msg), id, to: h.to || '', auto: h['auto-submitted'] || '', internalDate: msg.internalDate || '' };
+  }));
 }
 
 // True if a Gmail search (in GMAIL_USER's mailbox) finds any message.

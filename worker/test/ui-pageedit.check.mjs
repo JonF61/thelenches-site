@@ -2,7 +2,10 @@
 // Browser check of Edit page against the built site (_site; run the Eleventy build first):
 // a local "site" serves _site, a local "worker" serves /admin/page, the editor files and
 // /admin/api/page-save, with GitHub's contents API mocked from src/. Edits a Privacy
-// paragraph, adds a link, saves, and checks the committed file. Saves screenshots (SHOTS=dir).
+// paragraph, adds a link, saves, and checks the committed file. Then listing entries ("edit
+// everything", 4 Nov): Local trades and Events entries are outlined with their label, a click opens
+// the edit box with the entry's current values, Save and publish sends one entryedit decision
+// (mocked) and the box shows Saving → Live ✓; official notices stay untouched. Saves screenshots (SHOTS=dir).
 // Run: node worker/test/ui-pageedit.check.mjs
 // and bundled as Wrangler does (keep-names), which is how the editor script really ships:
 //   npx esbuild@0.25 worker/test/ui-pageedit.check.mjs --bundle --keep-names --platform=node \
@@ -14,6 +17,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { editorPage, savePage } from '../src/admin/pageedit.js';
 import { PAGEEDIT_JS, PAGEEDIT_CSS } from '../src/admin/ui/pageedit.js';
+import { entryInfo, saveEntry } from '../src/admin/entryedit.js';
 
 const require = createRequire(import.meta.url);
 let chromium;
@@ -66,6 +70,8 @@ globalThis.fetch = async (url, init = {}) => {
 const env = { REPO: 'o/r', DISPATCH_TOKEN: 't', SITE_URL: SITE };
 
 let statusChecks = 0;
+let entryChecks = 0;
+const decisions = [];
 const worker = await listen(async (req, res) => {
   const u = new URL(req.url, 'http://x');
   const origin = `http://127.0.0.1:${worker.address().port}`;
@@ -86,6 +92,25 @@ const worker = await listen(async (req, res) => {
       assert.equal(u.searchParams.get('p'), '/privacy/');
       assert.equal(u.searchParams.get('text'), 'For the Lenches website and community mailing list. (updated)');
       res.end(JSON.stringify({ ok: true, state: statusChecks > 2 ? 'live' : 'building', phase: statusChecks === 2 ? 'publishing' : '' }));
+    } else if (u.pathname === '/admin/api/entry') {
+      const r = await entryInfo(env, u.searchParams.get('key'));
+      res.writeHead(r.ok ? 200 : r.status, { 'content-type': 'application/json' });
+      res.end(JSON.stringify(r));
+    } else if (u.pathname === '/admin/api/entry-save' && req.method === 'POST') {
+      assert.equal(req.headers['x-csrf-token'], 'tok');
+      let body = '';
+      for await (const c of req) body += c;
+      const r = await saveEntry(env, JSON.parse(body), {
+        meta: { mode: 'frozen', status: 'tested', issue_date: '2026-11-05' },
+        send: async (e, pl, reason, b) => { decisions.push({ pl, b }); return true; },
+      });
+      res.writeHead(r.ok ? 200 : r.status, { 'content-type': 'application/json' });
+      res.end(JSON.stringify(r));
+    } else if (u.pathname === '/admin/api/entry-status') {
+      entryChecks += 1;
+      assert.match(u.searchParams.get('id'), /^ee[0-9a-f]{16}$/);
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, state: entryChecks > 2 ? 'live' : 'building', phase: entryChecks === 1 ? 'saving' : 'publishing' }));
     } else if (u.pathname === '/admin/api/page-save' && req.method === 'POST') {
       assert.equal(req.headers['x-csrf-token'], 'tok');
       assert.equal(req.headers.origin, origin);
@@ -134,7 +159,7 @@ for (const size of [{ width: 1200, height: 900, name: 'desktop' }, { width: 390,
     await page.click('.le-bar button:has-text("Link")');
     assert.equal(await page.locator('.le-count').textContent(), '1 change');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pageedit-editing.png') });
-    await page.click('.le-bar button:has-text("Save")');
+    await page.click('.le-bar button:has-text("Save page text")');
     await page.waitForSelector('.le-dlg[open]');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pageedit-confirm.png') });
     await page.click('.le-dlg button:has-text("Save and publish")');
@@ -157,6 +182,87 @@ for (const size of [{ width: 1200, height: 900, name: 'desktop' }, { width: 390,
     await page.screenshot({ path: path.join(SHOTS, 'pageedit-phone.png') });
   }
   await ctx.close();
+}
+// Listing entries on the Local trades and Events pages.
+{
+  const ctx = await browser.newContext({ viewport: { width: 1200, height: 900 } });
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (m) => { if (m.type() === 'error' && !/fonts\.g|Failed to load resource/.test(m.text())) errors.push(m.text()); });
+  const trades = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/_data/trades.json'), 'utf8')).trades;
+  const t = trades.find((x) => x.id && x.what);
+  await page.goto(`${ORIGIN}/admin/page?p=/living-here/trades/`);
+  await page.waitForSelector('.le-bar');
+  assert.ok(await page.locator('.le-entry').count() >= trades.length, 'every trade has outlined fields');
+  assert.match(await page.locator('.le-bar .le-hint').textContent(), /save from their own box with Publish/);
+  assert.equal(await page.locator('.le-bar button.le-primary').textContent(), 'Save page text');
+  assert.equal(await page.locator('.le-edit').count() > 0, true, 'the page\'s own wording is still editable');
+  const card = page.locator(`[data-entry="t:${t.id}"]`);
+  // Names stay Ask Kryten (greyed), the fields are outlined, the label shows on hover.
+  assert.equal(await card.locator('h3.le-fixed').count(), 1);
+  const does = card.locator('dd[data-field="what"]');
+  await does.hover();
+  assert.equal(await page.locator('.le-tag').textContent(), `Local trades: ${t.name} · click to edit`);
+  if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'entryedit-outline.png') });
+  await does.click();
+  const form = page.locator('.le-entry-form');
+  await form.waitFor();
+  const box = form.locator('input.le-ef-in');
+  await box.waitFor();
+  assert.equal(await box.inputValue(), t.what);
+  await box.fill(`${t.what} (also evenings)`);
+  if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'entryedit-box.png') });
+  await form.locator('button:has-text("Save and publish")').click();
+  await form.locator('.le-new', { hasText: '(also evenings)' }).waitFor();
+  await form.locator('button:text-is("Publish")').click();
+  await form.locator('.le-ef-msg', { hasText: 'Saving the change' }).waitFor();
+  await form.locator('.le-ef-note', { hasText: 'Test send it again' }).waitFor();
+  if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'entryedit-saving.png') });
+  await form.locator('.le-ef-msg', { hasText: 'Live ✓' }).waitFor({ timeout: 30000 });
+  assert.equal(await does.textContent(), `${t.what} (also evenings)`);
+  assert.equal(decisions.length, 1);
+  assert.equal(decisions[0].pl.a, 'entryedit');
+  assert.deepEqual(JSON.parse(decisions[0].b), { key: `t:${t.id}`, changes: [{ field: 'what', old: t.what, new: `${t.what} (also evenings)` }] });
+  assert.match(await form.locator('.le-view').getAttribute('href'), /\/living-here\/trades\/\?v=/);
+  // While a change is saving, the card isn't opened again; afterwards it is.
+  await form.locator('button:has-text("Close")').click();
+  assert.equal(await page.locator('.le-entry-form').count(), 0);
+  if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'entryedit-live.png') });
+
+  // Events: a hand-written event's text (a textarea) and its link (words and address).
+  await page.goto(`${ORIGIN}/admin/page?p=/events/`);
+  await page.waitForSelector('.le-bar');
+  const evCard = page.locator('[data-entry^="h:events/"]').filter({ has: page.locator('a[data-field="link"]') }).first();
+  const key = await evCard.getAttribute('data-entry');
+  const ev = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/items/events', key.slice('h:events/'.length)), 'utf8'));
+  await evCard.locator('a[data-field="link"]').click();
+  assert.match(page.url(), /\/admin\/page/);
+  const lf = page.locator('.le-entry-form');
+  await lf.locator('input.le-ef-in').first().waitFor();
+  assert.deepEqual(await lf.locator('input.le-ef-in').evaluateAll((els) => els.map((e) => e.value)), [ev.link.text, ev.link.url]);
+  await lf.locator('input.le-ef-in').nth(1).fill('javascript:alert(1)');
+  await lf.locator('button:has-text("Save and publish")').click();
+  await lf.locator('button:text-is("Publish")').click();
+  await lf.locator('.le-ef-msg', { hasText: 'Links must start' }).waitFor();
+  assert.equal(decisions.length, 1, 'a bad link is refused');
+  await lf.locator('button:has-text("Back")').click();
+  await lf.locator('button:has-text("Cancel")').click();
+  await evCard.locator('p[data-field="body"]').first().click();
+  const ta = page.locator('.le-entry-form textarea');
+  await ta.waitFor();
+  assert.equal(await ta.inputValue(), ev.body);
+  if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'entryedit-event.png') });
+  await ctx.close();
+
+  // Notices: official statements carry no entry tags (Ask Kryten).
+  const nctx = await browser.newContext({ viewport: { width: 1200, height: 900 } });
+  const np = await nctx.newPage();
+  np.on('pageerror', (e) => errors.push(e.message));
+  await np.goto(`${ORIGIN}/admin/page?p=/notices/`);
+  await np.waitForSelector('.le-bar');
+  assert.equal(await np.locator('.np-official [data-entry], .np-official.le-entry-card').count(), 0);
+  assert.ok(await np.locator('.np-card.le-entry-card').count() > 0);
+  await nctx.close();
 }
 // Bad input is refused by the server whatever the page sends.
 for (const bad of ['<script>x</script>', '<a href="javascript:alert(1)">x</a>', '{{ site.email }}', '<img src=x>', '<a onclick="x" href="/">x</a>', '']) {

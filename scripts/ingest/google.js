@@ -388,6 +388,20 @@ async function readHeaders(tab) {
   return headerCache[tab];
 }
 
+// Adds one header at column index (0-based) of row 1: only at the end of the headers (new
+// columns go at the END only).
+async function setHeader(tab, index, name) {
+  const headers = await readHeaders(tab);
+  if (index !== headers.length) throw new Error(`New header ${name} must go at the end of ${tab}`);
+  await sheets().spreadsheets.values.update({
+    spreadsheetId: spreadsheetId(),
+    range: `'${tab}'!${colLetter(index)}1`,
+    valueInputOption: 'RAW',
+    requestBody: { values: [[name]] },
+  });
+  headerCache[tab] = [...headers, name];
+}
+
 // Rows as objects keyed by header, each with _row (1-based Sheet row number).
 async function readTable(tab) {
   const rows = await getValues(`'${tab}'!A1:AZ`);
@@ -480,6 +494,22 @@ async function updateRow(tab, rowNumber, fields) {
   });
 }
 
+// Deletes whole rows (1-based Sheet row numbers; never row 1), bottom first so the
+// numbers still point at the right rows. Callers read the tab just before, by email.
+async function deleteRows(tab, rowNumbers) {
+  const rows = [...new Set(rowNumbers.map(Number))].filter((n) => Number.isInteger(n) && n >= 2).sort((a, b) => b - a);
+  if (!rows.length) return 0;
+  const gid = await getSheetGid(tab);
+  if (gid === null) throw new Error(`No "${tab}" tab`);
+  await sheets().spreadsheets.batchUpdate({
+    spreadsheetId: spreadsheetId(),
+    requestBody: {
+      requests: rows.map((n) => ({ deleteDimension: { range: { sheetId: gid, dimension: 'ROWS', startIndex: n - 1, endIndex: n } } })),
+    },
+  });
+  return rows.length;
+}
+
 // Replaces a whole tab's values (A:Z) with rows, making the tab if missing. Only for tabs that
 // code alone owns and rewrites (Newsletter draft), never for tabs people edit.
 async function replaceTab(tab, rows) {
@@ -505,8 +535,10 @@ module.exports = {
   gmailLink,
   addressOf,
   sendMail,
+  deleteRows,
   readTable,
   readHeaders,
+  setHeader,
   readSettings,
   fromNameFor,
   getSheetGid,

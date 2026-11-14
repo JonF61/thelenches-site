@@ -41,7 +41,10 @@ test('the framed page: no scripts, site images only, panel framing only, links i
   assert.match(csp, /img-src https:\/\/thelenches\.org\.uk data:/);
   assert.match(csp, /frame-ancestors 'self'/);
   assert.match(csp, /sandbox/);
-  assert.doesNotMatch(csp, /allow-scripts|allow-same-origin/);
+  // allow-same-origin (3 Nov) lets the panel read the frame's height; never allow-scripts, so
+  // nothing in the frame can run.
+  assert.doesNotMatch(csp, /allow-scripts/);
+  assert.match(csp, /default-src 'none'/);
   assert.equal(r.headers.get('x-frame-options'), 'SAMEORIGIN');
   assert.match(await r.text(), /<head><base target="_blank"><title>/);
   assert.match(await draftPage('').text(), /No draft yet/);

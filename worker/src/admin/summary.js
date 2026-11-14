@@ -8,8 +8,10 @@
 //   failingRuns         workflows whose latest finished run failed
 //   subscriberChanges   sign-ups and Do Not Send additions since the last sent newsletter
 //                       (counts only: no address ever reaches the page)
-//   comingWeek          events and road works in the next 7 days (the site's coming-up.json)
+//   comingWeek          events (and road works, not shown) in the next 7 days (the site's coming-up.json)
 //   devTasks            the repo's dev-tasks list (devtasks.json, kept by Kryten)
+//   claudeSpend         Claude API spend this month and last, by job (the "Claude usage" tab,
+//                       written by lib/claudeusage.js after each run; dollars and counts only)
 
 import onThisDayData from '../../../src/_data/onthisday.json' with { type: 'json' };
 import devTasksData from './devtasks.json' with { type: 'json' };
@@ -153,7 +155,46 @@ export function comingWeek(coming, today) {
 
 export function devTasks() {
   return (devTasksData.tasks || []).filter((t) => str(t.task))
-    .map((t) => ({ task: str(t.task), waiting: str(t.waiting), added: ymd(t.added) }));
+    .map((t) => ({ task: str(t.task), waiting: str(t.waiting), added: ymd(t.added), kryten: t.kryten === true }));
+}
+
+// Claude API spend from the "Claude usage" tab: { month, total, calls, cacheShare, lastMonth,
+// lastTotal, jobs: [{ job, cost, calls }] (dearest first), since } in US dollars. Months are UK.
+export function claudeSpend(rows, today) {
+  const month = String(today).slice(0, 7);
+  const [y, m] = month.split('-').map(Number);
+  const lastMonth = `${m === 1 ? y - 1 : y}-${pad2(m === 1 ? 12 : m - 1)}`;
+  const jobs = new Map();
+  let total = 0;
+  let lastTotal = 0;
+  let calls = 0;
+  let read = 0;
+  let input = 0;
+  let since = '';
+  for (const r of rows || []) {
+    const t = Date.parse(str(r.at));
+    if (Number.isNaN(t)) continue;
+    const day = ukStamp(t).slice(0, 10);
+    if (!since || day < since) since = day;
+    const cost = Number(r.cost_usd) || 0;
+    if (day.slice(0, 7) === lastMonth) lastTotal += cost;
+    if (day.slice(0, 7) !== month) continue;
+    total += cost;
+    calls += Number(r.calls) || 0;
+    read += Number(r.cache_read) || 0;
+    input += (Number(r.input) || 0) + (Number(r.cache_write) || 0) + (Number(r.cache_read) || 0);
+    const job = str(r.job) || 'Other';
+    const j = jobs.get(job) || { job, cost: 0, calls: 0 };
+    j.cost += cost;
+    j.calls += Number(r.calls) || 0;
+    jobs.set(job, j);
+  }
+  const round = (x) => Math.round(x * 100) / 100;
+  return {
+    month, total: round(total), calls, lastMonth, lastTotal: round(lastTotal), since,
+    cacheShare: input ? Math.round((read / input) * 100) : 0,
+    jobs: [...jobs.values()].map((j) => ({ ...j, cost: round(j.cost) })).sort((a, b) => b.cost - a.cost || a.job.localeCompare(b.job)),
+  };
 }
 
 // The site's coming-up.json, or { error }. Cached at the edge for 5 minutes.

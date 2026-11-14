@@ -8,7 +8,7 @@
 'use strict';
 
 const crypto = require('crypto');
-const { anchorUrl, calendarUrl } = require('../../lib/anchors');
+const { anchorUrl, calendarUrl, googleCalendarLink } = require('../../lib/anchors');
 
 const SITE = 'https://thelenches.org.uk';
 const UNSUB_MARK = '%%UNSUBSCRIBE_URL%%';
@@ -19,7 +19,8 @@ const LINKS = {
   submit: 'website@thelenches.org.uk',
 };
 // The Website update paragraph: each entry's text, joined with spaces.
-const siteParagraph = (site) => site.map((u) => String(u.text || '').trim()).filter(Boolean).join(' ');
+// Website update texts, one per entry (each its own paragraph; Jon, 3 Nov: the joined block was too dense).
+const siteTexts = (site) => site.map((u) => String(u.text || '').trim()).filter(Boolean);
 
 // Regular activities, grouped by day since 30 Oct (Jon): [{ day, items }] in list order (lib/whatson.js
 // sorts Monday first, then by time), each line "What · 7pm (1st of the month) · where"; site-relative
@@ -35,6 +36,13 @@ function regularDays(regs) {
   return out;
 }
 const REGULARS_MORE = 'Who runs them, costs, contacts and flyers are on our';
+// Since 11 Nov (Jon): an intro, a button to the page and only the recently listed entries.
+const REGULARS_INTRO = 'Classes, clubs and groups that meet every week or month in and around the Lenches: when and where, who runs them, costs and contacts.';
+const REGULARS_BUTTON = (n) => `See all ${n} regular activities`;
+const FRESH_LABEL = { new: 'New activity', listed: 'Newly listed' };
+// New activities first, then newly listed; each "What · Day time (frequency) · where".
+const freshRegulars = (regs) => (Array.isArray(regs) ? ['new', 'listed'].flatMap((k) => regs.filter((r) => (r.fresh || 'listed') === k)) : []);
+const freshWhen = (r) => [r.day, regularTime(r)].filter(Boolean).join(' ');
 const siteUrl = (u) => (/^\//.test(String(u || '')) ? `${SITE}${u}` : String(u || ''));
 
 const C = {
@@ -98,6 +106,25 @@ function summaryLine(m) {
 
 /* ----------------------------------------------------------------- HTML -- */
 
+// Regular activities band (11 Nov): intro, a bulletproof button (table cell with bgcolor, so classic
+// Outlook keeps it) and the recently listed entries.
+function regularsBand(m) {
+  const url = siteUrl('/regulars/');
+  const btn = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:10px 0 2px;"><tr>`
+    + `<td bgcolor="${C.green}" style="background:${C.green};border-radius:4px;padding:10px 18px;">`
+    + `<a href="${esc(url)}" style="color:#ffffff;font-family:${SANS};font-size:15px;font-weight:bold;text-decoration:none;">${esc(REGULARS_BUTTON(m.regularsCount))} &rarr;</a>`
+    + `</td></tr></table>`;
+  const fresh = freshRegulars(m.regulars || []).map((r) => `<div style="margin:6px 0 0;"${entryAttrs(r, 'Regular activity')}${TAGS && TAGS[r.key] ? fieldAttr('time frequency where note') : ''}>`
+    + `<span style="font-weight:bold;color:${C.accentText};">${esc(FRESH_LABEL[r.fresh] || FRESH_LABEL.listed)}:</span> ${esc(r.what)}`
+    + `${freshWhen(r) ? ` · ${esc(freshWhen(r))}` : ''}`
+    + `${r.where ? ` · <span style="color:${C.muted};">${esc(r.where)}</span>` : ''}`
+    + `${r.note ? ` <span style="color:${C.muted};">(${esc(r.note)})</span>` : ''}`
+    + `${r.more ? ` · ${a(r.more, 'More', C.accentText)}` : (r.link ? ` · ${a(siteUrl(r.link.url), r.link.text, C.accentText)}` : '')}</div>`).join('');
+  return sectionHead('Regular activities')
+    + `<tr><td class="px" style="padding:6px 24px 0;font-family:${SANS};font-size:14px;line-height:1.5;color:${C.ink};">`
+    + `${esc(REGULARS_INTRO)}${btn}${fresh}</td></tr>`;
+}
+
 const a = (url, text, color) => `<a href="${esc(url)}" style="color:${color};text-decoration:underline;">${esc(text)}</a>`;
 
 // sub (HTML, optional): a short line under the title, above the rule (Regular activities, Jon 30 Oct).
@@ -132,14 +159,34 @@ function titleWithBadge(titleHtml, style) {
     + `</tr></table></td></tr></table>`;
 }
 
-function linkLine(link) {
-  return link ? `<div style="margin-top:6px;font-family:${SANS};font-size:13px;">${a(link.url, link.text, C.accentText)}</div>` : '';
+// The item's link and its optional second link (link2) on one line.
+// Edit tags (4 Nov, "edit everything"): only the panel's Newsletter draft passes render(model,
+// { entries }) (draft.js): { item key -> entry key as in scripts/rimmer/fix.js sources() }. Then each
+// editable item gets data-entry / data-label and its body and links data-field, so the panel's
+// draft editor (/admin/draft-edit) can find them. Sent copies never carry them (no entries given).
+let TAGS = null;
+const attr = (v) => esc(v).replace(/"/g, '&quot;');
+function entryAttrs(it, label) {
+  const key = TAGS && it && TAGS[it.key];
+  return key ? ` data-entry="${attr(key)}" data-label="${attr(`${label}: ${it.title || it.what || ''}`)}"` : '';
+}
+const fieldAttr = (name) => (TAGS ? ` data-field="${name}"` : '');
+const fieldLink = (html, name) => (TAGS ? html.replace(/^<a /, `<a data-field="${name}" `) : html);
+
+function linkLine(link, link2) {
+  const parts = [link, link2].map((l, i) => (l ? fieldLink(a(l.url, l.text, C.accentText), i ? 'link2' : 'link') : '')).filter(Boolean);
+  return parts.length ? `<div style="margin-top:6px;font-family:${SANS};font-size:13px;">${parts.join(' &nbsp;&middot;&nbsp; ')}</div>` : '';
 }
 
 // The event's own link (if any) and "Add to calendar" on one line, as on the Events page.
 function eventLinks(ev) {
   const cal = calendarUrl(ev);
-  const parts = [ev.link ? a(ev.link.url, ev.link.text, C.accentText) : '', cal ? a(cal, 'Add to calendar', C.accentText) : ''].filter(Boolean);
+  const gcal = googleCalendarLink(ev);
+  // Two calendar links (5 Nov 2026): Google's own page, and the .ics for Outlook / Apple.
+  const parts = [ev.link ? fieldLink(a(ev.link.url, ev.link.text, C.accentText), 'link') : '', ev.link2 ? fieldLink(a(ev.link2.url, ev.link2.text, C.accentText), 'link2') : ''].filter(Boolean);
+  // "Add to: Google Calendar · Other calendar" (Jon, 5 Nov).
+  const calLinks = [gcal ? a(gcal, 'Google Calendar', C.accentText) : '', cal ? a(cal, 'Other calendar', C.accentText) : ''].filter(Boolean);
+  if (calLinks.length) parts.push(`Add to: ${calLinks.join(' &nbsp;&middot;&nbsp; ')}`);
   return parts.length ? `<div style="margin-top:6px;font-family:${SANS};font-size:13px;">${parts.join(' &nbsp;&middot;&nbsp; ')}</div>` : '';
 }
 
@@ -152,7 +199,7 @@ function eventCard(ev) {
     + `<div style="font-size:11px;color:${C.muted};">${p.mon}</div>`
     + `</td></tr></table>`;
   const meta = ev.meta ? `<div style="font-family:${SANS};font-size:12px;color:${C.muted};margin-top:2px;">${esc(ev.meta)}</div>` : '';
-  const body = ev.body ? `<div style="margin-top:4px;">${para(ev.body)}</div>` : '';
+  const body = ev.body ? `<div style="margin-top:4px;"${fieldAttr('body')}>${para(ev.body)}</div>` : '';
   const img = ev.image
     ? `<tr><td colspan="2" style="padding:0 12px 12px;">${imageRow(ev.image, 528, anchorUrl('event', ev))}</td></tr>`
     : '';
@@ -161,7 +208,7 @@ function eventCard(ev) {
     ? titleWithBadge(esc(ev.title), `${titleStyle}color:${C.ink};`)
     : `<div style="${titleStyle}">${esc(ev.title)}</div>`;
   return `<tr><td class="px" style="padding:10px 24px 0;">`
-    + `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.card};">`
+    + `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.card};"${entryAttrs(ev, 'Event')}>`
     + `<tr><td width="62" valign="top" style="padding:12px 0 12px 12px;">${tile}</td>`
     + `<td valign="top" style="padding:12px;font-family:${SERIF};font-size:14px;line-height:1.5;color:${C.ink};">`
     + `${title}${meta}${body}${eventLinks(ev)}</td></tr>${img}</table></td></tr>`;
@@ -170,10 +217,10 @@ function eventCard(ev) {
 function storyBlock(it, titleSize, kind) {
   const meta = it.meta ? `<div style="font-family:${SANS};font-size:12px;color:${C.muted};">${esc(it.meta)}</div>` : '';
   const img = it.image ? `<div style="margin-top:8px;">${imageRow(it.image, 552, anchorUrl(kind, it))}</div>` : '';
-  return `<tr><td class="px" style="padding:12px 24px 0;font-family:${SERIF};font-size:14px;line-height:1.55;color:${C.ink};">`
+  return `<tr><td class="px" style="padding:12px 24px 0;font-family:${SERIF};font-size:14px;line-height:1.55;color:${C.ink};"${entryAttrs(it, kind === 'news' ? 'News' : 'Notice')}>`
     + `<div style="font-weight:bold;font-size:${titleSize}px;">${esc(it.title)}</div>${meta}`
-    + (it.body ? `<div style="margin-top:4px;">${para(it.body)}</div>` : '')
-    + `${linkLine(it.link)}${img}</td></tr>`;
+    + (it.body ? `<div style="margin-top:4px;"${fieldAttr('body')}>${para(it.body)}</div>` : '')
+    + `${linkLine(it.link, it.link2)}${img}</td></tr>`;
 }
 
 // Bins first, in a box of their own (Jon, 28 Oct): one line per collection day, date in bold.
@@ -194,9 +241,9 @@ function roadsAndBins(m) {
   const lines = [];
   for (const r of m.roads) {
     const when = r.date ? ` (from ${dateParts(r.date).short})` : '';
-    lines.push(`<div style="margin-bottom:8px;"><span style="color:${C.accentText};">Roadworks</span> · `
+    lines.push(`<div style="margin-bottom:8px;"${entryAttrs(r, 'Road item')}><span style="color:${C.accentText};">Roadworks</span> · `
       + `<strong>${esc(r.title)}</strong>${esc(when)}`
-      + (r.body ? para(r.body) : '')
+      + (r.body ? (TAGS ? `<div${fieldAttr('body')}>${para(r.body)}</div>` : para(r.body)) : '')
       + (r.link ? `<div>${a(r.link.url, r.link.text, C.accentText)}</div>` : '') + `</div>`);
   }
   if (!lines.length) return '';
@@ -211,6 +258,8 @@ function renderHtml(m, subject) {
     + `<div style="font-family:${SANS};font-size:22px;font-weight:bold;color:${C.green};">The Lenches Newsletter</div>`
     + `<div style="font-family:${SANS};font-size:12px;color:${C.muted};">Church · Rous · Ab · Atch · Sheriffs</div>`
     + `<div style="font-family:${SANS};font-size:13px;color:${C.accentText};margin-top:8px;">${esc(p.long)} · ${a(LINKS.site, 'thelenches.org.uk', C.accentText)}</div>`
+    // Contributions line at the top (Jon, 11 Nov; the footer keeps its own).
+    + `<div style="font-family:${SANS};font-size:13px;line-height:1.5;color:${C.ink};margin-top:8px;"><strong>Got something for the newsletter?</strong> Email ${a(`mailto:${LINKS.submit}`, LINKS.submit, C.accentText)} by 6pm Wednesday for the next issue.</div>`
     + `</td></tr>`);
   // "On this day" line (select.js onThisDay); no row when there is none, as for site updates.
   if (m.onThisDay) {
@@ -219,13 +268,14 @@ function renderHtml(m, subject) {
       + `<div style="font-family:${SERIF};font-size:14px;font-style:italic;line-height:1.5;color:${C.ink};">${esc(m.onThisDay.text)}</div>`
       + `</td></tr>`);
   }
-  // "Website update" (select.js siteUpdates): one paragraph, the due entries' text joined,
-  // then one link to the site (Jon, 28 Oct); no row at all when there are none.
+  // "Website update" (select.js siteUpdates): each due entry as its own short paragraph, the
+  // last ending with one link to the site (Jon, 28 Oct; separate paragraphs 3 Nov); no row when none.
   const site = m.siteUpdates || [];
   if (site.length) {
     rows.push(`<tr><td class="px" style="background:${C.cream};padding:10px 24px;border-bottom:1px solid ${C.line};">`
-      + `<div style="font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1px;color:${C.accentText};">WEBSITE UPDATE</div>`
-      + `<div style="font-family:${SANS};font-size:13px;line-height:1.5;color:${C.ink};">${esc(siteParagraph(site))} Have a look at ${a(LINKS.site, 'thelenches.org.uk', C.accentText)}.</div>`
+      + `<div style="font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1px;color:${C.accentText};">WEBSITE AND NEWSLETTER UPDATE</div>`
+      + siteTexts(site).map((t, i, all) => `<div style="font-family:${SANS};font-size:13px;line-height:1.5;color:${C.ink};padding-top:${i ? 8 : 2}px;">${esc(t)}`
+        + (i === all.length - 1 ? ` Have a look at ${a(LINKS.site, 'thelenches.org.uk', C.accentText)}.` : '') + `</div>`).join('')
       + `</td></tr>`);
   }
   rows.push(`<tr><td class="px" style="padding:16px 24px 0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${C.ink};">${esc(summaryLine(m))}</td></tr>`);
@@ -242,14 +292,17 @@ function renderHtml(m, subject) {
   // Regular activities (weekly regulars until 30 Oct): their own section, one line each, Monday
   // first (lib/whatson.js sorts them); the link to the full /regulars/ page sits under the heading.
   const regs = Array.isArray(m.regulars) ? m.regulars : [];
-  if (regs.length) {
+  if (Number.isFinite(m.regularsCount) && m.regularsCount > 0) {
+    rows.push(regularsBand(m));
+  } else if (regs.length) {
     rows.push(sectionHead('Regular activities', `${esc(REGULARS_MORE)} ${a(siteUrl('/regulars/'), 'Regular activities page', C.accentText)}.`));
     rows.push(`<tr><td class="px" style="padding:6px 24px 0;font-family:${SANS};font-size:14px;line-height:1.5;color:${C.ink};">`
       + regularDays(regs).map((g) => `<div style="font-weight:bold;color:${C.green};margin:8px 0 2px;">${esc(g.day)}</div>`
-        + g.items.map((r) => `<div style="margin:0 0 3px;">${esc(r.what)}${regularTime(r) ? ` · ${esc(regularTime(r))}` : ''}`
+        + g.items.map((r) => `<div style="margin:0 0 3px;"${entryAttrs(r, 'Regular activity')}${TAGS && TAGS[r.key] ? fieldAttr('time frequency where note') : ''}>${esc(r.what)}${regularTime(r) ? ` · ${esc(regularTime(r))}` : ''}`
           + `${r.where ? ` · <span style="color:${C.muted};">${esc(r.where)}</span>` : ''}`
           + `${r.note ? ` <span style="color:${C.muted};">(${esc(r.note)})</span>` : ''}`
-          + `${r.link ? ` · ${a(siteUrl(r.link.url), r.link.text, C.accentText)}` : ''}</div>`).join('')).join('')
+          + `${r.link ? ` · ${a(siteUrl(r.link.url), r.link.text, C.accentText)}` : ''}`
+          + `${r.more ? ` · ${a(r.more, 'More', C.accentText)}` : ''}</div>`).join('')).join('')
       + `</td></tr>`);
   }
   // No News section since 21 Oct 2026 (select.js gives news: []); kept for older snapshots.
@@ -257,9 +310,43 @@ function renderHtml(m, subject) {
     rows.push(sectionHead('News'));
     for (const it of m.news) rows.push(storyBlock(it, 16, 'news'));
   }
+  // The week's cartoon (select.js cartoonFor; 11 Nov, Jon): no heading, just the picture and its
+  // caption, just before Notices. A rule above it keeps it apart from the section before (Jon, 11 Nov:
+  // it read as part of Regular activities).
+  if (m.cartoon) {
+    rows.push(`<tr><td class="px" style="padding:28px 24px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>`
+      + `<td height="1" bgcolor="${C.line}" style="height:1px;background:${C.line};font-size:0;line-height:0;">&nbsp;</td></tr></table></td></tr>`);
+    rows.push(`<tr><td class="px" align="center" style="padding:24px 24px 4px;text-align:center;">`
+      + `<img src="${esc(m.cartoon.src)}" width="460" alt="${esc(m.cartoon.alt)}" `
+      + `style="display:block;margin:0 auto;width:100%;max-width:460px;height:auto;border:1px solid ${C.line};outline:none;text-decoration:none;">`
+      + `<div style="font-family:${SERIF};font-size:16px;font-style:italic;line-height:1.45;color:${C.ink};padding:10px 16px 0;max-width:460px;margin:0 auto;">${esc(m.cartoon.caption)}</div>`
+      + `</td></tr>`);
+  }
   if (m.notices.length) {
     rows.push(sectionHead('Notices'));
     for (const it of m.notices) rows.push(storyBlock(it, 15, 'notice'));
+  }
+  // Where in the Lenches? (select.js whereFor; 11 Nov, Jon): last puzzle's answer, then this week's
+  // close-up, after Notices. Just for fun: no replies asked for.
+  if (m.where) {
+    const w = m.where;
+    rows.push(sectionHead('Where in the Lenches?', w.puzzle ? esc(WHERE_INTRO) : ''));
+    if (w.answer) {
+      rows.push(`<tr><td class="px" style="padding:12px 24px 0;">`
+        + `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tr>`
+        + `<td width="160" valign="top" style="width:160px;"><img src="${esc(w.answer.src)}" width="160" alt="${esc(w.answer.text)}" `
+        + `style="display:block;width:160px;height:auto;border:0;outline:none;text-decoration:none;"></td>`
+        + `<td valign="top" style="padding-left:14px;font-family:${SERIF};font-size:15px;line-height:1.5;color:${C.ink};">`
+        + `<div style="font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1px;color:${C.accentText};padding-bottom:2px;">LAST WEEK'S ANSWER</div>`
+        + `${esc(w.answer.text)}</td></tr></table></td></tr>`);
+    }
+    if (w.puzzle) {
+      rows.push(`<tr><td class="px" align="center" style="padding:${w.answer ? 18 : 12}px 24px 0;text-align:center;">`
+        + (w.answer ? `<div style="font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1px;color:${C.accentText};padding-bottom:6px;text-align:left;">THIS WEEK</div>` : '')
+        + `<img src="${esc(w.puzzle.src)}" width="460" alt="A close-up for this week's Where in the Lenches? puzzle" `
+        + `style="display:block;margin:0 auto;width:100%;max-width:460px;height:auto;border:1px solid ${C.line};outline:none;text-decoration:none;">`
+        + `</td></tr>`);
+    }
   }
   rows.push(sectionHead(m.roads.length ? 'Bins and roads' : 'Bins'));
   rows.push(binsBox(m));
@@ -298,36 +385,48 @@ function renderText(m) {
   const p = dateParts(m.issueDate);
   const out = [];
   const head = (t) => { out.push('', t.toUpperCase(), '-'.repeat(t.length), ''); };
-  const item = (title, meta, body, link) => {
+  const item = (title, meta, body, link, link2) => {
     out.push(title);
     if (meta) out.push(meta);
     if (body) out.push(paras(body).join('\n\n'));
     if (link) out.push(`${link.text}: ${link.url.replace(/^mailto:/i, '')}`);
+    if (link2) out.push(`${link2.text}: ${link2.url.replace(/^mailto:/i, '')}`);
     out.push('');
   };
 
-  out.push('THE LENCHES NEWSLETTER', 'Church · Rous · Ab · Atch · Sheriffs', `${p.long} · ${LINKS.site}`, '');
+  out.push('THE LENCHES NEWSLETTER', 'Church · Rous · Ab · Atch · Sheriffs', `${p.long} · ${LINKS.site}`, '', `Got something for the newsletter? Email ${LINKS.submit} by 6pm Wednesday for the next issue.`, '');
   if (m.onThisDay) out.push(`On this day: ${m.onThisDay.text}`, '');
-  if ((m.siteUpdates || []).length) out.push(`Website update: ${siteParagraph(m.siteUpdates)} Have a look at ${LINKS.site}`, '');
+  if ((m.siteUpdates || []).length) out.push('Website and newsletter update:', ...siteTexts(m.siteUpdates).flatMap((t) => [t, '']), `Have a look at ${LINKS.site}`, '');
   out.push(summaryLine(m));
   const oldRegs = typeof m.regulars === 'string' ? m.regulars : '';
   if (m.events.length || oldRegs) {
     head('Coming up');
     for (const ev of m.events) {
-      item(`${dateParts(ev.date).short} · ${ev.title}${ev.lenches ? ' [Lenches]' : ''}`, ev.meta, ev.body, ev.link);
+      item(`${dateParts(ev.date).short} · ${ev.title}${ev.lenches ? ' [Lenches]' : ''}`, ev.meta, ev.body, ev.link, ev.link2);
       const cal = calendarUrl(ev);
       if (cal) out.splice(out.length - 1, 0, `Add to calendar: ${cal}`);
     }
     if (oldRegs) out.push(paras(oldRegs).join('\n\n'), '');
   }
-  if (Array.isArray(m.regulars) && m.regulars.length) {
+  if (Number.isFinite(m.regularsCount) && m.regularsCount > 0) {
+    head('Regular activities');
+    out.push(REGULARS_INTRO, `${REGULARS_BUTTON(m.regularsCount)}: ${siteUrl('/regulars/')}`);
+    const fresh = freshRegulars(m.regulars || []);
+    if (fresh.length) out.push('');
+    for (const r of fresh) {
+      out.push(`${FRESH_LABEL[r.fresh] || FRESH_LABEL.listed}: ${[r.what, freshWhen(r), r.where].filter(Boolean).join(' · ')}`
+        + (r.note ? ` (${r.note})` : '') + (r.more ? ` · More: ${r.more}` : (r.link ? ` · ${r.link.text}: ${siteUrl(r.link.url)}` : '')));
+    }
+    out.push('');
+  } else if (Array.isArray(m.regulars) && m.regulars.length) {
     head('Regular activities');
     out.push(`${REGULARS_MORE} Regular activities page: ${siteUrl('/regulars/')}`, '');
     regularDays(m.regulars).forEach((g, i) => {
       out.push(...(i ? [''] : []), g.day);
       for (const r of g.items) {
         out.push([r.what, regularTime(r), r.where].filter(Boolean).join(' · ')
-          + (r.note ? ` (${r.note})` : '') + (r.link ? ` · ${r.link.text}: ${siteUrl(r.link.url)}` : ''));
+          + (r.note ? ` (${r.note})` : '') + (r.link ? ` · ${r.link.text}: ${siteUrl(r.link.url)}` : '')
+          + (r.more ? ` · More: ${r.more}` : ''));
       }
     });
     out.push('');
@@ -336,9 +435,15 @@ function renderText(m) {
     head('News');
     for (const it of m.news) item(it.title, it.meta, it.body, it.link);
   }
+  if (m.cartoon) out.push('', `This week's cartoon: ${m.cartoon.caption}`, `See it here: ${m.cartoon.src}`, '');
   if (m.notices.length) {
     head('Notices');
-    for (const it of m.notices) item(it.title, it.meta, it.body, it.link);
+    for (const it of m.notices) item(it.title, it.meta, it.body, it.link, it.link2);
+  }
+  if (m.where) {
+    head('Where in the Lenches?');
+    if (m.where.answer) out.push(`Last week's answer: ${m.where.answer.text}`, '');
+    if (m.where.puzzle) out.push(WHERE_INTRO, `See this week's close-up: ${m.where.puzzle.src}`, '');
   }
   head(m.roads.length ? 'Bins and roads' : 'Bins');
   const bl = binLines(m.bins);
@@ -357,13 +462,34 @@ function renderText(m) {
 
 /* ------------------------------------------------------------ Render API -- */
 
-function render(model) {
-  const subject = `The Lenches Newsletter – ${dateParts(model.issueDate).subject}`;
-  const html = renderHtml(model, subject);
+// Subject line (11 Nov 2026, Jon): "The Lenches Newsletter – 12 Nov: Liz's Quiz, Christmas Fayre and
+// more" from select.js subjectTeaser; snapshots from before it (no subjectTeaser) or an issue with no
+// events keep "The Lenches Newsletter – Thursday 12 November".
+const WHERE_INTRO = "Can you place this close-up? The answer is in next week's newsletter.";
+
+function subjectFor(model) {
+  const p = dateParts(model.issueDate);
+  const names = Array.isArray(model.subjectTeaser) ? model.subjectTeaser.filter(Boolean) : [];
+  if (!names.length) return `The Lenches Newsletter – ${p.subject}`;
+  // A name with its own "and" (e.g. "Liz's Quiz and pub night") gets a comma before the next "and".
+  const hasAnd = names.some((n) => /\sand\s/i.test(n));
+  const list = model.subjectMore ? `${names.join(', ')}${hasAnd ? ',' : ''} and more`
+    : names.join(hasAnd ? ', ' : ' and ');
+  return `The Lenches Newsletter – ${p.date} ${p.mon}: ${list}`;
+}
+
+function render(model, { entries = null } = {}) {
+  const subject = subjectFor(model);
+  TAGS = entries && typeof entries === 'object' ? entries : null;
+  let html;
+  try { html = renderHtml(model, subject); } finally { TAGS = null; }
   const text = renderText(model);
   const hash = crypto.createHash('sha256').update(`${subject}\n\u0000${html}\n\u0000${text}`, 'utf8').digest('hex');
   return { subject, html, text, hash };
 }
+
+// Under the email's Send button (4 Nov, Jon): it still works, but the panel is the usual way.
+const SEND_NOTE = "You can send from here, but the usual way is Send to all on the admin panel's Newsletter draft screen, which shows when Rimmer last checked the issue.";
 
 // Signed buttons (actions.js) as HTML and text, for the preview and reminder emails.
 // info: { send, rebuild, pending: [{ title, approve?, reject? }], pendingTotal, note }
@@ -382,13 +508,14 @@ function actionsBlock(info) {
       + `<div style="color:${C.muted};font-size:12px;">Approvals reach this issue only when you Rebuild.</div></div>`
     : '<div style="margin-top:8px;">Nothing awaiting approval.</div>')
     + `<div style="margin-top:10px;">${btn(info.send, C.green)}${btn(info.rebuild, C.accentText)}</div>`
+    + (info.send ? `<div style="margin-top:6px;color:${C.muted};font-size:12px;">${esc(SEND_NOTE)}</div>` : '')
     + (info.note ? `<div style="margin-top:6px;color:${C.muted};font-size:12px;">${esc(info.note)}</div>` : '');
   const lines = [total ? `Awaiting approval (${total}; approvals reach this issue only when you Rebuild):` : 'Nothing awaiting approval.'];
   for (const p of pend) {
     lines.push(`- ${p.title}`);
     if (p.approve) lines.push(`  Approve: ${p.approve}`, `  Reject: ${p.reject}`);
   }
-  if (info.send) lines.push('', `${info.send.label}: ${info.send.url}`);
+  if (info.send) lines.push('', `${info.send.label}: ${info.send.url}`, SEND_NOTE);
   if (info.rebuild) lines.push(`${info.rebuild.label}: ${info.rebuild.url}`);
   if (info.note) lines.push(info.note);
   return { html, text: lines.join('\n') };
@@ -421,4 +548,4 @@ function wrapPreview(rendered, info) {
   };
 }
 
-module.exports = { render, wrapPreview, actionsBlock, dateParts, UNSUB_MARK };
+module.exports = { subjectFor, render, wrapPreview, actionsBlock, dateParts, UNSUB_MARK };

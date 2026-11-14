@@ -544,7 +544,7 @@ test('E2E: state, session and the panel files', async () => {
   const code = await js.text();
   assert.doesNotThrow(() => new Function(code), 'the panel script parses');
   assert.doesNotMatch(code, /innerHTML/, 'all text goes in as text nodes');
-  assert.doesNotMatch(code, /nlsend|nlbuild/, 'no newsletter send in the panel');
+  assert.doesNotMatch(code, /nlsend|nlbuild/, 'the panel sends only through /admin/api/newsletter (Send to all, 4 Nov)');
   const css = await worker.fetch(await reqWith('/admin/app.css'), env());
   assert.match(await css.text(), /prefers-color-scheme: dark/);
 });
@@ -915,12 +915,48 @@ test('Newsletter draft: Rebuild and Test send map to nlquiet / nltest, panel onl
   const today = '2026-10-29';
   assert.deepEqual(planNewsletter({ action: 'rebuild', issueDate: '2026-10-29' }, today).p, { a: 'nlquiet', i: '2026-10-29' });
   assert.deepEqual(planNewsletter({ action: 'test', issueDate: '2026-11-05' }, today).p, { a: 'nltest', i: '2026-11-05' });
+  // Send to all (4 Nov): the email's nlsend decision, with the draft's hash, count and mode.
   assert.equal(planNewsletter({ action: 'send', issueDate: '2026-10-29' }, today).status, 400);
+  assert.deepEqual(planNewsletter({ action: 'send', issueDate: '2026-10-29', hash: '0123456789ABCDEF', count: 425, mode: 'live' }, today).p,
+    { a: 'nlsend', i: '2026-10-29', h: '0123456789abcdef', n: 425, m: 'live' });
+  assert.equal(planNewsletter({ action: 'send', issueDate: '2026-10-29', hash: '0123456789abcdef', count: 425, mode: 'off' }, today).status, 400);
+  assert.equal(planNewsletter({ action: 'send', issueDate: '2026-10-29', hash: '0123456789abcdef', count: '', mode: 'live' }, today).status, 400);
+  assert.equal(planNewsletter({ action: 'send', issueDate: '2026-10-22', hash: '0123456789abcdef', count: 425, mode: 'live' }, today).status, 409);
+  assert.deepEqual(dispatchFor({ a: 'nlsend', i: '2026-10-29', h: '0123456789abcdef', n: 425, m: 'live' }),
+    ['newsletter', { action: 'send', issue_date: '2026-10-29', confirm_count: '425', expect_hash: '0123456789abcdef', expect_mode: 'live' }]);
   assert.equal(planNewsletter({ action: 'test', issueDate: 'x' }, today).status, 400);
   assert.equal(planNewsletter({ action: 'test', issueDate: '2026-10-22' }, today).status, 409);
   assert.equal(planNewsletter({ action: 'test', issueDate: '2026-11-06' }, today).status, 409);
   assert.deepEqual(dispatchFor({ a: 'nlquiet', i: '2026-10-29' }), ['newsletter', { action: 'build', issue_date: '2026-10-29', rebuild: true, step: 'build' }]);
   assert.deepEqual(dispatchFor({ a: 'nltest', i: '2026-10-29' }), ['newsletter', { action: 'build', issue_date: '2026-10-29', step: 'preview' }]);
   assert.equal(validPayload({ a: 'nltest', i: 'abc' }), false);
-  assert.deepEqual(PANEL_ONLY, ['nlquiet', 'nltest']);
+  assert.deepEqual(PANEL_ONLY, ['nlquiet', 'nltest', 'contactmail', 'done', 'merge', 'sug_ok', 'sug_no', 'rfix', 'rfix_ok', 'rfix_all', 'entryedit']);
+});
+
+test('Add details (merge): only for an already-listed item, panel only, fields as JSON in the body', async () => {
+  const { mergeBody } = await import('../src/admin/actions.js');
+  const { dispatchFor, validPayload, PANEL_ONLY: PO } = await import('../src/core.js');
+  const dup = JSON.stringify({ key: 'h:events/2026-11-10-x.json', title: 'Coffee morning', changes: { body: 'New text' } });
+  const row = { id: 'm1-1', status: 'pending', duplicate: dup };
+  const plan = planPending({ action: 'merge', id: 'm1-1', fields: { body: ' New text ', link_url: 'https://example.org/a' } }, row);
+  assert.equal(plan.p.a, 'merge');
+  assert.deepEqual(JSON.parse(plan.body), { body: 'New text', link_url: 'https://example.org/a' });
+  assert.equal(validPayload(plan.p), true);
+  assert.deepEqual(dispatchFor(plan.p, '', plan.body), ['approval', { id: 'm1-1', action: 'merge', body: plan.body }]);
+  assert.ok(PO.includes('merge'));
+  assert.equal(planPending({ action: 'merge', id: 'm1-1', fields: {} }, { id: 'm1-1', status: 'pending' }).status, 409);
+  assert.equal(planPending({ action: 'merge', id: 'm1-1', fields: { link_url: 'javascript:alert(1)' } }, row).status, 400);
+  assert.equal(mergeBody({ body: '' }), '{}');
+  assert.equal(validPayload({ a: 'merge', i: 'm1-1' }), false);
+});
+
+test('Newsletter draft meta range covers every meta row (Send to all needs hash, send_mode, send_count)', async () => {
+  const { draftMeta, DRAFT_META_RANGE } = await import('../src/admin/draft.js');
+  const last = Number(/B(\d+)$/.exec(DRAFT_META_RANGE)[1]);
+  const keys = ['as_of', 'issue_date', 'mode', 'status', 'subject', 'items', 'events', 'notices', 'roads', 'elsewhere', 'held', 'cutoff', 'subscribers', 'built_at', 'tested_at', 'hash', 'send_mode', 'send_count'];
+  assert.ok(keys.length + 1 + 5 <= last, 'room for the header, every key and a few more');
+  const rows = [['key', 'value'], ...keys.map((k) => [k, k === 'send_count' ? '450' : 'x'])].slice(0, last);
+  const m = draftMeta(rows);
+  assert.equal(m.hash, 'x');
+  assert.equal(m.send_count, 450);
 });

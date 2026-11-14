@@ -1,0 +1,85 @@
+name: Listing edit
+run-name: Listing edit ${{ github.event.client_payload.id }}
+
+# "Edit everything" (4 Nov): one listing edit Jon saved on the Edit page or the Newsletter draft's
+# editor (admin panel -> decide() entryedit; scripts/entryedit). The edited text is read from the
+# event file, never env (a step's env is public).
+#   repo entries (events, notices, Regular activities, Where to eat, Local trades): the file is
+#     written, committed here, then the site build (eat and trades also redeploy the Worker)
+#   published submissions: their Pending cells, then Publish
+#   if the next issue is already built: the newsletter Rebuild (as the panel's, sends nothing)
+# The run name carries the edit id, so the panel can follow this run (/admin/api/entry-status).
+on:
+  repository_dispatch:
+    types: [entry-edit]
+
+permissions:
+  contents: write
+  actions: write
+
+# One queue per edit, so every save runs (a shared group drops waiting runs).
+concurrency:
+  group: entry-edit-${{ github.event.client_payload.id }}
+  cancel-in-progress: false
+
+jobs:
+  edit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Write the edit
+        id: edit
+        run: node scripts/entryedit/index.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+
+      - name: Commit the edit and rebuild the site
+        if: ${{ success() && steps.edit.outputs.commit == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add -A src
+          if git diff --cached --quiet; then echo "No files changed."; exit 0; fi
+          git config user.name "Lenches Pipeline"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Listing edit from the admin panel"
+          git pull --rebase
+          git push
+          gh workflow run build.yml --ref main
+
+      - name: Redeploy the Worker (Local trades or Where to eat changed)
+        if: ${{ success() && steps.edit.outputs.worker == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-worker.yml --ref main
+
+      - name: Publish the edited submission
+        if: ${{ success() && steps.edit.outputs.publish == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run publish.yml --ref main
+
+      # The newsletter build waits for any Publish run first (scripts/newsletter/waitruns.js) and
+      # reads src/items and the Pending tab from main, so it picks up this edit.
+      - name: Rebuild the built newsletter (sends nothing)
+        if: ${{ success() && steps.edit.outputs.rebuild == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_DATE: ${{ steps.edit.outputs.issue_date }}
+        run: |
+          sleep 10
+          jq -n --arg d "$ISSUE_DATE" '{event_type: "newsletter", client_payload: {action: "build", issue_date: $d, rebuild: true, step: "build"}}' \
+            | gh api "repos/${GITHUB_REPOSITORY}/dispatches" --input -

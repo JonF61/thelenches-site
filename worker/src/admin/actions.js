@@ -13,7 +13,7 @@
 
 import { validPayload, cleanReason, cleanBody } from '../core.js';
 
-export const PENDING_ACTIONS = ['approve', 'approve_own', 'approve_rewrite', 'reject', 'trust'];
+export const PENDING_ACTIONS = ['approve', 'approve_own', 'approve_rewrite', 'reject', 'done', 'trust', 'merge'];
 export const REPLY_ACTIONS = { approve: 'send', reject: 'skip', edit: 'edit', redraft: 'redraft', close: 'close' };
 export const PHOTO_ACTIONS = { approve: 'approved', reject: 'rejected' };
 const APPROVING = new Set(['approve', 'approve_own', 'approve_rewrite', 'trust']);
@@ -51,7 +51,22 @@ const refuse = (status, error) => ({ error, status });
 // Pending decision. row: the Pending row (null if not found); hasPeopleOk: whether the
 // tab has a people_ok column; choicePeople: the people value of the suggested image chosen
 // for it (image_choice), if any. Returns { p } for decide(), or { error, status }.
-export function planPending({ action, id }, row, { hasPeopleOk = false, sources = [], choicePeople = '' } = {}) {
+// Add details (3 Nov): Jon's fields for the already-listed entry -> JSON (pure), or null.
+const MERGE_FIELDS = { body: 2000, link_text: 80, link_url: 500, link2_text: 80, link2_url: 500 };
+export function mergeBody(fields) {
+  if (!fields || typeof fields !== 'object') return null;
+  const out = {};
+  for (const [k, n] of Object.entries(MERGE_FIELDS)) {
+    const v = cleanBody(fields[k]).slice(0, n);
+    if (!v) continue;
+    if (/_url$/.test(k) && !/^https?:\/\/\S+$/i.test(v)) return null;
+    out[k] = v;
+  }
+  return JSON.stringify(out);
+}
+const listedOf = (row) => { try { const o = JSON.parse(String(row.duplicate || '')); return o && o.key ? o : null; } catch { return null; } };
+
+export function planPending({ action, id, reason = '', fields = null }, row, { hasPeopleOk = false, sources = [], choicePeople = '' } = {}) {
   if (!PENDING_ACTIONS.includes(action)) return refuse(400, `Unknown action "${action}"`);
   if (!row) return refuse(404, `No Pending item ${id}`);
   if (row.status !== 'pending') return refuse(409, `This item is already "${row.status}"`);
@@ -64,12 +79,18 @@ export function planPending({ action, id }, row, { hasPeopleOk = false, sources 
     return refuse(409, 'The chosen image may show people: tick "People OK" before approving');
   }
   const p = { a: action, i: String(id) };
+  if (action === 'merge') {
+    if (!listedOf(row)) return refuse(409, 'This item is not marked as already listed');
+    p.b = mergeBody(fields);
+    if (p.b === null) return refuse(400, 'A link must start with http:// or https://');
+  }
   if (action === 'trust') {
     p.k = trustKeyFor(row, sources);
     if (!p.k) return refuse(409, 'This item has no source that can be trusted');
   }
   if (!validPayload(p)) return refuse(400, 'Invalid item id');
-  return { p };
+  // Reject's optional reason (3 Nov): kept in Pending reject_reason for Previous submissions.
+  return { p, reason: action === 'reject' ? cleanReason(reason) : '', body: action === 'merge' ? p.b : '' };
 }
 
 // Reply decision. Returns { p, reason, body } for decide(), or { error, status }.
@@ -158,15 +179,18 @@ export function planSuggest({ id, sid }, row, suggestion, { hasChoice = false, h
   return { value: String(sid), save };
 }
 
-// Newsletter draft screen: Rebuild (nlquiet: rebuild, nothing sent) or Test send (nltest:
-// the preview of that build to Jon only). The issue date is the draft's, today to 7 days on.
-// Returns { p } for decide(), or { error, status }.
-export function planNewsletter({ action, issueDate }, today) {
-  const a = { rebuild: 'nlquiet', test: 'nltest' }[String(action || '')];
+// Newsletter draft screen: Rebuild (nlquiet: rebuild, nothing sent), Test send (nltest:
+// the preview of that build to Jon only) or Send to all (4 Nov, Jon: nlsend, the same decision
+// as the preview email's Send button, with the built issue's hash, mode and recipient count
+// from the draft tab; send.js refuses unless the issue is tested and all three still match).
+// The issue date is the draft's, today to 7 days on. Returns { p } for decide(), or { error, status }.
+export function planNewsletter({ action, issueDate, hash, count, mode }, today) {
+  const a = { rebuild: 'nlquiet', test: 'nltest', send: 'nlsend' }[String(action || '')];
   if (!a) return { error: `Unknown newsletter action "${action}"`, status: 400 };
   const i = String(issueDate || '');
   const p = { a, i };
-  if (!validPayload(p)) return { error: 'Bad issue date', status: 400 };
+  if (a === 'nlsend') Object.assign(p, { h: String(hash || '').toLowerCase(), n: String(count ?? '').trim() === '' ? NaN : Number(count), m: String(mode || '').toLowerCase() });
+  if (!validPayload(p)) return { error: a === 'nlsend' ? 'This draft has no Send details: Refresh it first' : 'Bad issue date', status: 400 };
   const last = new Date(Date.parse(`${today}T12:00:00Z`) + 7 * 86400000).toISOString().slice(0, 10);
   if (i < today || i > last) return { error: `The ${i} issue is not the next one: Refresh the draft first`, status: 409 };
   return { p };

@@ -9,12 +9,15 @@
 //   approved     Jon pressed Approve and the draft went as written
 //   edited       Jon changed it (Edit email, or the Replies body cell) before it went
 //   rejected     Jon pressed Reject (reason from the confirm page, if given)
+//   handled      Jon pressed "Replied in Gmail" (2 Nov): closed, not a rejection, never learned from
 //   auto_sent    sent by Holly in holiday mode
 //   timed_out    no decision in 24h: the acknowledgement went without the question
 //   redrafted    Jon pressed Redraft: reason is what he asked to change (the new draft
 //                has its own row)
 //   closed       Jon pressed "Close, no reply needed" on an email still owed a reply
 //   shadow       shadow mode: never sent
+//   ignored:<was> Jon's Ignore on the panel's Autonomy screen (a test or a slip): left out of
+//                the autonomy counts and of Holly's learning; Count again restores it
 // Jon can type a reason in the tab by hand at any time.
 // The tab is created (at the end, after every other tab) the first time it is needed.
 // Writes here never stop a reply: failures only warn.

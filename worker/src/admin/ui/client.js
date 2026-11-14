@@ -13,8 +13,9 @@
 // Contacts: a list (search; status, village and organisation filters; newest contact first)
 // and a page per contact; each field saves on its own, stale-checked.
 // Outreach (26 Oct): who is due a nudge (seasonal, gone quiet, leads; /admin/api/outreach),
-// with Draft nudge (Holly drafts; the card comes by email), Snooze 3 months, Never nudge,
+// with Draft nudge (Holly drafts; the draft appears under Replies), Snooze 3 months, Never nudge,
 // and Clear for those held back (next_nudge writes through /admin/api/contact).
+// A contact's page has Draft email (1 Nov): a brief for Holly (/admin/api/contactmail).
 // Organisations (27 Oct): every organisation the site lists and where its yearly check is
 // (/admin/api/orgs), with Draft check / Draft chaser (/admin/api/orgcheck), and Done, Snooze
 // 3 months, Never and Clear (next_check writes through /admin/api/orgnext).
@@ -27,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '44';
+export const UI_VERSION = '55';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -37,17 +38,19 @@ export const CLIENT_JS = String.raw`
     picked: {}, ff: '', openF: {}, drag: null, busy: false, order: {}, shown: '' };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
-  var VIEWS = [['summary', 'Summary'], ['draft', 'Newsletter draft'], ['stats', 'Newsletter stats'], ['visitors', 'Site visitors'], ['queue', 'Submissions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
+  var VIEWS = [['summary', 'Summary'], ['draft', 'Newsletter draft'], ['stats', 'Newsletter stats'], ['visitors', 'Site visitors'], ['queue', 'Submissions'], ['suggestions', 'Suggestions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['autonomy', 'Autonomy'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
   // Health has no menu entry (28 Oct): the top bar's Diagnostic and Watchdog open it, as does Summary's Site health.
   // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
   var INTROS = {
-    draft: 'The next newsletter as it would be built now from what is approved. It updates after each approval and every 3 hours. Once the issue is built on Thursday, this shows it exactly as built.',
+    draft: 'The next newsletter as it would be built now from what is approved. It updates after each approval and every 3 hours. Once the issue is built on Thursday, this shows it exactly as built. Edit text lets you change entries\' wording and links here.',
     visitors: 'How many people use the website: page views and visits by day and by month, and the most viewed pages. Counts only: nobody can be identified.',
     stats: 'How each newsletter did: how many it went to, bounces, and anonymous opens and link clicks. Counts are totals only: nobody can see who opened or clicked.',
     summary: 'What needs you now, and what is coming up, in one place. Tap a heading to open its page.',
+    autonomy: 'Progress towards Holly acting on her own, kind by kind. Nothing here is automatic: each step up needs your tap. Ignore a decision (a test or a slip) to leave it out of the counts and of Holly\'s learning.',
     queue: 'Events and notices sent in by email or picked up from feeds, waiting for you to approve or reject. Approved items go on the website and into Thursday\'s newsletter.',
     replies: 'Holly\'s draft emails waiting for you to Approve, Edit, Redraft or Reject. Below them: emails still owed a reply, and everything already sent.',
-    owed: 'Emails that got an automatic holding reply over 2 days ago but no real answer yet. Redraft one, reply yourself, or close it.',
+    owed: 'Emails that got a holding reply over 2 days ago but no real answer yet. Redraft one, reply yourself, or close it.',
+    suggestions: 'New Local trades and Where to eat entries suggested by readers through the forms on those pages, already confirmed by email. Approve adds the entry to the page as shown; Edit lets you change it first.',
     feedback: 'Comments and corrections from readers via the website\'s feedback form, to approve, reject or postpone, with Holly\'s replies to them.',
     lessons: 'Rules Holly follows in every draft. Approve or reject the weekly suggestions, edit or delete any lesson, or add your own (yours count as approved).',
     contacts: 'Everyone who sends in, or could send in, news and events, with their profile, contributions and status. Outreach shows who is due a friendly nudge; Organisations, the yearly check of each organisation\'s entry on the site.',
@@ -55,7 +58,116 @@ export const CLIENT_JS = String.raw`
     health: 'The daily diagnostic, the watchdog and the Google account the panel uses. Look here if something seems wrong.',
     activity: 'What the website\'s automatic jobs on GitHub are doing: checking email, publishing, building the site, sending. Newest first; tap a name to open it on GitHub.'
   };
-  function intro(view) { return h('p', { class: 'meta intro' }, INTROS[view]); }
+  // How this works (Jon, 4 Nov: every screen says how to use it and what its words mean): a folded
+  // guide under each screen's intro. [term, meaning] pairs; a plain string is a sentence on its own.
+  var HELP = {
+    summary: [
+      'Each box is one screen in short. Tap its heading to open that screen.',
+      ['No action needed on…', 'the screens with nothing waiting for you.'],
+      ['Red numbers and badges', 'something needs you, e.g. a failed job or an urgent item.'],
+      ['Claude spend', 'what the Claude API has cost this month in US dollars (as Anthropic bills), worked out from each job\'s own counts at list prices, so it can differ from the Console by a few cents. Cache = text Claude had read moments before, charged at a fraction of the price.']],
+    autonomy: [
+      'Each kind of submission or reply counts your decisions on Holly\'s work.',
+      ['As written / changed / rejected', 'approved unchanged, approved after your edits, or turned down.'],
+      ['Qualifies', '30 decisions, 95% as written over the latest 30 and no rejection in the last 20. Even then nothing goes automatic until you agree a next step.'],
+      ['If it had been on', 'what would have gone out without you over the last 30 days.'],
+      ['Ignore / Count again', 'leave a test or a slip out of the counts and of Holly\'s learning, or put it back.']],
+    draft: [
+      ['Live draft', 'changes as items are approved; Refresh rebuilds this preview now.'],
+      ['Built', 'Thursday\'s issue is made and frozen exactly as it will go out.'],
+      ['Rebuild', 're-makes a built issue with anything approved since. It sends nothing.'],
+      ['Test send', 'emails the preview of the built issue to you only.'],
+      ['Edit text', 'outlines each event, notice, regular activity and submission in the draft in blue: click one to change its wording or links, then Save and publish. It changes the website too (Saving → Building → Live ✓). Titles, dates and official statements stay with Kryten. If the issue is already built it is rebuilt with the change, so Test send again before Send to all.'],
+      ['Send to all', 'sends the built issue to every subscriber, once it has had a Test send. It first shows when it was last rebuilt and tested and when Rimmer last checked it, and asks you to confirm. Once it starts, the button goes and a bar shows how many have been sent, until it says Sent ✓. After a Rebuild, Test send again before sending. The preview email\'s Send button still works too.'],
+      ['Rimmer', 'his notes on the issue sit above the draft (open How this works on his card).']],
+    stats: [
+      ['Sent', 'how many addresses the issue went to.'],
+      ['Bounces', 'addresses that failed for good in the week after; they are taken off the list.'],
+      ['Opens', 'an undercount: many email apps block the tiny image that counts them.'],
+      ['Clicks', 'more reliable: each link click is counted once as it passes through.'],
+      'Counts are totals only and are kept for about 3 months.'],
+    visitors: [
+      ['Page views', 'pages opened.'],
+      ['Visits', 'one person\'s session, however many pages they look at.'],
+      ['Today', 'live; earlier days are saved each night, so the history keeps after Cloudflare drops its detail.']],
+    queue: [
+      ['Approve', 'puts it on the website and into Thursday\'s newsletter; Edit changes the wording first.'],
+      ['Reject', 'turns it down; the reason you type is for you only.'],
+      ['Done already', 'you have dealt with it another way: nothing publishes and no note is sent.'],
+      ['Trust this source', 'approves this item and marks the sender trusted. For now their items still wait here, marked "trusted source".'],
+      ['Already listed', 'the site has this already; Add details puts any new facts into the existing entry.'],
+      ['Different sender', 'an Already listed update not from whoever sent the entry in (hand-written entries always show it): check it is genuine before adding details.'],
+      ['Possible repeat', 'it may be something already sent in: check before approving.'],
+      ['Official, own words', 'from a council or other official body: only typos may be corrected.'],
+      ['Urgent', 'needs a decision soon (e.g. happening before the next newsletter).'],
+      ['Road', 'a road works or closure item, shown on the Roads page and map.'],
+      ['Check email now', 'fetches new mail straight away instead of waiting for the next run.'],
+      ['Previous submissions', 'everything already decided, with where and when it appeared.']],
+    suggestions: [
+      ['Approve', 'adds the entry to Local trades or Where to eat as shown.'],
+      ['Edit', 'change any field, then Save and approve.'],
+      ['Reject', 'turns it down; the reason is for you only.'],
+      ['Already listed?', 'names on the page that look similar: check it isn\'t there already.'],
+      'Nothing is ever sent back to the person who suggested it.'],
+    replies: [
+      ['Approve', 'sends Holly\'s draft as it is; Edit lets you change it, then send.'],
+      ['Redraft', 'Holly writes it again; What to say tells her the gist ("Write the reply afresh, saying: …").'],
+      ['Reject', 'drops the draft; Replied in Gmail closes it when you answered yourself (not counted or learned from).'],
+      ['They replied', 'the sender has written again since.'],
+      ['Own thread', 'you wrote by hand earlier in this conversation, so Holly drafts nothing: Reply in Gmail, then Done.'],
+      'Your edits and reasons teach Holly (see Holly lessons).'],
+    owed: [
+      'These people got the holding reply over 2 days ago and nothing since.',
+      ['Redraft', 'Holly writes a proper answer for you to check in Replies.'],
+      ['Reply in Gmail', 'answer it yourself, then close it here.']],
+    feedback: [
+      ['Suggested update / Correction / Other feedback', 'what the reader sent through the website\'s form.'],
+      ['Rating', 'Holly\'s score of how useful it is, 1 to 5.'],
+      ['Approve', 'you agree; make the change, add a note saying what you did, then Mark implemented.'],
+      ['Mark implemented', 'if they gave an email, Holly drafts a thank-you saying what changed, from your notes, for you to Send, Edit or Skip.'],
+      ['Postpone', 'hides it until a date you choose.'],
+      ['Reject', 'turns it down.']],
+    lessons: [
+      'Holly reads the approved lessons before every draft (the newest 20).',
+      ['Proposed', 'Monday\'s suggestions from the week\'s corrections: Approve or Reject.'],
+      ['Check: …', 'this lesson may clash with her fixed rules, her voice guide or another lesson.'],
+      ['Add', 'your own lesson, approved straight away; Edit and Delete work on any lesson.'],
+      'Lessons never name anyone, and her fixed rules always win.'],
+    contacts: [
+      ['Contacts', 'one row per person or group who sends in, or could send in, news; tap a name for their page, messages and Draft email.'],
+      ['Status', 'how they relate to the site (contributor, lead, official, organiser…). Ignore blocks them for good.'],
+      ['Quiet a year', 'Holly sends them nothing for 365 days.'],
+      ['Other addresses', 'one person\'s extra email addresses, so they count as one contact.'],
+      ['Outreach', 'who is due a friendly nudge; Draft nudge has Holly write one.'],
+      ['Organisations', 'the yearly check of each organisation\'s entry on the site; Draft check / Draft chaser. Its Commercial Listings button shows the same check for every Local trades and Where to eat entry, with Add an email for those without an address. Mail from anyone at an organisation\'s own domain (e.g. head@ when the check went to office@) counts as their reply; never gmail.com and the like, or a domain two listed organisations share.'],
+      'Every draft waits in Replies for your Approve; nothing is sent by itself.',
+      ['Delete', 'removes the row; only new mail from them can bring them back.']],
+    photos: [
+      ['Approve', 'publishes the photo; its folder sets its village and subject on the site.'],
+      ['May show people', 'check consent before approving.'],
+      ['Possible duplicate', 'looks like a photo already there.'],
+      ['Rename', 'always safe. Move changes where the photo shows on the site.'],
+      ['Reject / In To delete', 'the photo goes to the To delete folder, which you empty yourself in Drive.']],
+    health: [
+      ['Diagnostic', 'the daily end-to-end check of email, the Sheet, Claude and the site.'],
+      ['Watchdog', 'warns when a scheduled job hasn\'t run when it should.'],
+      ['Google account', 'the service account the panel and jobs use for the Sheet and Drive.'],
+      'Rimmer\'s card has its own How this works.'],
+    activity: [
+      'The latest 20 automatic jobs on GitHub, refreshed every 15 seconds while open.',
+      ['Green tick / red cross / spinner', 'finished fine / failed / still running.'],
+      'A failed run usually also emails you; tap its name to see why on GitHub.']
+  };
+  function helpBox(items) {
+    return h('details', { class: 'help' }, h('summary', null, 'How this works'),
+      h('ul', null, items.map(function (it) {
+        return Array.isArray(it) ? h('li', null, h('b', null, it[0]), ' ' + it[1]) : h('li', { class: 'plain' }, it);
+      })));
+  }
+  function intro(view) {
+    var p = h('p', { class: 'meta intro' }, INTROS[view]);
+    return HELP[view] ? h('div', { class: 'intro-wrap' }, p, helpBox(HELP[view])) : p;
+  }
   var FLAG_LABELS = {
     own_wording: 'Asked for own wording', too_early: 'Too early', after_deadline: 'After deadline',
     flyer_limit: 'Flyer limit', newsletter_limit: 'Newsletter limit', people_in_image: 'Children in photo',
@@ -177,6 +289,7 @@ export const CLIENT_JS = String.raw`
       S.outreach = null;
       S.orgs = null;
       S.summary = null;
+      S.rimmer = null;
       render();
       if (!quiet) toast('Up to date');
     } catch (e) {
@@ -201,6 +314,10 @@ export const CLIENT_JS = String.raw`
     }
     S.done[kind + ':' + id] = doneText || 'Done';
     toast(r.json.message || 'Done');
+    if (kind === 'reply' && action === 'redraft') {
+      var was = ((S.data && S.data.replies && S.data.replies.rows) || []).find(function (x) { return x.reply_id === id; });
+      watchDraft(was ? (str(was.subject) || 'the reply') : 'the reply', was ? str(was.to) : '');
+    }
     closeOverlay();
     render();
     return true;
@@ -212,6 +329,70 @@ export const CLIENT_JS = String.raw`
   // same elements (same row, same content), only changed ones are rebuilt, and the scroll
   // position (pinned to the first card in view), the detail's and the menu's scroll come
   // back as they were. A different view or folder starts at the top.
+  // Drafting progress (1 Nov): after a tap that makes Holly draft (Redraft, What to say, Draft
+  // email, Draft nudge, Draft check) a bar shows "Holly is drafting…" with a timer, and the
+  // panel checks every 8 seconds for the new awaiting draft (a Replies row to the same
+  // address that wasn't there before; any new one when the address isn't known). When it
+  // lands: "Draft ready" and a button to Replies. Gives up after 4 minutes (see Activity).
+  var WAIT_POLL_MS = 8000;
+  var WAIT_MAX_MS = 240000;
+  function awaitingIds() {
+    return ((S.data && S.data.replies && S.data.replies.rows) || [])
+      .filter(function (x) { return lower(x.status) === 'awaiting'; }).map(function (x) { return x.reply_id; });
+  }
+  function watchDraft(label, to) {
+    S.wait = S.wait || [];
+    S.wait.push({ label: label, to: lower(to), since: Date.now(), before: awaitingIds() });
+    waitBar();
+    if (!S.waitTimer) S.waitTimer = setInterval(waitTick, 1000);
+  }
+  function waitBar() {
+    var bar = document.querySelector('.waitbar');
+    if (!S.wait || !S.wait.length) { if (bar) bar.remove(); return; }
+    if (!bar) { bar = h('div', { class: 'waitbar', role: 'status' }); document.body.appendChild(bar); }
+    var w = S.wait[0];
+    var secs = Math.round((Date.now() - w.since) / 1000);
+    bar.textContent = 'Holly is drafting: ' + w.label + ' (' + Math.floor(secs / 60) + ':' + ('0' + (secs % 60)).slice(-2) + ')'
+      + (S.wait.length > 1 ? ' and ' + (S.wait.length - 1) + ' more' : '');
+  }
+  async function waitTick() {
+    waitBar();
+    if (!S.wait || !S.wait.length) { clearInterval(S.waitTimer); S.waitTimer = null; return; }
+    var now = Date.now();
+    if (S.waitBusy || now - (S.waitLast || 0) < WAIT_POLL_MS) return;
+    S.waitBusy = true;
+    S.waitLast = now;
+    try {
+      var r = await api('/admin/api/state');
+      if (!r.ok) return;
+      var rows = (r.json.replies && r.json.replies.rows) || [];
+      var ready = [];
+      S.wait = S.wait.filter(function (w) {
+        var fresh = rows.find(function (x) {
+          return lower(x.status) === 'awaiting' && w.before.indexOf(x.reply_id) < 0 && (!w.to || lower(x.to) === w.to);
+        });
+        if (fresh) { ready.push(w); return false; }
+        if (now - w.since > WAIT_MAX_MS) { toast('Still drafting ' + w.label + ' after 4 minutes: check Activity for a failed run.', true); return false; }
+        return true;
+      });
+      if (ready.length) {
+        S.data = r.json;
+        S.done = {};
+        render();
+        var t = h('div', { class: 'toast', role: 'status' }, 'Draft ready: ' + ready.map(function (w) { return w.label; }).join(', ') + ' ',
+          S.view === 'replies' ? null : h('button', { class: 'btn link', onclick: function () { t.remove(); S.view = 'replies'; render(); } }, 'Open Replies'));
+        var old = document.querySelector('.toast');
+        if (old) old.remove();
+        document.body.appendChild(t);
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { t.remove(); }, 12000);
+      }
+    } finally {
+      S.waitBusy = false;
+      waitBar();
+    }
+  }
+
   function render() {
     var d = S.data;
     var view = S.view + '|' + S.pf + '|' + (wide() ? 'w' : 'n');
@@ -335,7 +516,8 @@ export const CLIENT_JS = String.raw`
       owed: Array.isArray(d.owed) ? d.owed.filter(function (o) { return !S.done['reply:' + o.holding.reply_id]; }).length : '!',
       photos: d.photos && !d.photos.error ? d.photos.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length : '!',
       feedback: d.feedback && !d.feedback.error ? fbRows(d, 'waiting').length + fbRows(d, 'reply').length : '!',
-      summary: null, draft: null, stats: null, visitors: null, contacts: null, lessons: null, health: null, activity: null
+      suggestions: d.listingSuggestions && !d.listingSuggestions.error ? sgRows(d).length : '!',
+      summary: null, autonomy: null, draft: null, stats: null, visitors: null, contacts: null, lessons: null, health: null, activity: null
     };
   }
 
@@ -360,15 +542,20 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'photos') return split(withIntro(photosList(d)), 'photo');
     if (S.view === 'health') return [h('div', { class: 'list wide' }, top, healthView(d))];
     if (S.view === 'feedback') return [h('div', { class: 'list wide' }, top, feedbackView(d))];
+    if (S.view === 'suggestions') return [h('div', { class: 'list wide' }, top, suggestionsView(d))];
     if (S.view === 'contacts') return [h('div', { class: 'list wide' }, top, contactsView())];
     if (S.view === 'lessons') return [h('div', { class: 'list wide' }, top, lessonsView())];
+    if (S.view === 'autonomy') return [h('div', { class: 'list wide' }, top, autonomyView())];
     if (S.view === 'activity') return [h('div', { class: 'list wide' }, top, activityView())];
     if (S.view === 'stats') return [h('div', { class: 'list wide' }, top, statsView())];
-    if (S.view === 'visitors') return [h('div', { class: 'list wide' }, top, visitorsView())];
+    // Site visitors: Refresh at the top right, beside the intro (Jon, 3 Nov).
+    if (S.view === 'visitors') return [h('div', { class: 'list wide' }, h('div', { class: 'intro-row' }, top,
+      h('button', { class: 'btn', disabled: S.svLoading ? true : null, onclick: function () { S.sv = null; render(); } }, 'Refresh')), visitorsView())];
     // Each time the draft screen opens, check the Cloudflare sign-in is still valid (draftView).
     if (S.view === 'draft' && S.shown.split('|')[0] !== 'draft') S.draftAuth = null;
     if (S.view === 'draft') return [h('div', { class: 'list wide' }, top, draftView(d))];
     if (S.view === 'summary') return [h('div', { class: 'list wide' }, top, summaryView(d))];
+    if (S.filter === 'previous') return [h('div', { class: 'list wide' }, top, queueBar(), historyView())];
     return split(withIntro(queueList(d)), 'pending');
   }
 
@@ -451,14 +638,60 @@ export const CLIENT_JS = String.raw`
 
   function isFlagged(r) { return Boolean(str(r.policy_flags)) || truthy(r.people_in_image) || truthy(r.political_commercial); }
 
+  // Check email now (3 Nov): runs the usual ingest (POST /admin/api/ingest-now), then watches
+  // Activity's runs every 15 seconds for that Ingest run; when it finishes the list reloads and
+  // says how many new items arrived. Gives up watching after 10 minutes (see Activity).
+  var INGEST_POLL_MS = 15000;
+  async function checkEmail() {
+    if (S.ingestBusy) return;
+    var r = await api('/admin/api/ingest-now', {});
+    if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); return; }
+    toast(r.json.message || 'Checking email');
+    var started = Date.now();
+    var before = {};
+    ((S.data && S.data.pending && S.data.pending.rows) || []).forEach(function (x) { before[x.id] = true; });
+    S.ingestBusy = { at: started };
+    render();
+    var tries = 0;
+    var finish = async function (text, bad) {
+      S.ingestBusy = false;
+      await load(true);
+      var fresh = ((S.data && S.data.pending && S.data.pending.rows) || []).filter(function (x) { return !before[x.id]; }).length;
+      toast(text || (fresh ? 'Email checked: ' + fresh + ' new item' + (fresh === 1 ? '' : 's') : 'Email checked: nothing new'), bad);
+      render();
+    };
+    var tick = async function () {
+      tries += 1;
+      var res = await api('/admin/api/runs');
+      var runs = (res.ok && res.json.runs) || [];
+      var mine = runs.filter(function (x) { return x.name === 'Ingest' && Date.parse(x.started) >= started - 60000; })[0];
+      if (mine && mine.status === 'completed') {
+        return finish(mine.conclusion === 'success' ? '' : 'The email check ended "' + str(mine.conclusion) + '": see Activity', mine.conclusion !== 'success');
+      }
+      if (tries * INGEST_POLL_MS >= 600000) return finish('Still checking email: see Activity for the Ingest run', true);
+      setTimeout(tick, INGEST_POLL_MS);
+    };
+    setTimeout(tick, INGEST_POLL_MS);
+  }
+
+  // All / Urgent / Flagged filter the queue; Previous submissions shows decided items (historyView).
+  function queueBar() {
+    var busy = S.ingestBusy;
+    return h('div', { class: 'toolbar' },
+      h('button', { class: 'btn', disabled: busy ? true : null, title: 'Reads new mail in the Pipeline label now, instead of waiting for the next run (every two hours)', onclick: checkEmail },
+        busy ? 'Checking email… (since ' + new Date(busy.at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) + ')' : 'Check email now'),
+      h('div', { class: 'seg', role: 'group', 'aria-label': 'Filter' }, [['all', 'All'], ['urgent', 'Urgent'], ['flagged', 'Flagged'], ['previous', 'Previous submissions']].map(function (f) {
+        return h('button', { 'aria-pressed': S.filter === f[0] ? 'true' : 'false', onclick: function () {
+          if (f[0] === 'previous') { S.history = null; S.hiShown = 25; }
+          S.filter = f[0]; render();
+        } }, f[1]);
+      })));
+  }
+
   function queueList(d) {
     var t = d.pending;
     var els = [];
-    var bar = h('div', { class: 'toolbar' },
-      h('div', { class: 'seg', role: 'group', 'aria-label': 'Filter' }, [['all', 'All'], ['urgent', 'Urgent'], ['flagged', 'Flagged']].map(function (f) {
-        return h('button', { 'aria-pressed': S.filter === f[0] ? 'true' : 'false', onclick: function () { S.filter = f[0]; render(); } }, f[1]);
-      })));
-    els.push(bar);
+    els.push(queueBar());
     if (t.error) { els.push(errorNote(t, 'Pending')); return { els: els }; }
     if (t.headers.indexOf('people_ok') < 0) els.push(h('div', { class: 'note warn' }, 'Pending has no people_ok column: items whose image shows people cannot be approved here.'));
     var rows = t.rows.filter(function (r) { return !S.done['pending:' + r.id]; })
@@ -472,9 +705,21 @@ export const CLIENT_JS = String.raw`
     return { els: els, selected: sel ? function () { return itemCard(sel, true); } : null };
   }
 
+  // How an item reached Pending: a website news feed (rss.js: message_id "rss:…", link to the
+  // article) or an email (gmail_link opens it in Gmail). '' when neither is known.
+  function itemOrigin(r) {
+    if (/^rss:/i.test(str(r.message_id))) return 'feed';
+    var link = str(r.gmail_link);
+    if (/^https:\/\/mail\.google\.com\//i.test(link)) return 'email';
+    if (/^https?:\/\//i.test(link)) return 'feed';
+    return str(r.message_id) ? 'email' : '';
+  }
+
   function itemBadges(r) {
     var b = [];
     if (truthy(r.urgent)) b.push(h('span', { class: 'badge bad' }, 'Urgent'));
+    var origin = itemOrigin(r);
+    if (origin) b.push(h('span', { class: 'badge info' }, origin === 'feed' ? 'Website feed' : 'Email'));
     b.push(h('span', { class: 'badge' }, lower(r.category) === 'event' ? 'Event' : 'Notice'));
     if (str(r.road)) b.push(h('span', { class: 'badge' }, 'Road'));
     if (r._official) b.push(h('span', { class: 'badge info' }, 'Official, own words'));
@@ -483,7 +728,9 @@ export const CLIENT_JS = String.raw`
       if (f === 'people_in_image') return;
       b.push(h('span', { class: 'badge warn' }, FLAG_LABELS[f] || f.replace(/_/g, ' ')));
     });
-    if (truthy(r.possible_repeat)) b.push(h('span', { class: 'badge warn' }, 'Possible repeat'));
+    if (listedOf(r)) b.push(h('span', { class: 'badge warn' }, 'Already listed'));
+    if (listedOf(r) && listedOf(r).same_sender === false) b.push(h('span', { class: 'badge bad' }, 'Different sender'));
+    else if (truthy(r.possible_repeat)) b.push(h('span', { class: 'badge warn' }, 'Possible repeat'));
     if (str(r.missing)) b.push(h('span', { class: 'badge warn' }, 'Missing: ' + str(r.missing).replace(/,/g, ', ')));
     return h('div', { class: 'badges' }, b);
   }
@@ -507,9 +754,56 @@ export const CLIENT_JS = String.raw`
     return (truthy(r.people_in_image) || Boolean(chosen && flaggedPeople(chosen))) && !truthy(r.people_ok);
   }
 
+  // Already listed (3 Nov; scripts/ingest/duplicates.js): Pending duplicate is JSON of the
+  // entry Holly matched, what the new email adds and her proposed changes to that entry.
+  function listedOf(r) {
+    try { var o = JSON.parse(str(r.duplicate)); return o && o.key ? o : null; } catch (e) { return null; }
+  }
+  var LISTED_FROM = { 'hand-written': 'hand-written item', pipeline: 'published submission', waiting: 'submission not yet published' };
+  var CHANGE_LABELS = { body: 'Text', link_text: 'Link text', link_url: 'Link', link2_text: 'Second link text', link2_url: 'Second link' };
+
+  function listedBox(r) {
+    var d = listedOf(r);
+    if (!d) return null;
+    var ch = d.changes || {};
+    var keys = Object.keys(ch).filter(function (k) { return CHANGE_LABELS[k] && str(ch[k]); });
+    return h('section', { class: 'note warn', 'aria-label': 'Already listed' },
+      d.same_sender === false ? h('div', null, h('strong', null, 'Sender different to original poster: '),
+        d.source === 'hand-written' ? 'this entry was added by hand, so no original sender is on record. Check the change is genuine.'
+          : 'this email is not from the address that sent the entry in. Check the change is genuine.') : null,
+      h('strong', null, 'Already listed: '),
+      d.url ? h('a', { href: str(d.url), target: '_blank', rel: 'noopener' }, str(d.title)) : str(d.title),
+      ' (' + (LISTED_FROM[d.source] || d.source) + '; Holly ' + Math.round((Number(d.confidence) || 0) * 100) + '% sure)',
+      h('div', { class: 'meta' }, d.details ? 'This email adds: ' + str(d.details) : 'Holly found nothing new in this email.'),
+      keys.length ? h('div', { class: 'meta' }, 'Add details would change: ' + keys.map(function (k) { return CHANGE_LABELS[k]; }).join(', ') + '.') : null,
+      h('div', { class: 'meta' }, d.sure && d.url ? 'The sender was told it is already on the website, with its link.' : 'The sender got the usual thank-you.'));
+  }
+
+  function mergeForm(r) {
+    var d = listedOf(r) || {};
+    var ch = d.changes || {};
+    var inputs = {};
+    var kids = [h('p', null, 'Add these details to "' + str(d.title) + '"? This item is then marked done; nothing is sent to anyone.')];
+    if (d.official) kids.push(h('div', { class: 'note' }, 'The listed entry is official, so its wording stays as it is: only links can be added.'));
+    Object.keys(CHANGE_LABELS).forEach(function (k) {
+      if (k === 'body' && d.official) return;
+      var id = 'mg-' + k;
+      inputs[k] = k === 'body' ? h('textarea', { class: 'f', id: id, rows: 8 }, str(ch[k])) : h('input', { class: 'f', id: id, value: str(ch[k]) });
+      kids.push(h('label', { class: 'f', for: id }, CHANGE_LABELS[k] + (k === 'body' ? ' (the whole new text; leave empty to keep it as it is)' : ' (leave empty for no change)')), inputs[k]);
+    });
+    kids.push(h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'submit' }, 'Add details')));
+    return h('form', { onsubmit: function (e) {
+      e.preventDefault();
+      var fields = {};
+      Object.keys(inputs).forEach(function (k) { fields[k] = inputs[k].value; });
+      act('pending', r.id, 'merge', { fields: fields }, 'Details added');
+    } }, kids);
+  }
+
   function itemCard(r, inDetail) {
     var c = h('div', { class: 'card' });
     add(c, [h('h2', null, str(r.title) || '(no title)'), itemMeta(r), itemBadges(r)]);
+    add(c, listedBox(r));
     if (r._offers) {
       add(c, h('div', { class: 'two' },
         h('div', null, h('h3', null, r._official ? 'Their words (official)' : 'Their wording'), h('div', { class: 'text' }, str(r.own_text))),
@@ -521,6 +815,7 @@ export const CLIENT_JS = String.raw`
     if (str(r.cost)) extra.push('Cost: ' + str(r.cost));
     if (str(r.contact)) extra.push('Contact: ' + str(r.contact));
     if (str(r.link_url)) extra.push('Link: ' + (str(r.link_text) ? str(r.link_text) + ' – ' : '') + str(r.link_url));
+    if (str(r.link2_url)) extra.push('Second link: ' + (str(r.link2_text) ? str(r.link2_text) + ' – ' : '') + str(r.link2_url));
     if (extra.length) add(c, h('div', { class: 'meta' }, extra.join(' · ')));
     add(c, images(r));
     if (truthy(r.people_in_image)) add(c, peopleTick('Pending', r.id, r, 'The photo may show children. Tick only if their parents are happy for it to appear.'));
@@ -541,7 +836,9 @@ export const CLIENT_JS = String.raw`
     var fill = function (all) {
       box.replaceChildren();
       var mine = all.filter(function (p) { return p.partId === str(r.image_part_id); });
-      var list = mine.length ? mine : all;
+      // An item with no image of its own shows none, even when another item from the
+      // same email has loaded them (10 Nov: a hamper draw showed all of a club's images).
+      var list = mine.length ? mine : (str(r.image_part_id) || truthy(r.people_in_image) ? all : []);
       if (!list.length) return;
       list.forEach(function (p) {
         var src = '/admin/img/mail/' + m + '/' + p.partId;
@@ -653,31 +950,58 @@ export const CLIENT_JS = String.raw`
     }));
   }
 
+  // Reject a submission (3 Nov): optional reason, kept in Pending reject_reason and shown in
+  // Previous submissions. Never sent: the sender's sorry note (if any) is drafted as before.
+  function itemRejectForm(r) {
+    var why = h('input', { class: 'f', id: 'irj', maxlength: 300 });
+    return h('form', { onsubmit: function (e) { e.preventDefault(); act('pending', r.id, 'reject', { reason: why.value }, 'Rejected'); } },
+      h('p', null, 'Reject "' + str(r.title) + '"? Nothing is published.'),
+      h('label', { class: 'f', for: 'irj' }, 'Why? (optional; kept in the Pending tab for Previous submissions, never sent)'), why,
+      h('div', { class: 'actions' }, h('button', { class: 'btn danger', type: 'submit' }, 'Reject')));
+  }
+
   function itemActions(r, inDetail) {
     var blocked = needsTick(r);
     var why = blocked ? 'Tick "People OK" first' : null;
+    var listed = listedOf(r);
     var approve = function (action, label, primary) {
-      return h('button', { class: 'btn' + (primary ? ' primary' : ''), disabled: blocked, title: why, onclick: function () {
+      return h('button', { class: 'btn' + (primary && !listed ? ' primary' : ''), disabled: blocked, title: why, onclick: function () {
+        if (listed && !window.confirm('Holly thinks this is already listed as "' + str(listed.title) + '".\n\nPublish it as a new item anyway?')) return;
         act('pending', r.id, action, null, 'Approved');
       } }, label);
     };
     var a = [];
-    if (r._offers) { a.push(approve('approve_own', 'Approve their wording', true)); a.push(approve('approve_rewrite', 'Approve rewrite', false)); }
-    else a.push(approve('approve', 'Approve', true));
+    // Already listed: Add details (Holly's proposal, editable) comes first.
+    if (listed) {
+      a.push(h('button', { class: 'btn primary', onclick: function () { overlay('Add details', mergeForm(r)); } }, 'Add details'));
+    }
+    // Already listed (4 Nov, Jon): no Approve button; publishing as new is a small link below.
+    if (!listed) {
+      if (r._offers) { a.push(approve('approve_own', 'Approve their wording', true)); a.push(approve('approve_rewrite', 'Approve rewrite', false)); }
+      else a.push(approve('approve', 'Approve', true));
+    }
     if (!inDetail) a.push(h('button', { class: 'btn', onclick: function () { overlay('Edit item', itemForm(r)); } }, 'Edit'));
-    a.push(h('button', { class: 'btn danger', onclick: function () {
-      if (window.confirm('Reject "' + str(r.title) + '"?')) act('pending', r.id, 'reject', null, 'Rejected');
-    } }, 'Reject'));
-    if (r._trust) {
+    a.push(h('button', { class: 'btn danger', onclick: function () { overlay('Reject item', itemRejectForm(r)); } }, 'Reject'));
+    // Done already (1 Nov): dealt with another way; nothing publishes, no sorry note.
+    a.push(h('button', { class: 'btn', title: 'Already on the site or dealt with another way: nothing is published and no note is sent', onclick: function () {
+      if (window.confirm('Mark "' + str(r.title) + '" as done already?\n\nNothing is published and no note goes to the sender. Their Contributions list shows it as done.')) act('pending', r.id, 'done', null, 'Done already');
+    } }, 'Done already'));
+    if (r._trust && !listed) {
       a.push(h('button', { class: 'btn', disabled: blocked, title: why, onclick: function () {
         if (window.confirm('Trust ' + r._trust + ' and approve this item?\n\nFuture items from it publish without asking, except anything with people in images, political or commercial content, official notices, anonymous or out-of-scope mail, classified ads or low confidence. Its other waiting items are not approved. To undo, delete its row in the Trusted tab.')) {
           act('pending', r.id, 'trust', null, 'Trusted');
         }
       } }, 'Trust this source'));
     }
-    if (str(r.gmail_link)) a.push(h('a', { class: 'btn link', href: str(r.gmail_link), target: '_blank', rel: 'noopener' }, 'Original email'));
+    if (str(r.gmail_link)) a.push(h('a', { class: 'btn link', href: str(r.gmail_link), target: '_blank', rel: 'noopener' }, itemOrigin(r) === 'feed' ? 'Open source page' : 'Open in Gmail'));
     a.push(sheetLink('Pending', r._row));
-    return h('div', { class: 'actions' }, a);
+    if (!listed) return h('div', { class: 'actions' }, a);
+    var action = r._offers ? 'approve_own' : 'approve';
+    var anyway = h('p', { class: 'anyway' }, 'Not the same thing? ',
+      h('button', { class: 'btn link', type: 'button', disabled: blocked, title: why, onclick: function () {
+        if (window.confirm('Holly thinks this is already listed as "' + str(listed.title) + '".\n\nPublish it as a new item anyway?')) act('pending', r.id, action, null, 'Approved');
+      } }, 'Publish as a new item…'));
+    return h('div', null, h('div', { class: 'actions' }, a), anyway);
   }
 
   function itemForm(r) {
@@ -700,6 +1024,8 @@ export const CLIENT_JS = String.raw`
     add(form, f('event_date', 'Date', 'date'));
     add(form, f('end_date', 'End date (several days)', 'date'));
     add(form, f('village', 'Village'));
+    add(form, f('link2_text', 'Second link: label (e.g. Report to West Mercia Police)'));
+    add(form, f('link2_url', 'Second link: address (https://… or mailto:…)'));
     var msg = h('div', { 'aria-live': 'polite' });
     add(form, msg);
     add(form, h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'submit' }, 'Save edits')));
@@ -836,6 +1162,7 @@ export const CLIENT_JS = String.raw`
     }
     add(c, [h('h3', { class: 'their-h' }, 'Holly\'s reply'), h('div', { class: 'text' }, str(r.body))]);
     if (str(r.notes)) add(c, h('div', { class: 'meta' }, 'Notes: ' + str(r.notes)));
+    add(c, whatToSay(r));
     add(c, h('div', { class: 'actions' },
       h('button', { class: 'btn primary', onclick: function () {
         if (window.confirm('Send this reply to ' + str(r.to) + ' as it stands?')) act('reply', r.reply_id, 'approve', null, 'Sent');
@@ -843,6 +1170,12 @@ export const CLIENT_JS = String.raw`
       h('button', { class: 'btn', onclick: function () { overlay('Edit reply', replyEditForm(r)); } }, 'Edit'),
       h('button', { class: 'btn', onclick: function () { overlay('Redraft reply', redraftForm(r)); } }, 'Redraft'),
       h('button', { class: 'btn danger', onclick: function () { overlay('Reject reply', rejectForm(r)); } }, 'Reject'),
+      // You answered them yourself in Gmail (2 Nov): closes the draft, not counted as a rejection.
+      h('button', { class: 'btn', onclick: function () {
+        if (window.confirm('Mark this as replied in Gmail? Holly\'s draft is closed and nothing is sent. It is not counted as a rejection or learned from.')) {
+          act('reply', r.reply_id, 'reject', { reason: 'Replied in Gmail' }, 'Marked replied in Gmail');
+        }
+      } }, 'Replied in Gmail'),
       h('button', { class: 'btn', onclick: function () {
         if (window.confirm('Close this email, no reply needed? Nothing is sent to them.')) act('reply', r.reply_id, 'close', null, 'Closed');
       } }, 'Close'),
@@ -864,6 +1197,20 @@ export const CLIENT_JS = String.raw`
     h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'submit' }, 'Send edited reply')));
   }
 
+  // What to say (1 Nov): an optional brief on every draft; Holly writes the reply afresh
+  // from it (a redraft whose instruction says so), and the new draft replaces this one.
+  function whatToSay(r) {
+    var id = 'wts-' + str(r.reply_id).replace(/[^A-Za-z0-9-]/g, '');
+    var box = h('textarea', { class: 'f', id: id, rows: 2, maxlength: 450, placeholder: 'Optional: what should the reply say? e.g. Thank her, say the hall is free on the 14th and ask her to confirm the time.' });
+    var btn = h('button', { class: 'btn', type: 'submit' }, 'Write it this way');
+    return h('form', { class: 'wts', onsubmit: function (e) {
+      e.preventDefault();
+      if (box.value.trim().length < 5) { toast('Say what the reply should say first', true); return; }
+      btn.disabled = true;
+      act('reply', r.reply_id, 'redraft', { reason: 'Write the reply afresh, saying: ' + box.value.trim() }, 'Holly is rewriting it');
+    } }, h('label', { class: 'f', for: id }, 'What to say'), box, h('div', { class: 'actions' }, btn));
+  }
+
   function redraftForm(r) {
     var text = h('textarea', { class: 'f', id: 'rr', rows: 5, maxlength: 500, required: true });
     return h('form', { onsubmit: function (e) {
@@ -872,7 +1219,7 @@ export const CLIENT_JS = String.raw`
       act('reply', r.reply_id, 'redraft', { reason: text.value }, 'Redraft requested');
     } },
     h('label', { class: 'f', for: 'rr' }, 'What should Holly change? (required; kept in the Reply feedback tab, never sent)'), text,
-    h('p', { class: 'meta' }, 'Holly writes a new draft from their email, the old draft and this. The new draft appears here and in a fresh email card.'),
+    h('p', { class: 'meta' }, 'Holly writes a new draft from their email, the old draft and this. The new draft appears here in a minute or so.'),
     h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'submit' }, 'Redraft')));
   }
 
@@ -1902,6 +2249,122 @@ export const CLIENT_JS = String.raw`
     render();
   }
 
+  /* ---------------------------------------------------------- suggestions -- */
+
+  // Local trades / Where to eat suggestions (Listing suggestions tab), confirmed by the
+  // suggester, waiting for Jon (admin/suggestions.mjs). Approve, Edit (Save and approve) and
+  // Reject all go through decide() (sug_ok / sug_no); the suggester's address never reaches
+  // this page.
+  var SG_FIELDS = {
+    trades: [['name', 'Name'], ['trade', 'Trade (section)'], ['what', 'What they do'], ['covers', 'Covers'], ['base', 'Base'],
+      ['contact', 'Contact name'], ['phone', 'Phone'], ['phone2', 'Second phone'], ['email', 'Email'], ['other', 'Other way to contact']],
+    eat: [['name', 'Name'], ['area', 'Area (section)'], ['where', 'Where'], ['type', 'Type'], ['food', 'Food'], ['phone', 'Phone'], ['note', 'Note']]
+  };
+  var SG_TAGS = [['garden', 'Garden'], ['children', 'Good for children'], ['dogs', 'Dogs welcome']];
+
+  function sgRows(d) {
+    if (!d.listingSuggestions || d.listingSuggestions.error) return [];
+    return d.listingSuggestions.rows.filter(function (r) { return !S.done['suggestion:' + r.id]; })
+      .sort(function (a, b) { return str(a.confirmed_at).localeCompare(str(b.confirmed_at)); });
+  }
+
+  function suggestionsView(d) {
+    var t = d.listingSuggestions;
+    if (!t || t.error) return [errorNote(t || { error: 'not loaded' }, 'Listing suggestions')];
+    var rows = sgRows(d);
+    var els = [h('h2', { class: 'section' }, 'Waiting (' + rows.length + ')')];
+    if (!rows.length) els.push(h('p', { class: 'empty' }, 'Nothing waiting.'));
+    rows.forEach(function (r) { els.push(sgCard(r)); });
+    return els;
+  }
+
+  // The entry as it would go on the page, one fact per line.
+  function sgFacts(kind, e) {
+    var out = [];
+    (SG_FIELDS[kind] || []).forEach(function (f) { if (f[0] !== 'name' && str(e[f[0]])) out.push([f[1], str(e[f[0]])]); });
+    if (e.website && e.website.url) out.push(['Website', e.website.text + ' (' + e.website.url + ')']);
+    var tags = SG_TAGS.filter(function (t) { return e[t[0]] === true; }).map(function (t) { return t[1]; });
+    if (tags.length) out.push(['Tags', tags.join(', ')]);
+    return out;
+  }
+
+  function sgCard(r) {
+    var e = r._draft || {};
+    var c = h('div', { class: 'card sg-card' },
+      h('div', { class: 'meta' }, 'Suggestion · ' + str(r._label) + (str(r.confirmed_at) ? ' · confirmed ' + when2(r.confirmed_at) : '')),
+      h('h2', null, str(r.name) || '(no name)'),
+      h('dl', { class: 'sg-said' },
+        h('dt', null, r.kind === 'eat' ? 'Type' : 'Trade'), h('dd', null, str(r.trade)),
+        h('dt', null, 'Phone or website'), h('dd', null, str(r.contact)),
+        h('dt', null, 'Area or village'), h('dd', null, str(r.area) || '—')),
+      str(r.why) ? h('div', { class: 'fbnotes' }, h('b', null, 'Why (only you see this)'), h('div', { class: 'fbtext' }, str(r.why))) : null,
+      (r._similar || []).length ? h('div', { class: 'note warn' }, 'Already listed? Similar name: ' + r._similar.map(function (n) { return '"' + n + '"'; }).join(', ')) : null,
+      h('div', { class: 'fbnotes' }, h('b', null, 'Approve adds'), h('dl', { class: 'sg-said' }, [h('dt', null, 'Name'), h('dd', null, str(e.name))].concat(
+        sgFacts(r.kind, e).map(function (f) { return [h('dt', null, f[0]), h('dd', null, f[1])]; })))),
+      h('div', { class: 'actions' },
+        h('button', { class: 'btn primary', onclick: function () {
+          if (window.confirm('Add ' + str(e.name) + ' to ' + str(r._label) + ' as shown? The site rebuilds in a few minutes.')) act('suggestion', r.id, 'approve', null, 'Approved');
+        } }, 'Approve'),
+        h('button', { class: 'btn', onclick: function () { overlay('Edit suggestion', sgEditForm(r)); } }, 'Edit'),
+        h('button', { class: 'btn danger', onclick: function () { overlay('Reject suggestion', sgRejectForm(r)); } }, 'Reject'),
+        sheetLink('Listing suggestions', r._row)));
+    return c;
+  }
+
+  function sgEditForm(r) {
+    var e = r._draft || {};
+    var opts = (S.data.listingOptions || {})[r.kind] || [];
+    var inputs = {};
+    var rows = (SG_FIELDS[r.kind] || []).map(function (f) {
+      var id = 'sg-' + f[0];
+      var el;
+      if (f[0] === 'trade' || f[0] === 'area') {
+        var list = opts.slice();
+        if (str(e[f[0]]) && list.indexOf(e[f[0]]) < 0) list.unshift(e[f[0]]);
+        if (f[0] === 'trade') {
+          el = h('input', { class: 'f', id: id, value: str(e[f[0]]), list: 'sg-trades', required: true });
+          return [h('label', { class: 'f', for: id }, f[1] + ' (pick one, or type a new section)'), el,
+            h('datalist', { id: 'sg-trades' }, list.map(function (o) { return h('option', { value: o }); })), (inputs[f[0]] = el, null)];
+        }
+        el = h('select', { class: 'f', id: id }, opts.map(function (o) { return h('option', { value: o, selected: o === e.area ? true : null }, o); }));
+      } else {
+        el = h('input', { class: 'f', id: id, value: str(e[f[0]]), maxlength: 300, required: ['name', 'type'].indexOf(f[0]) >= 0 ? true : null });
+      }
+      inputs[f[0]] = el;
+      return [h('label', { class: 'f', for: id }, f[1]), el];
+    });
+    var w = e.website || {};
+    var wText = h('input', { class: 'f', id: 'sg-wtext', value: str(w.text), maxlength: 80 });
+    var wUrl = h('input', { class: 'f', id: 'sg-wurl', value: str(w.url), maxlength: 300, placeholder: 'https://' });
+    var tags = r.kind === 'eat' ? SG_TAGS.map(function (t) {
+      var cb = h('input', { type: 'checkbox', id: 'sg-' + t[0], checked: e[t[0]] === true ? true : null });
+      inputs[t[0]] = cb;
+      return h('label', { class: 'chk', for: 'sg-' + t[0] }, cb, ' ' + t[1]);
+    }) : null;
+    return h('form', { onsubmit: function (ev) {
+      ev.preventDefault();
+      var fields = {};
+      Object.keys(inputs).forEach(function (k) { fields[k] = inputs[k].type === 'checkbox' ? inputs[k].checked : inputs[k].value; });
+      if (str(wUrl.value)) fields.website = { text: wText.value, url: wUrl.value };
+      act('suggestion', r.id, 'edit', { fields: fields }, 'Approved (edited)');
+    } },
+      h('p', null, 'This is the entry exactly as it will go on the ' + str(r._label) + ' page. Leave a box empty to leave that line out.'),
+      rows,
+      h('label', { class: 'f', for: 'sg-wtext' }, 'Website: text shown'), wText,
+      h('label', { class: 'f', for: 'sg-wurl' }, 'Website: address'), wUrl,
+      tags ? h('div', { class: 'sg-tags' }, h('p', { class: 'meta' }, 'Tick only when the place or a source says so.'), tags) : null,
+      h('div', { class: 'actions' }, h('button', { class: 'btn primary', type: 'submit' }, 'Save and approve'),
+        h('button', { class: 'btn', type: 'button', onclick: closeOverlay }, 'Cancel')));
+  }
+
+  function sgRejectForm(r) {
+    var why = h('input', { class: 'f', id: 'sgr', maxlength: 300 });
+    return h('form', { onsubmit: function (e) { e.preventDefault(); act('suggestion', r.id, 'reject', { reason: why.value }, 'Rejected'); } },
+      h('p', null, 'Nothing goes on the page and nothing is sent to the person who suggested it. Their address is deleted.'),
+      h('label', { class: 'f', for: 'sgr' }, 'Why? (optional, kept for you only)'), why,
+      h('div', { class: 'actions' }, h('button', { class: 'btn danger', type: 'submit' }, 'Reject')));
+  }
+
   /* ------------------------------------------------------------- feedback -- */
 
   // Reader feedback (Feedback tab). _state comes from the server (admin/feedback.js):
@@ -2195,8 +2658,11 @@ export const CLIENT_JS = String.raw`
   }
 
   // One next_check write (stale-checked against what the list loaded), then a fresh list.
-  async function gNext(e, value, what) {
-    var res = await api('/admin/api/orgnext', { id: e.id, expected: e.next_check, value: value });
+  // confirm (Done): also records today as the day they confirmed their entry.
+  async function gNext(e, value, what, confirm) {
+    var body = { id: e.id, expected: e.next_check, value: value };
+    if (confirm) { body.confirm = true; body.expected_confirmed = e.confirmed || ''; }
+    var res = await api('/admin/api/orgnext', body);
     toast(res.ok ? what : (res.json.error || ('HTTP ' + res.status)), !res.ok);
     S.orgs = null;
     render();
@@ -2204,8 +2670,15 @@ export const CLIENT_JS = String.raw`
 
   async function gDraft(e, btn) {
     btn.disabled = true;
+    btn.textContent = 'Requesting…';
     var res = await api('/admin/api/orgcheck', { id: e.id });
     toast(res.ok ? res.json.message : (res.json.error || ('HTTP ' + res.status)), !res.ok);
+    if (res.ok) {
+      watchDraft('check for ' + (e.name || e.id), '');
+      // Shown on the card until the draft lands (the list still says due until then).
+      S.gAsked = S.gAsked || {};
+      S.gAsked[e.id] = { at: Date.now(), chase: e.state === 'chase' };
+    }
     S.orgs = null;
     render();
   }
@@ -2229,16 +2702,42 @@ export const CLIENT_JS = String.raw`
       box, h('div', { class: 'actions' }, save));
   }
 
+  // A listing's address (Org outreach email): saved as typed, stale-checked.
+  async function gListingEmail(e, value, btn) {
+    btn.disabled = true;
+    var res = await api('/admin/api/listingemail', { id: e.id, expected: e.email_cell, expected_source: e.email_source, value: value });
+    toast(res.ok ? 'Saved: email for ' + e.name : (res.json.error || ('HTTP ' + res.status)), !res.ok);
+    btn.disabled = false;
+    if (res.ok) { S.orgs = null; render(); }
+  }
+
+  // Listings whose address isn't in the repo: the address Holly writes to, typed or found.
+  function listingEmail(e) {
+    var box = h('input', { class: 'f', type: 'email', 'aria-label': 'Email for ' + e.name, placeholder: 'name@example.co.uk', value: e.email_cell || '' });
+    var save = h('button', { class: 'btn', onclick: function () { gListingEmail(e, box.value, save); } }, 'Save email');
+    var src = e.email_source === 'website' ? 'found on their website' : e.email_source === 'panel' ? 'typed by you' : e.email_source;
+    return h('details', { class: 'org-emails' },
+      h('summary', null, e.email_cell ? 'Email (' + src + ')' : 'Add an email'),
+      h('p', { class: 'meta' }, 'The address Holly writes to for this listing. Kept in the Sheet only, never shown on the site. Leave blank to clear it.'),
+      box, h('div', { class: 'actions' }, save));
+  }
+
   function orgRow(e, o) {
     var acts = [];
-    if ((e.state === 'due' || e.state === 'chase') && o.count < o.cap) {
+    var asked = S.gAsked && S.gAsked[e.id];
+    if (asked && (e.state !== 'due' && e.state !== 'chase' || Date.now() - asked.at > 10 * 60 * 1000)) { delete S.gAsked[e.id]; asked = null; }
+    if (asked) {
+      var t = new Date(asked.at);
+      acts.push(h('div', { class: 'note' }, (asked.chase ? 'Chaser' : 'Check') + ' requested at ' + t.getHours() + ':' + ('0' + t.getMinutes()).slice(-2)
+        + '. Holly is drafting it: it appears under Replies in a minute or two for you to Approve.'));
+    } else if ((e.state === 'due' || e.state === 'chase') && o.count < o.cap) {
       var draft = h('button', { class: 'btn', onclick: function () { gDraft(e, draft); } }, e.state === 'chase' ? 'Draft chaser' : 'Draft check');
       acts.push(draft);
     }
     if (e.state === 'held') {
       if (e.next_check) acts.push(h('button', { class: 'btn link', onclick: function () { gNext(e, '', 'Cleared: ' + e.name); } }, 'Clear'));
     } else if (e.state !== 'noemail' && e.state !== 'draft' && e.state !== 'regular') {
-      acts.push(h('button', { class: 'btn link', onclick: function () { gNext(e, addMonths(o.today, 12), 'Done: ' + e.name + ' is next due in a year'); } }, 'Done'));
+      acts.push(h('button', { class: 'btn link', onclick: function () { gNext(e, addMonths(o.today, 12), 'Done: ' + e.name + ' is next due in a year', true); } }, 'Done'));
       if (e.state === 'due') acts.push(h('button', { class: 'btn link', onclick: function () { gNext(e, addMonths(o.today, 3), 'Snoozed for 3 months'); } }, 'Snooze 3 months'));
       acts.push(h('button', { class: 'btn link', onclick: function () {
         if (window.confirm('Never check ' + e.name + '?\n\nThey drop off the organisation lists for good (Clear undoes it). Nothing else changes.')) gNext(e, 'never', 'Never: ' + e.name);
@@ -2250,8 +2749,10 @@ export const CLIENT_JS = String.raw`
           h('a', { href: e.pageUrl, target: '_blank', rel: 'noopener' }, e.pageName)),
         h('div', { class: 'meta' }, [e.email, e.why].filter(Boolean).join(' · ').replace(/\d{4}-\d{2}-\d{2}/g, cDay)),
         h('div', { class: 'meta' }, e.shown.join(' · ')),
-        e.addresses > 1 ? h('div', { class: 'meta' }, (e.addresses - 1) + ' other address' + (e.addresses > 2 ? 'es' : '') + ' count as this group') : null,
+        e.addresses > 1 ? h('div', { class: 'meta' }, (e.addresses - 1) + ' other address' + (e.addresses > 2 ? 'es count' : ' counts') + ' as this group') : null,
+        (e.domains || []).length ? h('div', { class: 'meta' }, 'Anyone @' + e.domains.join(', @') + ' counts as this group too') : null,
         acts.length ? h('div', { class: 'actions' }, acts) : null,
+        e.listing && !e.shown.some(function (l) { return l === e.email; }) ? listingEmail(e) : null,
         e.state !== 'noemail' ? orgEmails(e) : null));
   }
 
@@ -2262,13 +2763,23 @@ export const CLIENT_JS = String.raw`
       return [h('p', { class: 'loading' }, 'Loading organisations…')];
     }
     if (o.error) return [errorNote(o, 'Organisations'), h('button', { class: 'btn', onclick: function () { S.orgs = null; render(); } }, 'Try again')];
-    var L = o.lists;
+    // Organisations or Listings (Local trades and Where to eat, 5 Nov): the same check, two lists.
+    var kind = S.gKind === 'listings' ? 'listings' : 'orgs';
+    var L = {};
+    Object.keys(o.lists).forEach(function (k) {
+      L[k] = o.lists[k].filter(function (e) { return kind === 'listings' ? !!e.listing : !e.listing; });
+    });
+    var kindTab = function (k, label) {
+      return h('button', { class: 'btn' + (kind === k ? '' : ' link'), 'aria-pressed': kind === k ? 'true' : 'false', onclick: function () { S.gKind = k; render(); } }, label);
+    };
     var section = function (title, hint, list) {
       return h('div', null, h('h2', { class: 'section' }, title + ' (' + list.length + ')'), h('p', { class: 'meta' }, hint),
         list.length ? list.map(function (e) { return orgRow(e, o); }) : h('p', { class: 'empty' }, 'None at the moment.'));
     };
     return [
-      h('p', { class: 'meta' }, 'Once a year Holly asks each organisation to check its entry on the site. The draft comes to you by email to Approve, Edit, Redraft or Reject, and never goes by itself. '
+      h('div', { class: 'actions' }, kindTab('orgs', 'Groups and services'), kindTab('listings', 'Commercial Listings')),
+      kind === 'listings' ? h('p', { class: 'meta' }, 'Every Local trades and Where to eat entry. Holly tells them they are listed free, shows their entry and asks if they would like anything changed or added. Addresses come from the entry or their website (found by Kryten\'s address finder), or type one under Add an email.') : null,
+      h('p', { class: 'meta' }, 'Once a year Holly asks each organisation to check its entry on the site. The draft appears under Replies for you to Approve, Edit, Redraft or Reject, and never goes by itself. '
         + o.count + ' of ' + o.cap + ' drafts used today. When someone replies, read it in Gmail, update the site if needed, then tap Done.'),
       o.count >= o.cap ? h('div', { class: 'note' }, 'Today\'s ' + o.cap + ' drafts are used: Draft check comes back tomorrow.') : null,
       section('Due a check', 'Not checked yet, or last checked a year ago.', L.due),
@@ -2279,7 +2790,7 @@ export const CLIENT_JS = String.raw`
       section('No reply', 'Chased 3 weeks ago or more with no reply: taken as all fine until next year.', L.noreply),
       section('In regular contact', 'They emailed us in the last 3 months, so no check is needed (it lapses 3 months after their last email).', L.regular || []),
       section('Done, snoozed or never', 'Held back until the date shown, or for good.', L.held),
-      section('No email', 'No address to write to: check these by phone or on their website.', L.noemail)
+      section('No email', kind === 'listings' ? 'No address yet: add one if you find it, or check by phone or Facebook.' : 'No address to write to: check these by phone or on their website.', L.noemail)
     ];
   }
 
@@ -2317,6 +2828,7 @@ export const CLIENT_JS = String.raw`
     btn.disabled = true;
     var res = await api('/admin/api/nudge', { email: e.email });
     toast(res.ok ? res.json.message : (res.json.error || ('HTTP ' + res.status)), !res.ok);
+    if (res.ok) watchDraft('nudge to ' + (e.name || e.email), e.email);
     S.outreach = null;
     render();
   }
@@ -2352,7 +2864,7 @@ export const CLIENT_JS = String.raw`
         list.length ? list.map(function (e) { return outreachRow(e, o); }) : h('p', { class: 'empty' }, 'Nobody at the moment.'));
     };
     return [
-      h('p', { class: 'meta' }, 'Holly drafts the email; it comes to you by email to Approve, Edit, Redraft or Reject, and never goes by itself. '
+      h('p', { class: 'meta' }, 'Holly drafts the email; it appears under Replies for you to Approve, Edit, Redraft or Reject, and never goes by itself. '
         + o.week + ' of ' + o.cap + ' drafts used this week.'),
       o.week >= o.cap ? h('div', { class: 'note' }, 'This week\'s ' + o.cap + ' drafts are used: Draft nudge comes back as the week moves on.') : null,
       o.hasNextNudge ? null : h('div', { class: 'note bad' }, 'Snooze and Never nudge need a next_nudge column at the end of the Contacts tab (column P).'),
@@ -2448,10 +2960,38 @@ export const CLIENT_JS = String.raw`
     return res.ok;
   }
 
+  // Village (1 Nov): a dropdown of the Lenches and nearby places, or one Jon types.
+  var C_VILLAGES = ['Church Lench', 'Rous Lench', 'Ab Lench', 'Atch Lench', 'Sheriffs Lench',
+    'Harvington', 'Abbots Morton', 'Norton', 'Evesham', 'Pershore'];
+  function cVillage(r) {
+    var cur = str(r.village);
+    var known = C_VILLAGES.filter(function (v) { return lower(v) === lower(cur); })[0];
+    var mode = !cur ? '' : known || 'own';
+    var pick = h('select', { class: 'f', id: 'c-village', onchange: function () { own.hidden = pick.value !== 'own'; if (!own.hidden) own.focus(); } },
+      h('option', { value: '', selected: mode === '' ? true : null }, 'Not set'),
+      C_VILLAGES.map(function (v) { return h('option', { value: v, selected: mode === v ? true : null }, v); }),
+      h('option', { value: 'own', selected: mode === 'own' ? true : null }, 'Somewhere else…'));
+    var own = h('input', { class: 'f', id: 'c-village-own', maxlength: C_LIMITS.village, placeholder: 'e.g. Inkberrow', 'aria-label': 'Village',
+      value: mode === 'own' ? cur : '' });
+    own.hidden = mode !== 'own';
+    return h('form', { class: 'cfield', onsubmit: async function (e) {
+      e.preventDefault();
+      var want = pick.value === 'own' ? own.value.trim() : pick.value;
+      if (pick.value === 'own' && !want) { toast('Type the place first', true); return; }
+      if (want === cur) { toast('No changes to save'); return; }
+      await cSave(r, 'village', want, 'Village');
+    } },
+    h('label', { class: 'f', for: 'c-village' }, 'Village'),
+    h('div', { class: 'crow-edit' }, pick, h('button', { class: 'btn', type: 'submit' }, 'Save')), own);
+  }
+
   function cField(r, field, label, hint) {
+    if (field === 'village') return cVillage(r);
     var id = 'c-' + field;
     var multi = field === 'profile' || field === 'notes';
-    var el = multi ? h('textarea', { class: 'f', id: id, rows: field === 'notes' ? 4 : 5, maxlength: C_LIMITS[field] }, str(r[field]))
+    // Empty profile or notes: a two-line box (1 Nov), so the page is shorter.
+    var rows = !str(r[field]) ? 2 : field === 'notes' ? 4 : 5;
+    var el = multi ? h('textarea', { class: 'f', id: id, rows: rows, maxlength: C_LIMITS[field] }, str(r[field]))
       : h('input', { class: 'f', id: id, maxlength: C_LIMITS[field], value: str(r[field]) });
     return h('form', { class: 'cfield', onsubmit: async function (e) {
       e.preventDefault();
@@ -2489,6 +3029,71 @@ export const CLIENT_JS = String.raw`
     h('div', { class: 'crow-edit' }, pick, h('button', { class: 'btn', type: 'submit' }, 'Save')), own);
   }
 
+  // Messages (1 Nov): every email between us and this contact, newest first, from Gmail
+  // (/admin/api/contact-messages, admin/messages.js): date, who wrote it, just the words.
+  var MSG_WHO = { them: 'Them', holly: 'Holly', you: 'You' };
+  var MSG_PAGE = 10;
+  var msgDate = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+  function cMessages(r) {
+    var box = h('div', { class: 'card msgs' }, h('h2', null, 'Messages'));
+    var key = lower(r.email);
+    S.msgs = S.msgs || {};
+    // Ten at a time (1 Nov), so Contributions stays near; Show older adds the next ten.
+    var fill = function (t, shown) {
+      box.replaceChildren(h('h2', null, 'Messages'));
+      if (!t || t.error) { add(box, h('p', { class: 'meta' }, 'Could not load their emails' + (t && t.error ? ': ' + t.error : '') + '.')); return; }
+      if (!t.messages.length) { add(box, h('p', { class: 'empty' }, 'No emails with them yet (the newsletter is left out).')); return; }
+      var n = Math.min(shown || MSG_PAGE, t.messages.length);
+      var left = t.messages.length - n;
+      add(box, [h('p', { class: 'meta' }, 'Newest first' + (t.messages.length >= t.max ? ', the latest ' + t.max : '') + '. The newsletter and automatic emails are left out.'),
+        t.messages.slice(0, n).map(function (m) {
+          return h('div', { class: 'msg ' + m.who },
+            h('div', { class: 'msg-h' }, h('b', null, MSG_WHO[m.who] || m.who), ' · ', m.at ? msgDate.format(new Date(m.at)).replace(/^(\w+),/, '$1') : '', m.subject ? ' · ' + m.subject : ''),
+            h('div', { class: 'text' }, m.text || '(no text)'));
+        }),
+        h('div', { class: 'actions' },
+          left > 0 ? h('button', { class: 'btn', type: 'button', onclick: function () {
+            S.msgShown = S.msgShown || {}; S.msgShown[key] = n + MSG_PAGE; fill(t, n + MSG_PAGE);
+          } }, 'Show older (' + Math.min(MSG_PAGE, left) + ' more)') : null,
+          n > MSG_PAGE ? h('button', { class: 'btn link', type: 'button', onclick: function () {
+            S.msgShown[key] = MSG_PAGE; fill(t, MSG_PAGE); box.scrollIntoView({ block: 'start' });
+          } }, 'Show fewer') : null)]);
+    };
+    if (S.msgs[key]) fill(S.msgs[key], S.msgShown && S.msgShown[key]);
+    else {
+      add(box, h('p', { class: 'loading' }, 'Loading their emails…'));
+      api('/admin/api/contact-messages?email=' + encodeURIComponent(r.email)).then(function (res) {
+        S.msgs[key] = res.ok ? res.json : { error: res.json.error || ('HTTP ' + res.status) };
+        if (!res.ok) { var e = S.msgs[key]; delete S.msgs[key]; fill(e); return; }
+        fill(S.msgs[key]);
+      });
+    }
+    return box;
+  }
+
+  // Draft email (1 Nov): Jon types a brief; Holly drafts the email (scripts/outreach/
+  // contactmail.js) and it waits in Replies for Approve / Edit / Redraft / Reject.
+  function cMailCard(r) {
+    if (lower(r.status) === 'ignore' || !str(r.email)) return null;
+    var who = str(r.name) || str(r.email);
+    var box = h('textarea', { class: 'f', id: 'cmail-brief', rows: 3, maxlength: 600,
+      placeholder: 'What should the email say? e.g. Tell them their class is now on the Regular activities page and they\'ll get the weekly newsletter.' });
+    var btn = h('button', { class: 'btn primary', type: 'submit' }, 'Draft email');
+    return h('form', { class: 'card', onsubmit: async function (e) {
+      e.preventDefault();
+      if (box.value.trim().length < 10) { toast('Say what the email is for first (at least 10 characters)', true); return; }
+      btn.disabled = true;
+      var res = await api('/admin/api/contactmail', { email: r.email, brief: box.value });
+      toast(res.ok ? res.json.message : (res.json.error || ('HTTP ' + res.status)), !res.ok);
+      if (res.ok) { box.value = ''; watchDraft('email to ' + who, r.email); }
+      btn.disabled = false;
+    } },
+    h('h2', null, 'Email ' + who),
+    h('p', { class: 'meta' }, 'Holly drafts it from your brief, with the usual opt-out line. Nothing is sent until you Approve it under Replies. Add any link you want included.'),
+    h('label', { class: 'f', for: 'cmail-brief' }, 'Brief'), box,
+    h('div', { class: 'actions' }, btn));
+  }
+
   function contactPage(r) {
     var manual = lower(r.profile_source) !== 'auto';
     var list = str(r.contributions) ? str(r.contributions).split('; ') : [];
@@ -2508,10 +3113,164 @@ export const CLIENT_JS = String.raw`
         cField(r, 'notes', 'Notes', '(yours; never touched by code)'),
         h('div', { class: 'actions' }, sheetLink('Contacts', r._row),
           h('button', { class: 'btn', onclick: function () { cDelete(r); } }, 'Delete contact'))),
+      cMailCard(r),
+      cMessages(r),
       h('div', { class: 'card' },
         h('h2', null, 'Contributions (' + (Number(r.contribution_count) || 0) + ')'),
         list.length ? h('ul', { class: 'clist-items' }, list.map(function (c) { return h('li', null, c); })) : h('p', { class: 'meta' }, 'Nothing in Pending from this address.'),
         more > 0 ? h('p', { class: 'meta' }, 'and ' + more + ' older.') : null)
+    ];
+  }
+
+  /* ------------------------------------------------------------ autonomy -- */
+
+  // Autonomy screen (admin/autonomy.js, stage 2): read-only progress per kind of item and reply.
+  async function loadAutonomy() {
+    S.auLoading = true;
+    var r = await api('/admin/api/autonomy');
+    S.auLoading = false;
+    S.autonomy = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'autonomy') render();
+  }
+
+  async function autonomyIgnore(d, op) {
+    var res = await api('/admin/api/autonomy-ignore', { kind: d.kind, id: d.id, op: op, expected: d.outcome });
+    toast(res.ok ? (res.json.message || 'Saved') : (res.status === 409 && res.json.current !== undefined
+      ? 'Changed in the Sheet since you loaded the page. Not saved; reloaded.' : (res.json.error || ('HTTP ' + res.status))), !res.ok);
+    S.autonomy = null;
+    render();
+  }
+
+  var AU_WORDS = { unchanged: 'Approved as written', changed: 'Changed by you', rejected: 'Rejected', ignored: 'Ignored' };
+  var AU_BADGE = { unchanged: 'ok', changed: 'warn', rejected: 'bad', ignored: '' };
+
+  function auDecision(d) {
+    var ign = d.verdict === 'ignored';
+    var what = AU_WORDS[d.verdict] || d.outcome;
+    if (d.verdict === 'changed' && d.changed) what += ' (' + d.changed.replace(/,/g, ', ').replace(/_/g, ' ') + ')';
+    if (ign) what += ' (was ' + d.outcome.replace(/^ignored:/, '') + ')';
+    return h('li', { class: 'au-dec' },
+      d.what ? h('div', { class: 'au-what' }, d.what) : null,
+      d.why ? h('div', { class: 'meta au-why' }, (d.kind === 'item' ? 'Your change: ' : 'Your reason: ') + d.why) : null,
+      h('span', { class: 'badge ' + (AU_BADGE[d.verdict] || '') }, ign ? 'Ignored' : (d.verdict === 'unchanged' ? 'As written' : d.verdict === 'changed' ? 'Changed' : 'Rejected')),
+      h('span', { class: 'meta' }, ' ' + [when(d.at), what].filter(Boolean).join(' · ') + ' '),
+      h('button', { class: 'btn link', onclick: function () {
+        if (ign || window.confirm('Ignore this decision?\n\nIt is left out of the counts and out of Holly\'s learning (use it for a test or a slip). You can count it again later.')) autonomyIgnore(d, ign ? 'restore' : 'ignore');
+      } }, ign ? 'Count again' : 'Ignore'));
+  }
+
+  function auCard(t, th) {
+    var pct = Math.min(100, Math.round(t.decided / th.needed * 100));
+    var status = t.qualifies ? 'Ready for your decision on stage 3'
+      : t.decided < th.needed ? (th.needed - t.decided) + ' more decision' + (th.needed - t.decided === 1 ? '' : 's') + ' needed'
+      : t.rate < th.rate ? 'Approved as written ' + t.rate + '% of the time (needs ' + th.rate + '%)'
+      : 'A rejection in the last ' + th.cleanLast + ' decisions';
+    return h('div', { class: 'card au-card' },
+      h('div', { class: 'au-head' }, h('b', null, t.label),
+        t.qualifies ? h('span', { class: 'badge ok' }, 'Qualifies') : null),
+      h('div', { class: 'meta' }, t.decided + ' decided · ' + t.unchanged + ' as written' + (t.decided ? ' (' + t.rate + '% of the latest ' + Math.min(t.decided, th.needed) + ')' : '') +
+        ' · ' + t.changed + ' changed · ' + t.rejected + ' rejected'),
+      h('div', { class: 'au-bar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': String(th.needed), 'aria-valuenow': String(Math.min(t.decided, th.needed)),
+        'aria-label': t.label + ': ' + Math.min(t.decided, th.needed) + ' of ' + th.needed + ' decisions' },
+        h('span', { style: 'width:' + pct + '%' })),
+      h('div', { class: 'meta' }, status),
+      t.recent && t.recent.length ? h('details', { class: 'au-more' }, h('summary', null, 'Latest decisions'),
+        h('ul', { class: 'au-list' }, t.recent.map(auDecision))) : null);
+  }
+
+  /* ---------------------------------------------------- previous submissions -- */
+  // Decided items, newest first (worker/src/admin/history.js): outcome, website dates (as the
+  // publish run works them out), the newsletter issues that carried them, your edits, and the
+  // reason for a rejection. Read-only.
+  async function loadHistory() {
+    S.hiLoading = true;
+    var r = await api('/admin/api/history');
+    S.hiLoading = false;
+    S.history = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'queue' && S.filter === 'previous') render();
+  }
+
+  var HI_STATUS = { approved: ['Approved', 'ok'], auto: ['Automatic', 'info'], rejected: ['Rejected', 'bad'], done: ['Done already', 'info'] };
+  var HI_FILTERS = [['all', 'All'], ['approved', 'Approved'], ['rejected', 'Rejected'], ['done', 'Done already']];
+
+  function hiCard(r, today) {
+    var st = HI_STATUS[r.status] || [r.status.charAt(0).toUpperCase() + r.status.slice(1), 'info'];
+    var lines = [];
+    lines.push(h('div', { class: 'meta' }, [
+      r.category === 'event' ? 'Event' + (r.eventDate ? ' on ' + day(r.eventDate) : '') : 'Notice',
+      r.village, (r.origin === 'feed' ? 'Feed: ' : 'From ') + (r.from || 'unknown'),
+      r.received ? 'Arrived ' + when(r.received) : '', r.decidedAt ? 'Decided ' + when(r.decidedAt) : '',
+    ].filter(Boolean).join(' · ')));
+    if (r.status === 'approved' || r.status === 'auto') {
+      var s = r.site;
+      lines.push(h('div', null, h('b', null, 'Website: '), s
+        ? s.page + ' page, ' + day(s.from) + ' to ' + day(s.until) + (s.now ? ' (showing now)' : s.until < today ? ' (now off)' : '')
+        : 'not shown'));
+      lines.push(h('div', null, h('b', null, 'Newsletter: '), r.newsletter.length
+        ? r.newsletter.map(day).join(', ') : (s && s.until >= today ? 'not yet' : 'not included')));
+      if (r.edited) lines.push(h('div', { class: 'meta' }, 'Your changes: ' + (r.changed || 'edited before approval')));
+      if (r.wording === 'own') lines.push(h('div', { class: 'meta' }, 'Published in their own wording'));
+    }
+    if (r.status === 'rejected') lines.push(h('div', null, h('b', null, 'Reason: '), r.reason || h('span', { class: 'meta' }, 'none given')));
+    if (r.notes) lines.push(h('details', null, h('summary', null, 'Notes'), h('p', { class: 'meta' }, r.notes)));
+    var links = [];
+    if (r.gmail) links.push(h('a', { class: 'btn link', href: r.gmail, target: '_blank', rel: 'noopener' }, 'Open email'));
+    if (r.link) links.push(h('a', { class: 'btn link', href: r.link, target: '_blank', rel: 'noopener' }, 'Original article'));
+    var sl = sheetLink('Pending', r.row);
+    if (sl) links.push(sl);
+    return h('div', { class: 'card hi-card' },
+      h('div', { class: 'au-head' }, h('b', null, r.title), h('span', null, r.edited ? h('span', { class: 'badge warn' }, 'Edited') : null,
+        r.edited ? ' ' : null, h('span', { class: 'badge ' + st[1] }, st[0]))),
+      lines, links.length ? h('div', { class: 'actions' }, links) : null);
+  }
+
+  function historyView() {
+    var t = S.history;
+    if (!t) {
+      if (!S.hiLoading) loadHistory();
+      return [h('p', { class: 'loading' }, 'Loading previous submissions…')];
+    }
+    if (t.error) return [errorNote(t, 'Pending'), h('button', { class: 'btn', onclick: function () { S.history = null; render(); } }, 'Try again')];
+    var f = S.hiFilter || 'all';
+    var rows = t.rows.filter(function (r) { return f === 'all' || (f === 'approved' ? (r.status === 'approved' || r.status === 'auto') : r.status === f); });
+    var shown = S.hiShown || 25;
+    var els = [
+      h('div', { class: 'toolbar' }, h('div', { class: 'seg', role: 'group', 'aria-label': 'Outcome' }, HI_FILTERS.map(function (x) {
+        return h('button', { 'aria-pressed': f === x[0] ? 'true' : 'false', onclick: function () { S.hiFilter = x[0]; S.hiShown = 25; render(); } }, x[1]);
+      }))),
+    ];
+    if (!t.hasReasonColumn) els.push(h('div', { class: 'note warn' }, 'Pending has no reject_reason column yet, so reasons for rejecting are not saved.'));
+    if (!rows.length) els.push(h('p', { class: 'empty' }, 'Nothing here yet.'));
+    rows.slice(0, shown).forEach(function (r) { els.push(hiCard(r, t.today)); });
+    if (rows.length > shown) els.push(h('button', { class: 'btn', onclick: function () { S.hiShown = shown + 25; render(); } }, 'Show older (' + (rows.length - shown) + ' more)'));
+    return els;
+  }
+
+  function autonomyView() {
+    var t = S.autonomy;
+    if (!t) {
+      if (!S.auLoading) loadAutonomy();
+      return [h('p', { class: 'loading' }, 'Loading progress…')];
+    }
+    if (t.error) return [errorNote(t, 'Autonomy'), h('button', { class: 'btn', onclick: function () { S.autonomy = null; render(); } }, 'Try again')];
+    var th = t.thresholds;
+    var section = function (title, rows, empty) {
+      return [h('h2', { class: 'section' }, title), rows.length ? rows.map(function (r) { return auCard(r, th); }) : h('p', { class: 'empty' }, empty)];
+    };
+    var sh = t.shadow;
+    return [
+      h('div', { class: 'note info' }, 'Nothing is automatic yet, apart from roadworks alerts and holiday mode. A kind qualifies after ' + th.needed +
+        ' decisions with at least ' + th.rate + '% approved as written and no rejection in the last ' + th.cleanLast + '. Then it is your call. ' +
+        'Counting from ' + when(t.countFrom) + ': earlier decisions are set aside. "Replied in Gmail" is never counted.'),
+      section('Submissions', t.items, 'No decisions yet. They are counted from 2 November.'),
+      section('Replies', t.replies, 'No reply decisions yet.'),
+      h('h2', { class: 'section' }, 'If it had been on (last ' + th.shadowDays + ' days)'),
+      h('div', { class: 'card' }, sh.qualifying.length
+        ? h('p', null, sh.wouldHave + ' would have gone out by itself; you changed or rejected ' + sh.wrong + ' of them.')
+        : h('p', { class: 'meta' }, 'No kind has qualified yet. Once one does, this shows what would have gone out by itself, and how many of those you changed or rejected.')),
+      h('h2', { class: 'section' }, 'Never automatic'),
+      h('div', { class: 'card' }, h('p', { class: 'meta' }, 'Official notices, people in images, political or commercial items, held mail, follow-ups and outreach always wait for you. ' +
+        (t.never.decided ? t.never.decided + ' such decision' + (t.never.decided === 1 ? '' : 's') + ' so far.' : '')))
     ];
   }
 
@@ -2630,7 +3389,7 @@ export const CLIENT_JS = String.raw`
         return h('tr', { class: x.date === cur ? 'sel' : null, tabindex: '0', role: 'button', title: 'Show this issue',
           onclick: function () { S.nlPick = x.date; S.nl = null; render(); },
           onkeydown: function (e) { if (e.key === 'Enter') { S.nlPick = x.date; S.nl = null; render(); } } },
-          h('td', null, day(x.date)), h('td', null, n(x.sent)), h('td', null, n(x.bounced)), h('td', null, n(x.opens)), h('td', null, n(x.clicks)));
+          h('td', null, day(x.date) + (x.early ? ' ★' : '')), h('td', null, n(x.sent)), h('td', null, n(x.bounced)), h('td', null, n(x.opens)), h('td', null, n(x.clicks)));
       })))));
     var d = t.detail;
     if (d) {
@@ -2638,6 +3397,7 @@ export const CLIENT_JS = String.raw`
       els.push(h('div', { class: 'card' },
         h('h2', null, day(d.date)),
         h('p', null, 'Sent ' + n(row.sent) + ' · Bounced ' + n(row.bounced) + ' · Opens ' + n(row.opens) + '* · Link clicks ' + n(row.clicks)),
+        row.early ? h('p', { class: 'meta' }, '★ Sent before counts began, so no opens or clicks were counted.') : null,
         d.days.length ? h('p', null, h('b', null, 'Opens by day: '), d.days.map(function (x) { return day(x.day) + ' ' + x.n; }).join(' · ')) : h('p', { class: 'meta' }, 'No opens counted yet.'),
         d.hours.length ? h('p', null, h('b', null, 'Busiest hours: '), d.hours.map(function (x) { return hourLabel(x.hour) + ' ' + x.n; }).join(' · ')) : null,
         h('h3', null, 'Most-clicked links'),
@@ -2645,6 +3405,7 @@ export const CLIENT_JS = String.raw`
           return h('tr', null, h('td', { class: 'run-t' }, String(l.n)), h('td', null, h('a', { href: l.url, target: '_blank', rel: 'noopener' }, l.url.replace(/^https?:\/\/(www\.)?/, ''))));
         }))) : h('p', { class: 'meta' }, 'No clicks counted yet.')));
     }
+    if (t.issues.some(function (x) { return x.early; })) els.push(h('p', { class: 'meta' }, '★ Sent before counts began (28 October), so no opens or clicks were counted.'));
     els.push(h('p', { class: 'meta' }, '* Opens are approximate: some email apps open every image automatically, others block images. Clicks may include link checkers in some email services. Counts are kept for about 3 months.'));
     return els;
   }
@@ -2670,13 +3431,12 @@ export const CLIENT_JS = String.raw`
       if (!S.svLoading) loadVisitors();
       return [h('p', { class: 'loading' }, 'Loading site visitors…')];
     }
-    var again = h('button', { class: 'btn', onclick: function () { S.sv = null; render(); } }, 'Refresh');
-    if (t.error) return [errorNote(t, 'Site visitors'), again];
+    if (t.error) return [errorNote(t, 'Site visitors')];
     if (t.off) return [h('div', { class: 'note warn' }, 'Not set up: the Worker needs CF_ANALYTICS_TOKEN and CF_ACCOUNT_ID.')];
     var els = [];
     if (t.todayError) els.push(h('div', { class: 'note bad' }, 'Today so far could not be read: ' + t.todayError));
     var days = t.days || [];
-    if (!days.length) { els.push(h('p', { class: 'empty' }, 'No days saved yet. Each night just after midnight the day before is saved.')); els.push(again); return els; }
+    if (!days.length) { els.push(h('p', { class: 'empty' }, 'No days saved yet. Each night just after midnight the day before is saved.')); return els; }
 
     // Last 30 days as bars (oldest left; hover for numbers), then the last 14 in a table, newest first.
     var last = days.slice(0, 30);
@@ -2716,7 +3476,6 @@ export const CLIENT_JS = String.raw`
         }))) : h('p', { class: 'meta' }, 'No page views counted.')));
     }
     els.push(h('p', { class: 'meta' }, 'Days run midnight to midnight UK time. A visit is one person’s session; page views count every page they open. Counted by Cloudflare without cookies, so some visitors who block it are missed. Each day is saved to the Visitors tab of the Sheet just after midnight.'));
-    els.push(again);
     return els;
   }
 
@@ -2754,12 +3513,103 @@ export const CLIENT_JS = String.raw`
       closeOverlay();
       if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); return; }
       toast(r.json.message || 'Started');
-      if (rebuild) pollDraft(before, 'Rebuilding…', 40);
+      // After a Test send the draft is redone too (newsletter-draft.yml), bringing Send to all.
+      pollDraft(before, rebuild ? 'Rebuilding…' : 'Test sending…', 40);
     } },
     h('p', null, rebuild
       ? 'Builds the ' + day(m.issue_date) + ' issue again with everything approved, including items that came in after the Wednesday deadline. Nothing is sent. Any Send button in an earlier preview stops working; use Test send for a new one.'
       : 'Sends the preview of the ' + day(m.issue_date) + ' issue, exactly as built, to your thelenches.org.uk inbox only, with the usual Send, Rebuild, Approve and Reject buttons. No subscriber and no test copy gets anything.'),
     h('div', { class: 'actions' }, btn)));
+  }
+
+  // Send to all (4 Nov, Jon): the preview email's Send decision from the panel (POST /admin/api/newsletter action send), for a
+  // built issue that has had its Test send. The confirm shows when it was last rebuilt and tested
+  // and when Rimmer last checked it; send.js refuses if the build, mode or count no longer match.
+  var SEND_WORDS = { live: 'subscribers', canary: 'canary addresses', shadow: 'would-be recipients (shadow run: no emails)' };
+  function canSend(m) {
+    return !!(m && m.mode === 'frozen' && (m.status === 'tested' || m.status === 'shadow') && m.hash && SEND_WORDS[m.send_mode] && m.send_count !== undefined);
+  }
+  // After Send to all (5 Nov, Jon): the bar says the send has started and the button goes, for this
+  // build (issue + hash), also after a reload (sessionStorage, guarded; the panel works without it).
+  // Once the send finishes the draft moves on to next week's issue and the note goes with it.
+  var SENT_KEY = 'lenches-nl-sent';
+  function markSent(m) {
+    S.nlSent = { issue_date: m.issue_date, hash: m.hash, count: m.send_count, mode: m.send_mode, at: new Date().toISOString() };
+    try { window.sessionStorage.setItem(SENT_KEY, JSON.stringify(S.nlSent)); } catch (e) { /* not kept */ }
+  }
+  function sentFor(m) {
+    if (!S.nlSent) { try { S.nlSent = JSON.parse(window.sessionStorage.getItem(SENT_KEY) || 'null'); } catch (e) { S.nlSent = null; } }
+    var x = S.nlSent;
+    return x && m && x.issue_date === m.issue_date && x.hash === m.hash ? x : null;
+  }
+  // Progress (5 Nov, Jon): /admin/api/send-progress every 15 seconds while the note shows (up to an
+  // hour), redrawing only the note so the draft frame isn't reloaded.
+  function sentNote(x) {
+    var who = x.count + ' ' + (SEND_WORDS[x.mode] || 'subscribers');
+    if (x.mode === 'shadow') {
+      return h('div', { class: 'note ok sent-note' }, h('b', null, 'Shadow run started ✓ '), 'No emails go out; started ' + when(x.at) + '. Activity shows the "Newsletter build and send" run.');
+    }
+    var p = S.nlProgress && S.nlProgress.issue === x.issue_date ? S.nlProgress : null;
+    if (!p || !p.done) watchSend(x);
+    var line;
+    if (p && p.done) {
+      line = [h('b', null, 'Sent ✓ '), p.sent + ' of ' + (p.total || x.count) + ' sent' + (p.failed ? ', ' + p.failed + ' failed' : '') + (p.stuck ? ', ' + p.stuck + ' not sure (see the Sends tab)' : '') + (p.queued ? ', ' + p.queued + ' still waiting' : '') + '. This screen moves on to next week\'s draft shortly.'];
+    } else if (p && p.total) {
+      line = [h('b', null, 'Sending… '), p.sent + ' of ' + p.total + ' sent' + (p.failed ? ', ' + p.failed + ' failed' : '') + '; started ' + when(x.at) + '. It takes about a quarter of an hour.'];
+    } else {
+      line = [h('b', null, 'Send started ✓ '), 'The newsletter is going to ' + who + '; started ' + when(x.at) + '. The count appears here once the send gets going (a minute or two).'];
+    }
+    var total = p && p.total ? p.total : 0;
+    var pct = total ? Math.round(100 * (p.sent + p.failed + p.stuck) / total) : 0;
+    return h('div', { class: 'note ok sent-note' }, line,
+      total ? h('div', { class: 'send-bar', role: 'progressbar', 'aria-valuemin': '0', 'aria-valuemax': '100', 'aria-valuenow': String(pct) }, h('span', { style: 'width:' + pct + '%' })) : null);
+  }
+  function watchSend(x) {
+    if (S.sendTimer) return;
+    var tries = 0;
+    var tick = async function () {
+      tries += 1;
+      var r = await api('/admin/api/send-progress?i=' + encodeURIComponent(x.issue_date) + '&m=' + encodeURIComponent(x.mode || 'live'));
+      if (r.ok) {
+        var changed = JSON.stringify(r.json) !== JSON.stringify(S.nlProgress);
+        S.nlProgress = r.json;
+        if (r.json.done) toast('Newsletter sent: ' + r.json.sent + ' of ' + r.json.total + (r.json.failed ? ', ' + r.json.failed + ' failed' : ''), !!r.json.failed);
+        if (changed && S.view === 'draft') {
+          var old = document.querySelector('.sent-note');
+          if (old) { S.sendTimer = 'redraw'; old.replaceWith(sentNote(x)); }
+        }
+      }
+      if ((r.ok && r.json.done) || tries >= 240) { S.sendTimer = null; return; }
+      S.sendTimer = setTimeout(tick, 15000);
+    };
+    S.sendTimer = setTimeout(tick, 1000);
+  }
+  function sendConfirm(m) {
+    var c = rimmerData();
+    var checked = c && c.last ? str(c.last.newsletter) : '';
+    var open = c && Array.isArray(c.open) ? c.open.filter(function (f) { return f.scope === 'newsletter'; }).length : 0;
+    var stale = !checked || (str(m.built_at) && stampMs(checked) < stampMs(m.built_at));
+    var who = m.send_count + ' ' + SEND_WORDS[m.send_mode];
+    var btn = h('button', { class: 'btn primary', type: 'submit' }, m.send_mode === 'live' ? 'Yes, send to ' + m.send_count : 'Yes, go ahead');
+    var row = function (k, v) { return h('li', null, h('b', null, k + ': '), v); };
+    overlay('Send to all', h('form', { onsubmit: async function (e) {
+      e.preventDefault();
+      btn.disabled = true;
+      var r = await api('/admin/api/newsletter', { action: 'send', issue_date: m.issue_date, hash: m.hash, count: m.send_count, mode: m.send_mode });
+      closeOverlay();
+      if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); return; }
+      markSent(m);
+      toast(r.json.message || 'Send started');
+      render();
+    } },
+    h('p', null, h('b', null, 'Are you sure? '), 'This sends the ' + day(m.issue_date) + ' issue, exactly as built, to ' + who + '. It can\'t be undone.'),
+    h('ul', { class: 'sum-l' },
+      row('Last rebuilt', str(m.built_at) ? when(m.built_at) : 'not known'),
+      row('Test send', str(m.tested_at) ? when(m.tested_at) : 'not known'),
+      row('Rimmer last checked', checked ? when(checked) + ' · ' + plural(open, 'open finding') : 'not yet')),
+    stale ? h('p', { class: 'note warn' }, checked ? 'Rimmer checked before the last rebuild: tap Check on his card first if you want him to read this build.' : 'Rimmer hasn\'t checked this issue: tap Check on his card first if you want him to.') : null,
+    open ? h('p', { class: 'note warn' }, 'Rimmer has ' + plural(open, 'open finding') + ' on this issue.') : null,
+    h('div', { class: 'actions' }, btn, h('button', { class: 'btn', type: 'button', onclick: closeOverlay }, 'Cancel'))));
   }
 
   // Checks every 15 seconds (default up to 6 minutes) for a draft newer than before.
@@ -2815,6 +3665,9 @@ export const CLIENT_JS = String.raw`
         h('h2', null, m ? 'Draft for ' + day(m.issue_date) : 'No draft yet'),
         m ? h('div', { class: 'meta' }, 'As of ' + when(m.as_of) + ' · ' + plural(m.items, 'item') + (counts ? ' (' + counts + ')' : '') +
           (m.held ? ' · ' + m.held + ' held as late, for next week' : '')) : h('div', { class: 'meta' }, 'Tap Refresh to make the first one.'),
+        m && m.subscribers !== undefined ? h('div', { class: 'meta' }, plural(m.subscribers, 'subscriber') + ' on the list') : null,
+        m && m.mode === 'frozen' && !canSend(m) && m.status === 'built' ? h('div', { class: 'meta' }, 'Test send first: Send to all shows once the preview has gone to you.') : null,
+        sentFor(m) ? sentNote(sentFor(m)) : null,
         m ? h('div', { class: 'badges' }, m.mode === 'frozen'
           ? h('span', { class: 'badge ok' }, 'Built: as it will go out' + (m.status ? ' (' + m.status + ')' : ''))
           : h('span', { class: 'badge info' }, 'Live draft: changes as items are approved')) : null),
@@ -2822,11 +3675,344 @@ export const CLIENT_JS = String.raw`
         h('button', { class: 'btn primary', disabled: S.draftBusy ? true : null, onclick: refreshDraft }, S.draftBusy || 'Refresh'),
         m ? h('button', { class: 'btn', disabled: S.draftBusy ? true : null, title: 'Build this issue again now; sends nothing', onclick: function () { nlConfirm('rebuild', m); } }, 'Rebuild') : null,
         m && m.mode === 'frozen' ? h('button', { class: 'btn', disabled: S.draftBusy ? true : null, title: 'Email the preview, with its Send button, to you only', onclick: function () { nlConfirm('test', m); } }, 'Test send') : null,
-        h('a', { class: 'btn link', href: '/admin/draft', target: '_blank', rel: 'noopener' }, 'Open in new tab'))));
+        canSend(m) && !sentFor(m) ? h('button', { class: 'btn send-all', disabled: S.draftBusy ? true : null, title: 'Send this built issue to every subscriber (asks first)', onclick: function () { sendConfirm(m); } }, m.send_mode === 'live' ? 'Send to all' : m.send_mode === 'canary' ? 'Canary send' : 'Shadow run') : null,
+        m ? h('button', { class: S.draftEdit ? 'btn primary' : 'btn', title: 'Click an entry in the draft to change its wording or links (the website changes too)', 'aria-pressed': S.draftEdit ? 'true' : 'false',
+          onclick: function () { S.draftEdit = !S.draftEdit; render(); } }, S.draftEdit ? 'Stop editing' : 'Edit text') : null,
+        h('a', { class: 'btn link', href: S.draftEdit ? '/admin/draft-edit' : '/admin/draft', target: '_blank', rel: 'noopener' }, 'Open in new tab'))));
+    // Edit text (4 Nov, "edit everything"): the same draft with the entry editor in it.
+    if (S.draftEdit) {
+      els.push(h('div', { class: 'note' }, 'Editing: click an outlined entry in the draft to change its wording or links, then Save and publish. The website changes too.'
+        + (m && m.mode === 'frozen' ? ' This issue is built, so it is rebuilt with each change: Test send again before Send to all.' : '')));
+    }
+    els.push(rimmerCard('Rimmer', ['newsletter'], [['newsletter', 'Check']],
+      'Rimmer reads the issue as a villager would and lists anything wrong. He runs on Wednesday evening after the deadline; Check runs him now.'));
+    // The draft at its full height (3 Nov, Jon): the page scrolls as one, Rimmer's notes above it.
     els.push(S.draftAuth === 'ok'
-      ? h('iframe', { class: 'draft-frame', src: '/admin/draft?v=' + encodeURIComponent(m ? str(m.as_of) : '0'), title: 'Newsletter draft' })
+      ? h('iframe', { class: 'draft-frame', src: S.draftEdit ? '/admin/draft-edit?v=' + encodeURIComponent(m ? str(m.as_of) : '0') : '/admin/draft?v=' + encodeURIComponent(m ? str(m.as_of) : '0'),
+        title: S.draftEdit ? 'Newsletter draft (editing)' : 'Newsletter draft', scrolling: 'no', onload: fitFrame })
       : h('p', { class: 'loading' }, 'Loading the draft…'));
     return els;
+  }
+
+  // Sizes the draft frame to its content (the frame has no scripts; the panel reads its height,
+  // allowed because /admin/draft is same-origin with allow-same-origin and no allow-scripts).
+  function fitFrame(e) {
+    var f = e && e.target;
+    try {
+      var fit = function () { var d = f.contentDocument; if (d && d.documentElement) f.style.height = (d.documentElement.scrollHeight + 4) + 'px'; };
+      fit(); setTimeout(fit, 400); setTimeout(fit, 1500);
+    } catch (err) { /* left at its default height */ }
+  }
+
+  /* ------------------------------------------------------------- rimmer -- */
+
+  // Rimmer (3 Nov; admin/rimmer.js, scripts/rimmer): a second Claude's findings on the next
+  // newsletter, the listings pages and the whole site. Each finding: Fix… (Holly proposes one
+  // change, then Apply / Discard), Send to Kryten, Dismiss. Check runs a check now.
+  var CHECK_LABELS = { newsletter: 'Newsletter', listings: 'Listings pages', site: 'Whole site' };
+  var FIX_BUSY = ['asked', 'applying'];
+  // A fix ready for Apply: one Jon asked for ("proposed") or one Holly drafted with Rimmer's run ("offered", 4 Nov).
+  var FIX_READY = ['proposed', 'offered'];
+  var FIX_WORDS = { title: 'title', body: 'text', date: 'date', endDate: 'end date', expires: 'hidden from', link: 'link', link2: 'second link', remove: 'take it off the website' };
+  var DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fixDate(v) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(str(v));
+    if (!m) return '';
+    var d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], 12));
+    return DAY_NAMES[d.getUTCDay()] + ' ' + (+m[3]) + ' ' + MONTH_NAMES[+m[2] - 1] + ' ' + m[1];
+  }
+  function fixJson(v) { try { return JSON.parse(v); } catch (e) { return null; } }
+  // One side (Now / After) of a fix, in words: dates as "Sun 6 Dec 2026", links as "words" → address,
+  // a removal as the entry and "Taken off the website".
+  function fixSide(f, side) {
+    var v = side === 'old' ? f.fix_old : f.fix_new;
+    var fld = f.fix_field;
+    if (fld === 'remove') {
+      if (side === 'new') return h('b', { class: 'bad-text' }, 'Taken off the website');
+      var o = fixJson(v) || {};
+      var more = str(o.body || o.about || o.what || o.note || o.where);
+      return [f.fix_label, more ? h('div', { class: 'meta' }, more.length > 160 ? more.slice(0, 159) + '…' : more) : null];
+    }
+    if (fld === 'date' || fld === 'endDate' || fld === 'expires') {
+      if (!str(v)) return fld === 'endDate' ? 'None (a one-day event)' : 'None';
+      return (fld === 'expires' ? 'Hidden from ' : '') + fixDate(v);
+    }
+    if (fld === 'link' || fld === 'link2') {
+      var l = str(v) ? fixJson(v) : null;
+      if (!l) return 'No link';
+      return ['"' + str(l.text) + '"', h('div', { class: 'meta' }, '→ ' + str(l.url))];
+    }
+    return v;
+  }
+  function fixConfirm(f) {
+    if (f.fix_field === 'remove') return 'Take this entry off the website?\n\n' + f.fix_label + '\n\nThe site rebuilds in a few minutes. If this week\'s newsletter is already built, Rebuild it afterwards.';
+    var extra = f.fix_field === 'date' && /^Event/.test(f.fix_label) ? '\n\nThe event moves to its new date (its page link changes, so the newsletter may show it again).' : '';
+    return 'Apply Holly\'s fix?\n\n' + f.fix_label + extra + '\n\nThe site rebuilds in a few minutes. If this week\'s newsletter is already built, Rebuild it afterwards.';
+  }
+  S.fixForm = S.fixForm || {};
+  S.fixNote = S.fixNote || {};
+  // Apply all ticked (5 Nov, Jon): the ready fixes Jon has ticked, by finding id.
+  S.fixTick = S.fixTick || {};
+  // Any finding not being worked on can be ticked (Send to Kryten / Dismiss); Apply takes the ready ones.
+  function tickable(f) { return FIX_BUSY.indexOf(f.fix_status) < 0; }
+  function tickedIn(list) {
+    return list.filter(function (f) { return S.fixTick[f.id] && tickable(f); });
+  }
+  function readyIn(list) { return list.filter(function (f) { return FIX_READY.indexOf(f.fix_status) >= 0; }); }
+  function findingWhere(f) { return [f.scope === 'newsletter' ? 'Newsletter' : f.page, f.where].filter(Boolean).join(' · '); }
+  async function applyTicked(list) {
+    var picked = readyIn(tickedIn(list));
+    if (!picked.length || S.batchBusy) return;
+    var lines = picked.map(function (f) { return '• ' + f.fix_label + (f.fix_field === 'remove' ? ' (take it off the website)' : f.fix_field ? ' (' + (FIX_WORDS[f.fix_field] || f.fix_field) + ')' : ''); });
+    if (!window.confirm('Apply ' + plural(picked.length, 'fix', 'fixes') + ' together?\n\n' + lines.join('\n') + '\n\nThe site rebuilds once, in a few minutes. If this week\'s newsletter is already built, Rebuild it afterwards.')) return;
+    S.batchBusy = true; render();
+    var r = await api('/admin/api/rimmer-apply-many', { items: picked.map(function (f) { return { id: f.id, expected: f.fix_status }; }) });
+    S.batchBusy = false;
+    if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); if (r.status === 409) { S.rimmer = null; } render(); return; }
+    (r.json.applied || []).forEach(function (id) { replaceFinding(id, { fix_status: 'applying' }); delete S.fixTick[id]; });
+    toast(r.json.message || 'Applying', !!(r.json.skipped || []).length);
+    if ((r.json.skipped || []).length) S.rimmer = null;
+    render();
+    watchFixes();
+  }
+  // Send to Kryten / Dismiss for every ticked finding (5 Nov, Jon): the same one-at-a-time
+  // stale-checked writes as the single buttons, in turn; any that fail are named.
+  async function closeTicked(list, what) {
+    var picked = tickedIn(list);
+    if (!picked.length || S.batchBusy) return;
+    var verb = what === 'kryten' ? 'Send ' + plural(picked.length, 'finding', 'findings') + ' to Kryten?' : 'Dismiss ' + plural(picked.length, 'finding', 'findings') + '? Rimmer won\'t raise them again.';
+    if (!window.confirm(verb + '\n\n' + picked.map(function (f) { return "• " + findingWhere(f); }).join('\n'))) return;
+    S.batchBusy = true; render();
+    var failed = 0;
+    for (var i = 0; i < picked.length; i += 1) {
+      var f = picked[i];
+      var note = str(S.fixNote[f.id]);
+      var r = await api(what === 'kryten' ? '/admin/api/rimmer-kryten' : '/admin/api/rimmer-dismiss', what === 'kryten' ? { id: f.id, note: note } : { id: f.id });
+      if (!r.ok) { failed += 1; continue; }
+      S.rimmer.open = S.rimmer.open.filter(function (x) { return x.id !== f.id; });
+      if (what === 'kryten') S.rimmer.kryten = [Object.assign({}, f, { fix_note: note })].concat(S.rimmer.kryten || []);
+      delete S.fixTick[f.id]; delete S.fixForm[f.id]; delete S.fixNote[f.id];
+    }
+    S.batchBusy = false;
+    var done = picked.length - failed;
+    toast((what === 'kryten' ? 'Sent to Kryten: ' : 'Dismissed: ') + done + (failed ? '; ' + failed + ' changed meanwhile, so left as they were' : ''), !!failed);
+    if (failed) S.rimmer = null;
+    render();
+  }
+  // The bar above a card's findings when two or more can be ticked: Tick all, Apply ticked fixes
+  // (ready fixes only), Send ticked to Kryten, Dismiss ticked.
+  function batchBar(list) {
+    var can = list.filter(tickable);
+    if (can.length < 2) return null;
+    var t = tickedIn(can);
+    var nFix = readyIn(t).length;
+    var all = t.length === can.length;
+    var busy = S.batchBusy ? true : null;
+    return h('div', { class: 'batch-bar' },
+      h('span', { class: 'meta' }, t.length ? plural(t.length, 'finding', 'findings') + ' ticked' + (nFix ? ' (' + plural(nFix, 'fix', 'fixes') + ' ready)' : '') : 'Tick findings to deal with several at once.'),
+      h('div', { class: 'actions' },
+        h('button', { class: 'btn link', onclick: function () { can.forEach(function (f) { if (all) delete S.fixTick[f.id]; else S.fixTick[f.id] = true; }); render(); } }, all ? 'Untick all' : 'Tick all'),
+        h('button', { class: 'btn primary', disabled: !nFix || busy, title: 'Makes every ticked fix Holly has ready in one go, with one site rebuild',
+          onclick: function () { applyTicked(can); } }, S.batchBusy ? 'Working…' : 'Apply ticked fixes' + (nFix ? ' (' + nFix + ')' : '')),
+        h('button', { class: 'btn', disabled: !t.length || busy, title: 'For anything needing judgement or code; any note you typed goes with it',
+          onclick: function () { closeTicked(can, 'kryten'); } }, 'Send ticked to Kryten' + (t.length ? ' (' + t.length + ')' : '')),
+        h('button', { class: 'btn', disabled: !t.length || busy, title: 'Close them; Rimmer won\'t raise them again',
+          onclick: function () { closeTicked(can, 'dismiss'); } }, 'Dismiss ticked' + (t.length ? ' (' + t.length + ')' : ''))));
+  }
+  async function loadRimmer() {
+    S.ckLoading = true;
+    var r = await api('/admin/api/rimmer');
+    S.ckLoading = false;
+    S.rimmer = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'summary' || S.view === 'draft' || S.view === 'health') render();
+    watchFixes();
+  }
+  function rimmerData() {
+    if (!S.rimmer && !S.ckLoading) loadRimmer();
+    return S.rimmer;
+  }
+  // While Holly is drafting or applying a fix, look again every 10 seconds (up to 6 minutes);
+  // re-draw only when something changed, so a half-typed instruction isn't lost.
+  function watchFixes() {
+    var busy = S.rimmer && Array.isArray(S.rimmer.open) && S.rimmer.open.some(function (f) { return FIX_BUSY.indexOf(f.fix_status) >= 0; });
+    if (!busy || S.fixTimer) return;
+    var tries = 0;
+    var tick = async function () {
+      tries += 1;
+      var c = await api('/admin/api/rimmer');
+      if (c.ok && JSON.stringify(c.json) !== JSON.stringify(S.rimmer)) {
+        var was = S.rimmer;
+        S.rimmer = c.json;
+        (was.open || []).forEach(function (o) {
+          var now = c.json.open.filter(function (x) { return x.id === o.id; })[0];
+          if (o.fix_status === 'asked' && now && now.fix_status !== 'asked') toast(now.fix_status === 'proposed' ? 'Holly has a fix ready to check' : 'Holly couldn\'t fix that one: see why', now.fix_status !== 'proposed');
+          if (o.fix_status === 'applying' && !now) toast('Fix applied: the site and draft update in a few minutes');
+          if (o.fix_status === 'applying' && now && now.fix_status === 'failed') toast('The fix wasn\'t applied: see why', true);
+        });
+        render();
+      }
+      var still = S.rimmer && Array.isArray(S.rimmer.open) && S.rimmer.open.some(function (f) { return FIX_BUSY.indexOf(f.fix_status) >= 0; });
+      if (still && tries < 36) { S.fixTimer = setTimeout(tick, 10000); return; }
+      S.fixTimer = null;
+      if (still) toast('Holly is taking a while: look again later (Activity shows the Rimmer fix run).', true);
+    };
+    S.fixTimer = setTimeout(tick, 10000);
+  }
+  async function runCheck(scope) {
+    if (S.ckBusy) return;
+    S.ckBusy = scope; render();
+    var r = await api('/admin/api/rimmer-run', { scope: scope });
+    if (!r.ok) { S.ckBusy = ''; render(); toast(r.json.error || ('HTTP ' + r.status), true); return; }
+    toast(r.json.message || 'Checking');
+    // Watch for this scope's new run (up to 10 minutes), then show its findings.
+    var before = str(((S.rimmer || {}).last || {})[scope]);
+    var tries = 0;
+    var poll = async function () {
+      tries += 1;
+      var c = await api('/admin/api/rimmer');
+      if (c.ok && str((c.json.last || {})[scope]) !== before) {
+        S.rimmer = c.json; S.ckBusy = '';
+        var n = c.json.open.filter(function (f) { return f.scope === scope; }).length;
+        toast(CHECK_LABELS[scope] + ' checked: ' + (n ? plural(n, 'finding') : 'nothing found'));
+        render(); return;
+      }
+      if (tries >= 40) { S.ckBusy = ''; render(); toast('The check is taking a while: look again later (Activity shows the Rimmer run).', true); return; }
+      setTimeout(poll, 15000);
+    };
+    setTimeout(poll, 20000);
+  }
+  function replaceFinding(id, fields) {
+    S.rimmer.open = S.rimmer.open.map(function (x) { return x.id === id ? Object.assign({}, x, fields) : x; });
+  }
+  async function dismissFinding(f) {
+    var r = await api('/admin/api/rimmer-dismiss', { id: f.id });
+    if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); return; }
+    S.rimmer.open = S.rimmer.open.filter(function (x) { return x.id !== f.id; });
+    toast(r.json.message || 'Dismissed');
+    render();
+  }
+  async function krytenFinding(f) {
+    var note = str(S.fixNote[f.id]);
+    var r = await api('/admin/api/rimmer-kryten', { id: f.id, note: note });
+    if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); return; }
+    S.rimmer.open = S.rimmer.open.filter(function (x) { return x.id !== f.id; });
+    S.rimmer.kryten = [Object.assign({}, f, { fix_note: note })].concat(S.rimmer.kryten || []);
+    delete S.fixForm[f.id]; delete S.fixNote[f.id];
+    toast(r.json.message || 'Sent to Kryten');
+    render();
+  }
+  async function fixOp(f, op) {
+    if (op === 'apply' && !window.confirm(fixConfirm(f))) return;
+    var note = op === 'propose' ? str(S.fixNote[f.id]) : '';
+    var r = await api('/admin/api/rimmer-fix', { id: f.id, op: op, note: note, expected: f.fix_status });
+    if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); if (r.status === 409) { S.rimmer = null; render(); } return; }
+    replaceFinding(f.id, Object.assign({ fix_status: r.json.value }, op === 'propose' ? { fix_note: note } : {}));
+    if (op === 'propose') delete S.fixForm[f.id];
+    toast(r.json.message || 'Done');
+    render();
+    watchFixes();
+  }
+  function fixForm(f) {
+    var box = h('textarea', { class: 'f', rows: 3, maxlength: 600, placeholder: 'Optional: what should it say? e.g. "Fran\'s number is 01386 …". Leave blank to use Rimmer\'s suggestion.',
+      'aria-label': 'What should change', oninput: function (e) { S.fixNote[f.id] = e.target.value; } }, S.fixNote[f.id] || '');
+    return h('div', { class: 'fix-form' }, box,
+      h('div', { class: 'actions' },
+        h('button', { class: 'btn primary', onclick: function () { fixOp(f, 'propose'); } }, 'Ask Holly for a fix'),
+        h('button', { class: 'btn', title: 'For anything needing judgement or code; your words above go with it', onclick: function () { krytenFinding(f); } }, 'Send to Kryten'),
+        h('button', { class: 'btn link', onclick: function () { delete S.fixForm[f.id]; render(); } }, 'Cancel')));
+  }
+  function fixPanel(f) {
+    var st = f.fix_status;
+    if (st === 'asked') return h('div', { class: 'note info' }, 'Holly is finding the entry and drafting a fix…');
+    if (st === 'applying') return h('div', { class: 'note info' }, 'Applying the fix… the site rebuilds in a few minutes.');
+    if (FIX_READY.indexOf(st) >= 0) {
+      return h('div', { class: 'fix-proposal' },
+        h('div', null, h('b', null, st === 'offered' ? 'Holly\'s fix (drafted with Rimmer\'s check): ' : 'Holly\'s fix: '),
+          f.fix_label + (f.fix_field ? ' (' + (FIX_WORDS[f.fix_field] || f.fix_field) + ')' : '')),
+        h('div', { class: 'fix-diff' },
+          h('div', { class: 'fix-old' }, h('span', { class: 'meta' }, 'Now'), h('div', null, fixSide(f, 'old'))),
+          h('div', { class: 'fix-new' + (f.fix_field === 'remove' ? ' fix-remove' : '') }, h('span', { class: 'meta' }, 'After'), h('div', null, fixSide(f, 'new')))),
+        f.fix_reason ? h('div', { class: 'meta' }, f.fix_reason + (f.fix_field === 'date' && /^Event/.test(f.fix_label) ? ' (The file is renamed to match.)' : '')) : null,
+        h('div', { class: 'actions' },
+          h('button', { class: 'btn primary', onclick: function () { fixOp(f, 'apply'); } }, f.fix_field === 'remove' ? 'Apply (remove it)' : 'Apply'),
+          h('button', { class: 'btn', title: 'Throw this fix away; the finding stays open', onclick: function () { fixOp(f, 'discard'); } }, 'Discard fix'),
+          h('button', { class: 'btn link', title: 'Tell Holly what it should say and she drafts again', onclick: function () { S.fixForm[f.id] = true; render(); } }, 'Ask again…'),
+          h('button', { class: 'btn link', title: 'For anything needing judgement or code', onclick: function () { krytenFinding(f); } }, 'Send to Kryten'),
+          h('button', { class: 'btn link', title: 'Close this finding; Rimmer won\'t raise it again', onclick: function () { dismissFinding(f); } }, 'Dismiss')),
+        S.fixForm[f.id] ? fixForm(f) : null);
+    }
+    var why = (st === 'cannot' || st === 'failed') && f.fix_reason
+      ? h('div', { class: 'note warn' }, (st === 'failed' ? 'Not applied: ' : 'Holly couldn\'t fix it: ') + f.fix_reason) : null;
+    return [why, S.fixForm[f.id] ? fixForm(f) : null];
+  }
+  function findingEl(f) {
+    var busy = FIX_BUSY.indexOf(f.fix_status) >= 0;
+    return h('div', { class: 'finding' },
+      busy ? null : h('label', { class: 'fix-tick' },
+        h('input', { type: 'checkbox', 'aria-label': 'Tick this finding', checked: S.fixTick[f.id] ? true : null, onchange: function (e) { if (e.target.checked) S.fixTick[f.id] = true; else delete S.fixTick[f.id]; render(); } }),
+        ' Tick'),
+      h('div', null, h('span', { class: 'badge ' + (f.severity === 'problem' ? 'bad' : 'warn') }, f.severity === 'problem' ? 'Problem' : 'Check'), ' ',
+        h('b', null, [f.scope === 'newsletter' ? '' : f.page, f.where].filter(Boolean).join(' · '))),
+      h('div', null, f.problem),
+      f.quote ? h('div', { class: 'meta' }, '"' + f.quote + '"') : null,
+      f.suggestion ? h('div', { class: 'meta' }, 'Suggested fix: ' + f.suggestion) : null,
+      fixPanel(f),
+      busy || FIX_READY.indexOf(f.fix_status) >= 0 || S.fixForm[f.id] ? null : h('div', { class: 'actions' },
+        h('button', { class: 'btn', title: 'Holly finds the entry and proposes a change for you to check', onclick: function () { S.fixForm[f.id] = true; render(); } }, 'Fix…'),
+        h('button', { class: 'btn link', title: 'For anything needing judgement or code', onclick: function () { krytenFinding(f); } }, 'Send to Kryten'),
+        h('button', { class: 'btn link', title: 'Close this finding; Rimmer won\'t raise it again', onclick: function () { dismissFinding(f); } }, 'Dismiss')));
+  }
+  function checkButton(scope, label) {
+    return h('button', { class: 'btn', disabled: S.ckBusy ? true : null, title: 'Rimmer reads it now and lists any problems here; he changes nothing',
+      onclick: function () { runCheck(scope); } }, S.ckBusy === scope ? 'Checking…' : label);
+  }
+  // How to use the card and what its words mean (Jon, 4 Nov: every screen explains itself).
+  function rimmerHelp() {
+    var li = function (b, t) { return h('li', null, h('b', null, b), ' ' + t); };
+    return h('details', { class: 'help' }, h('summary', null, 'How this works'),
+      h('p', null, 'Rimmer reads what readers see and lists anything that looks wrong. He changes nothing himself. Where the words are in a listing Holly can change, she drafts a fix in the same run, so most findings arrive with one ready for you to check.'),
+      h('ul', null,
+        li('Problem', 'Rimmer is sure it is wrong.'),
+        li('Check', 'it may be wrong: have a look.'),
+        li('Now / After', 'the entry as it is, and as it would be with Holly\'s fix. A fix changes one thing: some wording, an event\'s date or end date, the date a notice is hidden from, a link, or takes a whole entry off the website.'),
+        li('Apply', 'makes the change (after you confirm); the website rebuilds in a few minutes. If this week\'s newsletter is already built, tap Rebuild on the draft afterwards.'),
+        li('Tick', 'to deal with several findings at once: tick them (or Tick all), then Apply ticked fixes (the ticked ones with a fix ready, all made in one go with one website rebuild), Send ticked to Kryten or Dismiss ticked. One that changed meanwhile is skipped and the rest still go ahead.'),
+        li('Discard fix', 'throws Holly\'s fix away but keeps the finding open.'),
+        li('Fix… / Ask again…', 'type what it should say (a phone number, the right date, the web address) and Holly drafts again. She never adds details nobody gave her, and official statements only get typos corrected.'),
+        li('Holly couldn\'t fix it', 'says why; usually she needs a detail from you, or it is something only Kryten can change.'),
+        li('Send to Kryten', 'for anything needing judgement or code; your note goes with it.'),
+        li('Dismiss', 'closes the finding; Rimmer won\'t raise it again.')),
+      h('p', { class: 'meta' }, 'Rimmer checks the newsletter on Wednesday evenings (and that it agrees with the website\'s Events, Notices, Roads and Regular activities pages), the listings pages on Sundays and the whole site on the 1st of each month; the Check buttons run him now. A newer check replaces findings you haven\'t acted on.'));
+  }
+  // A card of findings for the given scopes, with Check buttons (and, when asked, the list sent to Kryten).
+  function rimmerCard(title, scopes, buttons, intro, showKryten) {
+    var c = rimmerData();
+    var lastRun = c && c.last ? scopes.map(function (sc) { return c.last[sc] ? CHECK_LABELS[sc] + ' last checked ' + when(c.last[sc]) : ''; }).filter(Boolean).join(' · ') : '';
+    var list = c && Array.isArray(c.open) ? c.open.filter(function (f) { return scopes.indexOf(f.scope) >= 0; }) : [];
+    var kr = showKryten && c && Array.isArray(c.kryten) ? c.kryten : [];
+    // Nothing to show (4 Nov, Jon): one short row, the intro left out, How this works still there.
+    if (c && !c.error && !list.length && !kr.length) {
+      return h('div', { class: 'card rimmer compact' },
+        h('div', { class: 'intro-row' },
+          h('div', { class: 'intro-wrap' }, h('h2', null, title + ' (0)'),
+            h('div', { class: 'meta' }, lastRun ? 'Nothing found · ' + lastRun : 'Not checked yet.')),
+          h('div', { class: 'actions' }, buttons.map(function (b) { return checkButton(b[0], b[1]); }))),
+        rimmerHelp());
+    }
+    return h('div', { class: 'card rimmer' },
+      h('div', { class: 'intro-row' }, h('h2', null, title + (c && !c.error ? ' (' + list.length + ')' : '')),
+        h('div', { class: 'actions' }, buttons.map(function (b) { return checkButton(b[0], b[1]); }))),
+      intro ? h('p', { class: 'meta' }, intro) : null,
+      rimmerHelp(),
+      !c ? h('p', { class: 'meta' }, 'Loading…') : c.error ? errorNote(c, 'The Rimmer tab')
+        : list.length ? [batchBar(list), list.map(findingEl)] : h('p', { class: 'meta' }, lastRun ? 'Nothing found.' : 'Not checked yet.'),
+      lastRun ? h('p', { class: 'meta' }, lastRun) : null,
+      kr.length ? h('div', { class: 'kryten-list' }, h('h3', null, 'Sent to Kryten (' + kr.length + ')'),
+        h('ul', { class: 'sum-l' }, kr.map(function (f) {
+          return h('li', null, [f.scope === 'newsletter' ? 'Newsletter' : f.page, f.where].filter(Boolean).join(' · ') + ': ' + f.problem,
+            f.fix_note ? h('span', { class: 'meta' }, ' · Your note: ' + f.fix_note) : null);
+        }))) : null);
   }
 
   /* ------------------------------------------------------------- summary -- */
@@ -2887,7 +4073,16 @@ export const CLIENT_JS = String.raw`
     return h('div', { class: 'card sum' }, h('h2', null, head),
       o.top || null,
       list.length ? h('ul', { class: 'sum-l' }, shown.map(function (l) { return h('li', null, l); })) : (o.top ? null : h('p', { class: 'meta' }, o.empty || 'Nothing waiting')),
-      list.length > shown.length ? h('p', { class: 'meta' }, 'and ' + (list.length - shown.length) + ' more') : null);
+      list.length > shown.length ? (o.more ? moreToggle(list.slice(shown.length)) : h('p', { class: 'meta' }, 'and ' + (list.length - shown.length) + ' more')) : null);
+  }
+  // A "Show N more" button that unfolds the rest of a summary list in place.
+  function moreToggle(rest) {
+    var extra = h('ul', { class: 'sum-l', hidden: true }, rest.map(function (l) { return h('li', null, l); }));
+    var btn = h('button', { class: 'btn link', onclick: function () {
+      extra.hidden = !extra.hidden;
+      btn.textContent = extra.hidden ? 'Show ' + rest.length + ' more' : 'Show fewer';
+    } }, 'Show ' + rest.length + ' more');
+    return h('div', null, extra, btn);
   }
   function line(main, meta, badges) {
     return [h('span', null, main), meta ? h('span', { class: 'meta' }, ' · ' + meta) : null,
@@ -2989,10 +4184,20 @@ export const CLIENT_JS = String.raw`
     }).concat(fbr.length ? [h('span', { class: 'meta' }, plural(fbr.length, 'reply', 'replies') + ' to send')] : []),
     { max: 5, top: d.feedback && d.feedback.error ? errorNote(d.feedback, 'Feedback') : null }));
 
+    // Local trades / Where to eat suggestions waiting.
+    var sgw = sgRows(d);
+    if (d.listingSuggestions) action('Suggestions', sgw.length, !(d.listingSuggestions && d.listingSuggestions.error), sumCard('Suggestions (' + sgw.length + ')', go('suggestions'), sgw.map(function (r) {
+      return line(str(r.name), [str(r._label), age(r.confirmed_at)].filter(Boolean).join(' · '), [(r._similar || []).length ? ['Already listed?', 'warn'] : null]);
+    }), { max: 5, top: d.listingSuggestions && d.listingSuggestions.error ? errorNote(d.listingSuggestions, 'Listing suggestions') : null }));
+
     // Holly lessons awaiting approval (below Feedback, agreed 28 Oct).
     var ls = all && Array.isArray(all.lessons) ? all.lessons : [];
     if (all) action('Holly lessons', ls.length, !all.lessons.error, sumCard('Holly lessons awaiting approval (' + ls.length + ')', go('lessons'), ls.map(function (l) { return line(str(l.lesson), '', []); }),
       { max: 5, top: all.lessons && all.lessons.error ? errorNote(all.lessons, 'Holly lessons') : null }));
+    // Rimmer's open findings (newsletter, listings, whole site).
+    var ck = rimmerData();
+    var ckOpen = ck && Array.isArray(ck.open) ? ck.open : [];
+    action('Rimmer', ckOpen.length, !!(ck && !ck.error), rimmerCard('Rimmer', ['newsletter', 'listings', 'site'], [['listings', 'Check listings'], ['site', 'Check whole site']], null, true));
     if (clear.length) els.push(h('div', { class: 'card sum' }, h('p', { class: 'sum-clear' }, h('b', null, 'No action needed on: '), clear.join(' / '))));
 
     if (!all) {
@@ -3002,8 +4207,8 @@ export const CLIENT_JS = String.raw`
 
     // 6. Development tasks (devtasks.json, kept by Kryten).
     els.push(sumCard('Development tasks (' + (all.devTasks || []).length + ')', null, (all.devTasks || []).map(function (t) {
-      return line(t.task, t.waiting ? 'waiting on ' + t.waiting : '', []);
-    }), { empty: 'Nothing outstanding' }));
+      return line(t.task, t.waiting ? 'waiting on ' + t.waiting : '', [t.kryten ? ['Kryten', 'info'] : null]);
+    }), { empty: 'Nothing outstanding', max: 5, more: true }));
 
     // 7. Next newsletter.
     if (all.issue && all.issue.error) els.push(sumCard('Next newsletter', null, [], { top: errorNote(all.issue, 'Issues') }));
@@ -3033,10 +4238,7 @@ export const CLIENT_JS = String.raw`
     var cw = all.coming || {};
     els.push(sumCard('Coming up this week', 'https://thelenches.org.uk/events/', cw.error ? [] : (cw.events || []).map(function (e) {
       return [h('span', { class: 'meta' }, dayRange(e.date, e.end) + ' · '), e.url ? h('a', { href: e.url, target: '_blank', rel: 'noopener' }, str(e.title)) : str(e.title)];
-    }).concat((cw.roads || []).map(function (r) {
-      return [h('span', { class: 'badge warn' }, 'Road'), ' ', h('a', { href: r.url, target: '_blank', rel: 'noopener' }, str(r.title)),
-        h('span', { class: 'meta' }, ' · ' + (r.end ? 'until ' + day(r.end) : 'end date not given'))];
-    })), { top: cw.error ? errorNote(cw, 'The site\'s coming-up list') : null, empty: 'Nothing in the next 7 days' }));
+    }), { top: cw.error ? errorNote(cw, 'The site\'s coming-up list') : null, empty: 'Nothing in the next 7 days' }));
 
     // 9. Outreach due.
     var ou = all.outreach || {};
@@ -3053,6 +4255,18 @@ export const CLIENT_JS = String.raw`
       line('+' + sb.joined + ' joined, −' + sb.left + ' unsubscribed or blocked', 'since the newsletter of ' + day(sb.since), []),
       line(plural(sb.total, 'subscriber') + ' on the list', '', [])
     ], { top: sb.error ? errorNote(sb, 'Subscribers') : null }));
+
+    // Claude API spend (the "Claude usage" tab, lib/claudeusage.js; 5 Nov). US dollars, as billed.
+    var cs = all.claudeSpend || {};
+    var usd = function (x) { return '$' + Number(x || 0).toFixed(2); };
+    var cl = [];
+    if (cs.none || cs.error) cl.push(line('No figures yet', 'each job that uses Claude adds a row to the Claude usage tab when it finishes', []));
+    else {
+      cl.push(line(usd(cs.total) + ' so far this month', plural(cs.calls, 'Claude call') + (cs.lastTotal ? ' · last month ' + usd(cs.lastTotal) : '') + (cs.since > cs.month + '-01' ? ' · counted from ' + day(cs.since) : ''), []));
+      if ((cs.jobs || []).length) cl.push(h('span', { class: 'meta' }, 'By job: ' + cs.jobs.slice(0, 6).map(function (j) { return j.job + ' ' + usd(j.cost); }).join(' · ')));
+      if (cs.calls) cl.push(h('span', { class: 'meta' }, cs.cacheShare + '% of what Claude read came from the cache (cheaper)'));
+    }
+    els.push(sumCard('Claude spend', null, cl, {}));
 
     // 12. Visitors (Cloudflare Web Analytics, admin/visitors.js).
     var vs = all.visitors || {};
@@ -3090,6 +4304,9 @@ export const CLIENT_JS = String.raw`
           h('td', null, str(r.summary), str(r.problems) ? h('div', { class: 'meta' }, str(r.problems).split(' | ').join('; ')) : null));
       })));
     els.push(h('div', { class: 'card' }, h('h2', null, 'Daily diagnostic (latest 7)'), t, h('div', { class: 'actions' }, sheetLink('Health', 1))));
+    // Rimmer: always here with its buttons (on Summary it folds away when nothing is open).
+    els.push(rimmerCard('Rimmer', ['newsletter', 'listings', 'site'], [['newsletter', 'Check newsletter'], ['listings', 'Check listings'], ['site', 'Check whole site']],
+      'Rimmer reads what readers see and lists problems: the newsletter on Wednesday evenings, the listings pages on Sundays and the whole site on the 1st of each month. Fix… asks Holly to propose a change for you to check; Send to Kryten is for anything needing judgement or code.', true));
     return els;
   }
 

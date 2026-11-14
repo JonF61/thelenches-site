@@ -29,13 +29,14 @@
 // At most DAY_CAP organisation drafts a day. Ids are slugs, so logs never show an address.
 
 export const ORG_TAB = 'Org outreach';
-export const ORG_HEADERS = ['id', 'next_check', 'notes', 'other_emails'];
+export const ORG_HEADERS = ['id', 'next_check', 'notes', 'other_emails', 'email', 'email_source', 'confirmed'];
 export const ORG_TYPE = 'outreach';
 export const CHASE_DAYS = 21;
 export const CYCLE_DAYS = 365;
-export const DAY_CAP = 10;
+export const DAY_CAP = 25; // Jon, 5 Nov (was 10)
 export const REGULAR_DAYS = 91;
 export const SUBJECT = 'Your entry on thelenches.org.uk';
+export const LISTING_SUBJECT = 'Your listing on thelenches.org.uk';
 export const SITE = 'https://thelenches.org.uk';
 export const PAGE_NAMES = {
   '/groups/': 'Groups & Clubs',
@@ -46,6 +47,8 @@ export const PAGE_NAMES = {
   '/living-here/schools/': 'Schools',
   '/living-here/health/': 'Health & emergencies',
   '/living-here/getting-around/': 'Getting around',
+  '/living-here/trades/': 'Local trades',
+  '/living-here/eat/': 'Where to eat',
 };
 const SENT = ['queued', 'sending', 'sent'];
 
@@ -118,6 +121,58 @@ export function orgEntries(data) {
   return out;
 }
 
+// Listings (5 Nov, Jon): every Local trades and Where to eat entry gets the same yearly check,
+// with its own wording (templates.md listing_check / listing_chase). Ids are "trade-<id>" /
+// "eat-<id>" (lib/listings.js anchorFor, so the link goes to the card itself). The address is
+// the entry's own public email, else the Org outreach tab's `email` cell (found on their
+// website by scripts/listingcontacts, or typed by Jon in the panel; private).
+// data: { trades, eat } (src/_data trades.json, eat.json).
+export function listingEntries(data) {
+  const { trades = {}, eat = {} } = data || {};
+  const out = [];
+  const web = (w) => str(w && w.url);
+  for (const t of trades.trades || []) {
+    if (!t || !t.id) continue;
+    out.push({
+      id: `trade-${t.id}`, listing: 'trades', name: str(t.name), email: low(t.email), greet: firstWord(t.contact),
+      page: '/living-here/trades/', pageName: PAGE_NAMES['/living-here/trades/'], pageUrl: `${SITE}/living-here/trades/#trade-${t.id}`,
+      website: web(t.website),
+      shown: [
+        str(t.trade), str(t.what), t.covers ? `Covers: ${str(t.covers)}` : '', t.base ? `Based: ${str(t.base)}` : '',
+        t.contact ? `Contact: ${str(t.contact)}` : '', [str(t.phone), str(t.phone2)].filter(Boolean).join(' or '),
+        str(t.email), str(t.other), web(t.website),
+      ].filter(Boolean),
+    });
+  }
+  for (const p of eat.places || []) {
+    if (!p || !p.id) continue;
+    const tags = [p.garden ? 'Garden' : '', p.children ? 'Children welcome' : '', p.dogs ? 'Dogs welcome' : ''].filter(Boolean).join(', ');
+    out.push({
+      id: `eat-${p.id}`, listing: 'eat', name: str(p.name), email: low(p.email), greet: '',
+      page: '/living-here/eat/', pageName: PAGE_NAMES['/living-here/eat/'], pageUrl: `${SITE}/living-here/eat/#eat-${p.id}`,
+      website: web(p.website),
+      shown: [str(p.where), str(p.type), str(p.food), str(p.note), tags, str(p.phone), web(p.website)].filter(Boolean),
+    });
+  }
+  return out;
+}
+
+// The address Holly writes to: the entry's own, else the Org outreach tab's email cell
+// (listings only: an organisation's address always comes from the repo).
+export function emailOf(org, orgRow) {
+  if (org.email) return org.email;
+  if (!org.listing) return '';
+  const e = low(orgRow && orgRow.email);
+  return /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(e) ? e : '';
+}
+
+// Email for a listing from the panel: { value } (lower case) or { error }. Blank clears it.
+export function planListingEmail(value) {
+  const v = low(value);
+  if (v && !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/.test(v)) return { error: `Not an email address: ${str(value)}` };
+  return { value: v };
+}
+
 // This organisation's outreach rows in Replies, newest first.
 export function rowsFor(id, replies) {
   return (replies || []).filter((r) => r.type === ORG_TYPE
@@ -136,8 +191,40 @@ const splitEmails = (v) => str(v).split(/[\s,;]+/).map(low).filter((e) => /^[^\s
 // outreach tab's other_emails, and the addresses on any Contacts row (not ignore) whose
 // organisation is its name (the same, or the name plus more words, e.g. "Lenches Club
 // committee"; never the other way round, so "Church Lench" is not the village hall).
-export function addressesFor(org, orgRow, contacts) {
-  const out = new Set([low(org.email), ...splitEmails(orgRow && orgRow.other_emails)].filter(Boolean));
+// Own domains (5 Nov, Jon: a school's head replied from head@ when the check went to office@):
+// when `domains` (from domainCounts) is given, the domain of the organisation's own addresses
+// also counts, as "@domain", if it is not free mail and no other listed organisation uses it
+// (so nhs.net or a shared council domain never does). Contacts-derived addresses never add one.
+export const FREE_MAIL = new Set(['gmail.com', 'googlemail.com', 'hotmail.com', 'hotmail.co.uk', 'outlook.com', 'live.com', 'live.co.uk',
+  'msn.com', 'yahoo.com', 'yahoo.co.uk', 'ymail.com', 'icloud.com', 'me.com', 'mac.com', 'aol.com', 'aol.co.uk', 'btinternet.com',
+  'btopenworld.com', 'sky.com', 'talktalk.net', 'virginmedia.com', 'blueyonder.co.uk', 'ntlworld.com', 'tiscali.co.uk', 'plus.com',
+  'protonmail.com', 'proton.me', 'gmx.com', 'gmx.co.uk', 'mail.com', 'zoho.com', 'fastmail.com', 'nhs.net', 'nhs.uk']);
+const domainOf = (e) => low(e).split('@')[1] || '';
+const ownAddresses = (org, orgRow) => [emailOf(org, orgRow), ...splitEmails(orgRow && orgRow.other_emails)].filter(Boolean).map(low);
+
+// domain -> how many listed organisations use it (each counted once).
+export function domainCounts(orgs, orgRows) {
+  const byId = new Map((orgRows || []).map((r) => [str(r.id), r]));
+  const counts = new Map();
+  for (const o of orgs || []) {
+    for (const d of new Set(ownAddresses(o, byId.get(o.id) || null).map(domainOf).filter(Boolean))) counts.set(d, (counts.get(d) || 0) + 1);
+  }
+  return counts;
+}
+
+// True if `address` is one of `mine` or at one of its "@domain" entries.
+export function isTheirs(mine, address) {
+  const a = low(address);
+  return !!a && (mine.has(a) || mine.has(`@${domainOf(a)}`));
+}
+
+export function addressesFor(org, orgRow, contacts, domains = null) {
+  const out = new Set(ownAddresses(org, orgRow));
+  if (domains) {
+    for (const d of new Set([...out].map(domainOf))) {
+      if (d && !FREE_MAIL.has(d) && (domains.get(d) || 0) <= 1) out.add(`@${d}`);
+    }
+  }
   const names = [normName(org.name)].filter((n) => n.length >= 4);
   for (const c of contacts || []) {
     if (low(c.status) === 'ignore') continue;
@@ -156,13 +243,13 @@ export function repliedSince(addresses, since, replies, contacts) {
   const mine = new Set([].concat(addresses).map(low));
   let first = '';
   for (const r of replies || []) {
-    if (!mine.has(low(r.to)) || !str(r.message_id) || r.type === ORG_TYPE) continue;
+    if (!isTheirs(mine, r.to) || !str(r.message_id) || r.type === ORG_TYPE) continue;
     const at = str(r.created_at);
     if (at > since && (!first || at < first)) first = at;
   }
   if (first) return first.slice(0, 10);
   for (const c of contacts || []) {
-    if (contactAddresses(c).some((e) => mine.has(e)) && isDay(c.last_contact) && str(c.last_contact) >= since.slice(0, 10)) return str(c.last_contact);
+    if (contactAddresses(c).some((e) => isTheirs(mine, e)) && isDay(c.last_contact) && str(c.last_contact) >= since.slice(0, 10)) return str(c.last_contact);
   }
   return '';
 }
@@ -170,27 +257,49 @@ export function repliedSince(addresses, since, replies, contacts) {
 // True if a Contacts row for any of their addresses shows mail in the last REGULAR_DAYS.
 export function contactRecent(addresses, contacts, today) {
   const mine = new Set([].concat(addresses).map(low));
-  return (contacts || []).some((c) => contactAddresses(c).some((e) => mine.has(e))
+  return (contacts || []).some((c) => contactAddresses(c).some((e) => isTheirs(mine, e))
     && isDay(c.last_contact) && daysBetween(str(c.last_contact), today) <= REGULAR_DAYS);
 }
 
 // The Gmail search that finds their recent mail from any address (at most 20).
 export function recentQuery(addresses) {
   const list = [...new Set([].concat(addresses).map(low).filter(Boolean))].slice(0, 20);
-  const from = list.length === 1 ? `from:${list[0]}` : `{${list.map((e) => `from:${e}`).join(' ')}}`;
+  const term = (e) => `from:${e.startsWith('@') ? e.slice(1) : e}`; // "@domain" -> from:domain
+  const from = list.length === 1 ? term(list[0]) : `{${list.map(term).join(' ')}}`;
   return `${from} newer_than:${REGULAR_DAYS}d`;
+}
+
+// A year on from a day (as the panel's Done sets next_check).
+export const yearOn = (d) => {
+  const t = new Date(ms(d));
+  t.setUTCMonth(t.getUTCMonth() + 12);
+  return t.toISOString().slice(0, 10);
+};
+
+// Held by a date: "Confirmed <day> · next check <day>" when Done set it (the Org outreach
+// `confirmed` cell, 5 Nov, and next_check a year on from it), else "Done or snoozed until".
+function heldWhy(next, orgRow) {
+  const c = str(orgRow && orgRow.confirmed);
+  return isDay(c) && yearOn(c) === next ? `Confirmed ${c} · next check ${next}` : `Done or snoozed until ${next}`;
 }
 
 // One organisation's state today: { state, why, check?, chase? }. recent: ids of organisations
 // that emailed us in the last REGULAR_DAYS (Gmail, any of their addresses), or null.
-export function orgState(org, { replies = [], contacts = [], orgRow = null, today, recent = null }) {
-  if (!org.email) return { state: 'noemail', why: 'No email: check by phone or their website' };
+export function orgState(org, { replies = [], contacts = [], orgRow = null, today, recent = null, domains = null }) {
+  if (!emailOf(org, orgRow)) {
+    return { state: 'noemail', why: org.listing
+      ? (org.website && !/facebook\.com/i.test(org.website) ? 'No email found yet: type one below, or check by phone' : 'No email: type one below, or check by phone or Facebook')
+      : 'No email: check by phone or their website' };
+  }
   const next = low(orgRow && orgRow.next_check);
   if (next === 'never') return { state: 'held', why: 'Set to never' };
-  const addresses = addressesFor(org, orgRow, contacts);
+  const addresses = addressesFor(org, orgRow, contacts, domains);
   const regular = (recent && recent.has(org.id)) || contactRecent(addresses, contacts, today);
   const REGULAR = { state: 'regular', why: 'Emailed us in the last 3 months: no check needed' };
-  if (isDay(next) && next > today) return regular ? REGULAR : { state: 'held', why: `Done or snoozed until ${next}` };
+  if (isDay(next) && next > today) {
+    // A date set by Done or by hand still shows (5 Nov, Jon: the hall's 15 January was invisible).
+    return regular ? { ...REGULAR, why: `${REGULAR.why} · next check ${next}` } : { state: 'held', why: heldWhy(next, orgRow) };
+  }
   const rows = rowsFor(org.id, replies);
   if (rows.some((r) => low(r.status) === 'awaiting')) return { state: 'draft', why: 'A draft is waiting for you' };
   const check = rows.find((r) => !isChase(r) && SENT.includes(low(r.status)));
@@ -224,24 +333,30 @@ export function dayCount(replies, today) {
 export function orgLists(orgs, { replies = [], contacts = [], orgRows = [], hasTab = false, today, recent = null }) {
   const byId = new Map((orgRows || []).map((r) => [str(r.id), r]));
   const lists = { due: [], chase: [], draft: [], waiting: [], chased: [], replied: [], noreply: [], held: [], regular: [], noemail: [] };
+  const domains = domainCounts(orgs, orgRows);
   for (const o of orgs) {
     const orgRow = byId.get(o.id) || null;
-    const s = orgState(o, { replies, contacts, orgRow, today, recent });
-    lists[s.state].push({ ...o, state: s.state, why: s.why, next_check: str(orgRow && orgRow.next_check), hasRow: !!orgRow,
-      other_emails: str(orgRow && orgRow.other_emails), addresses: addressesFor(o, orgRow, contacts).length });
+    const s = orgState(o, { replies, contacts, orgRow, today, recent, domains });
+    lists[s.state].push({ ...o, email: emailOf(o, orgRow), email_cell: str(orgRow && orgRow.email), email_source: str(orgRow && orgRow.email_source), state: s.state, why: s.why, next_check: str(orgRow && orgRow.next_check), confirmed: str(orgRow && orgRow.confirmed), hasRow: !!orgRow,
+      other_emails: str(orgRow && orgRow.other_emails), addresses: addressesFor(o, orgRow, contacts).length,
+      domains: addressesFor(o, orgRow, contacts, domains).filter((a) => a.startsWith('@')).map((a) => a.slice(1)) });
   }
   return { today, count: dayCount(replies, today), cap: DAY_CAP, hasTab, lists };
 }
 
 // Those to look up in Gmail (would otherwise be due, or held by a date, today):
 // [{ id, addresses }].
+// Listings are left out (5 Nov): one Gmail search each took the panel past the Worker's
+// subrequest limit; their regular contact comes from their Contacts row only.
 export function dueOrgs(orgs, { replies = [], contacts = [], orgRows = [], today }) {
   const byId = new Map((orgRows || []).map((r) => [str(r.id), r]));
+  const domains = domainCounts(orgs, orgRows);
   return orgs.filter((o) => {
+    if (o.listing) return false;
     const orgRow = byId.get(o.id) || null;
-    const { state } = orgState(o, { replies, contacts, orgRow, today });
+    const { state } = orgState(o, { replies, contacts, orgRow, today, domains });
     return state === 'due' || (state === 'held' && low(orgRow && orgRow.next_check) !== 'never');
-  }).map((o) => ({ id: o.id, addresses: addressesFor(o, byId.get(o.id) || null, contacts) }));
+  }).map((o) => ({ id: o.id, addresses: addressesFor(o, byId.get(o.id) || null, contacts, domains) }));
 }
 
 // Draft check / Draft chaser from the panel: { ok, kind: check|chase } or { error, status }.

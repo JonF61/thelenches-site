@@ -108,6 +108,7 @@
   </dialog>
   <style>
   a[data-viewer]{cursor:zoom-in}
+  .enlarge-hint{margin:.25rem 0 0;font-size:.8rem;color:var(--muted,#777);text-align:center}
   .img-viewer{border:0;padding:0;margin:0;background:transparent;width:100vw;height:100vh;height:100dvh;max-width:100vw;max-height:100vh;max-height:100dvh}
   .img-viewer[open]{display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:zoom-out}
   .img-viewer::backdrop{background:rgba(0,0,0,.85)}
@@ -140,6 +141,21 @@
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', size);
     size(); onScroll();
+  })();
+  (function () {
+    // Portrait pictures in a figure (Events, Regular activities) are held to a landscape one's height
+    // by their page's CSS, so say they open bigger (Jon, 11 Nov).
+    function hint(img) {
+      var a = img.parentNode;
+      if (!(img.naturalHeight > img.naturalWidth) || (a.nextElementSibling && a.nextElementSibling.className === 'enlarge-hint')) return;
+      var p = document.createElement('p');
+      p.className = 'enlarge-hint';
+      p.textContent = 'Click to enlarge';
+      a.parentNode.insertBefore(p, a.nextSibling);
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('figure > a[data-viewer] > img'), function (img) {
+      if (img.complete && img.naturalWidth) hint(img); else img.addEventListener('load', function () { hint(img); });
+    });
   })();
   (function () {
     var d = document.getElementById('img-viewer');

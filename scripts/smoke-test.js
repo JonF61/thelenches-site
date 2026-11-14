@@ -51,7 +51,7 @@ async function testSdk() {
     assert.ok(seen, 'SDK made no request');
     assert.ok(seen.url.startsWith('/v1/messages'), `unexpected path ${seen.url}`);
     assert.deepStrictEqual(seen.body.system[0].cache_control, { type: 'ephemeral' }, 'cache_control not sent');
-    assert.strictEqual(seen.body.tool_choice.name, 'record_items', 'tool_choice not sent');
+    assert.strictEqual(seen.body.tool_choice.type, 'auto', 'tool_choice not auto (Opus 5.5 refuses forced tool use)');
     assert.ok(out && typeof out === 'object', 'extract() returned nothing');
     assert.strictEqual(stats.cacheRead, 7, 'cache_read_input_tokens not read');
     console.log('SDK OK (extract round trip, prompt caching fields)');
@@ -74,10 +74,10 @@ function testGoogle() {
     email: 'smoke@example.iam.gserviceaccount.com',
     key: privateKey,
     scopes: ['https://www.googleapis.com/auth/gmail.readonly'],
-    subject: 'jon@thelenches.org.uk',
+    subject: 'team@thelenches.org.uk',
   });
   assert.strictEqual(auth.email, 'smoke@example.iam.gserviceaccount.com', 'JWT email option ignored');
-  assert.strictEqual(auth.subject, 'jon@thelenches.org.uk', 'JWT subject (delegation) ignored');
+  assert.strictEqual(auth.subject, 'team@thelenches.org.uk', 'JWT subject (delegation) ignored');
   const gmail = google.gmail({ version: 'v1', auth });
   for (const fn of [gmail.users.messages.list, gmail.users.messages.get, gmail.users.messages.send,
     gmail.users.messages.attachments.get, gmail.users.settings.sendAs.list]) {

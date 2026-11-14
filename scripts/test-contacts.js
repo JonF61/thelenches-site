@@ -25,7 +25,7 @@ assert.strictEqual(c.skipReason(msg({ from: 'no-reply@shop.com' })), 'excluded s
 assert.strictEqual(c.skipReason(msg({ from: 'a@b.com', auto: { autoSubmitted: 'auto-replied' } })), 'automated');
 assert.strictEqual(c.skipReason(msg({ from: 'a@b.com', auto: { autoSubmitted: 'no' } })), '');
 assert.strictEqual(c.skipReason(msg({ from: 'a@b.com', subject: 'Out of office: back Monday' })), 'automated');
-assert.strictEqual(c.skipReason(msg({ from: 'a@b.com', recipients: 'jon@thelenches.org.uk' })), 'not to website@');
+assert.strictEqual(c.skipReason(msg({ from: 'a@b.com', recipients: 'team@thelenches.org.uk' })), 'not to website@');
 assert.strictEqual(c.skipReason(msg({ from: 'a@b.com', recipients: 'undisclosed-recipients:;' }), true), '', 'Pipeline label counts (Bcc)');
 const big = Array.from({ length: 12 }, (_, i) => `p${i}@x.com`).join(', ');
 assert.strictEqual(c.skipReason(msg({ from: 'a@b.com', recipients: `${big}, ${c.WEBSITE}`, inReplyTo: '<1@x>' })), 'reply-all to a list');

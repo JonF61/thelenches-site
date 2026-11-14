@@ -12,7 +12,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { CLIENT_JS } from '../src/admin/ui/client.js';
 import { CLIENT_CSS } from '../src/admin/ui/css.js';
-import { orgEntries, orgLists } from '../src/admin/orgoutreach.mjs';
+import { orgEntries, listingEntries, orgLists } from '../src/admin/orgoutreach.mjs';
 
 const require = createRequire(import.meta.url);
 let chromium;
@@ -25,6 +25,7 @@ const SHOTS = process.env.SHOTS || '';
 const data = Object.fromEntries(['contacts', 'council', 'schools', 'health', 'transport']
   .map((n) => [n, JSON.parse(fs.readFileSync(new URL(`../../src/_data/${n}.json`, import.meta.url)))]));
 const ORGS = orgEntries(data);
+const LISTINGS = listingEntries(Object.fromEntries(['trades', 'eat'].map((n) => [n, JSON.parse(fs.readFileSync(new URL(`../../src/_data/${n}.json`, import.meta.url)))])));
 const TODAY = '2026-10-27';
 const email = (id) => ORGS.find((o) => o.id === id).email;
 const sent = (id, day, kind = 'check') => ({ reply_id: `r-${id}-${kind}`, type: 'outreach', to: email(id), status: 'sent',
@@ -35,9 +36,10 @@ function reset() {
   replies = [sent('tennis', '2026-10-01'), sent('cricket', '2026-10-20'), sent('walking', '2026-08-01'), sent('walking', '2026-09-01', 'chase'),
     sent('preschool', '2026-10-01'), { reply_id: 'm1-ack', message_id: 'm1', to: email('preschool'), type: 'ack', status: 'sent', created_at: '2026-10-05 10:00' },
     { ...sent('orchard', TODAY), status: 'awaiting' }];
-  orgRows = [{ id: 'grey-gable', next_check: '2027-01-27' }];
+  orgRows = [{ id: 'grey-gable', next_check: '2027-01-27' }, { id: 'eat-boot-inn', email: 'info@thebootinn.com', email_source: 'website' },
+    { id: 'trade-cannins', email: 'info@cannins.co.uk', next_check: '2027-10-20', confirmed: '2026-10-20' }];
 }
-const view = (count = 1) => ({ ...orgLists(ORGS, { replies, contacts: [], orgRows, hasTab: true, today: TODAY, recent: new Set(['rous-lench-hall']) }), count });
+const view = (count = 1) => ({ ...orgLists([...ORGS, ...LISTINGS], { replies, contacts: [], orgRows, hasTab: true, today: TODAY, recent: new Set(['rous-lench-hall']) }), count });
 
 let count = 1;
 const posts = [];
@@ -82,7 +84,7 @@ try {
     await main.getByText(/^Due a check \(\d+\)$/).waitFor();
     const text = await main.innerText();
     for (const want of [/Chaser due \(1\)/i, /Replied \(1\)/i, /Draft waiting \(1\)/i, /Waiting for a reply \(1\)/i, /No reply \(1\)/i,
-      /Done, snoozed or never \(1\)/i, /In regular contact \(1\)/i, /Emailed us in the last 3 months/, /No email \(10\)/i, /1 of 10 drafts used today/, /never goes by itself/,
+      /Done, snoozed or never \(1\)/i, /In regular contact \(1\)/i, /Emailed us in the last 3 months/, /No email \(10\)/i, /1 of 25 drafts used today/, /never goes by itself/,
       /Health & emergencies/, /High St, Inkberrow WR7 4BW · 01386 793007/]) assert.match(text, want);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `orgs-${name}.png`), fullPage: true });
 
@@ -90,6 +92,8 @@ try {
     await page.locator('.crow', { hasText: 'The Lenches Club' }).getByRole('button', { name: 'Draft check' }).click();
     await page.locator('.toast', { hasText: 'Check requested' }).waitFor();
     assert.deepEqual(posts.pop(), { path: '/admin/api/orgcheck', id: 'lenches-club' });
+    await page.locator('.crow', { hasText: 'The Lenches Club' }).getByText(/Check requested at \d+:\d\d\. Holly is drafting it/).waitFor();
+    assert.equal(await page.locator('.crow', { hasText: 'The Lenches Club' }).getByRole('button', { name: 'Draft check' }).count(), 0, 'no second Draft check');
     await page.locator('.crow', { hasText: 'Lenches Tennis Club' }).getByRole('button', { name: 'Draft chaser' }).click();
     await page.locator('.toast', { hasText: 'requested' }).last().waitFor();
     assert.deepEqual(posts.pop(), { path: '/admin/api/orgcheck', id: 'tennis' });
@@ -98,7 +102,7 @@ try {
     await main.getByText(/^Replied \(1\)$/).waitFor();
     await page.locator('.crow', { hasText: 'The Lenches Pre-school' }).getByRole('button', { name: 'Done' }).click();
     await page.locator('.toast', { hasText: 'next due in a year' }).waitFor();
-    assert.deepEqual(posts.pop(), { path: '/admin/api/orgnext', id: 'preschool', expected: '', value: '2027-10-27' });
+    assert.deepEqual(posts.pop(), { path: '/admin/api/orgnext', id: 'preschool', expected: '', value: '2027-10-27', confirm: true, expected_confirmed: '' });
 
     await page.locator('.crow', { hasText: 'Lenches Cricket Club' }).getByRole('button', { name: 'Never' }).click();
     await page.locator('.toast', { hasText: 'Never: Lenches Cricket Club' }).waitFor();
@@ -127,8 +131,29 @@ try {
       await page.locator('.crow', { hasText: 'Lenches Cricket Club' }).screenshot({ path: path.join(SHOTS, 'orgs-emails.png') });
     }
 
+    // Listings (5 Nov): their own list; a found address shows, Add an email saves one.
+    await main.getByRole('button', { name: 'Commercial Listings' }).click();
+    await main.getByText(/Every Local trades and Where to eat entry/).waitFor();
+    const ltext = await main.innerText();
+    assert.match(ltext, /Boot Inn\s+·\s+Where to eat/);
+    assert.match(ltext, /info@thebootinn\.com · Not checked yet/);
+    assert.match(ltext, /B Tomes & Son/);
+    assert.match(ltext, /Confirmed 20 Oct 2026 · next check 20 Oct 2027|Confirmed .*20.* · next check .*2027/);
+    assert.doesNotMatch(ltext, /Lenches Tennis Club/, 'organisations not in the Listings list');
+    assert.equal(await page.locator('.crow', { hasText: 'B Tomes & Son' }).getByText('Add an email').count(), 0, 'own address: no box');
+    const boot = page.locator('.crow', { hasText: 'Boot Inn' });
+    await boot.getByText('Email (found on their website)').waitFor();
+    const mysuru = page.locator('.crow', { hasText: 'Mysuru' });
+    await mysuru.getByText('Add an email').click();
+    await mysuru.locator('input[type=email]').fill('hello@mysuru.co.uk');
+    await mysuru.getByRole('button', { name: 'Save email' }).click();
+    await page.locator('.toast', { hasText: 'Saved: email for' }).waitFor();
+    assert.deepEqual(posts.pop(), { path: '/admin/api/listingemail', id: 'eat-mysuru', expected: '', expected_source: '', value: 'hello@mysuru.co.uk' });
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `orgs-listings-${name}.png`), fullPage: true });
+    await main.getByRole('button', { name: 'Groups and services' }).click();
+
     // Daily cap: Draft goes, Done stays.
-    count = 10;
+    count = 25;
     await page.getByRole('button', { name: 'All contacts' }).click();
     await page.getByRole('button', { name: 'Organisations' }).click();
     await main.getByText(/drafts are used/).waitFor();

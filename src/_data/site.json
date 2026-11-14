@@ -10,6 +10,8 @@
   "teamUrl": "https://approvals.lenches.workers.dev/admin",
   "feedbackUrl": "https://approvals.lenches.workers.dev/f",
   "signupUrl": "https://approvals.lenches.workers.dev/s",
+  "recommendUrl": "https://approvals.lenches.workers.dev/r",
+  "suggestUrl": "https://approvals.lenches.workers.dev/sg",
   "turnstileSiteKey": "0x4AAAAAAFleBJ36URNQhdUv",
   "newsletterCounts": true,
   "cfAnalyticsToken": "0f8fc2cc80c34667b0cbf46777d33341",
@@ -17,7 +19,7 @@
     { "title": "Around the villages", "links": [
       { "title": "Home", "url": "/" },
       { "title": "Events", "url": "/events/" },
-      { "title": "Regular activities", "url": "/regulars/" },
+      { "title": "Regulars", "url": "/regulars/" },
       { "title": "News", "url": "/notices/" },
       { "title": "Roads", "url": "/living-here/roads/" },
       { "title": "Bins", "url": "/bins/" }
@@ -31,6 +33,8 @@
       { "title": "Council & planning", "url": "/living-here/council/" },
       { "title": "Schools", "url": "/living-here/schools/" },
       { "title": "Walks & footpaths", "url": "/living-here/walks/" },
+      { "title": "Where to eat", "url": "/living-here/eat/" },
+      { "title": "Local trades", "url": "/living-here/trades/" },
       { "title": "What to do if…", "url": "/living-here/what-to-do/" }
     ] },
     { "title": "About", "links": [
@@ -42,7 +46,7 @@
   "nav": [
     { "title": "Home", "url": "/" },
     { "title": "Events", "url": "/events/" },
-    { "title": "Regular activities", "url": "/regulars/" },
+    { "title": "Regulars", "url": "/regulars/" },
     { "title": "News", "url": "/notices/", "match": ["notices"] },
     { "title": "Living here", "url": "/living-here/", "match": ["living-here", "groups", "halls", "churches"] },
     { "title": "Bins", "url": "/bins/" },

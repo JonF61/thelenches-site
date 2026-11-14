@@ -346,7 +346,17 @@ async function main() {
 
 if (require.main === module) {
   const daily = String(process.env.DIGEST_MODE || '').toLowerCase() === 'daily';
-  (daily ? mainDaily() : main()).catch((err) => {
+  // Approval emails off (1 Nov, Jon decides in the admin panel): Settings approval_emails TRUE
+  // turns the daily and weekly emails back on.
+  const run = async () => {
+    const { settings } = await g.readSettings();
+    if (!require('../ingest/urgent').approvalEmails(settings)) {
+      console.log(`${daily ? 'Daily approvals' : 'Weekly digest'} email not sent: approval emails are off (Settings approval_emails). Decide in the admin panel.`);
+      return;
+    }
+    await (daily ? mainDaily() : main());
+  };
+  run().catch((err) => {
     console.error('Fatal:', err && err.stack ? err.stack : err);
     process.exit(1);
   });

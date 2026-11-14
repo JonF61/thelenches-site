@@ -16,7 +16,10 @@
 //                                   photoFolders: [{ id, parent, names }] live from Drive,
 //                                   for the Photos menu and the drop/Move to… targets
 //                                   feedback: Feedback rows still needing Jon (feedback.js)
+//                                   listingSuggestions: confirmed Local trades / Where to eat
+//                                   suggestions (suggestions.mjs; no addresses)
 //   GET  /admin/api/mail-images?m=  every image in one email (for a Pending item)
+//   GET  /admin/api/contact-messages?email=  a contact's emails with us, newest first (messages.js)
 //   GET  /admin/api/mail-text?m=    one email's from, subject, date and text (Replies: their
 //                                   email beside Holly's draft; shown as plain text only)
 //   POST /admin/api/edit            { tab, key, field, expected, value }: one plain field
@@ -24,8 +27,12 @@
 //   POST /admin/api/action          { kind: pending|reply|photo, id, action, reason?, body?,
 //                                   expected? }: decisions go through core.js decide(),
 //                                   the same path as the signed email links
+//   POST /admin/api/action          kind pending, action merge (Add details, 3 Nov): fields = the
+//                                   details for the already-listed entry (actions.js mergeBody)
 //   POST /admin/api/action          kind feedback: approve, reject (reason?), postpone (date), done
 //                                   (Mark implemented), send, edit (body), skip: also decide()
+//   POST /admin/api/action          kind suggestion: approve, edit (fields: the entry as edited),
+//                                   reject (reason?): decide() sug_ok / sug_no -> listing-suggest.yml
 //   POST /admin/api/feedback-note   { id, expected, note }: a timestamped note appended to
 //                                   the Feedback row's notes (stale-checked, never overwrites)
 //   POST /admin/api/suggest         { id, sid, expected }: Choose a suggested image (sid = an
@@ -45,6 +52,9 @@
 //                                   through decide() (action nudge, id = idFor(email)); Holly's
 //                                   draft then waits in Replies for the usual Approve / Edit
 //   (Snooze, Never nudge and Clear are /admin/api/contact writes of next_nudge.)
+//   POST /admin/api/contactmail     { email, brief }: Draft email from a contact's page, if
+//                                   planContactEmail allows it, through decide() (action
+//                                   contactmail, id = idFor(email), brief as reason).
 //   GET  /admin/api/orgs            organisation outreach (orgoutreach.mjs orgLists): each
 //                                   organisation in contacts.json `outreach` and its state, from
 //                                   Replies, Contacts and the Org outreach tab, plus a Gmail
@@ -54,9 +64,16 @@
 //   POST /admin/api/orgnext         { id, expected, value }: Done / Snooze / Never / Clear, one
 //                                   stale-checked next_check write (the tab and row are made if
 //                                   missing)
+//   POST /admin/api/listingemail    { id, expected, expected_source, value }: a Local trades /
+//                                   Where to eat listing's address (Org outreach email)
 //   POST /admin/api/orgemails       { id, expected, value }: the organisation's other addresses
 //                                   (Org outreach other_emails, comma separated; same rules)
 //   GET  /admin/api/lessons         the Holly lessons tab, newest first (lessons.js)
+//   GET  /admin/api/history         Previous submissions: decided Pending rows, newest first, with
+//                                   site window, newsletter issues, edits, reject reason (history.js)
+//   GET  /admin/api/autonomy        per-type progress towards autonomy (autonomy.js; read-only)
+//   POST /admin/api/autonomy-ignore { kind: item|reply, id, op: ignore|restore, expected }: one
+//                                   stale-checked write of that decision's outcome cell
 //   POST /admin/api/lesson          { op: add, value } (a new approved lesson; the tab is made
 //                                   if missing) | { op: edit, id, expected, value } (stale-
 //                                   checked) | { op: delete, id, expected } (row removed if its
@@ -88,30 +105,56 @@
 //                                   (draft.js; scripts/newsletter/draft.js), framed by the panel
 //   GET  /admin/api/draft           that draft's meta only (as_of, issue_date, mode, counts)
 //   POST /admin/api/draft-refresh   runs newsletter-draft.yml now (repository_dispatch); sends nothing
-//   POST /admin/api/newsletter      { action: rebuild|test, issue_date } through decide():
+//   POST /admin/api/newsletter      { action: rebuild|test|send, issue_date[, hash, count, mode] } through decide():
 //                                   rebuild (nlquiet) sends nothing; test (nltest) sends only the
-//                                   preview, with its Send button, to preview_to (Jon)
+//                                   preview, with its Send button, to preview_to (Jon); send (nlsend,
+//                                   4 Nov) is the preview email's Send decision, checked by send.js
 //   GET  /admin/api/site-visitors   Site visitors (sitestats.js): saved days and months from the
 //                                   Visitors tab, plus today so far from Cloudflare.
 //   GET  /admin/api/nlstats?i=DATE  Newsletter stats (nlstats.js): sent issues with sent, bounced,
 //                                   and anonymous opens and clicks; for one issue, opens by day and
 //                                   hour and the most-clicked links (totals only, never per person)
+//   POST /admin/api/ingest-now      Submissions' Check email now (3 Nov): fires the usual ingest run
+//                                   (repository_dispatch "ingest", as the Worker's cron does); feeds
+//                                   are read only at their usual hours. Publishes or sends nothing
+//                                   beyond what any ingest run does (acknowledgements).
+//   GET  /admin/api/send-progress?i=<issue>&m=live|canary  counts of that send's Sends rows (sendprogress.js)
+//   GET  /admin/api/rimmer         Rimmer's open findings and each scope's last run (rimmer.js)
+//   POST /admin/api/rimmer-dismiss { id }: one stale-checked write of that finding's status
+//                                   (open -> dismissed); the next check is told not to raise it again
+//   POST /admin/api/rimmer-kryten { id, note }: open -> kryten (Send to Kryten), one stale-checked write
+//   POST /admin/api/rimmer-fix     { id, op: propose|apply|discard, note, expected }: Fix… (Holly
+//                                   proposes one change; decide() rfix), Apply (decide() rfix_ok),
+//                                   Discard; each one stale-checked write of fix_status first
+//   POST /admin/api/rimmer-apply-many { items: [{ id, expected }] }: Apply all ticked (5 Nov): each
+//                                   stale-checked to applying, then one decide() rfix_all
+//   POST /admin/api/rimmer-run     { scope: newsletter|listings|site }: Check now
+//                                   (repository_dispatch "rimmer"); reads and reports, changes nothing
 //   GET  /admin/api/runs            Activity: the latest 20 GitHub Actions runs (runs.js; read-only)
 //   GET  /admin/api/build-status?sha=&at=&p=&text=  whether an Edit page commit is live: its
 //                                   site build succeeded AND the page (fresh copy) shows text
+//   GET  /admin/api/entry?key=      Edit everything (4 Nov; entryedit.js): one listing entry's
+//                                   editable wording and links, read from main or its Pending row
+//   POST /admin/api/entry-save      { key, changes: [{ field, old, new }] }: stale-checked, then
+//                                   decide() entryedit -> entry-edit.yml (scripts/entryedit)
+//   GET  /admin/api/entry-status?id=&at=&p=&text=  that edit's run, then whether the page shows it
+//   GET  /admin/draft-edit          the Newsletter draft with the editor (Edit text), framed by the panel
 //   GET  /admin/img/mail/MSG/PART   a Pending image (email attachment)
 //   GET  /admin/img/drive/ID[?size=N]  a Photos image (Drive thumbnail, else the file)
-// Nothing here can send the newsletter to subscribers (Test send emails Jon's preview only) or change repository code, except Edit page's
+// The newsletter reaches subscribers from here only by Send to all (4 Nov, Jon): the same nlsend
+// decision as the preview email's Send button, after a confirm. Nothing here changes repository code, except Edit page's
 // wording edits to page templates (src/*.njk, pageedit.js). Otherwise the only GitHub call
 // is decide(), for the item and reply actions listed in actions.js, the Feedback
 // actions in feedback.js, outreach's nudge (a draft only; it never sends) and approving or
-// rejecting a proposed Holly lesson.
+// rejecting a proposed Holly lesson, Fix… and Apply on Rimmer's findings (rfix / rfix_ok), listing
+// edits from the Edit page and the draft editor (entryedit), plus the read-only runs it starts by repository_dispatch
+// (Check email now, Refresh draft, Check now for Rimmer).
 
 import { ACTIONS, decide, github, dispatch } from '../core.js';
 import { verifyAccess } from './access.js';
 import { makeCsrf, checkCsrf, sameOrigin } from './csrf.js';
 import {
-  getValues, sheetGids, gmailImage, gmailImageParts, gmailText, gmailAny, driveImage, serviceAccountEmail, appendValues, addTab, deleteRow, writeCells,
+  getValues, sheetGids, gmailImage, gmailImageParts, gmailText, gmailAny, gmailSearchTexts, driveImage, serviceAccountEmail, appendValues, addTab, deleteRow, writeCells,
 } from './google.js';
 import { readTable, readSettingsPairs, editCell, checkedWrite, colLetter } from './sheet.js';
 import {
@@ -124,13 +167,17 @@ import {
 } from './photofiles.js';
 import { photoPages, pagesFor, eventEnd } from './photopages.js';
 import { feedbackRows, planFeedback, planNote } from './feedback.js';
+import { SUGGEST_TAB as LISTING_TAB, panelRows as suggestionRows, planSuggestion } from './suggestions.mjs';
+import tradesData from '../../../src/_data/trades.json' with { type: 'json' };
+import eatData from '../../../src/_data/eat.json' with { type: 'json' };
 import { FEEDBACK_TAB } from '../feedback.js';
 import {
-  CONTACTS_TAB, DELETED_TAB, DELETED_HEADERS, contactRows, planContact, planDelete, addressesOf,
+  CONTACTS_TAB, DELETED_TAB, DELETED_HEADERS, contactRows, planContact, planDelete, addressesOf, isIgnore,
 } from './contacts.js';
-import { outreachLists, planNudge, idFor, sentRows } from './outreach.mjs';
+import { history, historyQuery, MAX_MESSAGES } from './messages.js';
+import { outreachLists, planNudge, idFor, sentRows, planContactEmail, cleanBrief } from './outreach.mjs';
 import {
-  ORG_TAB, ORG_HEADERS, orgEntries, orgLists, planOrgCheck, planNext, planOtherEmails, dueOrgs, recentQuery,
+  ORG_TAB, ORG_HEADERS, orgEntries, listingEntries, planListingEmail, orgLists, planOrgCheck, planNext, planOtherEmails, dueOrgs, recentQuery,
 } from './orgoutreach.mjs';
 // The site's own data, bundled at deploy (deploy-worker.yml also deploys when these change).
 import contactsData from '../../../src/_data/contacts.json' with { type: 'json' };
@@ -141,18 +188,23 @@ import transportData from '../../../src/_data/transport.json' with { type: 'json
 import {
   LESSONS_TAB, LESSON_HEADERS, lessonRows, cleanLesson, newLessonRow, planLessonDecision,
 } from './lessons.js';
+import { ITEM_TAB, REPLY_TAB, autonomyStats, planIgnore } from './autonomy.js';
+import { submissionHistory } from './history.js';
+import { RIMMER_TAB, CHECK_SCOPES, rimmerRows, planDismiss, planKryten, planFix, planApplyMany, batchId } from './rimmer.js';
 import { CLIENT_CSS } from './ui/css.js';
 import { CLIENT_JS, UI_VERSION } from './ui/client.js';
 import { PAGEEDIT_JS, PAGEEDIT_CSS, PAGEEDIT_VERSION } from './ui/pageedit.js';
 import { editorPage, savePage, showsText } from './pageedit.js';
+import { entryInfo, saveEntry, entryStatus, draftEditPage } from './entryedit.js';
 import { recentRuns, buildStatus } from './runs.js';
 import {
-  nextIssue, failingRuns, subscriberChanges, lastSentDate, comingWeek, comingUpFile, devTasks,
+  nextIssue, failingRuns, subscriberChanges, lastSentDate, comingWeek, comingUpFile, devTasks, claudeSpend,
 } from './summary.js';
 import { visitors } from './visitors.js';
 import { visitorHistory } from './sitestats.js';
 import { nlStats } from './nlstats.js';
-import { DRAFT_TAB, DRAFT_RANGE, draftMeta, draftHtml, draftPage } from './draft.js';
+import { sendProgress, PROGRESS_MODES } from './sendprogress.js';
+import { DRAFT_TAB, DRAFT_RANGE, DRAFT_META_RANGE, draftMeta, draftHtml, draftPage } from './draft.js';
 
 const MAX_BODY = 60000;
 const SECURITY_HEADERS = {
@@ -244,6 +296,10 @@ function suggestionsByItem(t) {
 const pick = (row, keys) => Object.fromEntries(keys.filter((k) => k in row).map((k) => [k, row[k]]));
 
 // The Feedback tab; none yet (made by the first submission) reads as empty.
+// The Local trades and Where to eat data as this Worker was deployed (deploy-worker.yml runs
+// when either file changes), for the suggestion cards' draft entry and "already listed?" check.
+const LISTING_DATA = { trades: tradesData, eat: eatData };
+
 async function readFeedback(env) {
   try {
     return await readTable(env, FEEDBACK_TAB);
@@ -265,11 +321,12 @@ async function readDraft(env, range) {
 
 async function state(env, email) {
   const photosRead = readTable(env, 'Photos');
-  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite, bin, sugg, fb, draftRows] = await settled([
+  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite, bin, sugg, fb, draftRows, listing] = await settled([
     readTable(env, 'Pending'), readTable(env, 'Replies'), photosRead,
     readSettingsPairs(env), readTable(env, 'Health'), readTable(env, 'Issues'), sheetGids(env),
     readSources(env), readTable(env, 'Image fetch'), watchdog(env), folderList(env), photoPages(env),
-    binList(env, photosRead), readTable(env, SUGGEST_TAB), readFeedback(env), readDraft(env, `'${DRAFT_TAB}'!A1:B13`),
+    binList(env, photosRead), readTable(env, SUGGEST_TAB), readFeedback(env), readDraft(env, DRAFT_META_RANGE),
+    readOptional(env, LISTING_TAB),
   ]);
   const suggested = suggestionsByItem(sugg);
   const holiday = settings.error ? settings : (settings.find((p) => p.key === 'holiday_mode') || { value: '' });
@@ -330,6 +387,11 @@ async function state(env, email) {
     photoFolders: folders,
     toDelete: bin,
     feedback: feedbackRows(fb, ukToday()),
+    // Confirmed Local trades / Where to eat suggestions waiting for Jon (suggestions.mjs):
+    // never the suggester's address.
+    listingSuggestions: suggestionRows(listing, LISTING_DATA),
+    // The Edit form's choices: Local trades sections and Where to eat areas.
+    listingOptions: { trades: [...new Set(tradesData.trades.map((t) => t.trade))].sort(), eat: eatData.areas },
     // Today in the UK, for the Past events filter.
     today: ukToday(),
     photosRoot: String(env.PHOTOS_FOLDER_ID || '').trim(),
@@ -406,9 +468,13 @@ async function doAction(env, body) {
       const s = (await readTable(env, SUGGEST_TAB)).rows.filter((x) => String(x.id) === choice && String(x.item) === id);
       choicePeople = s.length === 1 ? String(s[0].people || '') : '';
     }
-    plan = planPending({ action, id }, row, { hasPeopleOk: headers.includes('people_ok'), sources, choicePeople });
+    plan = planPending({ action, id, reason: body.reason, fields: body.fields }, row, { hasPeopleOk: headers.includes('people_ok'), sources, choicePeople });
   } else if (kind === 'reply') {
     plan = planReply({ action, id, reason: body.reason, body: body.body });
+  } else if (kind === 'suggestion') {
+    const { rows } = await readOptional(env, LISTING_TAB);
+    const matches = rows.filter((r) => id && r.id === id);
+    plan = planSuggestion({ action, id, fields: body.fields, reason: body.reason }, matches.length === 1 ? matches[0] : null, LISTING_DATA);
   } else if (kind === 'feedback') {
     const { rows } = await readFeedback(env);
     const matches = rows.filter((r) => id && r.id === id);
@@ -524,9 +590,10 @@ async function outreach(env) {
 // both outreach counts; organisations take the same Gmail look-ups as their own screen.
 async function summary(env) {
   const today = ukToday();
-  const [issues, pending, subs, dns, lessons, contacts, replies, orgTab, runs, coming, seen, sends] = await settled([
+  const [issues, pending, subs, dns, lessons, contacts, replies, orgTab, runs, coming, seen, sends, usage] = await settled([
     readTable(env, 'Issues'), readTable(env, 'Pending'), readTable(env, 'Subscribers'), readTable(env, 'Do Not Send'),
     readLessons(env), readTable(env, CONTACTS_TAB), readTable(env, 'Replies'), readOrgTab(env), recentRuns(env, 50), comingUpFile(env), visitors(env), readTable(env, 'Sends'),
+    readTable(env, 'Claude usage'),
   ]);
   const fail = (t) => (t && t.error ? { error: t.error } : null);
   const issueRows = issues.error ? [] : issues.rows;
@@ -558,6 +625,8 @@ async function summary(env) {
     orgs: orgsDue,
     lessons: lessons.error ? fail(lessons) : lessonRows(lessons).rows.filter((r) => r.status.toLowerCase() === 'proposed').map((r) => ({ id: r.id, lesson: r.lesson })),
     devTasks: devTasks(),
+    // Claude API spend (lib/claudeusage.js); no tab yet = no figures yet, not an error.
+    claudeSpend: usage.error ? { none: true } : claudeSpend(usage.rows, today),
     visitors: seen,
     // The last newsletter sent: sent, bounced, opens, clicks (no per-issue detail).
     lastSent: issues.error || sends.error || dns.error ? null
@@ -574,11 +643,30 @@ async function doNudge(env, body) {
   if (!(await decide(env, { a: 'nudge', i: await idFor(email) }))) {
     return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
   }
-  return json({ ok: true, message: 'Draft requested. Holly emails you the draft to approve in a minute or two.' });
+  return json({ ok: true, message: 'Draft requested. It appears under Replies in a minute or two.' });
+}
+
+// Draft email from a contact's page: { email, brief }. Holly drafts from the brief (scripts/
+// outreach/contactmail.js); the draft waits in Replies.
+async function doContactMail(env, body) {
+  const email = String(body.email ?? '');
+  const brief = cleanBrief(body.brief);
+  const [contacts, replies] = await Promise.all([readTable(env, CONTACTS_TAB), readTable(env, 'Replies')]);
+  const matches = contacts.rows.filter((r) => email && String(r.email ?? '') === email);
+  const plan = planContactEmail(matches.length === 1 ? matches[0] : null, replies.rows, brief, ukToday());
+  if (plan.error) return json({ ok: false, ...plan }, plan.status);
+  if (!(await decide(env, { a: 'contactmail', i: await idFor(email) }, brief))) {
+    return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
+  }
+  return json({ ok: true, message: 'Draft requested. It appears under Replies in a minute or two.' });
 }
 
 // Organisation outreach.
-const ORGS = orgEntries({ contacts: contactsData, council: councilData, schools: schoolsData, health: healthData, transport: transportData });
+// Listings (Local trades, Where to eat; 5 Nov) get the same yearly check (listingEntries).
+const ORGS = [
+  ...orgEntries({ contacts: contactsData, council: councilData, schools: schoolsData, health: healthData, transport: transportData }),
+  ...listingEntries({ trades: tradesData, eat: eatData }),
+];
 
 // The Org outreach tab, or { headers: [], rows: [], missing: true } if it doesn't exist yet.
 async function readOrgTab(env) {
@@ -610,7 +698,7 @@ async function doOrgCheck(env, body) {
   if (!(await decide(env, { a: 'orgcheck', i: id }))) {
     return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
   }
-  return json({ ok: true, message: `${plan.kind === 'chase' ? 'Chaser' : 'Check'} requested. Holly emails you the draft to approve in a minute or two.` });
+  return json({ ok: true, message: `${plan.kind === 'chase' ? 'Chaser' : 'Check'} requested. It appears under Replies in a minute or two.` });
 }
 
 // One stale-checked Org outreach cell for organisation `id`. Makes the tab, its headers, a
@@ -642,7 +730,11 @@ async function doOrgNext(env, body) {
   if (!ORGS.some((o) => o.id === id)) return json({ ok: false, error: 'No such organisation: reload the page' }, 404);
   const plan = planNext(body.value);
   if (plan.error) return json({ ok: false, ...plan }, 400);
-  return orgWrite(env, id, 'next_check', body.expected, plan.value);
+  const res = await orgWrite(env, id, 'next_check', body.expected, plan.value);
+  // Done (5 Nov): also record the day they confirmed, shown as "Confirmed <day>".
+  if (!body.confirm || res.status !== 200) return res;
+  const c = await orgWrite(env, id, 'confirmed', body.expected_confirmed, ukToday());
+  return c.status === 200 ? res : json({ ok: true, value: plan.value, note: 'Saved; the confirmed date was not updated' });
 }
 
 async function doOrgEmails(env, body) {
@@ -651,6 +743,20 @@ async function doOrgEmails(env, body) {
   const plan = planOtherEmails(body.value);
   if (plan.error) return json({ ok: false, ...plan }, 400);
   return orgWrite(env, id, 'other_emails', body.expected, plan.value);
+}
+
+// A listing's address (Org outreach email; typed by Jon, or found on their website). Saving it
+// by hand marks email_source "panel".
+async function doListingEmail(env, body) {
+  const id = String(body.id ?? '');
+  if (!ORGS.some((o) => o.id === id && o.listing)) return json({ ok: false, error: 'No such listing: reload the page' }, 404);
+  const plan = planListingEmail(body.value);
+  if (plan.error) return json({ ok: false, ...plan }, 400);
+  const res = await orgWrite(env, id, 'email', body.expected, plan.value);
+  if (res.status !== 200) return res;
+  // "panel" even when cleared, so the address finder never refills a cell Jon emptied.
+  const src = await orgWrite(env, id, 'email_source', body.expected_source, 'panel');
+  return src.status === 200 ? json({ ok: true, value: plan.value }) : json({ ok: true, value: plan.value, note: 'Saved; email_source was not updated' });
 }
 
 // The Holly lessons tab, or an empty list if it doesn't exist yet.
@@ -668,6 +774,101 @@ const ukNow = () => {
   const t = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d);
   return `${ukToday()} ${t}`;
 };
+
+// Autonomy screen (stage 2, 2 Nov): a tab not made yet reads as empty.
+async function readOptional(env, tab) {
+  try {
+    return await readTable(env, tab);
+  } catch (e) {
+    if (e.status === 400 && /Unable to parse range/i.test(e.message)) return { headers: [], rows: [] };
+    throw e;
+  }
+}
+
+// Previous submissions (history.js): decided Pending rows with their site and newsletter dates.
+async function submissionsHistory(env) {
+  const [pending, issues, feedback] = await Promise.all([readTable(env, 'Pending'), readOptional(env, 'Issues'), readOptional(env, ITEM_TAB)]);
+  return submissionHistory({ pending, issues, feedback, today: ukToday() });
+}
+
+async function autonomy(env) {
+  const [items, replies] = await Promise.all([readOptional(env, ITEM_TAB), readOptional(env, REPLY_TAB)]);
+  return autonomyStats({ items, replies });
+}
+
+// Ignore / Count again on one decision: one stale-checked write of its outcome cell.
+async function doAutonomyIgnore(env, body) {
+  const kind = String(body.kind || '');
+  const tab = kind === 'item' ? ITEM_TAB : kind === 'reply' ? REPLY_TAB : '';
+  if (!tab) return json({ ok: false, error: 'Unknown kind' }, 400);
+  const keyCol = kind === 'item' ? 'item_id' : 'reply_id';
+  const id = String(body.id ?? '');
+  const { rows } = await readOptional(env, tab);
+  const matches = rows.filter((r) => id && String(r[keyCol] ?? '') === id);
+  if (matches.length > 1) return json({ ok: false, error: `More than one ${tab} row for this id` }, 409);
+  const plan = planIgnore(matches[0], { op: String(body.op || ''), expected: body.expected });
+  if (plan.error) return json({ ok: false, ...plan }, plan.status);
+  const r = await checkedWrite(env, { tab, keyCol, key: id, field: plan.field, expected: plan.expected, value: plan.value });
+  return r.ok
+    ? json({ ok: true, value: r.value, message: body.op === 'ignore' ? 'Ignored: left out of the counts and of Holly\'s learning.' : 'Counted again.' })
+    : json(r, r.status);
+}
+
+// Rimmer: Dismiss, Send to Kryten, or Fix… / Apply / Discard on one finding (rimmer.js plans
+// each as one stale-checked write; Fix… and Apply then go through decide()).
+async function doRimmer(env, body, what) {
+  const id = String(body.id ?? '');
+  const { rows } = await readOptional(env, RIMMER_TAB);
+  const matches = rows.filter((r) => id && String(r.id ?? '') === id);
+  if (matches.length > 1) return json({ ok: false, error: 'More than one Rimmer row for this id' }, 409);
+  const row = matches[0];
+  const plan = what === 'dismiss' ? planDismiss(row)
+    : what === 'kryten' ? planKryten(row, body.note)
+      : planFix(row, { op: String(body.op || ''), note: body.note, expected: body.expected });
+  if (plan.error) return json({ ok: false, ...plan }, plan.status);
+  const r = await checkedWrite(env, { tab: RIMMER_TAB, keyCol: 'id', key: id, field: plan.field, expected: plan.expected, value: plan.value, also: plan.also || null });
+  if (!r.ok) return json(r, r.status);
+  if (plan.action && !(await decide(env, { a: plan.action, i: id }))) {
+    // Put it back, so the panel doesn't wait for a run that never starts.
+    await checkedWrite(env, { tab: RIMMER_TAB, keyCol: 'id', key: id, field: plan.field, expected: plan.value, value: plan.expected }).catch(() => {});
+    return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
+  }
+  const msg = {
+    dismiss: 'Dismissed: Rimmer won\'t raise it again.',
+    kryten: 'Sent to Kryten: he picks these up at the start of each session.',
+    rfix: 'Holly is looking for the entry and drafting a fix…',
+    rfix_ok: 'Applying the fix: the site rebuilds in a few minutes.',
+  }[plan.action || what] || 'Fix discarded.';
+  return json({ ok: true, value: plan.value, message: msg });
+}
+
+// Apply all ticked (5 Nov, Jon): each ticked fix stale-checked to applying (as Apply does), then one
+// decide() rfix_all for those that moved, so rimmer-fix.yml applies them with one commit and build.
+// A finding that changed meanwhile is skipped and named; the rest go ahead.
+async function doRimmerMany(env, body) {
+  const { rows } = await readOptional(env, RIMMER_TAB);
+  const planned = planApplyMany(rows, body.items);
+  if (planned.error) return json({ ok: false, ...planned }, planned.status);
+  const moved = [];
+  const skipped = [];
+  for (const { id, plan } of planned.plans) {
+    if (plan.error) { skipped.push({ id, error: plan.error }); continue; }
+    const r = await checkedWrite(env, { tab: RIMMER_TAB, keyCol: 'id', key: id, field: plan.field, expected: plan.expected, value: plan.value });
+    if (r.ok) moved.push({ id, plan }); else skipped.push({ id, error: r.error || 'Changed since you loaded the page' });
+  }
+  if (!moved.length) return json({ ok: false, error: 'None of those fixes could be applied: reload the page', skipped }, 409);
+  if (!(await decide(env, { a: 'rfix_all', i: batchId(), b: moved.map((m) => m.id).join(',') }))) {
+    for (const { id, plan } of moved) {
+      await checkedWrite(env, { tab: RIMMER_TAB, keyCol: 'id', key: id, field: plan.field, expected: plan.value, value: plan.expected }).catch(() => {});
+    }
+    return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
+  }
+  const n = moved.length;
+  return json({
+    ok: true, applied: moved.map((m) => m.id), skipped,
+    message: `Applying ${n} fix${n === 1 ? '' : 'es'} together: the site rebuilds once, in a few minutes.${skipped.length ? ` ${skipped.length} skipped (changed meanwhile).` : ''}`,
+  });
+}
 
 async function doLesson(env, body) {
   const op = String(body.op || '');
@@ -742,6 +943,18 @@ async function mailImages(env, url) {
   return json({ images: await gmailImageParts(env, m) });
 }
 
+// A contact's message history (messages.js): GET /admin/api/contact-messages?email=
+async function contactMessages(env, url) {
+  const email = String(url.searchParams.get('email') || '');
+  const [contacts, replies] = await Promise.all([readTable(env, CONTACTS_TAB), readTable(env, 'Replies')]);
+  const row = contacts.rows.find((r) => email && String(r.email ?? '') === email);
+  if (!row || isIgnore(row)) return json({ error: 'No such contact: reload the page' }, 404);
+  const addresses = addressesOf(row);
+  const hollyIds = new Set(replies.rows.filter((r) => String(r.status) === 'sent' && r.sent_gmail_id).map((r) => String(r.sent_gmail_id)));
+  const found = await gmailSearchTexts(env, historyQuery(addresses), MAX_MESSAGES);
+  return json({ messages: history(found, { addresses, hollyIds }), max: MAX_MESSAGES });
+}
+
 async function mailText(env, url) {
   const m = String(url.searchParams.get('m') || '');
   if (!/^[A-Za-z0-9]{6,40}$/.test(m)) return json({ error: 'Bad message id' }, 400);
@@ -803,21 +1016,41 @@ export async function handleAdmin(request, env) {
         });
       }
       if (path === '/admin/draft') return draftPage(await draftHtml(await readDraft(env, DRAFT_RANGE)));
-      if (path === '/admin/api/draft') return json({ meta: draftMeta(await readDraft(env, `'${DRAFT_TAB}'!A1:B13`)) });
+      // The same draft with the editor in it (Edit text on the draft screen; entryedit.js).
+      if (path === '/admin/draft-edit') {
+        return draftEditPage(await readDraft(env, DRAFT_RANGE), { origin: url.origin, csrf: await makeCsrf(env, auth.email), version: PAGEEDIT_VERSION });
+      }
+      if (path === '/admin/api/entry') return fromResult(await entryInfo(env, String(url.searchParams.get('key') || '')));
+      if (path === '/admin/api/entry-status') {
+        const q = (k) => String(url.searchParams.get(k) || '');
+        return fromResult(await entryStatus(env, { id: q('id'), at: q('at'), page: q('p'), text: q('text').slice(0, 200) }));
+      }
+      if (path === '/admin/api/draft') return json({ meta: draftMeta(await readDraft(env, DRAFT_META_RANGE)) });
       if (path === '/admin/api/mail-images') return await mailImages(env, url);
       if (path === '/admin/api/mail-text') return await mailText(env, url);
       if (path === '/admin/api/session') return json({ email: auth.email, csrf: await makeCsrf(env, auth.email) });
       if (path === '/admin/api/state') return json(await state(env, auth.email));
       if (path === '/admin/api/contacts') return json(contactRows(await readTable(env, CONTACTS_TAB)));
+      if (path === '/admin/api/contact-messages') return await contactMessages(env, url);
       if (path === '/admin/api/outreach') return json(await outreach(env));
       if (path === '/admin/api/orgs') return json(orgLists(ORGS, await orgContext(env)));
       if (path === '/admin/api/lessons') return json(lessonRows(await readLessons(env)));
+      if (path === '/admin/api/autonomy') return json(await autonomy(env));
+      if (path === '/admin/api/history') return json(await submissionsHistory(env));
       if (path === '/admin/api/summary') return json(await summary(env));
       if (path === '/admin/api/site-visitors') return json(await visitorHistory(env));
       if (path === '/admin/api/nlstats') {
         const [issues, sends, dns] = await Promise.all([readTable(env, 'Issues'), readTable(env, 'Sends'), readTable(env, 'Do Not Send')]);
         return json(await nlStats(env, { issues: issues.rows, sends: sends.rows, dns: dns.rows }, String(url.searchParams.get('i') || '')));
       }
+      if (path === '/admin/api/send-progress') {
+        const i = String(url.searchParams.get('i') || '');
+        const m = String(url.searchParams.get('m') || 'live');
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(i) || !PROGRESS_MODES.includes(m)) return json({ error: 'Bad issue or mode' }, 400);
+        const [issues, sends] = await Promise.all([readTable(env, 'Issues'), readTable(env, 'Sends')]);
+        return json(sendProgress(sends.rows, issues.rows, i, m));
+      }
+      if (path === '/admin/api/rimmer') return json(rimmerRows(await readOptional(env, RIMMER_TAB)));
       if (path === '/admin/api/runs') return json({ runs: await recentRuns(env, 20) });
       if (path === '/admin/api/build-status') {
         const st = await buildStatus(env, url.searchParams.get('sha'), url.searchParams.get('at'));
@@ -851,24 +1084,46 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/contact') return await doContact(env, body);
       if (path === '/admin/api/contact-delete') return await doContactDelete(env, body);
       if (path === '/admin/api/nudge') return await doNudge(env, body);
+      if (path === '/admin/api/contactmail') return await doContactMail(env, body);
       if (path === '/admin/api/orgcheck') return await doOrgCheck(env, body);
       if (path === '/admin/api/orgnext') return await doOrgNext(env, body);
       if (path === '/admin/api/orgemails') return await doOrgEmails(env, body);
+      if (path === '/admin/api/listingemail') return await doListingEmail(env, body);
       if (path === '/admin/api/lesson') return await doLesson(env, body);
+      if (path === '/admin/api/autonomy-ignore') return await doAutonomyIgnore(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(env, body);
+      if (path === '/admin/api/ingest-now') {
+        if (!(await dispatch(env, 'ingest', { by: 'panel' }, 2))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);
+        return json({ ok: true, message: 'Checking email: new items show here in a few minutes.' });
+      }
+      if (path === '/admin/api/rimmer-dismiss') return await doRimmer(env, body, 'dismiss');
+      if (path === '/admin/api/rimmer-kryten') return await doRimmer(env, body, 'kryten');
+      if (path === '/admin/api/rimmer-fix') return await doRimmer(env, body, 'fix');
+      if (path === '/admin/api/rimmer-apply-many') return await doRimmerMany(env, body);
+      if (path === '/admin/api/rimmer-run') {
+        const scope = String(body.scope || '');
+        if (!CHECK_SCOPES.includes(scope)) return json({ ok: false, error: 'Unknown check' }, 400);
+        if (!(await dispatch(env, 'rimmer', { scope }, 2))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);
+        return json({ ok: true, message: scope === 'newsletter' ? 'Checking the newsletter: findings show here in a few minutes.' : 'Checking the website: findings show on Summary in a few minutes.' });
+      }
       if (path === '/admin/api/draft-refresh') {
         if (!(await dispatch(env, 'newsletter-draft', {}, 2))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);
         return json({ ok: true, message: 'Refreshing: the new draft shows in a minute or two.' });
       }
       if (path === '/admin/api/newsletter') {
-        const plan = planNewsletter({ action: body.action, issueDate: body.issue_date }, ukToday());
+        const plan = planNewsletter({ action: body.action, issueDate: body.issue_date, hash: body.hash, count: body.count, mode: body.mode }, ukToday());
         if (plan.error) return json({ ok: false, error: plan.error }, plan.status);
         if (!(await decide(env, plan.p))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);
-        return json({ ok: true, message: plan.p.a === 'nlquiet'
-          ? 'Rebuilding: nothing is sent. The draft shows the new build in a few minutes.'
-          : 'Test send started: the preview should reach your inbox in a few minutes.' });
+        return json({ ok: true, message: {
+          nlquiet: 'Rebuilding: nothing is sent. The draft shows the new build in a few minutes.',
+          nltest: 'Test send started: the preview should reach your inbox in a few minutes.',
+          nlsend: 'Send started: Activity shows the Newsletter run. If anything no longer matches, nothing is sent and the run says why.',
+        }[plan.p.a] });
       }
       if (path === '/admin/api/page-save') return fromResult(await savePage(env, body));
+      if (path === '/admin/api/entry-save') {
+        return fromResult(await saveEntry(env, body, { meta: draftMeta(await readDraft(env, DRAFT_META_RANGE)) }));
+      }
       return json({ ok: false, error: 'Not found' }, 404);
     }
     return new Response('Method not allowed', { status: 405, headers: SECURITY_HEADERS });

@@ -14,6 +14,12 @@ on:
       - "src/_data/transport.json"
       # Bundled into the admin panel's Summary page (worker/src/admin/summary.js).
       - "src/_data/onthisday.json"
+      # Bundled so the Recommend buttons only accept listed entries (worker/src/recommend.js),
+      # and for the panel's Suggestions cards (worker/src/admin/suggestions.mjs).
+      - "src/_data/trades.json"
+      - "src/_data/eat.json"
+      # Which listing fields the Edit page and the draft editor can change (worker/src/admin/entryedit.js).
+      - "lib/entryfields.json"
   workflow_dispatch:
 
 permissions:
@@ -30,7 +36,18 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Deploy first, then upload the secrets: Cloudflare refuses a secret change while
+      # the Worker's newest version isn't the deployed one (11 Nov: two failed runs).
       - name: Deploy with Wrangler
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: worker
+          wranglerVersion: "4"
+          command: deploy
+
+      - name: Upload secrets
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -40,6 +57,7 @@ jobs:
           secrets: |
             DISPATCH_TOKEN
             APPROVAL_SIGNING_KEY
+          command: deployments status
         env:
           DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}

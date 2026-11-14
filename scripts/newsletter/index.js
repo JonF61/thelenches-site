@@ -36,7 +36,8 @@ const FROM = 'website@thelenches.org.uk';
 const SNAPSHOT_MAX = 45000; // a Sheets cell holds 50,000 characters
 // Hard limits: a Sheet edit can never point a test or preview at anyone else.
 const TEST_ALLOWED = ['jon@alphaquad.co.uk'];
-const PREVIEW_ALLOWED = ['jon@thelenches.org.uk'];
+// The team inbox only (repo secret GMAIL_USER, so the address isn't in the public repo or logs).
+const PREVIEW_ALLOWED = [String(process.env.GMAIL_USER || '').trim().toLowerCase()].filter(Boolean);
 
 const str = (v) => String(v ?? '').trim();
 const londonDate = (ms) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(ms);
@@ -117,7 +118,7 @@ async function main() {
     whatson: loadWhatson(),
     bins: readJson('src/_data/bins.json'),
     siteupdates: readJson('src/_data/siteupdates.json'),
-    onthisday: readJson('src/_data/onthisday.json'),
+    onthisday: readJson('src/_data/onthisday.json'), cartoons: readJson('src/_data/cartoons.json'), wherelenches: readJson('src/_data/wherelenches.json'),
     photos: readJson('src/_data/photos.json'),
   });
   const issue = render(model);

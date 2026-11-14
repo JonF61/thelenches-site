@@ -44,6 +44,26 @@ const frozen = buildDraft(built);
 assert.strictEqual(frozen.meta.mode, 'frozen');
 assert.strictEqual(frozen.meta.status, 'tested');
 assert.strictEqual(frozen.html, live.html);
+assert.strictEqual(frozen.meta.send_mode, 'off');
+assert.strictEqual(live.meta.subscribers, undefined, 'no Subscribers read: no count');
+
+// Send to all (4 Nov): subscriber count (as send.js counts) and, once built, the send details.
+const subscribers = [{ email: 'A@example.org', status: 'active' }, { email: 'a@example.org' }, { email: 'b@example.org', status: 'unsubscribed' }, { email: 'c@example.org' }];
+const sendable = buildDraft({ ...built, subscribers, dns: [{ email: 'c@example.org' }], settings: { newsletter_mode: 'Live' },
+  issues: [...base.issues, { issue_id: '2026-10-29', issue_date: '2026-10-29', status: 'tested', snapshot, content_hash: 'ABCDEF0123456789ffff', built_at: '2026-10-29T06:00:00Z', tested_at: '2026-10-29T06:05:00Z' }] });
+assert.deepStrictEqual(
+  [sendable.meta.subscribers, sendable.meta.send_count, sendable.meta.send_mode, sendable.meta.hash, sendable.meta.built_at, sendable.meta.tested_at],
+  [1, 1, 'live', 'abcdef0123456789', '2026-10-29T06:00:00Z', '2026-10-29T06:05:00Z']);
+const canary = buildDraft({ ...built, subscribers, dns: [], settings: { newsletter_mode: 'canary', canary_to: 'x@example.org, y@example.org' } });
+assert.strictEqual(canary.meta.send_count, 2);
+assert.strictEqual(buildDraft({ ...base, subscribers, dns: [] }).meta.send_count, undefined, 'live draft: no send details');
+
+// The preview email's Send button carries the note (4 Nov).
+const { actionsBlock } = require('./newsletter/render');
+const block = actionsBlock({ send: { label: 'Send to 425 subscribers', url: 'https://x/a?t=1' }, rebuild: null, pending: [], pendingTotal: 0 });
+assert.ok(block.html.includes('the usual way is Send to all on the admin panel'));
+assert.ok(block.text.includes('the usual way is Send to all on the admin panel'));
+assert.ok(!actionsBlock({ send: null, rebuild: null, pending: [] }).html.includes('usual way'));
 
 // Sent: the draft moves on to next week.
 assert.strictEqual(issueDateFor('2026-10-29', [{ issue_id: '2026-10-29', status: 'sent' }]), '2026-11-05');
@@ -61,3 +81,14 @@ assert.ok(parts.every((r) => r[1].length <= CHUNK));
 assert.strictEqual(zlib.inflateSync(Buffer.from(parts.map((r) => r[1]).join(''), 'base64')).toString('utf8'), big);
 
 console.log('newsletter draft: all tests passed');
+
+// A Lenches event whose place line only says "Lenches" drops it (the badge says so); a real village stays (5 Nov).
+{
+  const ev = (id, village) => ({ id, title: `Rugby ${id} — The Lenches Club`, body: 'Drinks offer.', category: 'event', event_date: '2026-10-31', event_time: '7pm', village, status: 'approved', received: '2026-10-26 10:00', decided_at: '2026-10-26 11:00' });
+  const m = select({ ...base, pending: [ev('x', 'Lenches'), ev('y', 'Rous Lench'), ev('z', 'The Lenches')], issueDate: '2026-10-29', cutoff: '2026-10-28 18:00' });
+  const meta = Object.fromEntries(m.events.map((e) => [e.key, [e.meta, e.lenches]]));
+  assert.deepStrictEqual(meta['p:x'], ['7pm', true]);
+  assert.deepStrictEqual(meta['p:y'], ['Rous Lench · 7pm', true]);
+  assert.deepStrictEqual(meta['p:z'], ['7pm', true]);
+  console.log('Lenches place line: ok');
+}

@@ -1,5 +1,5 @@
 {
-  "_help": "Short paragraph under the newsletter header, labelled WEBSITE UPDATE: the due entries' text joined in order of from date, then key, then one 'Have a look at thelenches.org.uk.' link (render.js). So write each text as one or two plain sentences that read well joined to others: no 'New on the website:' and no 'Have a look'. Each entry: key (unique, letters/numbers/hyphens, never reused), from (first issue date it can appear, YYYY-MM-DD), optional until (last date), text, link (kept for the record; not shown). Shown in one issue that is sent live, then retired automatically.",
+  "_help": "Short paragraph under the newsletter header, labelled WEBSITE UPDATE: the due entries' text each as its own short paragraph in order of from date, then key, the last followed by one 'Have a look at thelenches.org.uk.' link (render.js). So write each text as one or two plain sentences that read well beside the others (check the other due entries so none repeats another): no 'New on the website:' and no 'Have a look'. Each entry: key (unique, letters/numbers/hyphens, never reused), from (first issue date it can appear, YYYY-MM-DD), optional until (last date), text, link (kept for the record; not shown). Shown in one issue that is sent live, then retired automatically.",
   "entries": [
     {
       "key": "add-to-contacts-2026-10",
@@ -61,6 +61,39 @@
       "from": "2026-11-05",
       "link": "https://thelenches.org.uk/regulars/",
       "text": "There is now a Regular activities page listing the weekly classes, clubs and groups across the villages, with who runs them, costs and contact details as we gather them."
+    },
+    {
+      "key": "suggest-forms-2026-11",
+      "from": "2026-11-05",
+      "link": "https://thelenches.org.uk/living-here/trades/",
+      "text": "You can now suggest a local tradesperson or somewhere to eat using the forms at the foot of the Local trades and Where to eat pages. The more suggestions you send in, the more useful the pages become for everyone, so please support us by adding your favourites."
+    },
+    {
+      "key": "calendar-links-2026-11",
+      "from": "2026-11-12",
+      "link": "https://thelenches.org.uk/events/",
+      "text": "Every event on the website and in this newsletter now has an \"Add to\" link for Google Calendar, plus one for other calendars such as Outlook and Apple."
+    },
+    {
+      "key": "nl-a-cartoon-2026-11",
+      "from": "2026-11-12",
+      "link": "https://thelenches.org.uk/newsletter/",
+      "text": "New this week: a cartoon, just for fun. You'll find it further down, just before Notices.",
+      "until": "2026-11-12"
+    },
+    {
+      "key": "nl-b-where-2026-11",
+      "from": "2026-11-12",
+      "link": "https://thelenches.org.uk/newsletter/",
+      "text": "Also new: Where in the Lenches?, a close-up photo of somewhere in the villages to puzzle over, with the answer in next week's issue. You'll find it just after Notices.",
+      "until": "2026-11-12"
+    },
+    {
+      "key": "nl-c-regulars-2026-11",
+      "from": "2026-11-12",
+      "link": "https://thelenches.org.uk/regulars/",
+      "text": "The Regular activities section is now shorter: it shows newly listed activities, with a button to the full list on the website.",
+      "until": "2026-11-12"
     }
   ]
 }

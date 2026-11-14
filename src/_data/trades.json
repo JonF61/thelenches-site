@@ -1,0 +1,147 @@
+{
+  "intro": "Local tradespeople in and around the Lenches. We don't check or guarantee anyone's work, so please get quotes and ask questions as you would with anyone. If you're listed and would rather not be, tell us and we'll take you off.",
+  "trades": [
+    {
+      "id": "b-tomes-son",
+      "name": "B Tomes & Son",
+      "trade": "Fencing and landscaping",
+      "what": "Fencing, gates, sleeper steps and landscaping; fully insured",
+      "covers": "Evesham area",
+      "phone": "07956 077775",
+      "email": "b.tomesandson@gmail.com",
+      "base": "Norton, Evesham"
+    },
+    {
+      "id": "andrew-smith-chimney-sweep",
+      "name": "Andrew Smith Chimney Sweep",
+      "trade": "Chimney sweeps",
+      "base": "Inkberrow",
+      "phone": "07789 721303",
+      "phone2": "01386 793248",
+      "website": {
+        "text": "inkberrowservices.co.uk",
+        "url": "https://www.inkberrowservices.co.uk"
+      }
+    },
+    {
+      "id": "stocky-sweeps-chimney-services",
+      "name": "Stocky Sweeps Chimney Services",
+      "trade": "Chimney sweeps",
+      "what": "Qualified, registered and insured; CCTV inspections, nest removal, rotary power and manual sweeping",
+      "other": "Message them on Facebook (Stocky Sweeps Chimney Services)"
+    },
+    {
+      "id": "daran-collins",
+      "name": "Daran Collins",
+      "trade": "Chimney sweeps",
+      "phone": "07771 667406"
+    },
+    {
+      "id": "frank",
+      "name": "Frank",
+      "trade": "Chimney sweeps",
+      "phone": "07544 510726"
+    },
+    {
+      "id": "jeremy",
+      "name": "Jeremy",
+      "trade": "Chimney sweeps",
+      "phone": "07854 522453"
+    },
+    {
+      "id": "britania-services",
+      "name": "Britania Services",
+      "trade": "Plumbing and heating",
+      "what": "Plumbing and heating; Gas Safe and OFTEC registered",
+      "base": "Kington",
+      "phone": "01386 791321",
+      "website": {
+        "text": "britserv.uk.com",
+        "url": "https://britserv.uk.com"
+      }
+    },
+    {
+      "id": "smart-cut-ltd",
+      "name": "Smart Cut Ltd",
+      "trade": "Gardening and grounds",
+      "what": "Mowing, scarifying, seeding, fertilising and spraying; mainly larger grounds",
+      "base": "near Bishampton",
+      "phone": "01386 462706",
+      "website": {
+        "text": "smartcut.co.uk",
+        "url": "https://www.smartcut.co.uk"
+      }
+    },
+    {
+      "id": "cannins",
+      "name": "Cannins",
+      "trade": "Window and exterior cleaning",
+      "what": "Window and exterior cleaning, homes and businesses",
+      "base": "Broadway, near Evesham",
+      "covers": "About 10 miles around Evesham",
+      "phone": "01386 718165",
+      "website": {
+        "text": "cannins.co.uk",
+        "url": "https://www.cannins.co.uk"
+      }
+    },
+    {
+      "id": "cotswold-drainage",
+      "name": "Cotswold Drainage",
+      "trade": "Drains",
+      "what": "Drain unblocking, jetting, CCTV surveys, repairs and septic tanks",
+      "base": "Evesham",
+      "phone": "01386 882324",
+      "website": {
+        "text": "cotswolddrainage.co.uk",
+        "url": "https://www.cotswolddrainage.co.uk"
+      }
+    },
+    {
+      "id": "evesham-home-improvements",
+      "name": "Evesham Home Improvements",
+      "trade": "Windows, doors and conservatories",
+      "what": "Makes and fits uPVC windows, doors, porches and conservatories",
+      "base": "Willersey Business Park, Broadway",
+      "phone": "01386 853222",
+      "website": {
+        "text": "eveshamhomeimprovements.co.uk",
+        "url": "https://www.eveshamhomeimprovements.co.uk"
+      }
+    },
+    {
+      "id": "tom-cook-carpets",
+      "name": "Tom Cook Carpets",
+      "trade": "Carpets and flooring",
+      "what": "Supplies and fits carpets and flooring; free home visits to quote",
+      "base": "Blackminster, near Evesham",
+      "phone": "01386 833766",
+      "website": {
+        "text": "tomcookcarpets.co.uk",
+        "url": "https://www.tomcookcarpets.co.uk"
+      }
+    },
+    {
+      "id": "tapcast",
+      "name": "Tapcast",
+      "trade": "Computers and IT",
+      "what": "IT support for homes and businesses, Microsoft 365, security",
+      "base": "near Inkberrow",
+      "phone": "01386 792196",
+      "website": {
+        "text": "tapcast.co.uk",
+        "url": "https://www.tapcast.co.uk"
+      }
+    },
+    {
+      "id": "john",
+      "name": "John",
+      "trade": "Electrician",
+      "base": "Worcester",
+      "website": {
+        "text": "ismelectricalsolutions.com",
+        "url": "https://www.ismelectricalsolutions.com/"
+      }
+    }
+  ]
+}

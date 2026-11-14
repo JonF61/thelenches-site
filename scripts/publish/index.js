@@ -173,6 +173,34 @@ async function imageFor(row, failures, suggestions) {
   }
 }
 
+// Where a published row goes and its last day shown (expires). Events: their date. Notices:
+// at least NOTICE_DAYS from the decision (or their date if later); one.network roadworks to
+// their end_date if later; any other notice with an end_date (8 Nov, Jon: notices about
+// Saturday's fireworks stayed up 21 days) to that day, the last day it matters.
+// worker/src/admin/history.js siteWindow mirrors this.
+function windowFor(row, today) {
+  const date = ymd(row.event_date);
+  const start = ymd(row.decided_at) || ymd(row.received) || today;
+  const cat = str(row.category).toLowerCase();
+  let list;
+  let expires;
+  if (cat === 'event' && date) {
+    list = 'events';
+    expires = date;
+  } else {
+    // notice, the old "news", or an event with no date
+    list = 'notices';
+    expires = later(date, addDays(start, NOTICE_DAYS));
+  }
+  const url = safeUrl(row.link_url);
+  const road = isRoad({ link: { url } });
+  const end = road ? ymd(row.end_date) : '';
+  if (end) expires = later(expires, end);
+  const until = !road && list === 'notices' ? ymd(row.end_date) : '';
+  if (until) expires = until;
+  return { date, start, list, expires, end, url, road };
+}
+
 async function main() {
   const today = londonDate(Date.now());
   const rows = (await g.readTable('Pending'))
@@ -196,23 +224,7 @@ async function main() {
   const roadsWanted = [];
 
   for (const row of byKey.values()) {
-    const date = ymd(row.event_date);
-    const start = ymd(row.decided_at) || ymd(row.received) || today;
-    const cat = str(row.category).toLowerCase();
-    let list;
-    let expires;
-    if (cat === 'event' && date) {
-      list = 'events';
-      expires = date;
-    } else {
-      // notice, the old "news", or an event with no date
-      list = 'notices';
-      expires = later(date, addDays(start, NOTICE_DAYS));
-    }
-    const url = safeUrl(row.link_url);
-    const road = isRoad({ link: { url } });
-    const end = road ? ymd(row.end_date) : '';
-    if (end) expires = later(expires, end);
+    const { date, start, list, expires, end, url, road } = windowFor(row, today);
     if (expires < today) continue;
 
     const item = { id: row.id, title: str(row.title), body: bodyOf(row) };
@@ -234,6 +246,9 @@ async function main() {
       if (source) item.source = source;
     }
     if (url) item.link = { text: str(row.link_text) || 'More details', url };
+    // Second link (2 Nov): e.g. a police reporting page named in the text; never a repeat of the first.
+    const url2 = safeUrl(row.link2_url);
+    if (url2 && url2 !== url) item.link2 = { text: str(row.link2_text) || 'More details', url: url2 };
     const img = await imageFor(row, failures, suggestions);
     if (img) {
       item.image = { url: img, alt: str(row.alt_text) };
@@ -289,4 +304,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { imageFor, chosenImage };
+module.exports = { imageFor, chosenImage, windowFor };

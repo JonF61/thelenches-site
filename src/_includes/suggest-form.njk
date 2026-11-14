@@ -1,0 +1,97 @@
+{#- "Suggest a tradesperson" (trades.njk) / "Suggest somewhere to eat" (eat.njk) at the foot of
+    the page. Set suggestKind ("trades" or "eat") before including. Posts to the approvals
+    Worker (POST /sg, worker/src/listingsuggest.js), which checks Turnstile, saves a Listing
+    suggestions row and has listing-suggest.yml email a confirm link; once confirmed it waits
+    on the admin panel's Suggestions screen for Jon. Shown only when site.json has suggestUrl
+    and turnstileSiteKey; otherwise the page keeps its "Tell us" email line. Wording approved
+    by Jon 3 Nov. -#}
+{% set sgEat = suggestKind == "eat" %}
+<section class="sg card" id="suggest" aria-labelledby="sg-h">
+  <h2 id="sg-h">{{ "Suggest somewhere to eat" if sgEat else "Suggest a tradesperson" }}</h2>
+  <form class="sg-form" method="post" action="{{ site.suggestUrl }}" data-sitekey="{{ site.turnstileSiteKey }}">
+    <input type="hidden" name="kind" value="{{ suggestKind }}">
+    <div class="sg-grid">
+      <p><label for="sg-name">Their name <span aria-hidden="true">*</span></label>
+        <input id="sg-name" name="name" type="text" maxlength="80" required></p>
+      <p><label for="sg-trade">{{ "Type, e.g. pub, café" if sgEat else "Trade" }} <span aria-hidden="true">*</span></label>
+        <input id="sg-trade" name="trade" type="text" maxlength="60" required></p>
+      <p><label for="sg-contact">Phone or website <span aria-hidden="true">*</span></label>
+        <input id="sg-contact" name="contact" type="text" maxlength="200" required></p>
+      <p><label for="sg-area">Area or village</label>
+        <input id="sg-area" name="area" type="text" maxlength="80"></p>
+    </div>
+    <p><label for="sg-why">Why you&rsquo;d recommend them (optional, only we see this)</label>
+      <textarea id="sg-why" name="why" rows="3" maxlength="1000"></textarea></p>
+    <p><label for="sg-email">Your email <span aria-hidden="true">*</span></label>
+      <input id="sg-email" name="email" type="email" maxlength="200" autocomplete="email" required></p>
+    <div class="fb-hp" aria-hidden="true"><label for="sg-website">Leave this empty</label><input id="sg-website" name="website" type="text" tabindex="-1" autocomplete="off"></div>
+    <input type="hidden" name="js" value="">
+    <div class="sg-ts"></div>
+    <p class="sg-note small">We&rsquo;ll email you a link to confirm. You can send up to 10 suggestions a day. We check every suggestion before it goes on the page.</p>
+    <button type="submit" class="btn sg-send">Send suggestion</button>
+    <p class="sg-status small" role="status" aria-live="polite"></p>
+  </form>
+</section>
+<style>
+.sg{margin-top:1.5rem}.sg h2{margin-top:0}
+.sg-form label{display:block;font-weight:600;margin-bottom:.2rem}
+.sg-form input[type=text],.sg-form input[type=email],.sg-form textarea{width:100%;box-sizing:border-box;padding:.4rem .5rem;font:inherit}
+.sg-form p{margin:0 0 .7rem}
+.sg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0 .75rem}
+.sg-note{color:#555}.sg-status{margin:.5rem 0 0}.sg-status.bad{color:#a12a1f}.sg-status.ok{color:#2f4a22;font-weight:600}
+</style>
+{% include "turnstile-loader.njk" %}
+<script>
+(function () {
+  var form = document.querySelector('.sg-form');
+  if (!form || !window.fetch || !window.FormData) return;
+  var status = form.querySelector('.sg-status'), box = form.querySelector('.sg-ts'), button = form.querySelector('.sg-send');
+  var widget = null, token = '', waiting = [];
+  form.elements.js.value = '1';
+  function say(text, bad) { status.textContent = text; status.className = 'sg-status small' + (bad ? ' bad' : text ? ' ok' : ''); }
+  function got(t) { token = t || ''; var w = waiting; waiting = []; w.forEach(function (f) { f(token); }); }
+  function render() {
+    if (widget !== null || !window.turnstile) return;
+    widget = window.turnstile.render(box, {
+      sitekey: form.getAttribute('data-sitekey'), appearance: 'interaction-only', theme: 'light',
+      callback: got, 'expired-callback': function () { token = ''; },
+      'error-callback': function () { got(''); }
+    });
+  }
+  form.addEventListener('focusin', function () {
+    window.lenchesTurnstile(render, function () { say('The robot check could not load. Please try again later.', true); });
+  });
+  function tokenSoon() {
+    if (token) return Promise.resolve(token);
+    return new Promise(function (resolve) {
+      waiting.push(resolve);
+      setTimeout(function () { resolve(token); }, 15000);
+    });
+  }
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (button.disabled) return;
+    button.disabled = true;
+    say('Sending…');
+    window.lenchesTurnstile(render);
+    tokenSoon().then(function (t) {
+      if (!t) throw new Error('We couldn\'t confirm you\'re not a robot. Please try again in a moment.');
+      var data = new FormData(form);
+      data.set('cf-turnstile-response', t);
+      return fetch(form.action, { method: 'POST', body: data }).then(function (r) {
+        return r.json().catch(function () { return { ok: false, message: 'Sorry, something went wrong. Please try again later.' }; });
+      });
+    }).then(function (res) {
+      if (!res.ok) throw new Error(res.message || 'Sorry, something went wrong. Please try again later.');
+      ['name', 'trade', 'contact', 'area', 'why'].forEach(function (k) { form.elements[k].value = ''; });
+      say(res.message);
+    }).catch(function (err) {
+      say(err && err.message && !/fetch|network/i.test(err.message) ? err.message : 'Sorry, that couldn\'t be sent. Please check your connection and try again.', true);
+    }).then(function () {
+      button.disabled = false;
+      token = '';
+      if (widget !== null && window.turnstile) window.turnstile.reset(widget);
+    });
+  });
+})();
+</script>

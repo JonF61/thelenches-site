@@ -3,12 +3,6 @@
   "intro": "Clubs, halls, churches and practical information for everyone in the Lenches.",
   "cards": [
     {
-      "title": "Regular activities",
-      "url": "/regulars/",
-      "icon": "calendar",
-      "text": "Weekly classes, clubs and groups, Monday to Sunday."
-    },
-    {
       "title": "Groups & Clubs",
       "url": "/groups/",
       "icon": "users",
@@ -25,6 +19,18 @@
       "url": "/churches/",
       "icon": "church",
       "text": "Service times and readings across the ARCH Benefice."
+    },
+    {
+      "title": "Where to eat",
+      "url": "/living-here/eat/",
+      "icon": "eat",
+      "text": "Pubs, cafés and restaurants nearby."
+    },
+    {
+      "title": "Local trades",
+      "url": "/living-here/trades/",
+      "icon": "tools",
+      "text": "Plumbers, sweeps, cleaners and more nearby."
     },
     {
       "title": "Health & emergencies",

@@ -21,6 +21,14 @@
 //   Site        src/_data/siteupdates.json: a linked line under the header from its
 //               "from" date (to "until", if set) until one issue carrying it is sent
 //               live. Shadow, canary and test copies don't count, so it stays due.
+//   Cartoon     src/_data/cartoons.json: the entry keyed by the issue date, picture (its file
+//               must be in the repo) and caption, just before Notices; none = nothing (11 Nov 2026).
+//   Subject     (11 Nov 2026, Jon) subjectTeaser: the short names (title before " — ") of up to
+//               two lead events, Lenches ones first, those in the issue's first 7 days first, then
+//               by date; subjectMore when the issue has anything else. render.js puts them in the
+//               subject. Older snapshots have no subjectTeaser and keep the date-only subject.
+//   Where?      src/_data/wherelenches.json (11 Nov 2026, Jon): this issue's close-up puzzle, and
+//               the answer to the latest earlier puzzle from the last 14 days. Just for fun.
 //   On this day src/_data/onthisday.json: the entry keyed by the issue's MM-DD (any year),
 //               one italic line under the header; none = no line (28 Oct 2026).
 //   Images      Pending and whatson items: the JPEG copy of an /images/items/*.webp
@@ -41,10 +49,13 @@ const crypto = require('crypto');
 const { inLenches } = require('../../lib/lenches');
 const { bodyOf } = require('../../lib/wording');
 const { localSource } = require('../../lib/sources');
+const anchors = require('../../lib/anchors');
 
 const WINDOW_DAYS = 14;
 const MAX_APPEARANCES = 3;
 const MAX_IMAGE = 2;
+// Bingo nights, but not the Christmas hamper callers card (Jon, 11 Nov).
+const TEXT_ONLY_TITLES = [/^(?!.*\bhamper\b).*\bbingo\b/i];
 const BINS_DAYS = 7;
 const DEADLINE_HM = '18:00'; // Wednesday before the issue, UK time (submission guidelines)
 const COUNTED = new Set(['sent', 'shadow']);
@@ -98,6 +109,13 @@ function addDays(day, n) {
 }
 
 // Submission deadline for an issue: the day before at 18:00 UK ("YYYY-MM-DD HH:MM").
+// Regular activities first listed in the 14 days up to the issue (added, YYYY-MM-DD), list order.
+const REGULARS_NEW_DAYS = 14;
+function recentRegulars(list, issueDate) {
+  const from = addDays(issueDate, -(REGULARS_NEW_DAYS - 1));
+  return list.filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(String(r.added || '')) && r.added >= from && r.added <= issueDate);
+}
+
 function deadlineFor(issueDate) {
   return `${addDays(issueDate, -1)} ${DEADLINE_HM}`;
 }
@@ -110,6 +128,12 @@ function whatsonKey(list, item) {
 function linkOf(text, url) {
   const u = safeUrl(url);
   return u ? { text: str(text) || 'More details', url: u } : null;
+}
+
+// An item's optional second link as { link2 } (spread in), or nothing, so snapshots without one are unchanged.
+function link2Of(it) {
+  const l = linkOf(it.link2 && it.link2.text, it.link2 && it.link2.url);
+  return l && !(it.link && safeUrl(it.link.url) === l.url) ? { link2: l } : {};
 }
 
 function binsFor(bins, issueDate) {
@@ -170,7 +194,60 @@ function onThisDayFor(onthisday, issueDate) {
   return text ? { text } : null;
 }
 
-function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, issues, settings, sources, jpegFor, cutoff, photos }) {
+// The issue's cartoon (src/_data/cartoons.json, keyed YYYY-MM-DD): absolute image URL, alt and
+// caption, or null when there is none, its caption is blank or its image isn't in the repo.
+function cartoonFor(cartoons, issueDate, jpegFor) {
+  const e = cartoons && cartoons.entries && cartoons.entries[issueDate];
+  const image = str(e && e.image);
+  const caption = str(e && e.caption);
+  if (!image || !caption || !/^\/images\/[\w./-]+\.jpe?g$/i.test(image) || typeof jpegFor !== 'function') return null;
+  const src = jpegFor(image);
+  return src ? { src, alt: str(e.alt) || 'Cartoon', caption } : null;
+}
+
+// Short name for the subject line: the title before " — " / " – " / " - " (titles are "What — Where").
+function shortName(title) {
+  return str(String(title || '').split(/\s+[—–-]\s+/)[0]).replace(/[.:;,]+$/, '');
+}
+const SUBJECT_MAX_NAMES = 2;
+const SUBJECT_NAME_MAX = 32; // longer names are left out, so the subject stays readable on a phone
+
+function subjectTeaserFor(events, issueDate) {
+  const weekEnd = addDays(issueDate, 6);
+  const ranked = events.filter((e) => e.date && e.date >= issueDate)
+    .map((e) => ({ e, name: shortName(e.title) }))
+    .filter((x) => x.name && x.name.length <= SUBJECT_NAME_MAX)
+    .sort((a, b) => (b.e.lenches ? 1 : 0) - (a.e.lenches ? 1 : 0)
+      || (a.e.date <= weekEnd ? 0 : 1) - (b.e.date <= weekEnd ? 0 : 1)
+      || cmp(a.e.date, b.e.date) || cmp(a.name, b.name));
+  const names = [];
+  for (const x of ranked) {
+    if (names.length >= SUBJECT_MAX_NAMES) break;
+    if (!names.some((n) => n.toLowerCase() === x.name.toLowerCase())) names.push(x.name);
+  }
+  return names;
+}
+
+// Where in the Lenches? (wherelenches.json): { puzzle: {src}, answer: {src, text} }, either part
+// null when there is none or its image isn't in the repo; null when both are.
+const JPEG_PATH = /^\/images\/[\w./-]+\.jpe?g$/i;
+function whereFor(data, issueDate, jpegFor) {
+  const entries = (data && data.entries) || {};
+  const img = (u) => (JPEG_PATH.test(str(u)) && typeof jpegFor === 'function' ? jpegFor(str(u)) : '');
+  const today = entries[issueDate];
+  const puzzleSrc = today ? img(today.puzzle) : '';
+  const earlier = Object.keys(entries).filter((k) => /^\d{4}-\d{2}-\d{2}$/.test(k)
+    && k < issueDate && k >= addDays(issueDate, -14)).sort().pop();
+  const prev = earlier && entries[earlier];
+  const answerSrc = prev && str(prev.answer) ? img(prev.photo) : '';
+  const out = {
+    puzzle: puzzleSrc ? { src: puzzleSrc } : null,
+    answer: answerSrc ? { src: answerSrc, text: str(prev.answer) } : null,
+  };
+  return out.puzzle || out.answer ? out : null;
+}
+
+function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, cartoons, wherelenches, issues, settings, sources, jpegFor, cutoff, photos }) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate || '')) throw new Error(`Bad issue date "${issueDate}"`);
   const deadline = str(cutoff);
   if (deadline && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(deadline)) throw new Error(`Bad cutoff "${cutoff}"`);
@@ -238,9 +315,12 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     }
     return null;
   }
-  const imageFor = (row, key) => emailImage(row.image_url, row.alt_text, key, row.flyer_count, row.image_credit, row.image_credit_url)
+  // Text only in the newsletter (Jon, 11 Nov: the bingo posters are repetitive): items whose title
+  // matches never carry a picture in the email; the website still shows it.
+  const textOnly = (title) => TEXT_ONLY_TITLES.some((re) => re.test(str(title)));
+  const imageFor = (row, key) => textOnly(row.title) ? null : emailImage(row.image_url, row.alt_text, key, row.flyer_count, row.image_credit, row.image_credit_url)
     || (str(row.image_url) || str(row.category).toLowerCase() !== 'event' ? null : standingImage(row.title, key, row.flyer_count));
-  const whatsonImage = (it, key, isEvent) => (it.image ? emailImage(it.image.url, it.image.alt, key, 0, it.image.credit, it.image.creditUrl)
+  const whatsonImage = (it, key, isEvent) => textOnly(it.title) ? null : (it.image ? emailImage(it.image.url, it.image.alt, key, 0, it.image.credit, it.image.creditUrl)
     : (isEvent ? standingImage(it.title, key, 0) : null));
 
   // ---- Pending: approved/auto rows; later rows win, as on the site.
@@ -269,6 +349,8 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
       key, title: str(row.title), body: bodyOf(row), meta,
       link: linkOf(row.link_text, row.link_url), date, sortStart: start,
     };
+    const link2 = linkOf(row.link2_text, row.link2_url);
+    if (link2 && (!base.link || link2.url !== base.link.url)) base.link2 = link2;
 
     const local = localSource(row);
     if (local) {
@@ -286,7 +368,9 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     if (cat === 'event' && date) {
       if (inWindow(date) && count < MAX_APPEARANCES) {
         const lenches = inLenches({ title: row.title, body: base.body, village: row.village });
-        events.push({ ...base, lenches, image: imageFor(row, key) });
+        // A place line that only says "Lenches" repeats the Lenches badge above it: left out (5 Nov, Jon).
+        const meta = lenches ? base.meta.split(' · ').filter((x) => !/^(?:the\s+)?lenches$/i.test(x)).join(' · ') : base.meta;
+        events.push({ ...base, meta, lenches, image: imageFor(row, key) });
         pendingEvents.add(`${normTitle(row.title)}|${date}`);
       }
       continue;
@@ -304,8 +388,9 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     if (pendingEvents.has(`${normTitle(ev.title)}|${date}`)) continue;
     const key = whatsonKey('events', ev);
     if ((shown.get(key) || 0) >= MAX_APPEARANCES) continue;
-    events.push({ key, title: str(ev.title), body: str(ev.body), meta: '', link: linkOf(ev.link && ev.link.text, ev.link && ev.link.url), date, sortStart: '', lenches: inLenches(ev), image: whatsonImage(ev, key, true) });
+    events.push({ key, title: str(ev.title), body: str(ev.body), meta: '', link: linkOf(ev.link && ev.link.text, ev.link && ev.link.url), ...link2Of(ev), date, sortStart: '', lenches: inLenches(ev), image: whatsonImage(ev, key, true) });
   }
+  let pins = 0; // pinned notices keep the site's order (lib/whatson.js: "order", then file name)
   for (const it of [...(w.notices || []), ...(w.news || [])]) {
     if (!str(it.title)) continue;
     const key = whatsonKey('notices', it);
@@ -313,14 +398,16 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
     // Converted from news (shown once under its old key): not repeated.
     if (shown.get(whatsonKey('news', it))) continue;
     if (notices.some((x) => x.key === key)) continue;
-    notices.push({ key, title: str(it.title), body: str(it.body), meta: '', link: linkOf(it.link && it.link.text, it.link && it.link.url), date: '', sortStart: '', image: whatsonImage(it, key) });
+    notices.push({ key, title: str(it.title), body: str(it.body), meta: '', link: linkOf(it.link && it.link.text, it.link && it.link.url), ...link2Of(it), date: '', sortStart: '', image: whatsonImage(it, key), ...(it.pinned ? { pinned: ++pins } : {}) });
   }
 
   // ---- Deterministic order.
   events.sort((a, b) => cmp(a.date, b.date) || cmp(a.title, b.title) || cmp(a.key, b.key));
   // Newest Pending items first, then whatson items in title order.
   const newestFirst = (a, b) => cmp(b.sortStart, a.sortStart) || cmp(a.title, b.title) || cmp(a.key, b.key);
-  notices.sort(newestFirst);
+  // A hand-written notice with "pinned": true leads the Notices section, as on the site (10 Nov).
+  // Several pinned: in the site's order.
+  notices.sort((a, b) => ((a.pinned || Infinity) - (b.pinned || Infinity)) || newestFirst(a, b));
   roads.sort((a, b) => cmp(a.date || '9999', b.date || '9999') || cmp(a.title, b.title) || cmp(a.key, b.key));
   elsewhere.sort((a, b) => cmp(a.source, b.source) || cmp(a.title, b.title) || cmp(a.key, b.key));
 
@@ -330,24 +417,36 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
   const keys = [...all.map((x) => x.key), ...siteUpdates.map((x) => x.key)];
   const imageKeys = all.filter((x) => x.image).map((x) => x.key);
   const strip = (x) => {
-    const { sortStart, ...rest } = x;
+    const { sortStart, pinned, ...rest } = x;
     return rest;
   };
 
+  const subjectTeaser = subjectTeaserFor(events, issueDate);
   return {
     issueDate,
+    subjectTeaser,
+    subjectMore: all.length > subjectTeaser.length,
     holiday,
     siteUpdates,
     onThisDay: onThisDayFor(onthisday, issueDate),
+    cartoon: cartoonFor(cartoons, issueDate, jpegFor),
+    where: whereFor(wherelenches, issueDate, jpegFor),
     lastIssue,
     cutoff: deadline,
     held,
     events: events.map(strip),
-    // Weekly regulars (src/items/regulars.json), every issue; older snapshots hold a string.
-    // Only the one-line fields go in the snapshot (the rest is for the /regulars/ page).
-    regulars: (w.regulars || []).length
-      ? w.regulars.map(({ day, time, what, where, note, link, frequency }) => ({ day, time, what, where, note, link, ...(frequency ? { frequency } : {}) }))
-      : str(w.eventsFootnote),
+    // Regular activities (11 Nov, Jon: the full list each week was repetitive): the newsletter shows
+    // a button to /regulars/ with the page's count, plus the entries listed in the last 14 days
+    // (added), each marked new activity (newActivity) or newly listed. Only the one-line fields go in
+    // the snapshot. Snapshots before 11 Nov have no regularsCount and hold the whole list (or, before
+    // 28 Oct, a string).
+    regularsCount: (w.regularsPage || w.regulars || []).length,
+    regulars: recentRegulars(w.regularsPage || w.regulars || [], issueDate).map((r) => {
+      const { day, time, what, where, note, link, frequency } = r;
+      return { day, time, what, where, note, link, ...(frequency ? { frequency } : {}),
+        fresh: r.newActivity ? 'new' : 'listed',
+        ...(anchors.regularHasDetails(r) ? { more: anchors.regularUrl(r) } : {}) };
+    }),
     news: [],
     notices: notices.map(strip),
     roads: roads.map(strip),
@@ -359,4 +458,4 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, iss
   };
 }
 
-module.exports = { select, whatsonKey, ymd, addDays, minuteKey, deadlineFor };
+module.exports = { shortName, select, whatsonKey, ymd, addDays, minuteKey, deadlineFor };

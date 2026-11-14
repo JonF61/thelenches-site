@@ -10,6 +10,9 @@
 # set, every submission is refused.
 # Summary page visitors (admin/visitors.js): secrets CF_ANALYTICS_TOKEN (custom API token,
 # Account Analytics: Read only) and CF_ACCOUNT_ID, added by hand the same way.
+# Kryten's quick Sheet access (POST /k, src/kryten.js): secret KRYTEN_TOKEN (40+ random
+# letters and digits), added by hand the same way; the same value is in Kryten's cloud
+# environment. Until it is set, /k answers 404.
 name = "approvals"
 main = "src/index.js"
 compatibility_date = "2026-09-01"
@@ -58,6 +61,18 @@ simple = { limit = 5, period = 60 }
 [[ratelimits]]
 name = "SIGNUP_LIMITER"
 namespace_id = "1002"
+simple = { limit = 5, period = 60 }
+
+# Recommend buttons on Local trades / Where to eat (recommend.js): at most 5 tries a minute per IP.
+[[ratelimits]]
+name = "RECOMMEND_LIMITER"
+namespace_id = "1003"
+simple = { limit = 5, period = 60 }
+
+# Suggest a tradesperson / somewhere to eat forms (listingsuggest.js): at most 5 tries a minute per IP.
+[[ratelimits]]
+name = "SUGGEST_LIMITER"
+namespace_id = "1004"
 simple = { limit = 5, period = 60 }
 
 # Anonymous newsletter counts (src/track.js: /c clicks, /o opens), read by the panel's

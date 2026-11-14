@@ -55,10 +55,18 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/admin/api/session') return send({ email: 'admin@example.org', csrf: 'c' });
   if (url.pathname === '/admin/api/state') return send(stateData());
   if (url.pathname === '/admin/api/contacts') return send(contacts());
+  if (url.pathname === '/admin/api/contact-messages') return send({ max: 25, messages: [
+    { id: 'm3', at: '2026-11-01T09:00:00Z', who: 'them', subject: 'Re: Quiz night', text: 'Lovely, thank you!' },
+    { id: 'm2', at: '2026-10-31T10:00:00Z', who: 'holly', subject: 'Re: Quiz night', text: "Hi Jane,\n\nThanks, your quiz night is on its way to the website and Thursday's newsletter." },
+    { id: 'm1', at: '2026-10-31T09:12:00Z', who: 'them', subject: 'Quiz night', text: 'Hi, our quiz night is on 21 November at 7.30pm in the hall. Flyer attached.' },
+    // Nine older ones: twelve in all, so the card shows ten and "Show older (2 more)".
+    ...Array.from({ length: 9 }, (_, i) => ({ id: 'o' + i, at: `2026-10-${String(20 - i).padStart(2, '0')}T09:00:00Z`, who: 'them', subject: 'Older ' + i, text: 'Older message ' + i })),
+  ] });
   let body = '';
   for await (const ch of req) body += ch;
   const b = body ? JSON.parse(body) : {};
   posts.push({ path: url.pathname, ...b });
+  if (url.pathname === '/admin/api/contactmail') return send({ ok: true, message: 'Draft requested. Holly emails you the draft.' });
   if (url.pathname === '/admin/api/contact-delete') return send({ ok: true, message: 'Deleted from Contacts. Their newsletter subscription is unchanged.' });
   if (b.field === 'village') return send({ ok: false, error: 'Changed in the Sheet since you loaded the page', current: 'Atch Lench' }, 'application/json', 409);
   const profile = ['name', 'organisation', 'village', 'role', 'profile'].includes(b.field);
@@ -114,6 +122,21 @@ try {
     assert.match(text, /and 5 older/);
     assert.equal(await page.locator('#c-role').inputValue(), 'Secretary');
     assert.equal(await main.locator('a[href^="mailto:"]').count(), 0, 'no email link');
+    // Messages: newest first, who wrote each, just the words.
+    await main.locator('.msgs .msg').first().waitFor();
+    assert.deepEqual((await main.locator('.msgs .msg-h b').allInnerTexts()).slice(0, 3), ['Them', 'Holly', 'Them']);
+    assert.match(await main.locator('.msgs .msg').nth(1).innerText(), /Sat 31 Oct 2026, 10:00 · Re: Quiz night[\s\S]*on its way to the website/);
+    // Holly's text is shown whole, not clipped to its first two lines ("Hi Jane," and a blank).
+    assert.ok(await main.locator('.msgs .msg.holly .text').evaluate((el) => el.scrollHeight <= el.clientHeight + 1), 'Holly text not clipped');
+    // Ten at a time.
+    assert.equal(await main.locator('.msgs .msg').count(), 10);
+    await main.getByRole('button', { name: 'Show older (2 more)' }).click();
+    assert.equal(await main.locator('.msgs .msg').count(), 12);
+    await main.getByRole('button', { name: 'Show fewer' }).click();
+    assert.equal(await main.locator('.msgs .msg').count(), 10);
+    // Empty profile and notes: small boxes; village is a dropdown.
+    assert.equal(await page.locator('#c-notes').getAttribute('rows'), '2');
+    assert.equal(await page.locator('#c-village').evaluate((el) => el.tagName), 'SELECT');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `contacts-page-${name}.png`), fullPage: true });
     await page.fill('#c-role', 'Chair');
     await page.locator('form.cfield', { has: page.locator('#c-role') }).getByRole('button', { name: 'Save' }).click();
@@ -122,8 +145,19 @@ try {
     await page.fill('#c-notes', 'Call after 6');
     await page.locator('form.cfield', { has: page.locator('#c-notes') }).getByRole('button', { name: 'Save' }).click();
     await page.locator('.toast', { hasText: 'Notes saved' }).waitFor();
+    // Draft email: a short brief is refused in the page; a real one is posted, box cleared.
+    await page.fill('#cmail-brief', 'hi');
+    await page.getByRole('button', { name: 'Draft email' }).click();
+    await page.locator('.toast', { hasText: 'at least 10 characters' }).waitFor();
+    await page.fill('#cmail-brief', 'Tell her the quiz is listed on the site.');
+    await page.getByRole('button', { name: 'Draft email' }).click();
+    await page.locator('.toast', { hasText: 'Draft requested' }).waitFor();
+    assert.equal(await page.locator('#cmail-brief').inputValue(), '');
+    assert.deepEqual(posts.filter((p) => p.path === '/admin/api/contactmail').map((p) => [p.email, p.brief]),
+      [['jane@example.org', 'Tell her the quiz is listed on the site.']]);
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `contacts-mail-${name}.png`), fullPage: true });
     // Stale village: refused, the page shows the Sheet's value.
-    await page.fill('#c-village', 'Rous Lench');
+    await page.selectOption('#c-village', 'Rous Lench');
     await page.locator('form.cfield', { has: page.locator('#c-village') }).getByRole('button', { name: 'Save' }).click();
     await page.waitForFunction(() => document.querySelector('#c-village').value === 'Atch Lench');
     assert.match(await page.locator('.toast').innerText(), /changed in the Sheet.*Atch Lench.*Not saved/);

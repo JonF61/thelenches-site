@@ -9,6 +9,10 @@ export const NL_MODES = ['shadow', 'canary', 'live'];
 export const ACTIONS = {
   approve: ['Approve', 'Approved', 'approve'],
   reject: ['Reject', 'Rejected', 'reject'],
+  // Pending item dealt with another way (admin panel only): status "done", nothing publishes.
+  done: ['Done already', 'Marked done already', 'reject'],
+  // Already listed (admin panel only, 3 Nov): add the new details to the existing entry; this item becomes done.
+  merge: ['Add details', 'Details being added to the listed item', 'approve'],
   approve_own: ['Approve with their wording', 'Approved with their wording', 'approve'],
   approve_rewrite: ['Approve with rewrite', 'Approved with our rewrite', 'approve'],
   trust: ['Trust this source', 'Source trusted', 'approve'],
@@ -26,6 +30,15 @@ export const ACTIONS = {
   unsub: ['Unsubscribe', 'Unsubscribed', 'reject'],
   // Newsletter sign-up confirmation link (/s only; /a refuses it). The id is a Sign-ups row id.
   signup: ['Confirm sign-up', 'Confirmed', 'approve'],
+  // Recommend button confirmation link (/r only; /a refuses it). The id is a Recommendations row id.
+  rec: ['Confirm recommendation', 'Confirmed', 'approve'],
+  // Suggest a tradesperson / somewhere to eat confirmation link (/sg only; /a refuses it). The id
+  // is a Listing suggestions row id.
+  sug: ['Send suggestion', 'Sent', 'approve'],
+  // Jon's decision on a confirmed suggestion (admin panel only): sug_ok adds the entry (as
+  // suggested, or as edited: JSON in b) to trades.json / eat.json; sug_no rejects it.
+  sug_ok: ['Approve suggestion', 'Suggestion approved', 'approve'],
+  sug_no: ['Reject suggestion', 'Suggestion rejected', 'reject'],
   // Reader feedback (Feedback tab), admin panel only: no signed email links carry these.
   fb_approve: ['Approve', 'Approved', 'approve'],
   fb_reject: ['Reject', 'Rejected', 'reject'],
@@ -40,13 +53,28 @@ export const ACTIONS = {
   // Organisation outreach (admin panel only): Holly's check or chaser to one organisation
   // (admin/orgoutreach.mjs). The id is its slug in contacts.json `outreach`.
   orgcheck: ['Draft check', 'Draft requested', 'approve'],
+  // Draft email (admin panel only, 1 Nov): Holly drafts an email to one contact from Jon's
+  // brief (admin/outreach.mjs planContactEmail). The id is a hash of their address; the
+  // brief rides in reason. The draft then waits for Jon's send / edit / skip.
+  contactmail: ['Draft email', 'Draft requested', 'approve'],
   // Holly's weekly lessons (scripts/lessons): Approve / Reject links in the lessons email.
   lesson_ok: ['Approve lesson', 'Lesson approved', 'approve'],
   lesson_no: ['Reject lesson', 'Lesson rejected', 'reject'],
+  // Rimmer's findings (admin panel only, 3 Nov): Fix… asks Holly to propose one change (Jon's
+  // instruction is in the Rimmer tab row); Apply writes it. Both run rimmer-fix.yml.
+  rfix: ['Ask Holly for a fix', 'Fix requested', 'approve'],
+  rfix_ok: ['Apply fix', 'Fix being applied', 'approve'],
+  // Apply all ticked (5 Nov, Jon): several ready fixes in one run. The id is the batch's own id; the
+  // finding ids ride comma separated in b. One commit and one site build.
+  rfix_all: ['Apply ticked fixes', 'Fixes being applied', 'approve'],
+  // Edit page / Newsletter draft "edit everything" (admin panel only, 4 Nov): Jon's new wording or
+  // link for one listing entry (admin/entryedit.js). The id is a fresh edit id; the entry key and
+  // the changes (each with the value Jon saw, for the stale check) ride as JSON in b. entry-edit.yml.
+  entryedit: ['Save listing edit', 'Edit being saved', 'approve'],
 };
 
 // Never valid in a signed email link (index.js /a).
-export const PANEL_ONLY = ['nlquiet', 'nltest'];
+export const PANEL_ONLY = ['nlquiet', 'nltest', 'contactmail', 'done', 'merge', 'sug_ok', 'sug_no', 'rfix', 'rfix_ok', 'rfix_all', 'entryedit'];
 
 export const FEEDBACK_ACTIONS = ['fb_approve', 'fb_reject', 'fb_postpone', 'fb_done', 'fb_send', 'fb_edit', 'fb_skip'];
 
@@ -62,6 +90,11 @@ export function validPayload(p) {
   // Redraft links may carry the draft to show (links.js redraftLink); it is never dispatched.
   if (p.a === 'redraft' && p.b !== undefined && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
   if (p.a === 'fb_postpone' && !/^\d{4}-\d{2}-\d{2}$/.test(String(p.d || ''))) return false;
+  if (p.a === 'merge' && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
+  if (p.a === 'rfix_all' && !(typeof p.b === 'string' && /^[A-Za-z0-9_-]{1,100}(,[A-Za-z0-9_-]{1,100}){0,19}$/.test(p.b))) return false;
+  if (p.a === 'entryedit' && (typeof p.b !== 'string' || p.b.length > 20000)) return false;
+  if (p.a === 'sug_ok' && p.b !== undefined && (typeof p.b !== 'string' || p.b.length > 3000)) return false;
+  if (p.a === 'rec' && !(['trades', 'eat'].includes(p.k) && /^[a-z0-9-]{1,80}$/.test(String(p.n || '')))) return false;
   if (p.a === 'trust') {
     const k = String(p.k || '');
     if (k.length > 300 || !(/^[^\s@<>]+@[^\s@<>]+$/.test(k) || /^https?:\/\/\S+$/i.test(k))) return false;
@@ -118,11 +151,24 @@ export function dispatchFor(p, reason = '', body = '') {
       action: 'send', issue_date: p.i, confirm_count: String(p.n), expect_hash: p.h, expect_mode: p.m,
     }];
   }
+  // Listing suggestions go to listing-suggest.yml (it commits trades.json / eat.json); Jon's edited
+  // entry and reject reason ride in the payload, read from the event file, never env.
+  if (p.a === 'sug_ok') return ['listing-suggest', { action: 'approve', id: p.i, body: body || p.b || '' }];
+  if (p.a === 'sug_no') return ['listing-suggest', { action: 'reject', id: p.i, reason }];
+  if (p.a === 'rfix') return ['rimmer-fix', { action: 'propose', id: p.i }];
+  if (p.a === 'rfix_ok') return ['rimmer-fix', { action: 'apply', id: p.i }];
+  if (p.a === 'rfix_all') return ['rimmer-fix', { action: 'apply_many', id: p.i, ids: String(p.b || '').split(',').filter(Boolean) }];
+  // Listing edit: the changes as JSON, read by scripts/entryedit from the event file, never env.
+  if (p.a === 'entryedit') return ['entry-edit', { id: p.i, body: body || p.b }];
   if (p.a === 'nlbuild') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true }];
   if (p.a === 'nlquiet') return ['newsletter', { action: 'build', issue_date: p.i, rebuild: true, step: 'build' }];
   if (p.a === 'nltest') return ['newsletter', { action: 'build', issue_date: p.i, step: 'preview' }];
-  if ((p.a === 'skip' || p.a === 'redraft') && reason) return ['approval', { id: p.i, action: p.a, reason }];
+  // Pending reject (3 Nov): Jon's optional reason, saved in Pending reject_reason, never sent.
+  if ((p.a === 'skip' || p.a === 'redraft' || p.a === 'reject') && reason) return ['approval', { id: p.i, action: p.a, reason }];
   if (p.a === 'edit') return ['approval', { id: p.i, action: p.a, body, reason }];
+  // Add details: the fields as JSON, read by scripts/approve from the event file, never env.
+  if (p.a === 'merge') return ['approval', { id: p.i, action: p.a, body: body || p.b }];
+  if (p.a === 'contactmail') return ['approval', { id: p.i, action: p.a, reason }];
   // approval.yml passes only id, action, reason and body: the postpone date rides in reason.
   if (p.a === 'fb_postpone') return ['approval', { id: p.i, action: p.a, reason: p.d }];
   if (p.a === 'fb_edit') return ['approval', { id: p.i, action: p.a, body }];
@@ -131,7 +177,7 @@ export function dispatchFor(p, reason = '', body = '') {
 }
 
 // One decision (approve, reject, trust, send, skip, edit, redraft, close, nlsend, nlbuild, nlquiet, nltest,
-// the reader feedback fb_* actions, nudge, orgcheck, and lesson_ok / lesson_no) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
+// the reader feedback fb_* actions, nudge, orgcheck, contactmail, lesson_ok / lesson_no, sug_ok / sug_no, rfix / rfix_ok / rfix_all and entryedit) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
 export async function decide(env, p, reason = '', body = '') {
   const [eventType, payload] = dispatchFor(p, reason, body);
   return dispatch(env, eventType, payload, 2);

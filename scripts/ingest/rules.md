@@ -1,6 +1,9 @@
-# Extraction rules — The Lenches
+# Write-up guidance — The Lenches
 
-Edit this file freely; it is read on every run. No code changes needed.
+Holly's guidance for writing up listings (scripts/ingest/extract.js). Since 2 Nov 2026 it
+guides rather than binds: Holly follows it unless an item is better served another way, and
+then says why in a "Holly:" note on the item. The rules that always bind are the FIXED RULES
+in extract.js. Edit this file freely; it is read on every run. No code changes needed.
 Scope must match the Submission Guidelines (src/_includes/guidelines.md).
 
 ## Scope
@@ -32,8 +35,10 @@ villages), or Evesham, Pershore or Inkberrow for town events.
 - British English. Plain, warm, factual; no hype, no exclamation marks.
 - Title: "What — Where", e.g. "Harvest Lunch — Church Lench Village Hall",
   "Cash Bingo — The Lenches Club". Keep under about 60 characters.
-- Summary: one or two sentences, roughly 25–50 words, written fresh (do not copy the email).
+- Summary: usually one or two sentences, roughly 25–50 words, written fresh (do not copy the email).
   Include the time, place, price and how to book where known.
+  Go up to about 80 words when readers need more to take part: who can join or enter, how to
+  book, bid or apply, deadlines and conditions. Never drop those to save words.
 - Times as "7.30pm", "from 8pm", "12.15 for 12.30". Dates as "Friday 16 October".
   Prices as "£10", "free".
 - cost: short, e.g. "£15 per person", "Free", or empty if not stated.

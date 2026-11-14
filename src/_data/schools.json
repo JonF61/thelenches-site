@@ -1,12 +1,12 @@
 {
   "checked": "20 October 2026",
   "intro": "The Lenches are in Worcestershire's three-tier system: first school (Reception to Year 5), middle school (Years 6 to 8) and high school (Years 9 to 13).",
-  "stages": ["Pre-school 2–5", "First 4–10", "Middle 10–13", "High 13–18"],
+  "stages": ["Pre-school 2–4", "First 4–10", "Middle 10–13", "High 13–18"],
   "local": [
     {
       "name": "The Lenches Pre-school",
-      "where": "Church Lench Village Hall · ages 2–5",
-      "text": "A charity run by a parent committee. Term time, Monday to Friday 8.30am–3.30pm, all-day or half-day sessions. Funded hours for 2, 3 and 4-year-olds. Ofsted: Good (July 2025).",
+      "where": "Church Lench Village Hall · ages 2–4",
+      "text": "A charity run by a parent committee. Term time, Monday to Friday 8.30am–3.30pm, all-day or half-day sessions. Funded hours for 2, 3 and 4-year-olds. Winner of the SME Digital award for Best Early Years Learning Environment, Worcestershire 2026. Ofsted: Good (July 2025).",
       "forestSchool": true,
       "image": "/images/lenches-preschool.jpg",
       "alt": "The Lenches Pre-school",

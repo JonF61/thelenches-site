@@ -1,6 +1,22 @@
 {
   "events": [
     {
+      "id": "1a1c605c25d4b905-4",
+      "title": "Autumn Internationals rugby — The Lenches Club",
+      "body": "Four matches will be shown live at The Lenches Club on Saturday 14 November: Italy v Argentina (11.40am), Wales v New Zealand (2.10pm), England v Japan (4.40pm) and Ireland v Fiji (8.10pm).",
+      "date": "2026-11-14",
+      "village": "Lenches",
+      "expires": "2026-11-14",
+      "link": {
+        "text": "Email Rhona",
+        "url": "mailto:rhona.cresswell@yahoo.co.uk"
+      },
+      "image": {
+        "url": "/images/items/1a1c605c25d4b905-4.webp",
+        "alt": "Poster listing four Autumn Internationals matches on 14 November 2026 at The Lenches Club with kick-off times"
+      }
+    },
+    {
       "id": "rss-4b3e37ba34618472-1",
       "title": "Christmas Market — Spetchley Park Gardens",
       "body": "Spetchley Park Gardens will host a free Christmas market on 14 and 15 November, with a mix of indoor and outdoor stalls.",
@@ -10,6 +26,38 @@
       "link": {
         "text": "Read more at Evesham Journal",
         "url": "https://www.eveshamjournal.co.uk/news/26642458.spetchley-park-gardens-host-artisan-christmas-market/"
+      }
+    },
+    {
+      "id": "1a1c605c25d4b905-1",
+      "title": "Glo-Quiz — The Lenches Club",
+      "body": "Glo-Quiz returns to The Lenches Club for a hosted trivia night on Saturday 14 November from 8pm. Bring a team and have a go at a jackpot of at least £300.",
+      "date": "2026-11-14",
+      "village": "Lenches",
+      "expires": "2026-11-14",
+      "link": {
+        "text": "Email Rhona",
+        "url": "mailto:rhona.cresswell@yahoo.co.uk"
+      },
+      "image": {
+        "url": "/images/items/1a1c605c25d4b905-1.webp",
+        "alt": "Poster for Glo-Quiz at The Lenches Club, 14 November, 8pm, with a minimum £300 jackpot"
+      }
+    },
+    {
+      "id": "1a1c605c25d4b905-5",
+      "title": "Autumn Internationals: Scotland v Australia — The Lenches Club",
+      "body": "The Lenches Club is showing Scotland v Australia live on Sunday 15 November, with kick-off at 3.10pm. This rounds off the club's Autumn Internationals rugby weekend.",
+      "date": "2026-11-15",
+      "village": "Lenches",
+      "expires": "2026-11-15",
+      "link": {
+        "text": "Email Rhona",
+        "url": "mailto:rhona.cresswell@yahoo.co.uk"
+      },
+      "image": {
+        "url": "/images/items/1a1c605c25d4b905-5.webp",
+        "alt": "Poster for Scotland v Australia, 15 November 2026, kick-off 3.10pm, at The Lenches Club"
       }
     },
     {
@@ -93,6 +141,22 @@
       }
     },
     {
+      "id": "1a1c605c25d4b905-7",
+      "title": "Christmas Wreath Workshop — The Lenches Club",
+      "body": "Amulet Blooms is running a Christmas wreath workshop at The Lenches Club on Friday 11 December at 7pm, using fresh and dried materials from its flower farm. It costs £45 per person, including a glass of fizz and a mince pie. Book at amuletblooms.co.uk. Returning customers get 10% off and can email info@amuletblooms.co.uk if they haven't had their discount link.",
+      "date": "2026-12-11",
+      "village": "Lenches",
+      "expires": "2026-12-11",
+      "link": {
+        "text": "Book: Amulet Blooms",
+        "url": "https://amuletblooms.co.uk"
+      },
+      "image": {
+        "url": "/images/items/1a1c605c25d4b905-7.webp",
+        "alt": "Poster for the Amulet Blooms Christmas wreath workshop showing a wreath of fir, pine cones and dried flowers"
+      }
+    },
+    {
       "id": "1a17d10d5d56383f-6",
       "title": "Children's Christmas Party — The Vale Golf & Country Club",
       "body": "A Christmas party for children with Santa at The Vale Golf and Country Club, Bishampton. Sunday 13 December, 11am-2.30pm, £20 per child. Booking via the club's website.",
@@ -106,6 +170,38 @@
       "image": {
         "url": "/images/items/1a17d10d5d56383f-6.webp",
         "alt": "Santa with children and adults celebrating with confetti at a Christmas party"
+      }
+    },
+    {
+      "id": "1a1c605c25d4b905-8",
+      "title": "Carols with Avonbank Brass Band — The Lenches Club",
+      "body": "Avonbank Brass Band returns to The Lenches Club on Monday 21 December at 7pm to play Christmas carols, with song sheets for anyone who wants to sing along. Entry is free and includes a mince pie and a small mulled wine on arrival. Donations to the band are welcome.",
+      "date": "2026-12-21",
+      "village": "Lenches",
+      "expires": "2026-12-21",
+      "link": {
+        "text": "Email Rhona",
+        "url": "mailto:rhona.cresswell@yahoo.co.uk"
+      },
+      "image": {
+        "url": "/images/items/1a1c605c25d4b905-8.webp",
+        "alt": "Poster for an evening of carols with Avonbank Brass Band at The Lenches Club, with Father Christmas and candles"
+      }
+    },
+    {
+      "id": "1a1c605c25d4b905-6",
+      "title": "Christmas Prize Bingo — The Lenches Club",
+      "body": "Festive prize bingo for all the family at The Lenches Club on Wednesday 23 December. Tickets go on sale at 7.15pm and eyes down is at 8pm. There are prizes on the book and flyer, and a cash flyer for over-18s at the end of the evening.",
+      "date": "2026-12-23",
+      "village": "Lenches",
+      "expires": "2026-12-23",
+      "link": {
+        "text": "Email Rhona",
+        "url": "mailto:rhona.cresswell@yahoo.co.uk"
+      },
+      "image": {
+        "url": "/images/items/1a1c605c25d4b905-6.webp",
+        "alt": "Red festive poster for Christmas Bingo at The Lenches Club, Wednesday 23 December, eyes down 8pm"
       }
     },
     {
@@ -126,6 +222,175 @@
     }
   ],
   "notices": [
+    {
+      "id": "rss-8d20b44ee05df9cf-1",
+      "title": "Emergency closure of Hughes Lane — Harvington",
+      "body": "Hughes Lane in Harvington is shut to vehicles between Village Street and Ragley Road so that a burst water main can be repaired. The closure began on Tuesday 10 November and is expected to last about two days, though the order allows up to 21 days. Drivers should use Village Street and Ragley Road instead. People on foot can still reach homes and premises on the lane.",
+      "date": "2026-11-10",
+      "village": "Harvington",
+      "expires": "2026-12-02",
+      "added": "2026-11-11",
+      "link": {
+        "text": "Read more at Harvington PC",
+        "url": "https://harvington-pc.gov.uk/news/proposed-road-closure-hughes-road-harvington-10-november-2026"
+      }
+    },
+    {
+      "id": "1a1c3ae234a8adb0-1",
+      "title": "Road closure — Ab Lench Road, Ab Lench",
+      "body": "Ab Lench Road will be closed from Monday 16 to Friday 20 November while Worcestershire County Council repairs a damaged section of carrier pipe outside Easter House. A diversion will run between Rous Lench and Ab Lench, and delays are likely.",
+      "date": "2026-11-16",
+      "village": "Ab Lench",
+      "start": "2026-11-16",
+      "end": "2026-11-20",
+      "road": "Ab Lench Road",
+      "expires": "2026-12-01",
+      "added": "2026-11-10",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB152647813"
+      },
+      "link2": {
+        "text": "Diversion route",
+        "url": "https://one.network?GBTMI47847273"
+      }
+    },
+    {
+      "id": "1a1c3ae234a8adb0-2",
+      "title": "Road closure — Abbots Morton Road, Abbots Morton",
+      "body": "Abbots Morton Road will be closed for carriageway patching and resurfacing on 3 days between Monday 16 and Tuesday 24 November, ahead of surface dressing by Worcestershire County Council. A diversion will use Alcester Road, and delays are likely.",
+      "date": "2026-11-16",
+      "village": "Abbots Morton",
+      "start": "2026-11-16",
+      "end": "2026-11-24",
+      "road": "Abbots Morton Road",
+      "expires": "2026-12-01",
+      "added": "2026-11-10",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB152541040"
+      },
+      "link2": {
+        "text": "Diversion route",
+        "url": "https://one.network?GBTMI47739297"
+      }
+    },
+    {
+      "id": "1a1c3ae234a8adb0-3",
+      "title": "Roadworks — Rectory Close, Harvington",
+      "body": "Openreach plans works in Rectory Close, Harvington, on Thursday 12 November. A temporary obstruction may cause delays of up to 15 minutes.",
+      "date": "2026-11-12",
+      "village": "Harvington",
+      "start": "2026-11-12",
+      "end": "2026-11-12",
+      "road": "Rectory Close",
+      "expires": "2026-12-01",
+      "added": "2026-11-10",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB153499694"
+      }
+    },
+    {
+      "id": "1a1c605c25d4b905-9",
+      "title": "Christmas hamper bingo callers card — The Lenches Club",
+      "body": "The Lenches Club is running a callers card draw for a luxury Christmas hamper with wine, savoury treats, chocolates and festive favourites. Numbers 1 to 90 are £5 each and can be bought from behind the bar by cash or card. The winning number is drawn on Christmas Day.",
+      "village": "Lenches",
+      "expires": "2026-12-25",
+      "added": "2026-11-10",
+      "image": {
+        "url": "/images/items/1a1c605c25d4b905-9.webp",
+        "alt": "Poster for the Christmas hamper bingo callers card at The Lenches Club: numbers 1 to 90, £5 a number, drawn on Christmas Day"
+      }
+    },
+    {
+      "id": "1a1c605c25d4b905-10",
+      "title": "The Lenches Club closed 23–25 November",
+      "body": "The Lenches Club will be closed from Monday 23 to Wednesday 25 November while a new Heineken SmartDispense beer system is installed and the floor behind the bar is repaired. Normal opening hours return on Thursday 26 November. Anyone with a booking on those days will be contacted, and questions can go to Leanne or any committee member.",
+      "village": "Lenches",
+      "expires": "2026-11-25",
+      "added": "2026-11-10"
+    },
+    {
+      "id": "1a19f9a2c5331db0-1",
+      "title": "Abbots Morton Road closed — Abbots Morton",
+      "body": "Abbots Morton Road in Abbots Morton will be closed from Wednesday 4 to Friday 6 November while Openreach carries out works. A signed diversion will be in place, so expect delays.",
+      "date": "2026-11-04",
+      "village": "Abbots Morton",
+      "start": "2026-11-04",
+      "end": "2026-11-06",
+      "road": "Abbots Morton Road",
+      "expires": "2026-11-24",
+      "added": "2026-11-03",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB151959384"
+      }
+    },
+    {
+      "id": "1a19f9a2c5331db0-2",
+      "title": "Morton Wood Lane closed — Abbots Morton",
+      "body": "Morton Wood Lane in Abbots Morton will be closed from Wednesday 4 to Friday 6 November for Openreach works. Expect delays and allow extra time.",
+      "date": "2026-11-04",
+      "village": "Abbots Morton",
+      "start": "2026-11-04",
+      "end": "2026-11-06",
+      "road": "Morton Wood Lane",
+      "expires": "2026-11-24",
+      "added": "2026-11-03",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB153149243"
+      }
+    },
+    {
+      "id": "1a19f9a2c5331db0-3",
+      "title": "Ab Lench Road closed — Church Lench",
+      "body": "Ab Lench Road in Church Lench will be closed on Monday 9 November for Openreach works. A diversion will run via Main Street, so expect delays.",
+      "date": "2026-11-09",
+      "village": "Church Lench",
+      "start": "2026-11-09",
+      "end": "2026-11-09",
+      "road": "Ab Lench Road",
+      "expires": "2026-11-24",
+      "added": "2026-11-03",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB153245184"
+      }
+    },
+    {
+      "id": "1a19f9a2c5331db0-5",
+      "title": "Temporary traffic lights on Alcester Road — Harvington",
+      "body": "Openreach works will bring two-way temporary traffic lights to Alcester Road, Harvington, from Monday 9 to Friday 13 November. There may be some delays.",
+      "date": "2026-11-09",
+      "village": "Harvington",
+      "start": "2026-11-09",
+      "end": "2026-11-13",
+      "road": "Alcester Road",
+      "expires": "2026-11-24",
+      "added": "2026-11-03",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB153228826"
+      }
+    },
+    {
+      "id": "rss-df636fba7526f898-1",
+      "title": "Home Security Advice for Darker Evenings",
+      "body": "Harvington Parish Council passes on Neighbourhood Watch advice to keep homes secure as evenings darken, including locking doors and windows, hiding keys and valuables, and using timer lights. Residents are encouraged to report suspicious activity to West Mercia Police online, or call 999 in an emergency.",
+      "village": "Harvington",
+      "expires": "2026-11-23",
+      "added": "2026-11-02",
+      "link": {
+        "text": "Read more at Harvington PC",
+        "url": "https://harvington-pc.gov.uk/news/neighbourhood-watch-keep-your-home-safe-during-darker-nights"
+      },
+      "link2": {
+        "text": "Report to West Mercia Police",
+        "url": "https://www.westmercia.police.uk/ro/report/"
+      }
+    },
     {
       "id": "rss-8788c72fe9d78161-1",
       "title": "MP backs climate petition after Harvington wildfire",
@@ -226,140 +491,6 @@
       "village": "Church Lench",
       "expires": "2026-11-17",
       "added": "2026-10-27"
-    },
-    {
-      "id": "1a15f6e84d8946ce-1",
-      "title": "Tennis Club Tour to Porto — The Lenches Tennis Club",
-      "body": "Sixteen men from The Lenches Tennis Club enjoyed a tour to Porto, combining tennis with a trip up the Douro Valley and a river boat trip. Next tours planned to Edgbaston and possibly for the Ladies section in spring.",
-      "village": "Lenches",
-      "expires": "2026-11-12",
-      "added": "2026-10-22"
-    },
-    {
-      "id": "1a15f6e84d8946ce-2",
-      "title": "Peter Pandemonium — GLADS Production",
-      "body": "The Great Lenches Amateur Dramatics Society performed their comedy version of Peter Pan, Peter Pandemonium, to full houses over two nights. Anyone interested in joining future productions can contact Simon Badger at the Lenches Lakes.",
-      "village": "Lenches",
-      "expires": "2026-11-12",
-      "added": "2026-10-22"
-    },
-    {
-      "id": "1a15780b0f8da7e1-1",
-      "title": "Road Closure — Ab Lench Road, Church Lench",
-      "body": "Ab Lench Road, Church Lench will be closed on Monday 26 October for Openreach streetworks, with a diversion route in place via Main Street.",
-      "date": "2026-10-26",
-      "village": "Church Lench",
-      "start": "2026-10-26",
-      "road": "Ab Lench Road",
-      "expires": "2026-11-10",
-      "added": "2026-10-20",
-      "official": true,
-      "link": {
-        "text": "Roadworks details",
-        "url": "https://one.network?GBTMI47131888"
-      }
-    },
-    {
-      "id": "1a15780b0f8da7e1-2",
-      "title": "Road Closure — Badgers Hill to Handgate Lane, Sheriffs Lench",
-      "body": "Badgers Hill to Handgate Lane, Sheriffs Lench, closed from Tuesday 27 October to Sunday 29 November for Severn Trent Water works, with a diversion via Handgate Lane, Church Lench.",
-      "date": "2026-10-27",
-      "village": "Sheriffs Lench",
-      "start": "2026-10-27",
-      "road": "Badgers Hill",
-      "expires": "2026-11-10",
-      "added": "2026-10-20",
-      "official": true,
-      "link": {
-        "text": "Roadworks details",
-        "url": "https://one.network?GBTMI45377659"
-      }
-    },
-    {
-      "id": "1a15780b0f8da7e1-3",
-      "title": "Brookdale, Harvington — water works",
-      "body": "Severn Trent Water works at Brookdale, Harvington, from Wednesday 21 to Friday 23 October; no carriageway incursion expected and delays are unlikely.",
-      "date": "2026-10-21",
-      "village": "Harvington",
-      "start": "2026-10-21",
-      "road": "Brookdale",
-      "expires": "2026-11-10",
-      "added": "2026-10-20",
-      "link": {
-        "text": "Roadworks details",
-        "url": "https://one.network?GB153078571"
-      }
-    },
-    {
-      "id": "1a15780b0f8da7e1-4",
-      "title": "Hughes Close, Harvington — Openreach works",
-      "body": "Openreach works at Hughes Close, Harvington, from Thursday 22 to Monday 26 October; some carriageway incursion but delays are unlikely.",
-      "date": "2026-10-22",
-      "village": "Harvington",
-      "start": "2026-10-22",
-      "road": "Hughes Close",
-      "expires": "2026-11-10",
-      "added": "2026-10-20",
-      "link": {
-        "text": "Roadworks details",
-        "url": "https://one.network?GB153082375"
-      }
-    },
-    {
-      "id": "1a15780b0f8da7e1-5",
-      "title": "Leys Road, Harvington — water works",
-      "body": "Severn Trent Water works at Leys Road, Harvington, from Wednesday 21 to Friday 23 October; no carriageway incursion expected.",
-      "date": "2026-10-21",
-      "village": "Harvington",
-      "start": "2026-10-21",
-      "road": "Leys Road",
-      "expires": "2026-11-10",
-      "added": "2026-10-20",
-      "link": {
-        "text": "Roadworks details",
-        "url": "https://one.network?GB153074788"
-      }
-    },
-    {
-      "id": "1a15780b0f8da7e1-6",
-      "title": "Stratford Road, Harvington — water works",
-      "body": "Severn Trent Water works at Stratford Road, Harvington, from Wednesday 21 to Friday 23 October; some carriageway incursion but delays unlikely.",
-      "date": "2026-10-21",
-      "village": "Harvington",
-      "start": "2026-10-21",
-      "road": "Stratford Road",
-      "expires": "2026-11-10",
-      "added": "2026-10-20",
-      "link": {
-        "text": "Roadworks details",
-        "url": "https://one.network?GB153079789"
-      }
-    },
-    {
-      "id": "rss-d74650da230223b8-1",
-      "title": "Landline switch-off to affect parts of Worcestershire",
-      "body": "Openreach has named eight Worcestershire areas affected by a nationwide shift from old copper landlines to full fibre broadband, as the UK moves towards digital phone services.",
-      "village": "Lenches",
-      "expires": "2026-11-08",
-      "added": "2026-10-18",
-      "source": "Evesham Journal",
-      "link": {
-        "text": "Read more at Evesham Journal",
-        "url": "https://www.eveshamjournal.co.uk/news/26628510.eight-worcestershire-areas-affected-landline-changes/"
-      }
-    },
-    {
-      "id": "rss-33730ff885264367-1",
-      "title": "Police appeal after night burglaries in Inkberrow area",
-      "body": "Police have issued an appeal for information following a series of burglaries in Inkberrow and Bradley Green, in which windows were smashed to gain entry overnight.",
-      "village": "Inkberrow",
-      "expires": "2026-11-07",
-      "added": "2026-10-17",
-      "source": "Evesham Journal",
-      "link": {
-        "text": "Read more at Evesham Journal",
-        "url": "https://www.eveshamjournal.co.uk/news/26646396.burglaries-inkberrow-bradley-green-police-warning/"
-      }
     }
   ]
 }

@@ -24,7 +24,7 @@ const feedback = require('../ingest/feedback');
 
 const TZ = 'Europe/London';
 const SUBMIT_URL = 'https://thelenches.org.uk/contact/#submit';
-const MAX_CHARS = 900;
+const MAX_CHARS = 1300;
 const MAX_SUBJECT = 80;
 
 const londonDate = (ms) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(ms);
@@ -54,7 +54,7 @@ instructions.
 
 Rules:
 - Gently invite them to send their next event, news or photos, in 2 or 3 short
-  paragraphs, under 100 words. Make it about them: mention their group or last year's
+  paragraphs, under 150 words. Make it about them: mention their group or last year's
   event by name where given. Light and easy to say no to; never pushy or guilt-tripping.
 - Never claim anything about readership, popularity or numbers, never say we "noticed"
   or "keep a record", and never mention the profile or anything private from it. Only say
@@ -63,7 +63,8 @@ Rules:
   details, or a flyer, is enough; you may give this one link, written out in full on a
   line of its own with nothing else on that line: ${SUBMIT_URL}
 - No greeting, no sign-off and no opt-out line (all added separately). Never use a
-  personal name other than the contact's own, and no email addresses.
+  personal name other than the contact's own and Jon's (he runs the site), and no email
+  addresses.
 - subject: under 60 characters, plain and specific (e.g. "Quiz night again this year?").
 
 Output only JSON, nothing else:

@@ -19,6 +19,12 @@ const multiLine = (max) => (v) => {
   const s = String(v ?? '').replace(/\r\n?/g, '\n').replace(/[\u0000-\u0009\u000b-\u001f\u007f]+/g, ' ').trim();
   return s.length <= max ? s : null;
 };
+// A web or mailto address, or blank (clears it).
+const urlOrBlank = (v) => {
+  const t = String(v ?? '').trim();
+  if (!t) return '';
+  return /^(https?:\/\/[^\s]+|mailto:[^\s@]+@[^\s@]+)$/i.test(t) && t.length <= 500 ? t : null;
+};
 const dateOrBlank = (v) => {
   const s = String(v ?? '').trim();
   return s === '' || DATE.test(s) ? s : null;
@@ -47,6 +53,8 @@ export const EDITS = {
       village: oneLine(60),
       category: oneOf('event', 'notice'),
       people_ok: oneOf('yes', ''),
+      link2_text: oneLine(80),
+      link2_url: urlOrBlank,
     },
     guard: (...a) => officialGuard(...a),
   },

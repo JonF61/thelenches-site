@@ -49,10 +49,11 @@ seoTitle: "Road closures and roadworks around the Lenches, near Evesham"
 .rd-works{background:#fbe6d6;color:#8a3e0c}
 </style>
 {% macro roadItem(r) %}
-    <div class="rd-item">
+    {%- set ek = r | entryKey %}
+    <div class="rd-item"{% if ek %} data-entry="{{ ek }}" data-label="Road item: {{ r.title | escape }}"{% endif %}>
       <h3>{{ r.title | roadTitle | escape }}{% set kind = r | roadKind %}<span class="rd-tag {{ 'rd-closure' if kind == 'Closure' else 'rd-works' }}">{{ kind }}</span></h3>
       {% set from = r.start or r.date %}{% if r.village or from %}<p class="rd-meta">{{ r.village | escape }}{% if r.village and from %} &middot; {% endif %}{% if from %}From {{ from | shortDate }}{% endif %}</p>{% endif %}
-      {% for p in r.body | paras %}<p>{{ p | escape }}</p>{% endfor %}
+      {% for p in r.body | paras %}<p data-field="body">{{ p | escape }}</p>{% endfor %}
       {% if r.link %}<p><a href="{{ r.link.url | escape }}" target="_blank" rel="noopener">Details on one.network &rarr;</a></p>{% endif %}
     </div>
 {% endmacro %}

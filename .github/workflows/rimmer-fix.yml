@@ -1,0 +1,76 @@
+name: Rimmer fix
+
+# Fix… on one of Rimmer's findings (scripts/rimmer/fix.js), from the admin panel through decide():
+#   propose (rfix)   Holly finds the entry and proposes one change; written to the Rimmer tab
+#   apply (rfix_ok)  the change is written: a repo file (committed here, then the site build; an
+#                    event whose date moved is renamed, a removed entry's file deleted; Local trades
+#                    or Where to eat also redeploy the Worker, which bundles them) or a Pending cell
+#                    (then Publish, which rebuilds pipeline.json and the site)
+#   apply_many (rfix_all, 5 Nov)  Apply all ticked: several fixes applied in turn, then one commit,
+#                    one site build and at most one Publish; the finding ids ride in the payload
+# Jon's instruction is read from the Rimmer tab row, never from env (a step's env is public).
+on:
+  repository_dispatch:
+    types: [rimmer-fix]
+
+permissions:
+  contents: write
+  actions: write
+
+# One queue per finding (or per batch of ticked fixes), so every tap runs (a shared group drops waiting runs).
+concurrency:
+  group: rimmer-fix-${{ github.event.client_payload.id }}
+  cancel-in-progress: false
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Propose or apply
+        id: fix
+        run: node scripts/rimmer/fix.js
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NODE_OPTIONS: --require ./lib/claudeusage.js
+          HOLLY_MODEL: ${{ vars.HOLLY_MODEL }}
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+
+      - name: Commit the fix and rebuild the site
+        if: ${{ success() && steps.fix.outputs.commit == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add -A src
+          if git diff --cached --quiet; then echo "No files changed."; exit 0; fi
+          git config user.name "Lenches Pipeline"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "${{ github.event.client_payload.action == 'apply_many' && 'Fixes' || 'Fix' }} from Rimmer's check (admin panel)"
+          git pull --rebase
+          git push
+          gh workflow run build.yml --ref main
+
+      - name: Redeploy the Worker (Local trades or Where to eat changed)
+        if: ${{ success() && steps.fix.outputs.worker == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy-worker.yml --ref main
+
+      - name: Publish the corrected submission
+        if: ${{ success() && steps.fix.outputs.publish == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run publish.yml --ref main

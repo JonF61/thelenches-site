@@ -38,6 +38,7 @@ jobs:
         env:
           GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NODE_OPTIONS: --require ./lib/claudeusage.js
           SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
           PHOTOS_FOLDER_ID: 0BwdIG5DOmCgkT2thdWs2LTdIbzQ
 

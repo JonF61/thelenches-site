@@ -2,7 +2,9 @@
 // Browser check of the panel's Newsletter draft screen (ui/client.js, admin/draft.js) against
 // a mock API, on desktop and phone sizes: the menu entry, the top bar's Newsletter chip and
 // its Draft link, the draft (a real render from scripts/newsletter/draft.js) in its frame,
-// Refresh showing the newer draft, and Rebuild / Test send (confirm, then the POST). Saves screenshots (SHOTS=dir).
+// Refresh showing the newer draft, and Rebuild / Test send (confirm, then the POST). Edit text (4 Nov):
+// the draft editor frame outlines the entries, a click opens the edit box and Save and publish posts
+// the change (mocked). Saves screenshots (SHOTS=dir).
 // Run: node worker/test/ui-draft.check.mjs
 import http from 'node:http';
 import assert from 'node:assert/strict';
@@ -11,6 +13,8 @@ import { createRequire } from 'node:module';
 import { CLIENT_JS } from '../src/admin/ui/client.js';
 import { CLIENT_CSS } from '../src/admin/ui/css.js';
 import { draftMeta, draftHtml, draftPage } from '../src/admin/draft.js';
+import { draftEditPage } from '../src/admin/entryedit.js';
+import { PAGEEDIT_JS, PAGEEDIT_CSS } from '../src/admin/ui/pageedit.js';
 
 const require = createRequire(import.meta.url);
 let chromium;
@@ -25,18 +29,31 @@ const data = (f) => require(`../../src/_data/${f}`);
 
 const draft = buildDraft({
   today: '2026-10-28', settings: {}, sources: [], jpegFor: () => '', whatson: loadWhatson({ today: '2026-10-28' }),
-  bins: data('bins.json'), siteupdates: data('siteupdates.json'), onthisday: data('onthisday.json'),
+  bins: data('bins.json'), siteupdates: data('siteupdates.json'), onthisday: data('onthisday.json'), cartoons: data('cartoons.json'), wherelenches: data('wherelenches.json'),
   pending: [
-    { id: 'a', title: 'Hall quiz night results', body: 'Well done to every team, and thanks to all who came.', category: 'notice', status: 'approved', received: '2026-10-26 10:00', decided_at: '2026-10-26 11:00' },
+    { id: 'a', title: 'Hall quiz night results', summary: 'Well done to every team, and thanks to all who came.', category: 'notice', status: 'approved', received: '2026-10-26 10:00', decided_at: '2026-10-26 11:00' },
     { id: 'b', title: 'Too late notice', body: 'x', category: 'notice', status: 'approved', received: '2026-10-28 19:00', decided_at: '2026-10-28 19:30' },
   ],
   issues: [{ issue_id: '2026-10-22', issue_date: '2026-10-22', status: 'sent', item_keys: '', image_keys: '' }],
+  subscribers: [{ email: 'a@example.org', status: 'active' }, { email: 'b@example.org', status: '' }, { email: 'c@example.org', status: 'unsubscribed' }, { email: 'd@example.org' }],
+  dns: [{ email: 'd@example.org' }],
 });
+assert.equal(draft.meta.subscribers, 2);
+// The built issue after its Test send (4 Nov): what Send to all passes on.
+const SEND = { built_at: '2026-10-28T13:20:00.000Z', tested_at: '2026-10-28T13:30:00.000Z', hash: '0123456789abcdef', send_mode: 'live', send_count: 2 };
 const liveRows = draftRows(draft.meta, draft.html, '2026-10-28T12:00:00.000Z');
 let rows = liveRows;
 let refreshed = 0;
 const nlPosts = [];
+let progressCalls = 0;
+const PROGRESS = [
+  { total: 0, sent: 0, failed: 0, stuck: 0, queued: 0, sending: 0, status: 'tested', done: false },
+  { total: 2, sent: 1, failed: 0, stuck: 0, queued: 0, sending: 1, status: 'sending', done: false },
+  { total: 2, sent: 2, failed: 0, stuck: 0, queued: 0, sending: 0, status: 'sent', done: true },
+];
 let signedOut = false;
+const entrySaves = [];
+let entryChecks = 0;
 
 const stateData = () => ({
   email: 'admin@example.org', sheetId: 'sheet', gids: {}, holiday: { value: 'FALSE', on: false },
@@ -56,6 +73,11 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/admin/api/session') return send({ email: 'admin@example.org', csrf: 'c' });
   if (url.pathname === '/admin/api/state') return send(stateData());
   if (url.pathname === '/admin/api/summary') return send({ error: 'not in this check' }, 'application/json', 500);
+  if (url.pathname === '/admin/api/send-progress') {
+    progressCalls += 1;
+    const p = PROGRESS[Math.min(progressCalls - 1, PROGRESS.length - 1)];
+    return send({ issue: url.searchParams.get('i'), mode: url.searchParams.get('m'), ...p });
+  }
   if (url.pathname === '/admin/api/draft') return signedOut ? send('Forbidden', 'text/plain', 403) : send({ meta: draftMeta(rows) });
   if (url.pathname === '/admin/api/draft-refresh' && req.method === 'POST') {
     refreshed += 1;
@@ -67,8 +89,34 @@ const server = http.createServer(async (req, res) => {
     for await (const c of req) b += c;
     const body = JSON.parse(b);
     nlPosts.push(body);
-    if (body.action === 'rebuild') rows = draftRows({ ...draft.meta, mode: 'frozen', status: 'built' }, draft.html, '2026-10-28T13:20:00.000Z');
-    return send({ ok: true, message: body.action === 'rebuild' ? 'Rebuilding: nothing is sent.' : 'Test send started.' });
+    if (body.action === 'rebuild') rows = draftRows({ ...draft.meta, mode: 'frozen', status: 'built', built_at: SEND.built_at, hash: SEND.hash, send_mode: 'live', send_count: 2 }, draft.html, '2026-10-28T13:20:00.000Z');
+    if (body.action === 'test') rows = draftRows({ ...draft.meta, mode: 'frozen', status: 'tested', ...SEND }, draft.html, '2026-10-28T13:31:00.000Z');
+    return send({ ok: true, message: { rebuild: 'Rebuilding: nothing is sent.', test: 'Test send started.', send: 'Send started.' }[body.action] });
+  }
+  if (url.pathname === '/admin/api/rimmer') return send({ open: [], kryten: [], last: { newsletter: '2026-10-28T11:00:00.000Z' } });
+  if (url.pathname === '/admin/draft-edit') {
+    const r = await draftEditPage(rows, { origin: base, csrf: 'c', version: 't' });
+    res.writeHead(200, Object.fromEntries(r.headers));
+    return res.end(await r.text());
+  }
+  if (url.pathname === '/admin/pageedit.js') return send(PAGEEDIT_JS, 'text/javascript');
+  if (url.pathname === '/admin/pageedit.css') return send(PAGEEDIT_CSS, 'text/css');
+  if (url.pathname === '/admin/api/entry') {
+    assert.equal(url.searchParams.get('key'), 'p:a');
+    return send({ ok: true, key: 'p:a', label: 'Submission: Hall quiz night results', official: false, page: '/notices/', fields: [
+      { field: 'body', name: 'Text', type: 'text', multiline: true, required: true, value: 'Well done to every team, and thanks to all who came.' },
+      { field: 'link', name: 'Link', type: 'link', value: '' }, { field: 'link2', name: 'Second link', type: 'link', value: '' }] });
+  }
+  if (url.pathname === '/admin/api/entry-save' && req.method === 'POST') {
+    let b = '';
+    for await (const c of req) b += c;
+    assert.equal(req.headers['x-csrf-token'], 'c');
+    entrySaves.push(JSON.parse(b));
+    return send({ ok: true, id: `ee${'1'.repeat(16)}`, count: 1, at: new Date().toISOString(), page: '/notices/', check: 'Well done', rebuild: false, message: 'Saved 1 change.' });
+  }
+  if (url.pathname === '/admin/api/entry-status') {
+    entryChecks += 1;
+    return send({ ok: true, state: entryChecks > 1 ? 'live' : 'building', phase: 'saving' });
   }
   if (url.pathname === '/admin/draft') {
     const r = draftPage(await draftHtml(rows));
@@ -90,7 +138,8 @@ try {
     await page.clock.install();
     await page.goto(`${base}/admin`);
     const menu = (await page.locator('nav.side button').allInnerTexts()).map((t) => t.replace(/\s*\d+$/, '').trim());
-    assert.deepEqual(menu.slice(0, 4), ['Summary', 'Newsletter draft', 'Newsletter stats', 'Submissions']);
+    assert.deepEqual(menu.slice(0, 5), ['Summary', 'Newsletter draft', 'Newsletter stats', 'Site visitors', 'Submissions']);
+    assert.equal(menu[menu.indexOf('Holly lessons') + 1], 'Autonomy');
     // The top bar: Newsletter chip with its Draft link; no Feedback chip.
     const chip = page.locator('.top .chip', { hasText: 'Newsletter' });
     assert.match(await chip.innerText(), /2026-10-22 · sent[\s\S]*Draft Thu 29 Oct/);
@@ -98,16 +147,56 @@ try {
     await chip.locator('button', { hasText: 'Draft' }).click();
     const main = page.locator('.main');
     await main.locator('iframe.draft-frame').waitFor();
+    // Full height (3 Nov): the frame grows to the issue, so the page scrolls as one, Rimmer's card above it.
+    await page.waitForFunction(() => { const f = document.querySelector('iframe.draft-frame'); return f && f.style.height && parseInt(f.style.height, 10) > 900; });
+    const box = await main.locator('iframe.draft-frame').boundingBox();
+    const above = await main.locator('.card.rimmer').boundingBox();
+    assert.ok(above && above.y < box.y, 'Rimmer card above the draft');
     const text = await main.innerText();
     assert.match(text, /^The next newsletter as it would be built now/m);
     assert.match(text, /Draft for Thu 29 Oct/);
     assert.match(text, /1 held as late, for next week/);
     assert.match(text, /Live draft: changes as items are approved/);
+    assert.match(text, /2 subscribers on the list/);
+    // Rimmer with nothing found (4 Nov): one short row, no intro paragraph.
+    const rim = main.locator('.card.rimmer.compact');
+    await rim.waitFor();
+    assert.match(await rim.innerText(), /Nothing found · Newsletter last checked/);
+    assert.ok((await rim.boundingBox()).height < 110, 'compact Rimmer card');
+    assert.equal(await main.locator('button', { hasText: 'Send to all' }).count(), 0);
     const frame = page.frameLocator('iframe.draft-frame');
     await frame.locator('text=Hall quiz night results').first().waitFor();
     assert.equal(await frame.locator('text=Too late notice').count(), 0);
     await page.waitForTimeout(500);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `draft-${name}.png`), fullPage: false });
+    // Edit text: the editor frame (script from the Worker), entries outlined; edit a submission's text.
+    if (name === 'desktop') {
+      await main.locator('button', { hasText: 'Edit text' }).click();
+      await main.locator('.note', { hasText: 'click an outlined entry' }).waitFor();
+      assert.match(await main.locator('iframe.draft-frame').getAttribute('src'), /^\/admin\/draft-edit\?v=/);
+      const ef = page.frameLocator('iframe.draft-frame');
+      await ef.locator('.le-banner').waitFor();
+      assert.ok(await ef.locator('.le-entry-card').count() >= 1);
+      const target = ef.locator('[data-entry="p:a"] [data-field="body"]');
+      await target.click();
+      const ta = ef.locator('.le-entry-form textarea');
+      await ta.waitFor();
+      assert.equal(await ta.inputValue(), 'Well done to every team, and thanks to all who came.');
+      await ta.fill('Well done to every team, and thanks to everyone who came.');
+      if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'draft-edit-box.png'), fullPage: false });
+      await ef.locator('.le-entry-form button:text-is("Save and publish")').click();
+      await ef.locator('.le-entry-form button:text-is("Publish")').click();
+      await ef.locator('.le-ef-msg', { hasText: 'Saved ✓' }).waitFor();
+      assert.deepEqual(entrySaves.pop(), { key: 'p:a', changes: [{ field: 'body', old: 'Well done to every team, and thanks to all who came.', new: 'Well done to every team, and thanks to everyone who came.' }] });
+      await page.clock.runFor(6000);
+      await page.clock.runFor(11000);
+      await ef.locator('.le-ef-msg', { hasText: 'Live ✓' }).waitFor();
+      // Links in the draft don't navigate while editing.
+      await ef.locator('a').first().click();
+      assert.equal(page.frames().length, 2);
+      await main.locator('button', { hasText: 'Stop editing' }).click();
+      assert.match(await main.locator('iframe.draft-frame').getAttribute('src'), /^\/admin\/draft\?v=/);
+    }
     // Refresh: shows the newer draft once it appears.
     const before = refreshed;
     await main.locator('button', { hasText: 'Refresh' }).click();
@@ -125,6 +214,8 @@ try {
     assert.deepEqual(nlPosts.pop(), { action: 'rebuild', issue_date: draft.meta.issue_date });
     await page.clock.runFor(16000);
     await main.locator('.badge', { hasText: 'Built: as it will go out (built)' }).waitFor();
+    assert.equal(await main.locator('button', { hasText: 'Send to all' }).count(), 0);
+    await main.locator('.meta', { hasText: 'Test send first' }).waitFor();
     await main.locator('button', { hasText: 'Test send' }).click();
     await page.locator('.overlay', { hasText: 'No subscriber and no test copy' }).waitFor();
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `draft-test-${name}.png`), fullPage: false });
@@ -132,6 +223,43 @@ try {
     await page.locator('text=Test send started.').waitFor();
     assert.deepEqual(nlPosts.pop(), { action: 'test', issue_date: draft.meta.issue_date });
     assert.equal(await page.locator('.overlay').count(), 0);
+    // Send to all (4 Nov): shows once tested; the confirm gives the times and Rimmer's check, then posts nlsend's details.
+    await main.locator('button', { hasText: 'Test sending…' }).waitFor();
+    await page.clock.runFor(16000);
+    await main.locator('button', { hasText: 'Send to all' }).click();
+    const ov = page.locator('.overlay', { hasText: 'Are you sure?' });
+    await ov.waitFor();
+    const ovText = await ov.innerText();
+    assert.match(ovText, /to 2 subscribers\. It can't be undone/);
+    assert.match(ovText, /Last rebuilt: /);
+    assert.match(ovText, /Test send: /);
+    assert.match(ovText, /Rimmer last checked: .* · 0 open findings/);
+    assert.match(ovText, /Rimmer checked before the last rebuild/);
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `draft-send-${name}.png`), fullPage: false });
+    await ov.locator('button', { hasText: 'Cancel' }).click();
+    assert.equal(await page.locator('.overlay').count(), 0);
+    assert.equal(nlPosts.length, 0);
+    await main.locator('button', { hasText: 'Send to all' }).click();
+    await page.locator('.overlay button[type=submit]', { hasText: 'Yes, send to 2' }).click();
+    await page.locator('text=Send started.').waitFor();
+    assert.deepEqual(nlPosts.pop(), { action: 'send', issue_date: draft.meta.issue_date, hash: SEND.hash, count: 2, mode: 'live' });
+    // After it (5 Nov, Jon): the bar says it is sending and Send to all goes, also after a reload.
+    // Progress: started, then 1 of 2 with a bar, then Sent ✓.
+    progressCalls = 0;
+    await main.locator('.sent-note', { hasText: 'Send started ✓' }).waitFor();
+    assert.equal(await main.locator('button', { hasText: 'Send to all' }).count(), 0);
+    await page.clock.runFor(2000);
+    await main.locator('.sent-note', { hasText: 'going to 2 subscribers' }).waitFor();
+    await page.clock.runFor(16000);
+    await main.locator('.sent-note', { hasText: '1 of 2 sent' }).waitFor();
+    assert.equal(await main.locator('.sent-note .send-bar').getAttribute('aria-valuenow'), '50');
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `draft-sent-${name}.png`), fullPage: false });
+    await page.clock.runFor(16000);
+    await main.locator('.sent-note', { hasText: 'Sent ✓ 2 of 2 sent.' }).waitFor();
+    await page.locator('text=Newsletter sent: 2 of 2').waitFor();
+    const calls = progressCalls;
+    await page.clock.runFor(60000);
+    assert.equal(progressCalls, calls, 'stops watching once sent');
     rows = liveRows;
     // Signed out of Cloudflare: a message and Reload instead of a blocked frame.
     signedOut = true;

@@ -10,8 +10,13 @@
 
 export const DRAFT_TAB = 'Newsletter draft';
 export const DRAFT_RANGE = `'${DRAFT_TAB}'!A1:B60`;
-const META_KEYS = ['as_of', 'issue_date', 'mode', 'status', 'subject', 'items', 'events', 'notices', 'roads', 'elsewhere', 'held', 'cutoff'];
-const NUMBERS = new Set(['items', 'events', 'notices', 'roads', 'elsewhere', 'held']);
+// Enough rows for every META_KEYS row (draft.js writes them first, then html_N). It was A1:B13
+// until 5 Nov, which cut off hash / send_mode / send_count, so after Refresh or a Test send the
+// panel's newer copy of the meta hid Send to all.
+export const DRAFT_META_RANGE = `'${DRAFT_TAB}'!A1:B30`;
+const META_KEYS = ['as_of', 'issue_date', 'mode', 'status', 'subject', 'items', 'events', 'notices', 'roads', 'elsewhere', 'held', 'cutoff',
+  'subscribers', 'built_at', 'tested_at', 'hash', 'send_mode', 'send_count'];
+const NUMBERS = new Set(['items', 'events', 'notices', 'roads', 'elsewhere', 'held', 'subscribers', 'send_count']);
 
 const str = (v) => String(v ?? '').trim();
 const pairs = (rows) => (rows || []).slice(1).filter((r) => str(r[0])).map((r) => [str(r[0]), String(r[1] ?? '')]);
@@ -33,7 +38,7 @@ export async function draftHtml(rows) {
 
 const DRAFT_CSP = [
   "default-src 'none'", 'img-src https://thelenches.org.uk data:', "style-src 'unsafe-inline'",
-  "form-action 'none'", "frame-ancestors 'self'", 'sandbox allow-popups allow-popups-to-escape-sandbox',
+  "form-action 'none'", "frame-ancestors 'self'", 'sandbox allow-same-origin allow-popups allow-popups-to-escape-sandbox',
 ].join('; ');
 
 const EMPTY = '<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><title>Newsletter draft</title></head>'

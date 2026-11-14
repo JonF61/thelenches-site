@@ -7,12 +7,14 @@
 // Nothing is committed to the repo. Email sent from here: the per-run alert to jon@
 // (urgent.js) and submitter replies (replies.js, per Settings replies_mode).
 // Nothing ever goes to subscribers from here.
-// Trusted senders and feeds (Trusted tab, trusted.js) go straight to "auto" unless the
-// item needs a human anyway; such rows carry "trusted" in notes.
+// Stage 1 of graduated autonomy (2 Nov 2026, trusted.js PANEL_FIRST): outside holiday mode
+// every item waits as "pending" for Jon's tap in the panel, including "auto" feeds and
+// trusted senders (noted "trusted source"). Holly writes each one up (extract.js), and the
+// draft is logged in the Item feedback tab (itemfeedback.js) so Jon's edits teach her.
 'use strict';
 
 const g = require('./google');
-const { extract, stats: claudeStats } = require('./extract');
+const { extract, holdRegular, stats: claudeStats } = require('./extract');
 const { prepareAttachments, hashDistance } = require('./images');
 const { sendUrgentAlerts } = require('./urgent');
 const replies = require('./replies');
@@ -25,6 +27,10 @@ const { extractLinks } = require('../suggest/organiser');
 const readerFeedback = require('../readerfeedback');
 const { LOW_CLASS_CONFIDENCE } = require('./classify');
 const { loadOffList } = require('./subscriptions');
+const itemFeedback = require('./itemfeedback');
+const { primeWriteups } = require('./extract');
+const dupes = require('./duplicates');
+const logsafe = require('../../lib/logsafe'); // public logs: no contact details
 
 const MAX_RETRIES = 3;            // after this, a failing message is left for the diagnostic
 const MAX_MESSAGES_PER_RUN = 25;  // caps run time and spend; the rest wait for the next run
@@ -134,6 +140,7 @@ function decideStatus(item, mode, holiday) {
   if (holiday) return 'auto';
   // Official notices: Jon picks their wording or our rewrite (digest / action email).
   if (item.official && item.own_text) return 'pending';
+  if (trust.panelFirst(item)) return 'pending'; // stage 1: everything but roadworks waits for Jon's tap
   if (mode === 'auto' && item.confidence >= LOW_CONFIDENCE) return 'auto';
   return 'pending';
 }
@@ -220,6 +227,14 @@ async function processMessage(id, ctx) {
   }
   const items = sureSpam ? [] : result.items;
 
+  // Already listed (3 Nov): one check per item against what the site has or is about to have.
+  const listed = items.length ? dupes.listings(ctx.existing) : [];
+  const found = [];
+  for (const item of items) found.push(spam ? null : await dupes.check(item, listed, { messageId: msg.id, text: msg.text }));
+  // Sender check (Jon, 4 Nov): flag an update that isn't from whoever sent the entry in.
+  for (const d of found.filter(Boolean)) d.same_sender = dupes.sameSender(d, msg.fromAddress, ctx.existing, replies.samePerson);
+  if (found.some(Boolean)) console.log(`${id}: ${found.filter(Boolean).length} item(s) already listed.`);
+
   const link = g.gmailLink(msg);
   const rows = items.map((item, n) => {
     const img = item.image_index >= 0 ? images[item.image_index] : null;
@@ -229,11 +244,19 @@ async function processMessage(id, ctx) {
       noteParts.push(`Possible repeat of ${repeat.row.id} (${repeat.byImage ? 'same image' : 'same title/date'})`);
     }
     // Trusted sender: published without approval unless the item needs a human anyway.
-    const decided = spam
+    let decided = spam
       ? { status: 'pending' }
       : trust.applyTrust(decideStatus(item, source.mode, ctx.holiday), item,
         msg.fromAddress, ctx.trusted, { anonymous: result.anonymous, outOfScope: result.outOfScope });
     if (decided.byTrust) noteParts.push('trusted');
+    else if (decided.trustedSource) noteParts.push('trusted source');
+    const dup = found[n];
+    if (dup) {
+      noteParts.push(dupes.noteFor(dup));
+      decided = { ...decided, status: 'pending' }; // never published as a new item, in any mode
+    }
+    decided = holdRegular(item, decided, noteParts);
+    if (item.holly_note) noteParts.push(`Holly: ${item.holly_note}`);
     if (spam) noteParts.push(`Possible spam (confidence ${result.classConfidence})`);
     const row = {
       id: `${msg.id}-${n + 1}`,
@@ -251,6 +274,8 @@ async function processMessage(id, ctx) {
       contact: item.contact,
       link_text: item.link_text,
       link_url: item.link_url,
+      link2_text: item.link2_text,
+      link2_url: item.link2_url,
       confidence: item.confidence,
       urgent: item.urgent,
       people_in_image: item.people_in_image,
@@ -282,6 +307,8 @@ async function processMessage(id, ctx) {
       links: extractLinks(msg.text).join(' '),
       // Holiday mode: nobody is choosing, so official and verbatim items use their words.
       wording: ctx.holiday && offersChoice(item) ? 'own' : '',
+      // Already listed (duplicates.js); ignored if the Sheet lacks the column (the note still says so).
+      duplicate: dup ? JSON.stringify(dup) : '',
     };
     const flags = replies.itemPolicy({ ...row, classified: item.classified }, msg.internalDate);
     if (result.anonymous) flags.push('anonymous');
@@ -291,6 +318,7 @@ async function processMessage(id, ctx) {
 
   if (rows.length) await g.appendRows('Pending', rows);
   rows.forEach((r) => ctx.existing.push(r)); // later emails in this run can match these
+  await itemFeedback.record(rows); // Holly's drafts, for Jon's edits to teach her
 
   // Never fails the message: a retry would duplicate the Pending rows. A missed reply
   // beats a duplicate; the run still fails so GitHub emails Jon.
@@ -319,7 +347,8 @@ async function processMessage(id, ctx) {
 
 async function main() {
   const { sources, settings } = await g.readSettings();
-  await replies.primeLearning(); // Holly's lessons and recent corrections for this run's drafts
+  const learnt = await replies.primeLearning(); // Holly's lessons and recent corrections for this run's drafts
+  await primeWriteups((learnt && learnt.writeup) || []); // the same lessons, and Jon's recent edits, for her write-ups
   // Run workflow's start date box: "2026-10-08" overrides Gmail and feeds;
   // "rss:2026-10-08" overrides feeds only (Gmail keeps Settings start_date).
   const rawOverride = String(process.env.START_DATE_OVERRIDE || '').trim();
@@ -391,7 +420,7 @@ async function main() {
         error: String((err && err.message) || err).slice(0, 500),
         retries,
       };
-      console.error(`${id}: ${outcome.error}`);
+      console.error(`${id}: ${logsafe.scrub(outcome.error)}`);
     }
     const fields = {
       message_id: id,
@@ -405,7 +434,8 @@ async function main() {
     };
     if (prev) await g.updateRow('Log', prev._row, fields);
     else await g.appendRows('Log', [fields]);
-    console.log(`${id}: ${outcome.status}, ${outcome.items} item(s)${outcome.error ? ` — ${outcome.error}` : ''}`);
+    const note = logsafe.outcomeNote(outcome.error);
+    console.log(`${id}: ${outcome.status}, ${outcome.items} item(s)${note ? ` — ${note}` : ''}`);
   }
 
   if (todo.length > batch.length) console.log(`${todo.length - batch.length} left for the next run.`);

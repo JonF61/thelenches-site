@@ -1,0 +1,79 @@
+name: Rimmer
+
+# Rimmer (scripts/rimmer): a second Claude reads what readers will see and lists problems
+# on the admin panel (Rimmer tab). It changes nothing else and sends nothing.
+#   newsletter  Wednesdays 18:37 UTC (after the 6pm cutoff), and the draft bar's Check button
+#   listings    Sundays 19:17 UTC: the listings pages of the built site
+#   site        the 1st of each month 20:13 UTC: every page of the built site
+# The panel's buttons send repository_dispatch "rimmer" with client_payload.scope.
+# One group per scope: a newer check of the same scope replaces a waiting one (each reads it all).
+on:
+  schedule:
+    - cron: "37 18 * * 3"
+    - cron: "17 19 * * 0"
+    - cron: "13 20 1 * *"
+  repository_dispatch:
+    types: [rimmer]
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: "newsletter, listings or site"
+        required: true
+        default: newsletter
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rimmer-${{ github.event.client_payload.scope || inputs.scope || github.event.schedule }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Choose the scope
+        id: scope
+        env:
+          SCHEDULE: ${{ github.event.schedule }}
+          ASKED: ${{ github.event.client_payload.scope || inputs.scope }}
+        run: |
+          case "$SCHEDULE" in
+            "37 18 * * 3") s=newsletter ;;
+            "17 19 * * 0") s=listings ;;
+            "13 20 1 * *") s=site ;;
+            *) s="$ASKED" ;;
+          esac
+          case "$s" in newsletter|listings|site) ;; *) echo "Unknown scope"; exit 1 ;; esac
+          echo "scope=$s" >> "$GITHUB_OUTPUT"
+          echo "Scope: $s"
+
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      # The newsletter check reads the built events, notices, roads and regulars pages too,
+      # to check the issue agrees with the website (10 Nov).
+      - name: Build the site
+        run: npx @11ty/eleventy --quiet
+
+      - name: Check
+        run: node scripts/rimmer/index.js
+        env:
+          CHECK_SCOPE: ${{ steps.scope.outputs.scope }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NODE_OPTIONS: --require ./lib/claudeusage.js
+          RIMMER_MODEL: ${{ vars.RIMMER_MODEL }}
+          RIMMER_AUTOFIX: ${{ vars.RIMMER_AUTOFIX }}
+          HOLLY_MODEL: ${{ vars.HOLLY_MODEL }}
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}

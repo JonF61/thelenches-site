@@ -1,9 +1,73 @@
 {
-  "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD.",
+  "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
-      "task": "Contacts on the newsletter: check the first contacts run's Newsletter line and that Thursday's send count rose by about that many",
-      "added": "2026-10-31"
+      "task": "Unsubscribing: on the next real unsubscribe (link or email), check the Subscribers row is deleted and Holly's \"Unsubscribed:\" email reaches Jon",
+      "added": "2026-11-14"
+    },
+    {
+      "task": "Dependency updates (Dependabot PRs #187 sharp + Eleventy minor, #188 googleapis 181 to 188, #189 @anthropic-ai/sdk 0.128 to 1.3): test each (npm ci, build, offline tests, a check of Gmail/Sheets/Drive and Claude calls) and merge, in a session while Jon is at his PC",
+      "waiting": "Jon at his PC",
+      "added": "2026-11-13",
+      "kryten": true
+    },
+    {
+      "task": "Lenches Club hamper draw (Pending row 139, image set by hand to the email's 9th picture): once approved, check it publishes with the hamper poster, not another of the club's posters",
+      "added": "2026-11-10"
+    },
+    {
+      "task": "Panel 429 retry: check that approving several items quickly now just goes slower instead of failing; if 429s still get through, cut the Sheet reads per Approve",
+      "added": "2026-11-10"
+    },
+    {
+      "task": "Listing edits, faster (Jon to decide once he knows how he edits): (1) the panel saves hand-written events, notices, regular activities, Where to eat and Local trades straight to the repo, as page wording does, skipping the ~20s Listing edit job; (2) edit sessions: edits held as drafts in the panel (kept in a Sheet tab) with one Publish all at the end, so several edits cost one build and deploy instead of 2-3 minutes each",
+      "waiting": "Jon",
+      "added": "2026-11-04"
+    },
+    {
+      "task": "Edit everything: on the first real listing edit (Edit page or the draft's Edit text), check the Listing edit run commits or publishes it, the box reaches Live ✓, and a built newsletter is rebuilt",
+      "added": "2026-11-04"
+    },
+    {
+      "task": "Rimmer's same-run fixes: on the next listings run (Sun 19:17), check how many findings arrive with a fix ready, that the dates/links/removals proposed are right, and note the extra Opus tokens in the log line \"Holly's fixes\"",
+      "added": "2026-11-04"
+    },
+    {
+      "task": "Rimmer: check the first newsletter and whole-site runs give useful findings (few false alarms; the first listings run gave 15, mostly useful) and note the cost per run",
+      "added": "2026-11-03"
+    },
+    {
+      "task": "Holly lessons: check the Monday 9 Nov run sends its email (the 2 Nov run failed at the email with Google unauthorized_client); if it fails again, check the Gmail send permission for that job",
+      "added": "2026-11-03"
+    },
+    {
+      "task": "Write-up length (up to ~80 words for entry details, plus lesson L20261103-1): check the next few listings keep who can take part and how to enter, and simple ones stay short",
+      "added": "2026-11-03"
+    },
+    {
+      "task": "Check email now: check the first tap starts an Ingest run and the list reloads with the new items",
+      "added": "2026-11-03"
+    },
+    {
+      "task": "Already listed for feeds: check the next feed runs flag real repeats only (not, e.g., different events at the same hall) and note any extra Opus cost",
+      "added": "2026-11-03"
+    },
+    {
+      "task": "Now live emails: check the first one sends after a build, on the ack thread, with the right link, and only once",
+      "added": "2026-11-03"
+    },
+    {
+      "task": "Graduated autonomy stage 3 (a veto window for a kind that qualifies on the Autonomy screen): propose once one qualifies",
+      "waiting": "A kind qualifying, then Jon's go-ahead",
+      "added": "2026-11-02"
+    },
+    {
+      "task": "Contacts page: check the first Done already item reads (…, done) in its contact's Contributions after the next daily contacts run",
+      "added": "2026-11-01"
+    },
+    {
+      "task": "Holly on Opus 5.5 with looser rules: review the first week's drafts",
+      "added": "2026-11-01"
     },
     {
       "task": "Write Sheet cells: after a few weeks, check the Kryten log tab and tidy old entries",
@@ -37,14 +101,50 @@
       "added": "2026-10-30"
     },
     {
-      "task": "SEO: in Search Console (thelenches.org.uk Domain property, verified 30 Oct; sitemap submitted) check Enhancements → Events and Pages indexed after a week (missing endDate fixed 31 Oct: press Validate fix; performer, offers and organizer warnings left as we hold no such data)",
-      "waiting": "Google to crawl",
-      "added": "2026-10-30"
+      "task": "Where to eat: add the places to the yearly organisation check (contacts.json outreach) and fill missing phones for The Anchor Inn, The Pantry at Rush Farm and Wayside Farm Shop & Tearoom (websites done 3 Nov)",
+      "added": "2026-11-03"
     },
     {
-      "task": "Site visitors: check the first nightly save (Visitors tab should hold 28–30 Oct after 00:10 UK on 31 Oct) and that the panel screen shows them",
-      "waiting": "the first nightly run",
-      "added": "2026-10-30"
+      "task": "Suggest forms: check the first real suggestion end to end (email, confirm, panel card, Approve adds it to the page), and that a second suggestion the same day from one address works (up to 10)",
+      "added": "2026-11-03"
+    },
+    {
+      "task": "Newsletter 5 Nov: check the WEBSITE UPDATE paragraph carries the Where to eat / Local trades line and then the Suggest forms line",
+      "added": "2026-11-03"
+    },
+    {
+      "task": "Where to eat: check the Facebook links for The Anchor Inn, Bishampton Village Store & Café and Golden Cross are current, and The Dolphin Steakhouse's phone number and \"Community owned\" note",
+      "waiting": "Jon",
+      "added": "2026-11-03"
+    },
+    {
+      "task": "Fix the Outreach browser check (worker/test/ui-outreach.check.mjs), which fails on main as well",
+      "added": "2026-11-04"
+    },
+    {
+      "task": "Newsletter roads section: check it can't list the same roadworks twice (select.js picks road rows separately from the Roads page's de-duplication)",
+      "added": "2026-11-04"
+    },
+    {
+      "task": "After the next approved listing suggestion: check the Listing suggestion run sent the thank-you (row result \"added, thanked\"), the card shows its star, and the email link opens the card.",
+      "waiting": "next suggestion approved",
+      "added": "2026-11-05",
+      "kryten": true
+    },
+    {
+      "task": "Listing check: 17 trades and eateries have no email address yet (10 websites without one, 7 with no website or only Facebook). They're under Contacts > Organisations > Commercial Listings > No email: add any you find with Add an email, or check by phone or Facebook.",
+      "waiting": "Jon",
+      "added": "2026-11-05"
+    },
+    {
+      "task": "Claude spend: compare the Claude usage tab's $3.48 for 5–14 Nov (Ingest $1.91, Rimmer $0.88, rest under $0.30 each) with the Console's Usage page for the same days; if they differ a lot, check lib/claudeusage.js PRICES and which jobs log",
+      "waiting": "Jon (Console figure)",
+      "added": "2026-11-14"
+    },
+    {
+      "task": "Newsletter cartoon: each week Kryten writes 2–3 gags from that week's items plus an image prompt; Jon makes the picture with an image tool and attaches it; Kryten adds it to src/_data/cartoons.json. Consider automating with an image API if the feature sticks",
+      "waiting": "Jon",
+      "added": "2026-11-11"
     }
   ]
 }
