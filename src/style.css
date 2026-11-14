@@ -282,3 +282,9 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 .sponsor-more{margin:.35rem 0 0;font-size:.8rem}
 .sponsor-more a{color:var(--muted)}
 .sponsor-page .price{font-size:1.15rem}
+.sponsor-examples{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0 .25rem;align-items:start}
+.sponsor-examples figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:.5rem;box-shadow:0 2px 8px rgba(46,42,31,.08)}
+.sponsor-examples img{display:block;width:100%;height:auto;border-radius:6px}
+.sponsor-examples figcaption{font-size:.85rem;color:var(--muted);text-align:center;margin-top:.4rem}
+.sponsor-examples-note{font-size:.8rem;margin-top:.25rem}
+@media (max-width:640px){.sponsor-examples{grid-template-columns:1fr}}
