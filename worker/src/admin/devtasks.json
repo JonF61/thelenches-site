@@ -126,18 +126,8 @@
       "added": "2026-11-04"
     },
     {
-      "task": "Check the first Send to all with the new progress bar (12 Nov): it counts up to the full list, says Sent ✓, and the button stays hidden after a reload.",
-      "added": "2026-11-05",
-      "kryten": true
-    },
-    {
       "task": "After the next approved listing suggestion: check the Listing suggestion run sent the thank-you (row result \"added, thanked\"), the card shows its star, and the email link opens the card.",
       "waiting": "next suggestion approved",
-      "added": "2026-11-05",
-      "kryten": true
-    },
-    {
-      "task": "Plan doc Build history: add the entry for PRs 271-272 (listing suggestion thank-you email with first recommendation, per-card anchors, star under the name, one-off thank run).",
       "added": "2026-11-05",
       "kryten": true
     },
@@ -147,14 +137,9 @@
       "added": "2026-11-05"
     },
     {
-      "task": "Claude spend: after about a week of rows in the Claude usage tab, check the Summary's Claude spend card against the Console's Usage page, see whether the cache share rose for Ingest (Holly) and Rimmer fixes, and recommend to Jon whether Rimmer should move to Sonnet or have RIMMER_AUTOFIX off",
-      "added": "2026-11-05",
-      "kryten": true
-    },
-    {
-      "task": "Check the first issue with the new Regular activities section (button, count, Newly listed lines) renders well in Outlook and Gmail, and that Rimmer's newsletter check doesn't flag the shorter section.",
-      "added": "2026-11-11",
-      "kryten": true
+      "task": "Claude spend: compare the Claude usage tab's $3.48 for 5–14 Nov (Ingest $1.91, Rimmer $0.88, rest under $0.30 each) with the Console's Usage page for the same days; if they differ a lot, check lib/claudeusage.js PRICES and which jobs log",
+      "waiting": "Jon (Console figure)",
+      "added": "2026-11-14"
     },
     {
       "task": "Newsletter cartoon: each week Kryten writes 2–3 gags from that week's items plus an image prompt; Jon makes the picture with an image tool and attaches it; Kryten adds it to src/_data/cartoons.json. Consider automating with an image API if the feature sticks",
