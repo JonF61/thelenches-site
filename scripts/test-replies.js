@@ -61,11 +61,13 @@ const HEADERS = {
 };
 let tables;
 let sent;
+let jonNotes = [];
 const inbox = {}; // message id -> text, for getMessage
 let settings;
 const reset = () => {
   tables = { Replies: [], Pending: [], Subscribers: [], 'Do Not Send': [{ email: 'blocked@example.com', reason: 'unsubscribe link' }] };
   sent = [];
+  jonNotes = [];
 };
 const headersOf = (tab) => HEADERS[tab] || { 'Reply feedback': require('./ingest/feedback').HEADERS,
   'Holiday log': require('./ingest/welcome').HEADERS }[tab] || [];
@@ -83,11 +85,18 @@ Object.assign(g, {
   },
   ensureTab: async (tab) => { if (tables[tab]) return false; tables[tab] = []; return true; },
   sendAsAddresses: async () => ['owner@thelenches.org.uk', 'website@thelenches.org.uk'],
-  sendMail: async (m) => { sent.push(m); return `sent-${sent.length}`; },
+  // Holly's "Unsubscribed: …" notes to Jon (14 Nov) are kept apart from the replies.
+  sendMail: async (m) => {
+    if (/^Unsubscribed: /.test(m.subject || '')) { jonNotes.push(m); return 'note'; }
+    sent.push(m); return `sent-${sent.length}`;
+  },
   getMessage: async (id) => (id.startsWith('sent-')
     ? { fromAddress: sent[Number(id.slice(5)) - 1].from || 'owner@thelenches.org.uk' }
     : { rfcMessageId: `<${id}@mail>`, references: '', text: inbox[id] || '' }),
   getSheetGid: async () => 0,
+  // Unsubscribing deletes the Subscribers row(s) (14 Nov).
+  deleteRows: async (tab, rows) => { for (const n of [...rows].sort((a, b) => b - a)) tables[tab].splice(n - 2, 1); return rows.length; },
+  fromNameFor: () => 'The Lenches Website and Newsletter Team',
   spreadsheetId: () => 'sheet',
   threadMessageIds: async () => [], // no hand-written threads here (see test-holly.js)
 });
@@ -235,6 +244,8 @@ async function testSending() {
   ok(clarify.status === 'awaiting' && !sent.some((m) => m.to === clarify.to && m.text.includes('Could you let us know')), 'clarification still waits for Jon after 24h');
   ok(byType('answer').every((r) => r.status === 'awaiting') && byType('held').every((r) => r.status === 'awaiting'),
     'normal mode: answers and held drafts wait for Jon');
+  ok(jonNotes.length && jonNotes.every((m) => m.to === process.env.GMAIL_USER && /Holly/.test(m.text)), 'Holly tells Jon about an unsubscribe');
+  ok(!tables.Subscribers.some((r) => tables['Do Not Send'].some((d) => d.email === r.email)), 'unsubscribed people leave Subscribers');
   ok(sent.every((m) => m.from === 'website@thelenches.org.uk'), 'all replies from website@');
   const fb = () => tables['Reply feedback'];
   ok(!fb().find((r) => r.reply_id === clarify.reply_id).outcome, 'feedback: no outcome until Jon decides');
