@@ -17,11 +17,23 @@ feedback: false
     <p class="lead">The Lenches Website and its free weekly newsletter keep five villages in touch: events, news, roads, bins and local services, all in one place, updated daily. Each month, one local business can support it.</p>
 
     <h2>Your business, in front of local homeowners</h2>
-    <ul>
-      <li>The newsletter is opened over {{ a.opensPerMonth }} times each month.</li>
-      <li>Around {{ a.visitsPerMonth | string | replace(r/\B(?=(\d{3})+(?!\d))/g, ",") }} website visits a month.</li>
-      <li>You're the only sponsor that month, with no other adverts beside you.</li>
-    </ul>
+    <div class="sponsor-stats">
+      <div class="sponsor-stat">
+        <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+        <p class="sponsor-stat-num">{{ a.opensPerMonth }}+</p>
+        <p class="sponsor-stat-label">newsletter opens every month</p>
+      </div>
+      <div class="sponsor-stat">
+        <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>
+        <p class="sponsor-stat-num">{{ a.visitsPerMonth | string | replace(r/\B(?=(\d{3})+(?!\d))/g, ",") }}</p>
+        <p class="sponsor-stat-label">website visits a month, roughly</p>
+      </div>
+      <div class="sponsor-stat">
+        <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" focusable="false"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.6-4.1 6.1-.6z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        <p class="sponsor-stat-num">1</p>
+        <p class="sponsor-stat-label">sponsor a month: just you, with no other adverts beside you</p>
+      </div>
+    </div>
 
     <h2>Seen in a good light</h2>
     <p>A positive, trusted community newsletter, with no politics, no gambling and nothing to argue about. Your name sits alongside village events, church services and local news that people actually read.</p>
