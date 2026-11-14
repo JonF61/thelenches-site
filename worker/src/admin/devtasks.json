@@ -2,6 +2,24 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Sponsor of the month, stage 1: research 20-30 prospects (estate agents, solicitors, financial advisers, accountants around Evesham and Pershore; public business emails; mark sole traders and partnerships) into a new Sponsors tab for Jon to add to",
+      "added": "2026-11-14",
+      "kryten": true
+    },
+    {
+      "task": "Sponsor of the month, stage 2: panel Sponsors screen like Organisation outreach (approach, chaser after 14 days, Snooze/Never/Done); Holly sends templates.md sponsor_approach / sponsor_chase; Jon to decide whether these fixed-wording emails may send without his tap",
+      "added": "2026-11-14",
+      "waiting": "Jon"
+    },
+    {
+      "task": "Sponsor of the month, stage 3: newsletter band near the top and the thank-you mention (render.js, from sponsors.json), Stripe payment link and Worker webhook marking a month paid, booking replies from Holly",
+      "added": "2026-11-14"
+    },
+    {
+      "task": "Sponsor page figures (src/_data/sponsors.json audience): update automatically (subscriber count, monthly visits, newsletter open rate) instead of by hand",
+      "added": "2026-11-14"
+    },
+    {
       "task": "Unsubscribing: on the next real unsubscribe (link or email), check the Subscribers row is deleted and Holly's \"Unsubscribed:\" email reaches Jon",
       "added": "2026-11-14"
     },

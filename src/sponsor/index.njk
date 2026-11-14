@@ -1,0 +1,53 @@
+---
+layout: base.njk
+title: Sponsor the Lenches newsletter
+description: "Sponsor the free weekly newsletter and community website for the Lenches villages near Evesham, one local business a month."
+permalink: /sponsor/
+noindex: true
+search: false
+eleventyExcludeFromCollections: true
+---
+{#- Unlisted selling page for sponsor of the month (14 Nov 2026, wording approved by Jon). Not in the menu,
+    sitemap or search; Holly's approach email links here. Figures from src/_data/sponsors.json audience. -#}
+{%- set a = sponsors.audience -%}
+<main class="container sponsor-page">
+  <section>
+    <h1>Sponsor the Lenches newsletter</h1>
+    <p class="lead">The Lenches Website and its free weekly newsletter keep five villages in touch: events, news, roads, bins and local services, all in one place. Each month, one local business can support it.</p>
+
+    <h2>Your business, in front of local homeowners</h2>
+    <ul>
+      <li>Around {{ a.subscribers }} subscribers every Thursday morning.</li>
+      <li>Around {{ a.visitsPerMonth | string | replace(r/\B(?=(\d{3})+(?!\d))/g, ",") }} website visits a month.</li>
+      <li>You're the only sponsor that month, with no other adverts beside you.</li>
+    </ul>
+
+    <h2>Seen in a good light</h2>
+    <p>A positive, trusted community newsletter, with no politics, no gambling and nothing to argue about. Your name sits alongside village events, church services and local news that people actually read.</p>
+
+    <h2>Supporting your community</h2>
+    <p>Your sponsorship keeps a free community resource running for everyone in the villages. It's a simple, visible part of your corporate social responsibility. 100% of sponsorship money goes towards the running costs of the website and newsletter.</p>
+
+    <h2>What you get</h2>
+    <ul>
+      <li>A &ldquo;Supported this month by&rdquo; band with your logo, name, one line and a link near the top of every issue that month.</li>
+      <li>The same at the top of the website's home page for the whole month.</li>
+      <li>A thank-you mention in the newsletter.</li>
+    </ul>
+
+    <h2>Price</h2>
+    <p class="price"><strong>&pound;{{ sponsors.price }} for the calendar month.</strong></p>
+    <p>It's usually an allowable business expense, but check with your accountant. We're not VAT registered.</p>
+
+    <h2>Easy to arrange</h2>
+    <p>Reply to our email, or write to <a href="mailto:{{ site.email }}?subject=Sponsoring%20the%20newsletter">{{ site.email }}</a>, with the month you'd like, your logo and a line of up to 15 words. Pay by bank transfer or card, and you're done.</p>
+
+    <h2>Even easier to repeat</h2>
+    <p>One month at a time, with no contract to tie you in. To book again, just reply &ldquo;same again&rdquo;.</p>
+
+    <h2>Our promise</h2>
+    <p>Sponsorship never affects our news, listings or recommendations, and we never share subscriber details with anyone.</p>
+
+    <p><a href="{{ '/newsletter/' | url }}">See what the newsletter is about</a> &middot; <a href="{{ '/sponsor/terms/' | url }}">Sponsorship terms</a></p>
+  </section>
+</main>

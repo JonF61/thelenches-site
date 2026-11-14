@@ -144,3 +144,17 @@ Just following up on my note about {name}'s free listing on our {page} page. If 
 Best wishes,
 Holly
 Lenches website assistant
+
+## sponsor_approach
+I'm writing from The Lenches Website, the free community website and weekly newsletter for Church, Rous, Ab, Atch and Sheriffs Lench near Evesham. We're looking for local businesses to support the newsletter, one sponsor each month.
+
+It reaches {subscribers} local subscribers every Thursday, and the website has around {visits} visits a month. It's £{price} for a month, with nothing to sign up to beyond that.
+
+Everything you need to know is here:
+{sponsor_url}
+
+## sponsor_chase
+Just following up my note about sponsoring the Lenches newsletter:
+{sponsor_url}
+
+If it's not for you, no problem: reply "no thanks" and we won't contact you again.
