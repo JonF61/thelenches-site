@@ -2,6 +2,10 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Unsubscribing: on the next real unsubscribe (link or email), check the Subscribers row is deleted and Holly's \"Unsubscribed:\" email reaches Jon",
+      "added": "2026-11-14"
+    },
+    {
       "task": "Dependency updates (Dependabot PRs #187 sharp + Eleventy minor, #188 googleapis 181 to 188, #189 @anthropic-ai/sdk 0.128 to 1.3): test each (npm ci, build, offline tests, a check of Gmail/Sheets/Drive and Claude calls) and merge, in a session while Jon is at his PC",
       "waiting": "Jon at his PC",
       "added": "2026-11-13",
