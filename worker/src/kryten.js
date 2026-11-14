@@ -1,14 +1,16 @@
 // worker/src/kryten.js
 // Quick Sheet access for Kryten (4 Nov, Jon; idea 3 of the "speed things up" list): POST /k
 // does what the Read Sheet tab and Write Sheet cells workflows do, in a second or two instead
-// of a GitHub run of about a minute each. Same rules exactly (worker/test/kryten.test.mjs
-// checks they match scripts/sheettab and scripts/sheetwrite):
-//   read    one tab as CSV (first line names the columns, first field the Sheet row);
-//           refuses the personal-data tabs, Contacts and the Kryten log show allowed columns
-//           only, "ignore" Contacts rows are blanked, email addresses are masked
+// of a GitHub run of about a minute each.
+// Full access (14 Nov, Jon): /k answers only Kryten, never a public log, so it reads every tab
+// in full (real addresses, Contacts profiles and notes, Subscribers, Sends …) and writes every
+// tab but the Kryten log. The Read Sheet tab and Write Sheet cells workflows keep their own
+// stricter rules (their logs are public); worker/test/kryten.test.mjs checks they still
+// refuse the personal tabs.
+//   read    one tab as CSV (first line names the columns, first field the Sheet row)
 //   set / append / undo   as Write Sheet cells: stale-checked, RAW, never row 1, no formulas,
-//           at most 50 cells, refuses the subscriber/send tabs and the Kryten log, and every
-//           write first adds a Kryten log row (run = "kryten endpoint") so it can be undone
+//           at most 50 cells, never the Kryten log, and every write first adds a Kryten log
+//           row (run = "kryten endpoint") so it can be undone
 // Auth: header "authorization: Bearer <KRYTEN_TOKEN>" (Worker secret, added by hand in the
 // Cloudflare dashboard; the same value is in Kryten's cloud environment). Without the secret
 // (or with one under 32 characters) /k answers 404 as if it did not exist. Outside /admin,
@@ -19,22 +21,16 @@ import { accessToken, SCOPES } from './admin/google.js';
 
 const SHEETS = 'https://sheets.googleapis.com/v4/spreadsheets';
 
-/* --------------------------------------------- rules (as scripts/sheettab) -- */
+/* ------------------------------------------------------------ read rules -- */
 
-export const READ_REFUSED = ['subscribers', 'do not send', 'sends', 'replies', 'feedback', 'deleted contacts', 'sign-ups', 'recommendations', 'listing suggestions'];
-export const PARTIAL_TABS = {
-  contacts: ['email', 'name', 'organisation', 'village', 'role', 'contribution_count',
-    'first_contact', 'last_contact', 'message_count', 'status', 'profile_source', 'updated_at', 'next_nudge', 'other_emails'],
-  'kryten log': ['id', 'at', 'action', 'tab', 'range', 'status', 'run'],
-};
 export const MAX_ROWS_CAP = 500;
-const MAX_CELL = 500;
+const MAX_CELL = 2000;
 
-/* ------------------------------------------- rules (as scripts/sheetwrite) -- */
+/* ----------------------------------------------------------- write rules -- */
 
 export const LOG_TAB = 'Kryten log';
 export const LOG_HEADERS = ['id', 'at', 'action', 'tab', 'range', 'old', 'new', 'status', 'run'];
-export const WRITE_REFUSED = ['subscribers', 'do not send', 'sends', 'deleted contacts', 'sign-ups', 'recommendations', 'listing suggestions', LOG_TAB.toLowerCase()];
+export const WRITE_REFUSED = [LOG_TAB.toLowerCase()];
 export const MAX_CELLS = 50;
 
 const norm = (s) => String(s == null ? '' : s).trim().toLowerCase();
@@ -52,11 +48,10 @@ export function colLetters(n) {
   for (; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + ((n - 1) % 26)) + s;
   return s;
 }
-export const maskEmails = (text) => String(text).replace(/([A-Za-z0-9._%+-])[A-Za-z0-9._%+-]*@([A-Za-z0-9.-]+\.[A-Za-z]{2,})/g, '$1***@$2');
 const quoteTab = (tab) => `'${String(tab).replace(/'/g, "''")}'`;
 
 function csvCell(value) {
-  let s = maskEmails(value == null ? '' : value);
+  let s = String(value == null ? '' : value);
   if (s.length > MAX_CELL) s = s.slice(0, MAX_CELL) + '…';
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
@@ -72,14 +67,6 @@ function toCsv({ rows, header, startRow, startCol, maxRows }) {
   shown.forEach((r, i) => out.push(line(startRow + i, r)));
   if (rows.length > shown.length) out.push(`# ${rows.length - shown.length} more rows not shown (max rows ${maxRows})`);
   return out.join('\n');
-}
-function redactColumns(rows, headerRow, allowed) {
-  const h = (headerRow || []).map(norm);
-  const statusCol = h.indexOf('status');
-  return rows.map((r) => {
-    if (statusCol >= 0 && norm(r[statusCol]) === 'ignore') return ['(ignored row)'];
-    return r.map((v, i) => (allowed.includes(h[i]) || v === '' || v == null ? v : '(hidden)'));
-  });
 }
 
 /* ------------------------------------------------------- the Sheet calls -- */
@@ -109,22 +96,14 @@ const findIn = (titles, t) => titles.find((x) => x === t) || titles.find((x) => 
 export async function readTab(s, { tab, range, max_rows: maxRowsIn }) {
   const want = String(tab || '').trim();
   if (!want) throw new Error('tab is not set');
-  if (READ_REFUSED.includes(norm(want))) throw new Error(`The ${want} tab holds personal data and is never read here`);
   const { range: r, startRow, startCol, endCol } = parseRange(range);
   const maxRows = Math.min(MAX_ROWS_CAP, Math.max(1, parseInt(maxRowsIn, 10) || 50));
   const titles = await s.titles();
   const title = findIn(titles, want);
-  if (!title) throw new Error(`No tab called "${want}". Tabs: ${titles.filter((t) => !READ_REFUSED.includes(norm(t))).join(', ')}`);
+  if (!title) throw new Error(`No tab called "${want}". Tabs: ${titles.join(', ')}`);
   const rows = await s.get(r ? `${quoteTab(title)}!${r}` : quoteTab(title));
   const header = startRow > 1 ? (await s.get(`${quoteTab(title)}!${startCol}1:${endCol}1`))[0] || [] : null;
-  const allowed = PARTIAL_TABS[norm(title)] || null;
-  let shown = rows;
-  if (allowed) {
-    const headerRow = header || rows[0] || [];
-    if (rows.length && !headerRow.some((x) => norm(x) === 'status')) throw new Error(`Read the ${title} tab with a range that includes its status column`);
-    shown = header ? redactColumns(rows, headerRow, allowed) : [rows[0] || [], ...redactColumns(rows.slice(1), headerRow, allowed)];
-  }
-  return { tab: title, rows: rows.length, csv: toCsv({ rows: shown, header, startRow, startCol, maxRows }) };
+  return { tab: title, rows: rows.length, csv: toCsv({ rows, header, startRow, startCol, maxRows }) };
 }
 
 /* ----------------------------------------------------------------- write -- */
@@ -161,7 +140,7 @@ const grid = (values, height, width) => Array.from({ length: height }, (_, i) =>
 }));
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 const blankGrid = (g) => g.every((r) => r.every((v) => v === ''));
-const show = (g) => maskEmails(JSON.stringify(g));
+const show = (g) => JSON.stringify(g);
 const newId = (now) => 'w' + now.toISOString().replace(/[-:TZ.]/g, '').slice(0, 14) + Math.random().toString(16).slice(2, 6);
 
 export async function writeCells(s, inputs, now = new Date()) {
@@ -271,6 +250,6 @@ export async function handleKryten(request, env, client = null) {
     }
     return json({ error: 'op must be read, set, append or undo' }, 400);
   } catch (e) {
-    return json({ error: maskEmails(e.message) }, 400);
+    return json({ error: e.message }, 400);
   }
 }

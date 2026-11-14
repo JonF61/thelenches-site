@@ -1,6 +1,8 @@
-// worker/test/kryten.test.mjs: Kryten's quick Sheet access (POST /k, src/kryten.js). Its rules
-// must match the Read Sheet tab and Write Sheet cells workflows (scripts/sheettab,
-// scripts/sheetwrite) exactly; then reads, writes, undo and the refusals, with a fake Sheet.
+// worker/test/kryten.test.mjs: Kryten's quick Sheet access (POST /k, src/kryten.js). Since
+// 14 Nov (Jon) /k has full access (every tab read in full, every tab but the Kryten log
+// written), while the Read Sheet tab and Write Sheet cells workflows (scripts/sheettab,
+// scripts/sheetwrite), whose logs are public, keep refusing the personal tabs; then reads,
+// writes, undo and the refusals, with a fake Sheet.
 // Run: node --test worker/test/*.test.mjs
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -13,16 +15,18 @@ const sheettab = require('../../scripts/sheettab/index.js');
 const sheetwrite = require('../../scripts/sheetwrite/index.js');
 const TOKEN = 'k'.repeat(40);
 
-test('same rules as the workflows', () => {
-  const tabs = ['Subscribers', 'Do Not Send', 'Sends', 'Replies', 'Feedback', 'Deleted contacts', 'Sign-ups', 'Recommendations', 'Listing suggestions', 'Pending', 'Contacts', 'Rimmer', 'Kryten log'];
-  for (const t of tabs) {
-    assert.equal(k.READ_REFUSED.includes(t.toLowerCase()), sheettab.isRefused(t), `read ${t}`);
-    assert.equal(k.WRITE_REFUSED.includes(t.toLowerCase()), sheetwrite.isRefused(t), `write ${t}`);
-    assert.deepEqual(k.PARTIAL_TABS[t.toLowerCase()] || null, sheettab.allowedColumns(t), `columns ${t}`);
+test('/k full access; the public-log workflows stay strict', () => {
+  for (const t of ['Subscribers', 'Do Not Send', 'Sends', 'Replies', 'Feedback', 'Deleted contacts', 'Sign-ups', 'Recommendations', 'Listing suggestions']) {
+    assert.equal(sheettab.isRefused(t), true, `workflow read ${t}`);
   }
+  for (const t of ['Subscribers', 'Do Not Send', 'Sends', 'Deleted contacts', 'Sign-ups', 'Recommendations', 'Listing suggestions', 'Kryten log']) {
+    assert.equal(sheetwrite.isRefused(t), true, `workflow write ${t}`);
+  }
+  assert.ok(sheettab.allowedColumns('Contacts'), 'workflow still hides Contacts profiles');
+  assert.equal(sheettab.maskEmails('team@thelenches.org.uk'), 't***@thelenches.org.uk');
+  assert.deepEqual(k.WRITE_REFUSED, ['kryten log']);
   assert.equal(k.MAX_CELLS, sheetwrite.MAX_CELLS);
   assert.deepEqual(k.LOG_HEADERS, sheetwrite.LOG_HEADERS);
-  assert.equal(k.maskEmails('team@thelenches.org.uk'), sheettab.maskEmails('team@thelenches.org.uk'));
   assert.deepEqual(k.targetRange('B5', [['x', 'y']]), sheetwrite.targetRange('B5', [['x', 'y']]));
   assert.deepEqual(k.parseValues('["a","b"]'), sheetwrite.parseValues('["a","b"]'));
 });
@@ -70,13 +74,13 @@ const call = async (body, s, env = { KRYTEN_TOKEN: TOKEN }, token = TOKEN) => {
   return { status: r.status, json: await r.json().catch(() => null) };
 };
 
-test('read: CSV with row numbers, Contacts redacted and emails masked, personal tabs refused', async () => {
+test('read: CSV with row numbers, every tab in full', async () => {
   const s = fake(base());
   const r = await call({ op: 'read', tab: 'contacts' }, s);
   assert.equal(r.status, 200);
-  assert.equal(r.json.csv, 'row,A,B,C,D\n1,email,name,status,profile\n2,a***@x.org,Ann,organiser,(hidden)\n3,(ignored row),,,');
-  assert.match((await call({ op: 'read', tab: 'Contacts', range: 'A1:B3' }, s)).json.error, /status column/);
-  assert.match((await call({ op: 'read', tab: 'Subscribers' }, s)).json.error, /personal data/);
+  assert.equal(r.json.csv, 'row,A,B,C,D\n1,email,name,status,profile\n2,ann@x.org,Ann,organiser,Private notes\n3,me@x.org,Me,ignore,x');
+  assert.equal((await call({ op: 'read', tab: 'Contacts', range: 'A1:B2' }, s)).json.csv, 'row,A,B\n1,email,name\n2,ann@x.org,Ann');
+  assert.equal((await call({ op: 'read', tab: 'Subscribers' }, s)).json.csv, 'row,A\n1,email\n2,a@b.org');
   assert.equal((await call({ op: 'read', tab: 'Rimmer', range: 'A2:B2' }, s)).json.csv, 'row,A,B\n1,id,status\n2,K1,kryten');
 });
 
@@ -97,8 +101,11 @@ test('write: stale-checked set with a Kryten log row, undo, and the refusals', a
   assert.match(s.tabs['Kryten log'][1][7], /^undone /);
   const a = await call({ op: 'append', tab: 'Rimmer', values: ['K2', 'open'] }, s);
   assert.equal(a.json.range, 'A3:B3');
+  // Personal tabs are written too (full access, 14 Nov), logged like any other write.
+  const sub = await call({ op: 'set', tab: 'Subscribers', range: 'B2', values: 'unsubscribed' }, s);
+  assert.equal(sub.status, 200);
+  assert.equal(s.tabs.Subscribers[1][1], 'unsubscribed');
   for (const [body, why] of [
-    [{ op: 'set', tab: 'Subscribers', range: 'A3', values: 'x' }, /never written/],
     [{ op: 'set', tab: 'Kryten log', range: 'A9', values: 'x' }, /never written/],
     [{ op: 'set', tab: 'Rimmer', range: 'A1', values: 'x' }, /Row 1/],
     [{ op: 'set', tab: 'Rimmer', range: 'C9', values: '=1+1' }, /Formulas/],
