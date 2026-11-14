@@ -1,0 +1,11 @@
+{#- Sponsor of the month band, top of Home (14 Nov 2026). sponsorNow.js gives this UK month's approved, paid sponsor, else nothing shows. -#}
+{%- if sponsorNow %}
+<aside class="sponsor-band" aria-label="This month's sponsor">
+  <p class="sponsor-label">Supported this month by</p>
+  <div class="sponsor-body">
+    {% if sponsorNow.logo %}<img class="sponsor-logo" src="{{ sponsorNow.logo | url }}" alt="" width="120" height="60" loading="lazy">{% endif %}
+    <p class="sponsor-text">{% if sponsorNow.url %}<a href="{{ sponsorNow.url }}" rel="sponsored noopener" target="_blank"><strong>{{ sponsorNow.name }}</strong></a>{% else %}<strong>{{ sponsorNow.name }}</strong>{% endif %}{% if sponsorNow.line %}<span> &middot; {{ sponsorNow.line }}</span>{% endif %}</p>
+  </div>
+  <p class="sponsor-more"><a href="{{ '/sponsor/' | url }}">Sponsor the newsletter</a></p>
+</aside>
+{%- endif %}

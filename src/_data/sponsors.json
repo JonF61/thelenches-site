@@ -1,0 +1,6 @@
+{
+  "_help": "Sponsor of the month (14 Nov 2026, Jon). price: £ per calendar month. audience: the figures the /sponsor/ page and Holly's approach email quote (update by hand until automated). months: keyed YYYY-MM (UK); each {name, line (up to 15 words), url, logo (site path, e.g. /images/sponsors/<new-name>.png; optional), approved, paid}. The banner shows only an entry with approved AND paid true, during its month (sponsorNow.js; the nightly rebuild moves it on). One sponsor a month; never political or gambling.",
+  "price": 120,
+  "audience": { "subscribers": 450, "visitsPerMonth": 1500, "asOf": "2026-11-14" },
+  "months": {}
+}
