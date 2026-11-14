@@ -31,12 +31,19 @@ async function applyListRequest(kind, address, stamp, opts = {}) {
   const date = stamp.slice(0, 10);
 
   if (kind === 'unsubscribe') {
-    if (onDns) return { done: 'already_off' };
-    await g.appendRows('Do Not Send', [{
-      email, reason: 'asked by email', source: 'email to website@', date, added_at: stamp,
-      notes: 'added automatically by Holly',
-    }]);
-    return { done: 'unsubscribed' };
+    if (!onDns) {
+      await g.appendRows('Do Not Send', [{
+        email, reason: 'asked by email', source: 'email to website@', date, added_at: stamp,
+        notes: 'added automatically by Holly',
+      }]);
+    }
+    // Already on Do Not Send with no Subscribers row left: nothing new to tell Jon.
+    if (!onDns || rows.length) {
+      try { await removeFromSubscribers(email, 'email'); } catch (err) {
+        console.warn(`Subscribers tidy after an unsubscribe failed: ${err && err.message ? err.message : err}`);
+      }
+    }
+    return { done: onDns ? 'already_off' : 'unsubscribed' };
   }
 
   if (onDns) return { refused: 'they are on Do Not Send (delete that row to add them back)' };
@@ -106,4 +113,48 @@ async function subscribeContacts(addresses, stamp) {
   return { added: plan.add.length, already: plan.already, offList: plan.offList, unusable: plan.unusable };
 }
 
-module.exports = { applyListRequest, offListFrom, loadOffList, planContactSubscriptions, subscribeContacts };
+// Unsubscribed people leave Subscribers altogether (Jon, 14 Nov): once an address is on
+// Do Not Send (which still keeps them off the newsletter and stops anything re-adding
+// them), every Subscribers row for it is deleted, and Holly emails Jon to say so.
+// how: 'link' (the newsletter's unsubscribe link) | 'email' (asked Holly by email).
+const HOW = { link: 'using the unsubscribe link in the newsletter', email: 'by emailing website@' };
+
+function unsubscribedEmail(email, how, removed) {
+  const did = removed
+    ? `I've added them to Do Not Send and deleted their row from the Subscribers tab${removed > 1 ? ` (${removed} rows)` : ''}.`
+    : "I've added them to Do Not Send. They had no row in the Subscribers tab to delete.";
+  const text = [
+    'Hi Jon,', '',
+    `${email} has unsubscribed from the newsletter ${HOW[how] || HOW.link}.`, '',
+    `${did} They've had the usual confirmation and won't get the newsletter again.`, '',
+    'Best wishes,', 'Holly', 'Lenches website assistant', '',
+  ].join('\n');
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const html = text.trim().split('\n\n').map((p) => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('\n');
+  return { subject: `Unsubscribed: ${email}`, text, html };
+}
+
+async function removeFromSubscribers(email, how, deps = { g }) {
+  const e = lc(email);
+  const rows = (await deps.g.readTable('Subscribers')).filter((r) => lc(r.email) === e);
+  const removed = rows.length ? await deps.g.deleteRows('Subscribers', rows.map((r) => r._row)) : 0;
+  const { settings } = await deps.g.readSettings();
+  await deps.g.sendMail({
+    to: process.env.ALERT_TO || process.env.GMAIL_USER,
+    ...unsubscribedEmail(e, how, removed),
+    fromName: deps.g.fromNameFor(settings),
+  });
+  return removed;
+}
+
+// One-off tidy (14 Nov): every Subscribers row whose address is on Do Not Send.
+// Returns the rows to delete (pure, for the test).
+function planTidy(subscribers, dns) {
+  const off = new Set(dns.map((r) => lc(r.email)).filter(Boolean));
+  return subscribers.filter((r) => off.has(lc(r.email)));
+}
+
+module.exports = {
+  applyListRequest, offListFrom, loadOffList, planContactSubscriptions, subscribeContacts,
+  removeFromSubscribers, unsubscribedEmail, planTidy,
+};

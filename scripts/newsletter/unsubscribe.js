@@ -3,11 +3,13 @@
 // Worker's /u endpoint carries an opaque subscriber id (see unsub.js). Finds the
 // matching address in Subscribers and adds it to Do Not Send, once.
 // Never logs the address: this repo's Actions logs are public.
-// Env: GOOGLE_SA_KEY, SHEET_ID, APPROVAL_SIGNING_KEY, SUB_ID.
+// Then deletes their Subscribers row(s) and Holly emails Jon (14 Nov).
+// Env: GOOGLE_SA_KEY, SHEET_ID, GMAIL_USER, APPROVAL_SIGNING_KEY, SUB_ID.
 'use strict';
 
 const g = require('../ingest/google');
 const { subscriberId } = require('./unsub');
+const { removeFromSubscribers } = require('../ingest/subscriptions');
 
 const TZ = 'Europe/London';
 const str = (v) => String(v ?? '').trim();
@@ -33,16 +35,19 @@ async function main() {
     return;
   }
   if (dns.some((r) => lc(r.email) === match)) {
-    console.log('Already on Do Not Send. Nothing to do.');
-    return;
+    console.log('Already on Do Not Send.');
+  } else {
+    const now = stamp();
+    // appendRows fills only the headers that exist on the tab.
+    await g.appendRows('Do Not Send', [{
+      email: match, reason: 'unsubscribe link', source: 'unsubscribe link',
+      date: now.slice(0, 10), added_at: now, notes: 'one-click unsubscribe',
+    }]);
+    console.log('Added to Do Not Send.');
   }
-  const now = stamp();
-  // appendRows fills only the headers that exist on the tab.
-  await g.appendRows('Do Not Send', [{
-    email: match, reason: 'unsubscribe link', source: 'unsubscribe link',
-    date: now.slice(0, 10), added_at: now, notes: 'one-click unsubscribe',
-  }]);
-  console.log('Added to Do Not Send.');
+  // They matched a Subscribers row, so delete it and tell Jon (Jon, 14 Nov).
+  const removed = await removeFromSubscribers(match, 'link');
+  console.log(`Deleted ${removed} Subscribers row(s); Holly emailed Jon.`);
 }
 
 main().catch((err) => {
