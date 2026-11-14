@@ -6,9 +6,8 @@
       "added": "2026-11-14"
     },
     {
-      "task": "Dependency updates (Dependabot PRs #187 sharp + Eleventy minor, #188 googleapis 181 to 188, #189 @anthropic-ai/sdk 0.128 to 1.3): test each (npm ci, build, offline tests, a check of Gmail/Sheets/Drive and Claude calls) and merge, in a session while Jon is at his PC",
-      "waiting": "Jon at his PC",
-      "added": "2026-11-13",
+      "task": "SDK 1.3 (new API version 2026-10-21): check the first ingest, Rimmer and Holly runs after it merged make their Claude calls without errors (Claude usage tab rows as usual)",
+      "added": "2026-11-14",
       "kryten": true
     },
     {
