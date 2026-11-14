@@ -7,16 +7,25 @@ noindex: true
 search: false
 eleventyExcludeFromCollections: true
 feedback: false
+signup: false
 ---
 {#- Unlisted selling page for sponsor of the month (14 Nov 2026, wording approved by Jon). Not in the menu,
     sitemap or search; Holly's approach email links here. Figures from src/_data/sponsors.json audience. -#}
 {%- set a = sponsors.audience -%}
-<main class="container sponsor-page">
-  <section>
-    <h1>Sponsor the Lenches newsletter</h1>
-    <p class="lead">The Lenches Website and its free weekly newsletter keep five villages in touch: events, news, roads, bins and local services, all in one place, updated daily. Each month, one local business can support it.</p>
+<main class="sponsor-page">
+  <section class="sp-hero">
+    <div class="container">
+      <p class="sp-kicker">Sponsor of the month</p>
+      <h1>Sponsor the Lenches newsletter</h1>
+      <p class="lead">The Lenches Website and its free weekly newsletter keep five villages in touch: events, news, roads, bins and local services, all in one place, updated daily. Each month, one local business can support it.</p>
+      <p class="sp-hero-meta"><strong>&pound;{{ sponsors.price }} a month</strong> &middot; one sponsor at a time &middot; no contract</p>
+      <p class="sp-actions"><a class="btn sp-btn" href="mailto:{{ site.email }}?subject=Sponsoring%20the%20newsletter">Book a month</a> <a class="sp-link-light" href="#what-you-get">See what you get</a></p>
+    </div>
+  </section>
 
-    <h2>Your business, in front of local homeowners</h2>
+  <div class="container">
+    <section class="sp-block">
+      <h2>Your business, in front of local homeowners</h2>
     <div class="sponsor-stats">
       <div class="sponsor-stat">
         <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
@@ -35,18 +44,26 @@ feedback: false
       </div>
     </div>
 
-    <h2>Seen in a good light</h2>
-    <p>A positive, trusted community newsletter, with no politics, no gambling and nothing to argue about. Your name sits alongside village events, church services and local news that people actually read.</p>
+    </section>
 
-    <h2>Supporting your community</h2>
-    <p>Your sponsorship keeps a free community resource running for everyone in the villages. It's a simple, visible part of your corporate social responsibility. 100% of sponsorship money goes towards the running costs of the website and newsletter.</p>
+    <section class="sp-block sp-why">
+      <div class="sp-card">
+        <h3>Seen in a good light</h3>
+        <p>A positive, trusted community newsletter, with no politics, no gambling and nothing to argue about. Your name sits alongside village events, church services and local news that people actually read.</p>
+      </div>
+      <div class="sp-card">
+        <h3>Supporting your community</h3>
+        <p>Your sponsorship keeps a free community resource running for everyone in the villages. It's a simple, visible part of your corporate social responsibility. 100% of sponsorship money goes towards the running costs of the website and newsletter.</p>
+      </div>
+    </section>
 
-    <h2>What you get</h2>
-    <ul>
-      <li>A &ldquo;Supported this month by&rdquo; band with your logo, name, one line and a link near the top of every issue that month.</li>
-      <li>The same at the top of the website's home page for the whole month.</li>
-      <li>A thank-you mention in the newsletter.</li>
-    </ul>
+    <section class="sp-block" id="what-you-get">
+      <h2>What you get</h2>
+      <ul class="sp-ticks">
+        <li><svg class="sp-tick" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".15"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>A &ldquo;Supported this month by&rdquo; band with your logo, name, one line and a link near the top of every issue that month.</span></li>
+        <li><svg class="sp-tick" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".15"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>The same at the top of the website's home page for the whole month.</span></li>
+        <li><svg class="sp-tick" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".15"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>A thank-you mention in the newsletter.</span></li>
+      </ul>
     <div class="sponsor-examples">
       <figure>
         <img src="{{ '/images/sponsors/example-newsletter-1.jpg' | url }}" width="720" height="405" alt="Example: the top of a Lenches newsletter with a 'Supported this month by' band showing the Acme Estate Agents logo, name and one line" loading="lazy">
@@ -59,23 +76,47 @@ feedback: false
     </div>
     <p class="muted sponsor-examples-note">Acme Estate Agents is a made-up example.</p>
 
-    <h2>Price</h2>
-    <p class="price"><strong>&pound;{{ sponsors.price }} for the calendar month.</strong></p>
-    <p>It's usually an allowable business expense, but check with your accountant. We're not VAT registered.</p>
+    </section>
 
-    <h2>Easy to arrange</h2>
-    <p>Reply to our email, or write to <a href="mailto:{{ site.email }}?subject=Sponsoring%20the%20newsletter">{{ site.email }}</a>, with the month you'd like, your logo and a line of up to 15 words. Pay by bank transfer or card, and you're done.</p>
+    <section class="sp-block sp-price-row">
+      <div class="sp-price">
+        <h2>Price</h2>
+        <p class="sp-price-num">&pound;{{ sponsors.price }}</p>
+        <p class="sp-price-per">for the calendar month</p>
+        <ul class="sp-ticks">
+          <li><svg class="sp-tick" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".15"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Usually an allowable business expense (check with your accountant).</span></li>
+          <li><svg class="sp-tick" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".15"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>We're not VAT registered.</span></li>
+          <li><svg class="sp-tick" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".15"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>One month at a time, with no contract to tie you in.</span></li>
+        </ul>
+        <p><a class="btn sp-btn" href="mailto:{{ site.email }}?subject=Sponsoring%20the%20newsletter">Book a month</a></p>
+      </div>
+      <div class="sp-steps">
+        <h2>Easy to arrange</h2>
+        <ol>
+          <li><strong>Choose your month.</strong> Reply to our email, or write to <a href="mailto:{{ site.email }}?subject=Sponsoring%20the%20newsletter">{{ site.email }}</a>.</li>
+          <li><strong>Send your logo</strong> and a line of up to 15 words.</li>
+          <li><strong>Pay by bank transfer or card</strong>, and you're done.</li>
+        </ol>
+        <h3>Even easier to repeat</h3>
+        <p>To book again, just reply &ldquo;same again&rdquo;.</p>
+      </div>
+    </section>
 
-    <h2>Even easier to repeat</h2>
-    <p>One month at a time, with no contract to tie you in. To book again, just reply &ldquo;same again&rdquo;.</p>
-
-    <h2>Can we help?</h2>
-    <p>Sponsors can promote their own events and/or offers throughout the year for a small additional charge.</p>
+    <section class="sp-block">
+      <h2>Can we help?</h2>
+      <p>Sponsors can promote their own events and/or offers throughout the year for a small additional charge.</p>
     <figure class="sponsor-example-one">
       <img src="{{ '/images/sponsors/example-event-1.jpg' | url }}" width="720" height="278" alt="Example: a 'Meet the team' event from Acme Estate Agents in the newsletter's Coming up section, marked From our sponsor" loading="lazy">
       <figcaption>A sponsor's event in the newsletter (Acme is a made-up example)</figcaption>
     </figure>
+    </section>
 
-    <p><a href="{{ '/newsletter/' | url }}">See what the newsletter is about</a> &middot; <a href="{{ '/sponsor/terms/' | url }}">Sponsorship terms</a></p>
-  </section>
+    <section class="sp-cta">
+      <h2>Ready to support your villages?</h2>
+      <p>One month, one sponsor, and a free community newsletter kept going for everyone.</p>
+      <p><a class="btn sp-btn" href="mailto:{{ site.email }}?subject=Sponsoring%20the%20newsletter">Book a month</a></p>
+    </section>
+
+    <p class="sp-foot"><a href="{{ '/newsletter/' | url }}">See what the newsletter is about</a> &middot; <a href="{{ '/sponsor/terms/' | url }}">Sponsorship terms</a></p>
+  </div>
 </main>
