@@ -148,7 +148,7 @@ Lenches website assistant
 ## sponsor_approach
 I'm writing from The Lenches Website, the free community website and weekly newsletter for Church, Rous, Ab, Atch and Sheriffs Lench near Evesham. We're looking for local businesses to support the newsletter, one sponsor each month.
 
-It reaches {subscribers} local subscribers every Thursday, and the website has around {visits} visits a month. It's £{price} for a month, with nothing to sign up to beyond that.
+The newsletter is opened over {opens} times each month, and the website has around {visits} visits a month. It's £{price} for a month, with nothing to sign up to beyond that.
 
 Everything you need to know is here:
 {sponsor_url}
