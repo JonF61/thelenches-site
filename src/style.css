@@ -288,3 +288,4 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 .sponsor-examples figcaption{font-size:.85rem;color:var(--muted);text-align:center;margin-top:.4rem}
 .sponsor-examples-note{font-size:.8rem;margin-top:.25rem}
 @media (max-width:640px){.sponsor-examples{grid-template-columns:1fr}}
+.sponsor-page .lead{max-width:none}

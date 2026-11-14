@@ -6,6 +6,7 @@ permalink: /sponsor/
 noindex: true
 search: false
 eleventyExcludeFromCollections: true
+feedback: false
 ---
 {#- Unlisted selling page for sponsor of the month (14 Nov 2026, wording approved by Jon). Not in the menu,
     sitemap or search; Holly's approach email links here. Figures from src/_data/sponsors.json audience. -#}
@@ -17,7 +18,7 @@ eleventyExcludeFromCollections: true
 
     <h2>Your business, in front of local homeowners</h2>
     <ul>
-      <li>Around {{ a.subscribers }} subscribers every Thursday morning.</li>
+      <li>The newsletter is opened over {{ a.opensPerMonth }} times each month.</li>
       <li>Around {{ a.visitsPerMonth | string | replace(r/\B(?=(\d{3})+(?!\d))/g, ",") }} website visits a month.</li>
       <li>You're the only sponsor that month, with no other adverts beside you.</li>
     </ul>
