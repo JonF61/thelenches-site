@@ -125,6 +125,9 @@ function duplicateOutcome(row, action, merged = {}) {
 
 function outcomeFor(fb, row, action, wording = '', merged = {}) {
   if (str(fb.type) === 'duplicate') return duplicateOutcome(row, action, merged);
+  // Published itself after its veto window (worker/src/admin/autowindow.mjs): not Jon's
+  // decision, so not counted until he audits it (window_ok / window_bad, panel Autonomy screen).
+  if (action === 'window') return { outcome: 'window', changed: '', final: '' };
   const draft = parse(fb.draft) || {};
   const { changed, final } = diff(draft, row);
   const status = action === 'reject' ? 'rejected' : action === 'done' ? 'done' : 'approved';

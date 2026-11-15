@@ -10,6 +10,8 @@ import { getValues, writeCells } from './google.js';
 
 export const TABLE_RANGE = 'A1:BZ';
 
+import { settingFor, isWindowTime, COLUMN as WINDOW_COLUMN } from './autowindow.mjs';
+
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const oneLine = (max) => (v) => {
   const s = String(v ?? '').replace(/[\u0000-\u001f\u007f]+/g, ' ').trim();
@@ -57,6 +59,8 @@ export const EDITS = {
       link2_url: urlOrBlank,
     },
     guard: (...a) => officialGuard(...a),
+    // Veto window: an edit while an item is in its window holds it for Jon's own decision.
+    alsoIf: (row) => (isWindowTime(row[WINDOW_COLUMN]) ? { [WINDOW_COLUMN]: 'held: you edited it' } : null),
   },
   // Diagnostic flag: the panel's "Clear" marks the latest run's problems as dealt with
   // (status CLEARED); the next daily run writes a new row as usual.
@@ -82,6 +86,9 @@ export const EDITS = {
 // Settings keys the panel may change (the E:F key/value block, located by key).
 export const SETTINGS_EDITS = {
   holiday_mode: oneOf('TRUE', 'FALSE'),
+  // Veto window (autowindow.mjs): the kinds switched on ('' = off), and its heads-up email.
+  auto_window: (v) => settingFor(String(v ?? '').split(',')),
+  auto_window_emails: oneOf('TRUE', 'FALSE'),
 };
 
 export function colLetter(index) {
@@ -147,7 +154,7 @@ export async function editCell(env, { tab, key, field, expected, value }) {
   if (v === null) return fail(400, `Not a valid value for ${field}`);
 
   return checkedWrite(env, {
-    tab, keyCol: spec.key, key, field, expected, value: v, onlyStatus: spec.onlyStatus, guard: spec.guard,
+    tab, keyCol: spec.key, key, field, expected, value: v, onlyStatus: spec.onlyStatus, guard: spec.guard, alsoIf: spec.alsoIf,
   });
 }
 
@@ -187,7 +194,7 @@ function officialGuard(row, field, current, value) {
 // also: { otherField: value } written in the same request (not stale-checked; e.g.
 // Contacts profile_source), refused if the tab lacks any of those columns.
 export async function checkedWrite(env, {
-  tab, keyCol, key, field, expected, value, onlyStatus = '', guard = null, also = null,
+  tab, keyCol, key, field, expected, value, onlyStatus = '', guard = null, also = null, alsoIf = null,
 }) {
   const { headers, rows } = await readTable(env, tab);
   const col = headers.indexOf(field);
@@ -207,7 +214,10 @@ export async function checkedWrite(env, {
   }
   const refused = guard ? guard(row, field, current, value) : '';
   if (refused) return fail(400, refused);
-  await writeCells(env, [[col, value], ...extra.map(([c, , v]) => [c, v])]
+  // alsoIf(row): more cells for the same request, worked out from the row as read (skipped when
+  // the tab lacks the column or the field is the one being written).
+  const dyn = Object.entries((alsoIf && alsoIf(row)) || {}).map(([f, v]) => [headers.indexOf(f), f, v]).filter(([c, f]) => c >= 0 && f !== field);
+  await writeCells(env, [[col, value], ...extra.map(([c, , v]) => [c, v]), ...dyn.map(([c, , v]) => [c, v])]
     .map(([c, v]) => ({ range: `${quoteTab(tab)}!${colLetter(c)}${row._row}`, values: [[v]] })));
   return { ok: true, value };
 }

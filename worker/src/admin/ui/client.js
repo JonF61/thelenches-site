@@ -28,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '56';
+export const UI_VERSION = '57';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -46,7 +46,7 @@ export const CLIENT_JS = String.raw`
     visitors: 'How many people use the website: page views and visits by day and by month, and the most viewed pages. Counts only: nobody can be identified.',
     stats: 'How each newsletter did: how many it went to, bounces, and anonymous opens and link clicks. Counts are totals only: nobody can see who opened or clicked.',
     summary: 'What needs you now, and what is coming up, in one place. Tap a heading to open its page.',
-    autonomy: 'Progress towards Holly acting on her own, kind by kind. Nothing here is automatic: each step up needs your tap. Ignore a decision (a test or a slip) to leave it out of the counts and of Holly\'s learning.',
+    autonomy: 'Progress towards Holly acting on her own, kind by kind, and the veto window: emailed write-ups of a kind you switch on publish themselves after a few hours unless you stop them. Ignore a decision (a test or a slip) to leave it out of the counts and of Holly\'s learning.',
     queue: 'Events and notices sent in by email or picked up from feeds, waiting for you to approve or reject. Approved items go on the website and into Thursday\'s newsletter.',
     replies: 'Holly\'s draft emails waiting for you to Approve, Edit, Redraft or Reject. Below them: emails still owed a reply, and everything already sent.',
     owed: 'Emails that got a holding reply over 2 days ago but no real answer yet. Redraft one, reply yourself, or close it.',
@@ -69,7 +69,10 @@ export const CLIENT_JS = String.raw`
     autonomy: [
       'Each kind of submission or reply counts your decisions on Holly\'s work.',
       ['As written / changed / rejected', 'approved unchanged, approved after your edits, or turned down.'],
-      ['Qualifies', '30 decisions, 95% as written over the latest 30 and no rejection in the last 20. Even then nothing goes automatic until you agree a next step.'],
+      ['Veto window', 'for a kind switched on, once its latest 20 decisions were all approved as written, a new emailed write-up publishes itself 4 hours after it arrives (counting 8am to 9pm only) unless you tap Hold, Edit, Reject or Done already under Submissions. It publishes through the same Approve as your tap.'],
+      ['Switch on / Switch off', 'per kind. Off means everything of that kind waits for you, as before. A kind also stops by itself after any edit, rejection or Not right, until its latest 20 are clean again.'],
+      ['Audit: Fine / Not right', 'for each item that published itself. Fine counts as approved as written; Not right counts as a rejection. Fix or remove the item itself as usual.'],
+      ['Qualifies', 'for any further step: 30 decisions, 95% as written over the latest 30 and no rejection in the last 20. Even then nothing more goes automatic until you agree it.'],
       ['If it had been on', 'what would have gone out without you over the last 30 days.'],
       ['Ignore / Count again', 'leave a test or a slip out of the counts and of Holly\'s learning, or put it back.']],
     draft: [
@@ -95,6 +98,7 @@ export const CLIENT_JS = String.raw`
       ['Reject', 'turns it down; the reason you type is for you only.'],
       ['Done already', 'you have dealt with it another way: nothing publishes and no note is sent.'],
       ['Trust this source', 'approves this item and marks the sender trusted. For now their items still wait here, marked "trusted source".'],
+      ['Publishes itself / Hold', 'the item is in its veto window (see Autonomy): it publishes at the time shown unless you tap Hold, Edit, Reject or Done already. Approve publishes it now. Held items wait for you as usual.'],
       ['Already listed', 'the site has this already; Add details puts any new facts into the existing entry.'],
       ['Replace with the organiser\'s version', 'for an Already listed item sent by the organiser, when the listed entry came from elsewhere (a feed, Facebook, typed in by hand, someone else): this item is published and the listed entry is taken off, keeping its picture if this one has none. Not offered for official entries.'],
       ['Different sender', 'an Already listed update not from whoever sent the entry in (hand-written entries always show it): check it is genuine before adding details.'],
@@ -730,6 +734,10 @@ export const CLIENT_JS = String.raw`
       if (f === 'people_in_image') return;
       b.push(h('span', { class: 'badge warn' }, FLAG_LABELS[f] || f.replace(/_/g, ' ')));
     });
+    // Veto window (autonomy stage 3): auto_at is a UK time while the item will publish itself.
+    if (inWindow(r)) b.push(h('span', { class: 'badge info' }, 'Publishes itself ' + when(r.auto_at)));
+    else if (/^held/.test(str(r.auto_at))) b.push(h('span', { class: 'badge' }, 'Held'));
+    else if (/^publishing/.test(str(r.auto_at))) b.push(h('span', { class: 'badge info' }, 'Publishing itself…'));
     if (listedOf(r)) b.push(h('span', { class: 'badge warn' }, 'Already listed'));
     if (listedOf(r) && listedOf(r).same_sender === false) b.push(h('span', { class: 'badge bad' }, 'Different sender'));
     else if (truthy(r.possible_repeat)) b.push(h('span', { class: 'badge warn' }, 'Possible repeat'));
@@ -754,6 +762,26 @@ export const CLIENT_JS = String.raw`
   function needsTick(r) {
     var chosen = (r._suggest || []).filter(function (s) { return s.id === str(r.image_choice); })[0];
     return (truthy(r.people_in_image) || Boolean(chosen && flaggedPeople(chosen))) && !truthy(r.people_ok);
+  }
+
+  // Veto window (15 Nov; admin/autowindow.mjs): the note and Hold button on an item in its window.
+  function inWindow(r) { return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(str(r.auto_at)); }
+  async function autoHold(r) {
+    var res = await api('/admin/api/auto-hold', { id: r.id, expected: str(r.auto_at) });
+    toast(res.ok ? (res.json.message || 'Held') : (res.status === 409 ? 'It changed since you loaded the page; reloaded.' : (res.json.error || ('HTTP ' + res.status))), !res.ok);
+    load(true);
+  }
+  function windowBox(r) {
+    var at = str(r.auto_at);
+    if (inWindow(r)) {
+      return h('section', { class: 'note info', 'aria-label': 'Veto window' },
+        h('strong', null, 'Publishes itself ' + when(at) + '. '),
+        'Holly wrote this up and its kind has earned a veto window. Hold stops it (so do Edit, Reject and Done already); Approve publishes it now. ',
+        h('button', { class: 'btn', type: 'button', onclick: function () { autoHold(r); } }, 'Hold'));
+    }
+    if (/^held/.test(at)) return h('section', { class: 'note', 'aria-label': 'Veto window' }, h('strong', null, 'Held: '), 'it will not publish itself' + (at.length > 6 ? ' (' + at.replace(/^held:?\s*/, '') + ')' : '') + '. It waits for you as usual.');
+    if (/^publishing/.test(at)) return h('section', { class: 'note info', 'aria-label': 'Veto window' }, 'Its veto window has ended: it is being published now.');
+    return null;
   }
 
   // Already listed (3 Nov; scripts/ingest/duplicates.js): Pending duplicate is JSON of the
@@ -805,6 +833,7 @@ export const CLIENT_JS = String.raw`
   function itemCard(r, inDetail) {
     var c = h('div', { class: 'card' });
     add(c, [h('h2', null, str(r.title) || '(no title)'), itemMeta(r), itemBadges(r)]);
+    add(c, windowBox(r));
     add(c, listedBox(r));
     if (r._offers) {
       add(c, h('div', { class: 'two' },
@@ -3150,6 +3179,60 @@ export const CLIENT_JS = String.raw`
     render();
   }
 
+  // Veto window card (admin/autowindow.mjs): the switch per kind, what is in its window now and
+  // the audit of what published itself.
+  async function windowToggle(w, kind, on) {
+    var kinds = w.kinds.filter(function (k) { return k.kind === kind ? on : k.on; }).map(function (k) { return k.kind; });
+    var r = await edit('Settings', '', 'auto_window', w.value, kinds.join(','));
+    toast(r.ok ? (on ? 'Switched on' : 'Switched off') : (r.status === 409 ? 'Changed in the Sheet since you loaded the page; reloaded.' : r.error), !r.ok);
+    S.autonomy = null;
+    render();
+  }
+  async function windowEmails(w, on) {
+    var r = await edit('Settings', '', 'auto_window_emails', w.emails ? 'TRUE' : 'FALSE', on ? 'TRUE' : 'FALSE');
+    toast(r.ok ? (on ? 'Heads-up emails on' : 'Heads-up emails off') : r.error, !r.ok);
+    S.autonomy = null;
+    render();
+  }
+  async function windowAudit(a, op) {
+    var res = await api('/admin/api/autonomy-audit', { id: a.id, op: op, expected: a.outcome });
+    toast(res.ok ? (res.json.message || 'Saved') : (res.json.error || ('HTTP ' + res.status)), !res.ok);
+    S.autonomy = null;
+    S.summary = null;
+    render();
+  }
+  function windowCard(w) {
+    if (!w) return null;
+    var kids = [h('p', { class: 'meta' }, 'An emailed write-up of a kind switched on here publishes itself ' + w.hours + ' hours after it arrives (counting 8am to 9pm only) unless you stop it, once that kind\'s latest ' + w.needed +
+      ' decisions were all approved as written. One edit or rejection stops new ones until the latest ' + w.needed + ' are clean again. Nothing on the never-automatic list below ever gets a window.')];
+    if (!w.ready) kids.push(h('div', { class: 'note warn' }, w.missing + '. Ask Kryten.'));
+    w.kinds.forEach(function (k) {
+      var state = !k.on ? 'Off' : k.clean ? 'On: publishing after the window' : 'On: starts at ' + w.needed + ' in a row as written (' + k.run + ' so far)';
+      kids.push(h('div', { class: 'wrow' },
+        h('div', null, h('strong', null, k.label + ': '), state, !k.on ? h('span', { class: 'meta' }, ' · ' + k.run + ' in a row as written') : null),
+        h('button', { class: 'btn' + (k.on ? '' : ' primary'), disabled: !w.ready, onclick: function () {
+          if (window.confirm(k.on ? 'Switch the veto window off for ' + k.label.toLowerCase() + '?\n\nItems already in their window still publish at their time unless you hold them; new ones wait for you.'
+            : 'Switch the veto window on for ' + k.label.toLowerCase() + '?\n\nOnce their latest ' + w.needed + ' decisions are all approved as written, new ones publish themselves ' + w.hours + ' hours after arriving unless you stop them.')) windowToggle(w, k.kind, !k.on);
+        } }, k.on ? 'Switch off' : 'Switch on')));
+    });
+    kids.push(h('div', { class: 'wrow' }, h('div', { class: 'meta' }, 'Heads-up email when items get a window: ' + (w.emails ? 'on' : 'off')),
+      h('button', { class: 'btn', disabled: !w.ready, onclick: function () { windowEmails(w, !w.emails); } }, w.emails ? 'Turn emails off' : 'Turn emails on')));
+    kids.push(h('h3', null, 'In their window now (' + w.waiting.length + ')'));
+    kids.push(w.waiting.length ? h('ul', null, w.waiting.map(function (i) { return h('li', null, i.title + ': publishes itself ' + when(i.at) + ' (Hold it under Submissions)'); }))
+      : h('p', { class: 'meta' }, 'None.'));
+    kids.push(h('h3', null, 'Audit: published by themselves (' + w.auditTotal + ')'));
+    kids.push(w.audit.length ? w.audit.map(function (a) {
+      return h('div', { class: 'wrow' }, h('div', null, a.title || a.id, h('span', { class: 'meta' }, ' · ' + when(a.at))),
+        h('span', null,
+          h('button', { class: 'btn', onclick: function () { windowAudit(a, 'fine'); } }, 'Fine'), ' ',
+          h('button', { class: 'btn danger', onclick: function () {
+            if (window.confirm('Mark "' + (a.title || a.id) + '" as not right?\n\nIt counts as a rejection, so this kind stops publishing itself until its latest ' + w.needed + ' are clean again. Fix or remove the item itself as usual.')) windowAudit(a, 'bad');
+          } }, 'Not right')));
+    }) : h('p', { class: 'meta' }, 'Nothing to check.'));
+    if (w.auditTotal > w.audit.length) kids.push(h('p', { class: 'meta' }, 'Showing the oldest ' + w.audit.length + ' of ' + w.auditTotal + '.'));
+    return [h('h2', { class: 'section' }, 'Veto window'), h('div', { class: 'card' }, kids)];
+  }
+
   var AU_WORDS = { unchanged: 'Approved as written', changed: 'Changed by you', rejected: 'Rejected', ignored: 'Ignored' };
   var AU_BADGE = { unchanged: 'ok', changed: 'warn', rejected: 'bad', ignored: '' };
 
@@ -3268,7 +3351,8 @@ export const CLIENT_JS = String.raw`
     };
     var sh = t.shadow;
     return [
-      h('div', { class: 'note info' }, 'Nothing is automatic yet, apart from roadworks alerts and holiday mode. A kind qualifies after ' + th.needed +
+      windowCard(t.window),
+      h('div', { class: 'note info' }, 'Apart from the veto window above, roadworks alerts and holiday mode, nothing is automatic. For any further step a kind qualifies after ' + th.needed +
         ' decisions with at least ' + th.rate + '% approved as written and no rejection in the last ' + th.cleanLast + '. Then it is your call. ' +
         'Counting from ' + when(t.countFrom) + ': earlier decisions are set aside. "Replied in Gmail" is never counted.'),
       section('Submissions', t.items, 'No decisions yet. They are counted from 2 November.'),
@@ -3278,7 +3362,7 @@ export const CLIENT_JS = String.raw`
         ? h('p', null, sh.wouldHave + ' would have gone out by itself; you changed or rejected ' + sh.wrong + ' of them.')
         : h('p', { class: 'meta' }, 'No kind has qualified yet. Once one does, this shows what would have gone out by itself, and how many of those you changed or rejected.')),
       h('h2', { class: 'section' }, 'Never automatic'),
-      h('div', { class: 'card' }, h('p', { class: 'meta' }, 'Official notices, people in images, political or commercial items, held mail, follow-ups and outreach always wait for you. ' +
+      h('div', { class: 'card' }, h('p', { class: 'meta' }, 'Official notices, people in images, political or commercial items, Already listed matches, regular activities, possible spam and repeats, items with a date or place missing, held mail, follow-ups and outreach always wait for you. ' +
         (t.never.decided ? t.never.decided + ' such decision' + (t.never.decided === 1 ? '' : 's') + ' so far.' : '')))
     ];
   }
@@ -4163,7 +4247,7 @@ export const CLIENT_JS = String.raw`
       // Once the deadline has passed: which items still make this week's issue.
       var late = issue && dl && !left && rec ? (rec.replace('T', ' ').slice(0, 16) <= issue.deadline ? ['In time for ' + day(issue.date), 'info'] : ['For next week', '']) : null;
       return line(str(r.title) || '(no title)', [str(r.source) || 'email', age(rec)].filter(Boolean).join(' · '),
-        [truthy(r.urgent) ? ['Urgent', 'bad'] : null, /possible spam/i.test(str(r.notes)) ? ['Possible spam', 'warn'] : null, late]);
+        [truthy(r.urgent) ? ['Urgent', 'bad'] : null, /possible spam/i.test(str(r.notes)) ? ['Possible spam', 'warn'] : null, inWindow(r) ? ['Publishes itself ' + when(r.auto_at), 'info'] : null, late]);
     }), { max: 6, top: d.pending && d.pending.error ? errorNote(d.pending, 'Pending') : dl, empty: 'Nothing waiting' }));
 
     // 2. Replies needed.
@@ -4198,6 +4282,11 @@ export const CLIENT_JS = String.raw`
     if (d.listingSuggestions) action('Suggestions', sgw.length, !(d.listingSuggestions && d.listingSuggestions.error), sumCard('Suggestions (' + sgw.length + ')', go('suggestions'), sgw.map(function (r) {
       return line(str(r.name), [str(r._label), age(r.confirmed_at)].filter(Boolean).join(' · '), [(r._similar || []).length ? ['Already listed?', 'warn'] : null]);
     }), { max: 5, top: d.listingSuggestions && d.listingSuggestions.error ? errorNote(d.listingSuggestions, 'Listing suggestions') : null }));
+
+    // Items that published themselves after a veto window and wait for the audit (Autonomy screen).
+    var aud = all ? Number(all.autoAudit) || 0 : 0;
+    if (aud) els.push(sumCard('Published by themselves, to audit (' + aud + ')', go('autonomy'),
+      [line(aud + ' item' + (aud === 1 ? '' : 's') + ' published after a veto window', 'Mark each Fine or Not right on the Autonomy screen', [])], { max: 1 }));
 
     // Holly lessons awaiting approval (below Feedback, agreed 28 Oct).
     var ls = all && Array.isArray(all.lessons) ? all.lessons : [];

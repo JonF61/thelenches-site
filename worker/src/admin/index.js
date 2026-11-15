@@ -72,6 +72,9 @@
 //   GET  /admin/api/history         Previous submissions: decided Pending rows, newest first, with
 //                                   site window, newsletter issues, edits, reject reason (history.js)
 //   GET  /admin/api/autonomy        per-type progress towards autonomy (autonomy.js; read-only)
+//   POST /admin/api/autonomy-audit  { id, op: fine|bad, expected }: Jon's audit of an item that
+//                                   published itself after its veto window (autowindow.mjs)
+//   POST /admin/api/auto-hold       { id, expected }: stop an item in its veto window
 //   POST /admin/api/autonomy-ignore { kind: item|reply, id, op: ignore|restore, expected }: one
 //                                   stale-checked write of that decision's outcome cell
 //   POST /admin/api/lesson          { op: add, value } (a new approved lesson; the tab is made
@@ -189,6 +192,7 @@ import {
   LESSONS_TAB, LESSON_HEADERS, lessonRows, cleanLesson, newLessonRow, planLessonDecision,
 } from './lessons.js';
 import { ITEM_TAB, REPLY_TAB, autonomyStats, planIgnore } from './autonomy.js';
+import { SETTING as WINDOW_SETTING, EMAIL_SETTING as WINDOW_EMAILS, COLUMN as WINDOW_COLUMN, windowStatus, planAudit, isWindowTime } from './autowindow.mjs';
 import { submissionHistory } from './history.js';
 import { RIMMER_TAB, CHECK_SCOPES, rimmerRows, planDismiss, planKryten, planFix, planApplyMany, batchId } from './rimmer.js';
 import { CLIENT_CSS } from './ui/css.js';
@@ -590,10 +594,10 @@ async function outreach(env) {
 // both outreach counts; organisations take the same Gmail look-ups as their own screen.
 async function summary(env) {
   const today = ukToday();
-  const [issues, pending, subs, dns, lessons, contacts, replies, orgTab, runs, coming, seen, sends, usage] = await settled([
+  const [issues, pending, subs, dns, lessons, contacts, replies, orgTab, runs, coming, seen, sends, usage, feedbackTab] = await settled([
     readTable(env, 'Issues'), readTable(env, 'Pending'), readTable(env, 'Subscribers'), readTable(env, 'Do Not Send'),
     readLessons(env), readTable(env, CONTACTS_TAB), readTable(env, 'Replies'), readOrgTab(env), recentRuns(env, 50), comingUpFile(env), visitors(env), readTable(env, 'Sends'),
-    readTable(env, 'Claude usage'),
+    readTable(env, 'Claude usage'), readTable(env, ITEM_TAB),
   ]);
   const fail = (t) => (t && t.error ? { error: t.error } : null);
   const issueRows = issues.error ? [] : issues.rows;
@@ -625,6 +629,8 @@ async function summary(env) {
     orgs: orgsDue,
     lessons: lessons.error ? fail(lessons) : lessonRows(lessons).rows.filter((r) => r.status.toLowerCase() === 'proposed').map((r) => ({ id: r.id, lesson: r.lesson })),
     devTasks: devTasks(),
+    // Items that published themselves after a veto window and await Jon's audit (a count).
+    autoAudit: feedbackTab.error ? 0 : feedbackTab.rows.filter((r) => String(r.outcome || '').trim() === 'window').length,
     // Claude API spend (lib/claudeusage.js); no tab yet = no figures yet, not an error.
     claudeSpend: usage.error ? { none: true } : claudeSpend(usage.rows, today),
     visitors: seen,
@@ -792,8 +798,47 @@ async function submissionsHistory(env) {
 }
 
 async function autonomy(env) {
-  const [items, replies] = await Promise.all([readOptional(env, ITEM_TAB), readOptional(env, REPLY_TAB)]);
-  return autonomyStats({ items, replies });
+  const [items, replies, pending, pairs] = await Promise.all([
+    readOptional(env, ITEM_TAB), readOptional(env, REPLY_TAB), readTable(env, 'Pending'), readSettingsPairs(env),
+  ]);
+  const setting = pairs.find((p) => p.key === WINDOW_SETTING);
+  const emails = pairs.find((p) => p.key === WINDOW_EMAILS);
+  return {
+    ...autonomyStats({ items, replies }),
+    // Veto window (stage 3, autowindow.mjs): the switch, each kind's run of clean decisions,
+    // what is in its window now and what published itself and is waiting for the audit.
+    window: {
+      ...windowStatus({
+        settingValue: setting ? setting.value : undefined, feedbackRows: items.rows || [], pendingRows: pending.rows,
+        hasColumn: pending.headers.includes(WINDOW_COLUMN),
+      }),
+      emails: emails ? String(emails.value).trim().toUpperCase() !== 'FALSE' : true,
+    },
+  };
+}
+
+// Hold: stops an item in its veto window publishing itself; it then waits for Jon as usual.
+// Not a decision (nothing publishes), so a stale-checked cell write like Ignore.
+async function doAutoHold(env, body) {
+  const id = String(body.id ?? '');
+  const expected = String(body.expected ?? '');
+  if (!isWindowTime(expected)) return json({ ok: false, error: 'This item is not in a veto window' }, 400);
+  const r = await checkedWrite(env, { tab: 'Pending', keyCol: 'id', key: id, field: WINDOW_COLUMN, expected, value: 'held: by you', onlyStatus: 'pending' });
+  return r.ok ? json({ ok: true, value: r.value, message: 'Held: it now waits for you.' }) : json(r, r.status);
+}
+
+// Audit of an item that published itself: { id, op: fine | bad, expected }.
+async function doAutonomyAudit(env, body) {
+  const id = String(body.id ?? '');
+  const { rows } = await readOptional(env, ITEM_TAB);
+  const matches = rows.filter((r) => id && String(r.item_id ?? '') === id);
+  if (matches.length > 1) return json({ ok: false, error: `More than one ${ITEM_TAB} row for this id` }, 409);
+  const plan = planAudit(matches[0], { op: String(body.op || ''), expected: body.expected });
+  if (plan.error) return json({ ok: false, ...plan }, plan.status);
+  const r = await checkedWrite(env, { tab: ITEM_TAB, keyCol: 'item_id', key: id, field: plan.field, expected: plan.expected, value: plan.value });
+  return r.ok
+    ? json({ ok: true, value: r.value, message: plan.value === 'window_ok' ? 'Marked fine: it counts as approved as written.' : 'Marked not right: it counts as a rejection, so this kind stops publishing itself until its latest 20 are clean again.' })
+    : json(r, r.status);
 }
 
 // Ignore / Count again on one decision: one stale-checked write of its outcome cell.
@@ -1091,6 +1136,8 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/listingemail') return await doListingEmail(env, body);
       if (path === '/admin/api/lesson') return await doLesson(env, body);
       if (path === '/admin/api/autonomy-ignore') return await doAutonomyIgnore(env, body);
+      if (path === '/admin/api/autonomy-audit') return await doAutonomyAudit(env, body);
+      if (path === '/admin/api/auto-hold') return await doAutoHold(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(env, body);
       if (path === '/admin/api/ingest-now') {
         if (!(await dispatch(env, 'ingest', { by: 'panel' }, 2))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);

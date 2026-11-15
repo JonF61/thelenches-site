@@ -107,6 +107,13 @@ async function decideItem(id, action, reason = '') {
     if ('reject_reason' in row) fields.reject_reason = reason;
     else console.warn('Pending has no "reject_reason" column; the reason was not saved.');
   }
+  // Veto window (worker/src/admin/autowindow.mjs): the Worker marks auto_at "publishing <time>"
+  // just before it sends this approve, so the row published itself rather than by Jon's tap.
+  const byWindow = action === 'approve' && /^publishing /.test(String(row.auto_at || ''));
+  if (byWindow) {
+    fields.auto_at = `published ${fields.decided_at}`;
+    fields.notes = [row.notes, 'Published itself after its veto window'].filter(Boolean).join(' | ');
+  }
   const wording = WORDING[action];
   if (wording) {
     if (!('wording' in row)) {
@@ -121,8 +128,8 @@ async function decideItem(id, action, reason = '') {
   }
   await g.updateRow('Pending', row._row, fields);
   // Item feedback (stage 1): approved as written, edited first, rejected or done. Never fails the decision.
-  await itemFeedback.resolve(row, action, { wording: fields.wording || '', decidedAt: fields.decided_at });
-  console.log(`Item ${id} marked ${status}${fields.wording ? ` (${fields.wording} wording)` : ''}.`);
+  await itemFeedback.resolve(row, byWindow ? 'window' : action, { wording: fields.wording || '', decidedAt: fields.decided_at });
+  console.log(`Item ${id} marked ${status}${fields.wording ? ` (${fields.wording} wording)` : ''}${byWindow ? ' (veto window ended)' : ''}.`);
   if (status === 'rejected') {
     // The rejection is recorded either way; a failed draft only fails the run (GitHub emails Jon).
     try {
@@ -358,7 +365,7 @@ async function main() {
 }
 
 if (require.main !== module) {
-  module.exports = { mergeFields, applyDetails, mergeItem, replaceItem, HAND_KEY };
+  module.exports = { mergeFields, applyDetails, mergeItem, replaceItem, decideItem, HAND_KEY };
 } else main().catch((err) => {
   console.error('Fatal:', err && err.stack ? err.stack : err);
   process.exit(1);

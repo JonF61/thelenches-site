@@ -14,6 +14,8 @@
 // Never automatic, whatever the numbers: official notices, people in images, political or
 // commercial items, and held, follow-up and outreach replies.
 
+import { itemVerdict, itemNever } from './autowindow.mjs';
+
 export const ITEM_TAB = 'Item feedback';
 export const REPLY_TAB = 'Reply feedback';
 export const NEEDED = 30;       // decisions before a type can qualify
@@ -33,8 +35,11 @@ const WHAT = 90; // characters of "what it was" per decision
 const clip = (t, n = WHAT) => { const f = str(t).replace(/\s+/g, ' '); return f.length > n ? `${f.slice(0, n - 1)}…` : f; };
 const parse = (j) => { try { const o = JSON.parse(j); return o && typeof o === 'object' ? o : {}; } catch { return {}; } };
 
+// Items that published themselves after a veto window (autowindow.mjs) count once Jon has
+// audited them: window_ok = unchanged, window_bad = rejected; unaudited ("window") not at all.
 function verdict(kind, outcome) {
   const o = str(outcome).toLowerCase();
+  if (kind === 'item') return itemVerdict(o);
   if (o === 'approved') return 'unchanged';
   if (o === 'edited' || (kind === 'reply' && o === 'redrafted')) return 'changed';
   if (o === 'rejected') return 'rejected';
@@ -56,7 +61,7 @@ function itemDecision(r) {
   if (!v && !ignored) return null;
   const type = str(r.type) || 'notice';
   const flags = str(r.flags);
-  const never = /-official$/.test(type) || /\b(people_in_image|political_commercial|official)\b/.test(flags);
+  const never = itemNever(type, flags);
   const src = str(r.source_kind) || 'email';
   const label = `${cap(type.replace(/-official$/, ''))} · ${src.replace('-trusted', ' (trusted)')}`;
   return {
@@ -159,7 +164,7 @@ export function planIgnore(row, { op, expected }) {
   if (now !== str(expected)) return { error: 'Changed in the Sheet since you loaded the page', status: 409, current: now };
   if (op === 'ignore') {
     if (now.startsWith(IGNORED)) return { error: 'Already ignored', status: 409, current: now };
-    if (!verdict('item', now) && !verdict('reply', now)) return { error: 'Only a decision can be ignored', status: 400 };
+    if (!verdict('item', now) && !verdict('reply', now) && now !== 'window') return { error: 'Only a decision can be ignored', status: 400 };
     return { field: 'outcome', expected: now, value: `${IGNORED}${now}` };
   }
   if (op === 'restore') {
