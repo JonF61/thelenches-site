@@ -2,7 +2,7 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
-      "task": "Sponsors tab: 26 prospects added 15 Nov (rows 2-27) but only 5 have a public email; find the rest from each firm's own contact page (e.g. adapt the listing-email finder) and check structures marked (check)",
+      "task": "Sponsors tab: 26 prospects added 15 Nov (rows 2-27) but only 5 have a public email; run Find sponsor emails (sponsor-emails.yml) to fill the rest, then Jon checks guessed websites and structures marked (check)",
       "added": "2026-11-15",
       "waiting": "Jon"
     },

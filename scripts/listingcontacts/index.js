@@ -163,4 +163,4 @@ if (require.main === module) {
   run({ only }).catch((err) => { console.error(err && err.message ? err.message : err); process.exit(1); });
 }
 
-module.exports = { run, findEmail, addressesIn, contactLinks, pick, cfDecode };
+module.exports = { run, findEmail, fetchText, addressesIn, contactLinks, pick, cfDecode };
