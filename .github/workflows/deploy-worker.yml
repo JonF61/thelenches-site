@@ -57,7 +57,9 @@ jobs:
           secrets: |
             DISPATCH_TOKEN
             APPROVAL_SIGNING_KEY
-          command: deployments status
+          # A command that never looks up a version: `deployments status` raced the
+          # new version the secret upload creates (15 Nov: "version could not be found").
+          command: --version
         env:
           DISPATCH_TOKEN: ${{ secrets.DISPATCH_TOKEN }}
           APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
