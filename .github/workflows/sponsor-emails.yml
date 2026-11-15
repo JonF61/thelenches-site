@@ -1,0 +1,35 @@
+name: Find sponsor emails
+
+# Sponsor prospect address finder (scripts/sponsorcontacts): for each Sponsors tab row with a
+# blank email, looks on the firm's own website (guessing it from the name when the website
+# cell is blank, only if the page names the firm and its town) for a public business address
+# and fills the blank cells (email; website and a "guessed" note when it guessed). It never
+# overwrites a cell with a value and sends nothing. The log shows row numbers and counts only.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sponsor-emails
+  cancel-in-progress: false
+
+jobs:
+  find:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+      SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Find addresses
+        run: node scripts/sponsorcontacts/index.js
