@@ -403,8 +403,11 @@ async function setHeader(tab, index, name) {
 }
 
 // Rows as objects keyed by header, each with _row (1-based Sheet row number).
+// The whole width (A:ZZ): until 15 Nov 2026 this stopped at AZ, so Pending's columns from BA on
+// (duplicate, live_notified_at) were never read, and never written either, because appendRows
+// and updateRow use the headers cached here.
 async function readTable(tab) {
-  const rows = await getValues(`'${tab}'!A1:AZ`);
+  const rows = await getValues(`'${tab}'!A1:ZZ`);
   const headers = (rows[0] || []).map((h) => String(h).trim());
   headerCache[tab] = headers;
   return rows.slice(1).map((r, i) => {
@@ -525,6 +528,7 @@ async function replaceTab(tab, rows) {
 }
 
 module.exports = {
+  setSheetsClient: (c) => { sheetsClient = c; Object.keys(headerCache).forEach((k) => delete headerCache[k]); }, // offline tests
   listMessageIds,
   searchMessageIds,
   searchAllMessageIds,
