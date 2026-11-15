@@ -447,7 +447,6 @@ async function checkBounces() {
 const RSS_DEFAULT_SILENT_DAYS = 14;   // Settings column D "silent_days" overrides per feed
 const RSS_INGEST_GRACE_MS = DAY;      // ingestion reads feeds 3x daily, max 10 items per run
 const RSS_FETCH_TIMEOUT_MS = 20000;
-const RSS_USER_AGENT = 'LenchesPipeline/1.0 (+https://thelenches.org.uk)'; // as ingestion
 const rssMarkers = [];                // "RSS fetch failed: <source>", kept at the front of Health notes
 
 // Same key formula as scripts/ingest/rss.js logKey.
@@ -464,7 +463,7 @@ async function checkRss(ctx, prevNotes) {
   const startMs = /^\d{4}-\d{2}-\d{2}$/.test(ymd) ? Date.parse(`${ymd}T00:00:00Z`) : NaN;
   const live = Number.isFinite(startMs) && Date.now() >= startMs;
   const report = live ? problem : (text, detail) => notes.push(`(before start) ${text}${detail ? `: ${detail}` : ''}`);
-  const { parseFeed } = require('../ingest/rss');
+  const { parseFeed, fetchFeed } = require('../ingest/rss'); // same request as ingestion
 
   const [settingsRows, logRows] = await Promise.all([g.readTable('Settings'), g.readTable('Log')]);
   const logged = new Set();
@@ -483,13 +482,7 @@ async function checkRss(ctx, prevNotes) {
 
     let items = null;
     try {
-      const res = await fetch(feed.match, {
-        headers: { 'User-Agent': RSS_USER_AGENT, Accept: 'application/rss+xml, application/xml;q=0.9, */*;q=0.8' },
-        redirect: 'follow',
-        signal: AbortSignal.timeout(RSS_FETCH_TIMEOUT_MS),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      items = parseFeed(await res.text());
+      items = parseFeed(await fetchFeed(feed.match, { timeoutMs: RSS_FETCH_TIMEOUT_MS }));
       fetched += 1;
     } catch (e) {
       const marker = `RSS fetch failed: ${feed.source}`;

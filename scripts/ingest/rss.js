@@ -109,14 +109,24 @@ function cleanLink(url) {
 
 const logKey = (guid) => `rss:${crypto.createHash('sha1').update(guid).digest('hex').slice(0, 16)}`;
 
-async function fetchFeed(url) {
-  const res = await fetch(url, {
-    headers: { 'User-Agent': USER_AGENT, Accept: 'application/rss+xml, application/xml;q=0.9, */*;q=0.8' },
-    redirect: 'follow',
-    signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return res.text();
+// Some sites refuse the feed-type Accept header with 406 or 415 (15 Nov: Harvington and
+// South Lenches PCs); on those, ask once more with a plain Accept. Same honest User-Agent.
+const FEED_ACCEPTS = ['application/rss+xml, application/xml;q=0.9, */*;q=0.8', '*/*'];
+const RETRY_STATUS = new Set([406, 415]);
+
+async function fetchFeed(url, { fetchImpl = fetch, timeoutMs = FETCH_TIMEOUT_MS } = {}) {
+  let last;
+  for (const Accept of FEED_ACCEPTS) {
+    const res = await fetchImpl(url, {
+      headers: { 'User-Agent': USER_AGENT, Accept },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (res.ok) return res.text();
+    last = res.status;
+    if (!RETRY_STATUS.has(res.status)) break;
+  }
+  throw new Error(`HTTP ${last}`);
 }
 
 /* ------------------------------------------------------------- process -- */
@@ -312,4 +322,4 @@ async function run(ctx, logById, startMs, h) {
   return out;
 }
 
-module.exports = { run, parseFeed, cleanLink, htmlToText, isLocalFeed, aboutPlaces, processItem };
+module.exports = { run, fetchFeed, parseFeed, cleanLink, htmlToText, isLocalFeed, aboutPlaces, processItem };
