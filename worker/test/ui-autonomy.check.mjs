@@ -19,6 +19,9 @@ try { ({ chromium } = require('playwright')); } catch {
 const SHOTS = process.env.SHOTS || '';
 
 import { autonomyStats } from '../src/admin/autonomy.js';
+import { windowStatus } from '../src/admin/autowindow.mjs';
+const WAITING = { id: 'w1-1', title: 'Carols on the Green', status: 'pending', category: 'event', summary: 'Carols at 6pm.', source: 'website', message_id: 'w1', received: '2026-11-02T10:00:00Z', auto_at: '2026-11-02 14:17' };
+const selfPublished = (n, title) => ({ item_id: 's' + n + '-1', type: 'event', source_kind: 'email', flags: '', outcome: 'window', decided_at: '2026-11-0' + n + ' 12:00', draft: JSON.stringify({ title }) });
 const it = (n, outcome, extra = {}) => ({ item_id: 'm' + n + '-1', created_at: '2026-11-02 09:00', decided_at: '2026-11-03 1' + (n % 10) + ':00', type: 'event', source_kind: 'email', flags: '', outcome, changed: '', ...extra });
 const rp = (n, outcome, extra = {}) => ({ reply_id: 'r' + n, created_at: '2026-10-2' + (n % 9) + ' 09:00', decided_at: '2026-11-2' + (n % 9) + ' 10:0' + (n % 10), type: 'answer', class: 'question', outcome, ...extra });
 const data = () => autonomyStats({
@@ -28,7 +31,7 @@ const data = () => autonomyStats({
 const stateData = () => ({
   email: 'admin@example.org', sheetId: 'sheet', gids: {}, holiday: { value: 'FALSE', on: false }, newsletter: null,
   health: [], watchdog: { open: false }, googleAccount: 'sa@example.iam.gserviceaccount.com',
-  pending: { headers: [], rows: [] }, replies: { headers: [], rows: [] }, owed: [], photos: { headers: [], rows: [] },
+  pending: { headers: ['auto_at', 'people_ok'], rows: [{ _row: 2, ...WAITING }] }, replies: { headers: [], rows: [] }, owed: [], photos: { headers: [], rows: [] },
   photoFolders: [], photosRoot: 'r', today: '2026-11-02', toDelete: [], feedback: { headers: [], rows: [] }, sent: [],
 });
 
@@ -41,7 +44,7 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/admin/app.css') return send(CLIENT_CSS, 'text/css');
   if (url.pathname === '/admin/api/session') return send({ email: 'admin@example.org', csrf: 'c' });
   if (url.pathname === '/admin/api/state') return send(stateData());
-  if (url.pathname === '/admin/api/autonomy') return send(data());
+  if (url.pathname === '/admin/api/autonomy') return send({ ...data(), window: { ...windowStatus({ settingValue: 'event', feedbackRows: [selfPublished(4, 'Quiz Night'), selfPublished(5, 'Wreath Workshop')], pendingRows: [WAITING] }), emails: true } });
   if (req.method === 'GET') return send({});
   let b = '';
   for await (const ch of req) b += ch;
@@ -66,7 +69,23 @@ try {
     for (const t of ['Replies', 'If it had been on', 'Never automatic']) assert.ok(await page.locator('h2.section', { hasText: t }).count(), `${name}: ${t} section`);
     assert.ok(await page.locator('.au-card', { hasText: 'Event · email' }).count(), `${name}: event card`);
     assert.ok(await page.locator('.au-card', { hasText: 'Answer · question' }).locator('[role=progressbar]').count(), `${name}: progress bar`);
-    assert.ok(await page.getByText('Nothing is automatic yet').count(), `${name}: status note`);
+    assert.ok(await page.getByText('nothing is automatic').count(), `${name}: status note`);
+    // Veto window card (stage 3): the switch per kind, what is waiting, and the audit.
+    const win = page.locator('.card', { hasText: 'Emailed events:' }).first();
+    assert.match(await win.innerText(), /Emailed events: On: starts at 20 in a row as written \(0 so far\)/, `${name}: events on, not yet running`);
+    assert.match(await win.innerText(), /Emailed notices: Off/, `${name}: notices off`);
+    assert.match(await win.innerText(), /Carols on the Green: publishes itself/, `${name}: item in its window listed`);
+    assert.match(await win.innerText(), /Audit: published by themselves \(2\)/, `${name}: audit list`);
+    if (SHOTS) await win.screenshot({ path: path.join(SHOTS, `window-${name}.png`) });
+    await win.locator('.wrow', { hasText: 'Quiz Night' }).getByRole('button', { name: 'Fine' }).click();
+    await page.waitForTimeout(200);
+    let wp = posts.find((x) => x.path === '/admin/api/autonomy-audit');
+    assert.deepEqual([wp.id, wp.op, wp.expected], ['s4-1', 'fine', 'window'], `${name}: Fine posts the audit`);
+    await page.locator('.card', { hasText: 'Emailed events:' }).first().locator('.wrow', { hasText: 'Emailed notices' }).getByRole('button', { name: 'Switch on' }).click();
+    await page.waitForTimeout(200);
+    wp = posts.find((x) => x.path === '/admin/api/edit' && x.field === 'auto_window');
+    assert.deepEqual([wp.tab, wp.expected, wp.value], ['Settings', 'event', 'event,notice'], `${name}: Switch on writes the setting, stale-checked`);
+    assert.ok(dialogs.some((d) => /Switch the veto window on for emailed notices/.test(d)), `${name}: confirm before switching on`);
     const card = page.locator('.au-card', { hasText: 'Event · email' });
     await card.locator('summary').click();
     assert.ok(await card.getByText('Ignored').count(), `${name}: ignored decision shown`);
@@ -82,6 +101,17 @@ try {
     await page.waitForTimeout(200);
     p = posts.find((x) => x.path === '/admin/api/autonomy-ignore' && x.op === 'restore');
     assert.deepEqual([p.id, p.expected], ['m1-1', 'ignored:edited'], `${name}: count again`);
+    // Submissions: the item in its window shows when it publishes itself, and Hold stops it.
+    const subBtn = page.locator('nav.side button', { hasText: 'Submissions' });
+    if (!(await subBtn.isVisible())) await page.locator('button[aria-label*="enu"]').first().click().catch(() => {});
+    await subBtn.click();
+    await page.locator('section[aria-label="Veto window"]').first().waitFor();
+    assert.ok(await page.locator('.badge', { hasText: 'Publishes itself' }).count(), `${name}: badge`);
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `window-item-${name}.png`) });
+    await page.locator('section[aria-label="Veto window"]').first().getByRole('button', { name: 'Hold' }).click();
+    await page.waitForTimeout(200);
+    const hp = posts.find((x) => x.path === '/admin/api/auto-hold');
+    assert.deepEqual([hp.id, hp.expected], ['w1-1', '2026-11-02 14:17'], `${name}: Hold posts the time it saw`);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     assert.ok(overflow <= 1, `${name}: no sideways scroll (${overflow}px)`);
     await page.close();

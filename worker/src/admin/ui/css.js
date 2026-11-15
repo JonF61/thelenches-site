@@ -127,6 +127,7 @@ nav.side .n.attn{background:var(--bad-bg);color:var(--bad);box-shadow:inset 0 0 
 .btn.link{border:0;background:none;padding:9px 6px;color:var(--accent);text-decoration:underline}
 .anyway{margin:6px 0 0;font-size:.85rem;color:var(--muted,#666)}
 .anyway .btn.link{padding:4px 2px;min-height:0;font-size:inherit;color:inherit}
+.wrow{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line,#e5e2d8)}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 label.f{display:block;margin:10px 0 4px;font-weight:600;font-size:.9rem}
 input.f,select.f,textarea.f{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);font-size:16px}

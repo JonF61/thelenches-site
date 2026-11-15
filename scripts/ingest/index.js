@@ -28,6 +28,8 @@ const readerFeedback = require('../readerfeedback');
 const { LOW_CLASS_CONFIDENCE } = require('./classify');
 const { loadOffList } = require('./subscriptions');
 const itemFeedback = require('./itemfeedback');
+const path = require('path');
+const { pathToFileURL } = require('url');
 const { primeWriteups } = require('./extract');
 const dupes = require('./duplicates');
 const logsafe = require('../../lib/logsafe'); // public logs: no contact details
@@ -107,6 +109,35 @@ function offListAlertText(alerts) {
       `Items: ${a.items.join('; ')}`, `Email: ${a.link}`, '');
   }
   return lines.join('\n');
+}
+
+// Veto window (worker/src/admin/autowindow.mjs, shared with the Worker): the kinds switched on
+// (Settings auto_window) and each one's progress, or null when it is off. Adds Pending's
+// auto_at column the first time it is on. Never fails the run: without it everything waits
+// for Jon as before.
+async function loadWindow(settings) {
+  try {
+    const rules = await import(pathToFileURL(path.join(__dirname, '..', '..', 'worker', 'src', 'admin', 'autowindow.mjs')).href);
+    const on = rules.kindsOn(settings[rules.SETTING]);
+    if (!on.length) return null;
+    if (await g.ensureColumn('Pending', rules.COLUMN)) console.log(`Added the ${rules.COLUMN} column to Pending.`);
+    const feedback = await g.readTable(itemFeedback.TAB);
+    const progress = Object.fromEntries(on.map((k) => [k, rules.kindProgress(feedback, k)]));
+    console.log(`Veto window on for ${on.map((k) => `${k} (${progress[k].clean ? 'running' : `${progress[k].run} of ${rules.NEEDED} clean`})`).join(', ')}.`);
+    return { rules, on, progress };
+  } catch (err) {
+    console.warn(`Veto window not loaded (everything waits as usual): ${(err && err.message) || err}`);
+    return null;
+  }
+}
+
+// One heads-up email per run for the items given a window (titles only; to the team inbox).
+async function sendWindowHeadsUp(ctx, settings) {
+  if (!ctx.window || !ctx.windowed.length) return;
+  if (String(settings[ctx.window.rules.EMAIL_SETTING] || '').trim().toUpperCase() === 'FALSE') return;
+  const mail = ctx.window.rules.headsUp(ctx.windowed, 'https://approvals.lenches.workers.dev/admin');
+  await g.sendMail({ to: process.env.ALERT_TO || process.env.GMAIL_USER, subject: mail.subject, text: mail.text, fromName: g.fromNameFor(settings) });
+  console.log(`Veto window: ${ctx.windowed.length} item(s) given a window; heads-up sent.`);
 }
 
 async function sendOffListAlert(alerts, settings) {
@@ -313,6 +344,17 @@ async function processMessage(id, ctx) {
     const flags = replies.itemPolicy({ ...row, classified: item.classified }, msg.internalDate);
     if (result.anonymous) flags.push('anonymous');
     row.policy_flags = flags.join(',');
+    // Veto window (autonomy stage 3, autowindow.mjs): a kind Jon has switched on, whose latest
+    // 20 decisions were all as written, publishes itself at this time unless he stops it.
+    // Never anything on the never-automatic list (blockers), and never in holiday mode.
+    if (ctx.window && !spam) {
+      const at = ctx.window.rules.planWindow(row, ctx.window, ctx.window.rules.ukStamp(Date.now()), { outOfScope: result.outOfScope });
+      if (at) {
+        row.auto_at = at;
+        row.notes = [row.notes, `Publishes itself at ${at} unless you stop it (veto window)`].filter(Boolean).join(' | ');
+        ctx.windowed.push({ title: row.title, kind: row.category, at });
+      }
+    }
     return row;
   });
 
@@ -397,6 +439,8 @@ async function main() {
     tokensOut: 0,
     offList: await loadOffList(),
     offListAlerts: [],
+    window: holiday ? null : await loadWindow(settings),
+    windowed: [],
   };
   let failed = 0;
   let gaveUp = 0;
@@ -468,6 +512,12 @@ async function main() {
       console.error(`Unsubscribed-sender alert failed: ${(err && err.message) || err}`);
       process.exitCode = 1; // GitHub emails the failure; the Log rows say "Unsubscribed sender"
     }
+  }
+
+  try {
+    await sendWindowHeadsUp(ctx, settings);
+  } catch (err) {
+    console.error(`Veto window heads-up failed (the panel still shows the items): ${(err && err.message) || err}`);
   }
 
   // Runs every time, not just when new items arrive, so a failed alert is retried next run.

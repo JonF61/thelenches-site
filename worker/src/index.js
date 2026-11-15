@@ -62,6 +62,7 @@ import { handleSignup } from './signup.js';
 import { handleRecommend, listedEntry } from './recommend.js';
 import { handleSuggest, handleSuggestConfirm } from './listingsuggest.js';
 import { logVisitors } from './admin/sitestats.js';
+import { runAutoWindow } from './admin/autorun.js';
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -647,6 +648,8 @@ export default {
       ctx.waitUntil(runIngest(env, event.scheduledTime));
       ctx.waitUntil(runDaily(env, event.scheduledTime));
       ctx.waitUntil(runDiagnostic(env, event.scheduledTime));
+      // Veto window (autonomy stage 3): items whose window has ended publish through decide().
+      ctx.waitUntil(runAutoWindow(env, event.scheduledTime).catch((e) => console.error(`Veto window run failed: ${e.message}`)));
     }
     else ctx.waitUntil(watchdog(env));
   },

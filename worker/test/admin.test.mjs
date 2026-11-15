@@ -290,6 +290,23 @@ test('Edit: writes one cell by header name when the cell is unchanged', async ()
   assert.equal(tables.Pending[1][5], 'Quiz at the hall, 7pm.');
 });
 
+test('Edit: an edit to an item in its veto window holds it (auto_at), in the same write', async () => {
+  const tables = tablesFor();
+  tables.Pending[0].push('auto_at');
+  const col = tables.Pending[0].length - 1;
+  tables.Pending[1][col] = '2026-11-16 14:17';
+  let calls = fakeWorld(tables);
+  const r = await editCell(env(), { tab: 'Pending', key: 'm1-1', field: 'summary', expected: 'Quiz at the hall.', value: 'Quiz at the hall, 7pm.' });
+  assert.equal(r.ok, true);
+  assert.deepEqual(calls.writes.map((w) => w.values[0][0]), ['Quiz at the hall, 7pm.', 'held: you edited it']);
+  assert.equal(calls.writes[1].range, `'Pending'!${colLetter(col)}2`);
+  // Already held (or never in a window): just the edit.
+  tables.Pending[1][col] = 'held: by you';
+  calls = fakeWorld(tables);
+  await editCell(env(), { tab: 'Pending', key: 'm1-1', field: 'summary', expected: 'Quiz at the hall, 7pm.', value: 'Quiz.' });
+  assert.equal(calls.writes.length, 1);
+});
+
 test('Edit: refused with the current value when the cell changed since loading', async () => {
   const tables = tablesFor();
   tables.Pending[1][4] = 'Quiz night (edited in Sheet)';

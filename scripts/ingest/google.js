@@ -402,6 +402,28 @@ async function setHeader(tab, index, name) {
   headerCache[tab] = [...headers, name];
 }
 
+// Makes sure `tab` has a column headed `name`, adding it at the END if not (the grid ends at
+// the last column, so one column is added to the sheet first when the header would fall
+// outside it). Returns true if it was added.
+async function ensureColumn(tab, name) {
+  delete headerCache[tab];
+  const headers = await readHeaders(tab);
+  if (headers.includes(name)) return false;
+  const gid = await getSheetGid(tab);
+  if (gid === null) throw new Error(`No "${tab}" tab`);
+  const res = await sheets().spreadsheets.get({ spreadsheetId: spreadsheetId(), fields: 'sheets.properties(sheetId,gridProperties.columnCount)' });
+  const sheet = (res.data.sheets || []).find((x) => x.properties.sheetId === gid);
+  const width = sheet && sheet.properties.gridProperties ? Number(sheet.properties.gridProperties.columnCount) : 0;
+  if (width && width <= headers.length) {
+    await sheets().spreadsheets.batchUpdate({
+      spreadsheetId: spreadsheetId(),
+      requestBody: { requests: [{ appendDimension: { sheetId: gid, dimension: 'COLUMNS', length: 1 } }] },
+    });
+  }
+  await setHeader(tab, headers.length, name);
+  return true;
+}
+
 // Rows as objects keyed by header, each with _row (1-based Sheet row number).
 // The whole width (A:ZZ): until 15 Nov 2026 this stopped at AZ, so Pending's columns from BA on
 // (duplicate, live_notified_at) were never read, and never written either, because appendRows
@@ -540,6 +562,7 @@ module.exports = {
   addressOf,
   sendMail,
   deleteRows,
+  ensureColumn,
   readTable,
   readHeaders,
   setHeader,

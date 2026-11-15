@@ -14,7 +14,12 @@
       "added": "2026-11-15"
     },
     {
-      "task": "Autonomy plan step 4 (stage 3 veto window; Jon said go 15 Nov, emailed events to switch on at 20 decisions all as written): being built",
+      "task": "Veto window (autonomy stage 3, built 15 Nov; emailed events switched on, starting by itself at 20 decisions in a row as written; 10 so far): when it starts, check the first item gets its time and heads-up email, publishes through Apply approval at the end of its window, shows under Audit on the Autonomy screen, and that Hold and an edit stop one",
+      "added": "2026-11-15",
+      "kryten": true
+    },
+    {
+      "task": "Autonomy, acknowledgements: count Jon's decisions on Holly's acknowledgements in Reply feedback (they are not recorded today), then give them the same veto window once they qualify",
       "added": "2026-11-15"
     },
     {
