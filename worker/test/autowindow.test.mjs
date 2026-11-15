@@ -220,3 +220,13 @@ test('heads-up email: titles and times only', () => {
   assert.match(one.text, /tap Hold/);
   assert.equal(headsUp([{}, {}], 'u').subject, '2 items will publish themselves (Lenches)');
 });
+
+test('acknowledgements count on the Autonomy screen, by kind (logged since 15 Nov)', () => {
+  const ackRow = (n, cls, outcome) => ({ reply_id: `a${n}`, type: 'ack', class: cls, outcome, created_at: '2026-11-16 10:00', decided_at: `2026-11-16 1${n}:00`, they_wrote: 'Quiz on Friday', draft: 'Hi' });
+  const st = autonomyStats({ items: { rows: [] }, replies: { rows: [ackRow(1, 'plain', 'approved'), ackRow(2, 'plain', 'approved'), ackRow(3, 'personal', 'edited'), ackRow(4, 'listed', 'rejected'), ackRow(5, 'plain', 'auto_sent')] } });
+  assert.deepEqual(st.replies.map((t) => [t.key, t.label, t.decided, t.unchanged]), [
+    ['reply:ack:plain', 'Acknowledgement · fixed wording', 2, 2],
+    ['reply:ack:listed', 'Acknowledgement · already listed', 1, 0],
+    ['reply:ack:personal', 'Acknowledgement · with a personal line', 1, 0],
+  ]);
+});

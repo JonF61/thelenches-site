@@ -28,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '57';
+export const UI_VERSION = '58';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -69,6 +69,7 @@ export const CLIENT_JS = String.raw`
     autonomy: [
       'Each kind of submission or reply counts your decisions on Holly\'s work.',
       ['As written / changed / rejected', 'approved unchanged, approved after your edits, or turned down.'],
+      ['Acknowledgement', 'Holly\'s thank-you to a submitter, counted from 15 November in three kinds: fixed wording, with a personal line, and already listed.'],
       ['Veto window', 'for a kind switched on, once its latest 20 decisions were all approved as written, a new emailed write-up publishes itself 4 hours after it arrives (counting 8am to 9pm only) unless you tap Hold, Edit, Reject or Done already under Submissions. It publishes through the same Approve as your tap.'],
       ['Switch on / Switch off', 'per kind. Off means everything of that kind waits for you, as before. A kind also stops by itself after any edit, rejection or Not right, until its latest 20 are clean again.'],
       ['Audit: Fine / Not right', 'for each item that published itself. Fine counts as approved as written; Not right counts as a rejection. Fix or remove the item itself as usual.'],
