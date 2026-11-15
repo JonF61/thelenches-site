@@ -2,7 +2,13 @@
     not a real view. Replaced the illustrated map; the aerial photo is now at the foot of the page. -#}
 <div class="home-skyline" aria-hidden="true">
 <svg viewBox="{{ '0 8 960 111' if seasonal.tallSky else '0 28 960 91' }}" focusable="false">
-<path d="M0,95 C150,70 300,60 480,62 C650,64 800,78 960,92 L960,130 L0,130Z" fill="#DCCFAE" opacity=".55"/>
+{#- Night sky (15 Nov 2026): hidden by day; the script below shows it after dark (sun 6 degrees below the horizon at
+    the Lenches), with the moon drawn in its current phase and the cottage and tower windows lit. -#}
+<defs><linearGradient id="skyline-night" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0D1730"/><stop offset="1" stop-color="#2D3F66"/></linearGradient></defs>
+<g class="skyline-night"><rect x="0" y="0" width="960" height="115" fill="url(#skyline-night)"/>
+<g fill="#FFF8E1"><circle cx="70" cy="40" r=".9"/><circle cx="140" cy="62" r=".7"/><circle cx="232" cy="36" r="1"/><circle cx="300" cy="55" r=".7"/><circle cx="352" cy="30" r=".8"/><circle cx="398" cy="48" r="1"/><circle cx="560" cy="34" r=".8"/><circle cx="612" cy="58" r=".7"/><circle cx="668" cy="40" r="1"/><circle cx="742" cy="66" r=".7"/><circle cx="790" cy="32" r=".9"/><circle cx="846" cy="52" r=".7"/><circle cx="912" cy="38" r="1"/><circle cx="20" cy="66" r=".7"/><circle cx="455" cy="22" r=".8"/><circle cx="170" cy="18" r=".8"/><circle cx="720" cy="14" r=".9"/></g>
+<g class="skyline-moon" transform="translate(190 50)"><circle r="11" fill="#FFF8E1" opacity=".13"/><path fill="#FFF3C4" d=""/></g></g>
+<path class="skyline-ridge" d="M0,95 C150,70 300,60 480,62 C650,64 800,78 960,92 L960,130 L0,130Z" fill="#DCCFAE" opacity=".55"/>
 <path d="M0,112 C200,96 380,92 520,94 C700,97 830,104 960,110 L960,130 L0,130Z" fill="#3F5233" opacity=".18"/>
 <g fill="#3F5233"><circle cx="60" cy="98" r="13"/><rect x="58.5" y="98" width="3" height="19"/><circle cx="88" cy="102" r="11"/><rect x="86.5" y="102" width="3" height="17"/><circle cx="112" cy="99" r="12"/><rect x="110.5" y="99" width="3" height="18"/><circle cx="660" cy="96" r="12"/><rect x="658.5" y="96" width="3" height="18"/><circle cx="688" cy="100" r="10"/><rect x="686.5" y="100" width="3" height="16"/><circle cx="712" cy="97" r="13"/><rect x="710.5" y="97" width="3" height="19"/><circle cx="880" cy="104" r="11"/><rect x="878.5" y="104" width="3" height="17"/><circle cx="905" cy="101" r="12"/><rect x="903.5" y="101" width="3" height="18"/><circle cx="930" cy="105" r="10"/><rect x="928.5" y="105" width="3" height="16"/>
 <rect x="420" y="80" width="70" height="34"/><path d="M416,82 L455,62 L494,82Z"/>
@@ -11,7 +17,7 @@
 <path d="M250,114 V92 L270,78 L290,92 V114Z"/><path d="M292,114 V96 L308,86 L324,96 V114Z"/><rect x="276" y="70" width="5" height="12"/>
 <path d="M570,114 V94 L588,82 L606,94 V114Z"/><path d="M608,114 V98 L622,90 L636,98 V114Z"/>
 </g>
-<g fill="#FBF8F1"><rect x="499" y="56" width="8" height="12" rx="4"/><rect x="263" y="98" width="6" height="7"/><rect x="580" y="100" width="6" height="7"/></g>
+<g class="skyline-windows" fill="#FBF8F1"><rect x="499" y="56" width="8" height="12" rx="4"/><rect x="263" y="98" width="6" height="7"/><rect x="580" y="100" width="6" height="7"/></g>
 <line x1="0" y1="114" x2="960" y2="114" stroke="#3F5233" stroke-width="1.5"/>
 {%- if seasonal.poppies %}
 {#- Seasonal touches (dates in src/_data/seasonal.js). Remembrance: poppies along the meadow. -#}
@@ -72,3 +78,33 @@
 {%- endif %}
 </svg>
 </div>
+<script>
+/* Night skyline: sun altitude (simplified NOAA formulae, good to a few minutes) and moon phase, worked out in the
+   visitor's browser so it changes at dusk without a rebuild. ?night=1 or ?night=0 forces it, for checking. */
+(function () {
+  var box = document.querySelector('.home-skyline'); if (!box) return;
+  var LAT = 52.15, LON = -1.98, RAD = Math.PI / 180;
+  function jd(t) { return t / 86400000 + 2440587.5; }
+  function sunAlt(t) {
+    var d = jd(t) - 2451545, g = (357.529 + 0.98560028 * d) * RAD, q = 280.459 + 0.98564736 * d;
+    var L = (q + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * RAD, e = (23.439 - 0.00000036 * d) * RAD;
+    var ra = Math.atan2(Math.cos(e) * Math.sin(L), Math.cos(L)), dec = Math.asin(Math.sin(e) * Math.sin(L));
+    var ha = ((18.697374558 + 24.06570982441908 * d) * 15 + LON) * RAD - ra;
+    return Math.asin(Math.sin(LAT * RAD) * Math.sin(dec) + Math.cos(LAT * RAD) * Math.cos(dec) * Math.cos(ha)) / RAD;
+  }
+  function moonPath(t, r) {
+    var syn = 29.530588853, age = ((jd(t) - 2451550.1) % syn + syn) % syn, p = age / syn * 2 * Math.PI;
+    var waxing = age < syn / 2, crescent = Math.cos(p) > 0, rx = Math.abs(Math.cos(p)) * r;
+    if ((1 - Math.cos(p)) / 2 < 0.02) return '';
+    return 'M0,' + -r + ' A' + r + ',' + r + ' 0 0 ' + (waxing ? 1 : 0) + ' 0,' + r +
+      ' A' + rx.toFixed(2) + ',' + r + ' 0 0 ' + (waxing === crescent ? 0 : 1) + ' 0,' + -r + 'Z';
+  }
+  var force = (location.search.match(/[?&]night=([01])/) || [])[1];
+  function update() {
+    var now = Date.now(), night = force ? force === '1' : sunAlt(now) < -6;
+    box.classList.toggle('is-night', night);
+    if (night) box.querySelector('.skyline-moon path').setAttribute('d', moonPath(now, 11));
+  }
+  update(); setInterval(update, 300000);
+})();
+</script>
