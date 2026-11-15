@@ -22,8 +22,9 @@
       "added": "2026-11-15"
     },
     {
-      "task": "Autonomy plan step 2: Rimmer reads each of Holly's reply drafts against the email, thread, signature and live entry before Jon sees it; Holly redrafts once",
-      "added": "2026-11-15"
+      "task": "Autonomy plan step 2 (built 15 Nov: Rimmer reads Holly's reply drafts): on the next few drafts, check the Ingest log shows \"Rimmer read the … draft\", that his \"Rimmer: …\" notes are fair (few false alarms), and the extra cost in the Claude usage tab",
+      "added": "2026-11-15",
+      "kryten": true
     },
     {
       "task": "Autonomy plan step 1 (done 15 Nov: Holly asks only for an event's date or place): on the next few submissions, check no reply asks about cost, time or contact",
@@ -31,7 +32,7 @@
       "kryten": true
     },
     {
-      "task": "Harvington PC and South Lenches PC feeds refused with HTTP 415 (from about 13 Nov): check the 16 Nov Daily diagnostic and the next feed ingest after the plain-Accept retry (PR 346). Still 415 = their firewall blocks us: draft a note for Jon asking the councils to allow our feed reader. Also add Build history entries for PRs 344 and 346.",
+      "task": "Harvington PC and South Lenches PC feeds refused with HTTP 415 (from about 13 Nov): check the 16 Nov Daily diagnostic and the next feed ingest after the plain-Accept retry (PR 346). Still 415 = their firewall blocks us: draft a note for Jon asking the councils to allow our feed reader.",
       "added": "2026-11-15",
       "kryten": true
     },
@@ -58,7 +59,7 @@
       "added": "2026-11-14"
     },
     {
-      "task": "SDK 1.6 (new API version 2026-10-21): check the first ingest, Rimmer and Holly runs after it merged make their Claude calls without errors (Claude usage tab rows as usual)",
+      "task": "SDK 1.6 (new API version 2026-10-21): ingest and Holly runs are fine (15 Nov); check the next Rimmer run (Sunday listings) makes its Claude calls without errors",
       "added": "2026-11-14",
       "kryten": true
     },

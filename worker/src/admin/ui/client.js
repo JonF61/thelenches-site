@@ -115,6 +115,7 @@ export const CLIENT_JS = String.raw`
       ['Reject', 'drops the draft; Replied in Gmail closes it when you answered yourself (not counted or learned from).'],
       ['They replied', 'the sender has written again since.'],
       ['Own thread', 'you wrote by hand earlier in this conversation, so Holly drafts nothing: Reply in Gmail, then Done.'],
+      ['Rimmer: …', 'in a draft\'s notes: Rimmer read Holly\'s draft against the email, the thread and the entry before you saw it, and found a problem (a detail already given, the wrong name, "on its way" when it\'s already listed, something already done, a fact that differs, the question not answered). "Holly redrafted" means what you see is her second go; "left for you to check" means it is unchanged. No note: he found nothing.'],
       'Your edits and reasons teach Holly (see Holly lessons).'],
     owed: [
       'These people got the holding reply over 2 days ago and nothing since.',

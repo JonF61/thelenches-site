@@ -13,6 +13,7 @@ const assert = require('assert');
 
 process.env.GMAIL_USER = 'owner@thelenches.org.uk';
 process.env.ANTHROPIC_API_KEY = 'test';
+process.env.RIMMER_REPLIES = 'off'; // Rimmer's reading of drafts has its own test (test-replycheck.js)
 process.env.LEARN_FROM_TEST = '2026-01-01 00:00'; // fixtures predate the 2 Nov clear-down
 process.env.WORKER_URL = 'https://w.example';
 process.env.APPROVAL_SIGNING_KEY = 'k';
