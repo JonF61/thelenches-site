@@ -2,6 +2,11 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Harvington PC and South Lenches PC feeds refused with HTTP 415 (from about 13 Nov): check the 16 Nov Daily diagnostic and the next feed ingest after the plain-Accept retry (PR 346). Still 415 = their firewall blocks us: draft a note for Jon asking the councils to allow our feed reader. Also add Build history entries for PRs 344 and 346.",
+      "added": "2026-11-15",
+      "kryten": true
+    },
+    {
       "task": "Sponsors tab: 26 prospects added 15 Nov (rows 2-27) but only 5 have a public email; run Find sponsor emails (sponsor-emails.yml) to fill the rest, then Jon checks guessed websites and structures marked (check)",
       "added": "2026-11-15",
       "waiting": "Jon"
