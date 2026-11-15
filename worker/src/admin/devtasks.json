@@ -18,7 +18,13 @@
       "added": "2026-11-15"
     },
     {
-      "task": "Autonomy plan step 3: Holly's prompt carries recent site edits for the sender's entries (so nothing already done is chased); Already listed stops matching different events at one venue (4 of 5 matches were published as new)",
+      "task": "Autonomy plan step 3 (built 15 Nov: Holly and Rimmer see the sender's recent items and recent site changes; Already listed capped when titles differ): on the next few replies, check nothing already done is chased, and that the next Already listed matches are real repeats",
+      "added": "2026-11-15",
+      "kryten": true
+    },
+    {
+      "task": "Already listed: 4 of the 5 matches so far were published as new although 4 were the same thing (same title and day); Jon to say why he chose new over Add details or Done already, so the right fix can be built (e.g. a Replace the listed entry button when the organiser sends their own version)",
+      "waiting": "Jon",
       "added": "2026-11-15"
     },
     {

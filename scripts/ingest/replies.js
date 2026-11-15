@@ -112,6 +112,7 @@ const { siteFacts } = require('./sitefacts');
 const { applyListRequest } = require('./subscriptions');
 const welcome = require('./welcome');
 const replycheck = require('../rimmer/replycheck');
+const sitechanges = require('./sitechanges');
 
 const TZ = 'Europe/London';
 const REPLY_FROM = 'website@thelenches.org.uk'; // never jon@: replies must not expose it
@@ -696,6 +697,40 @@ or link to.`;
 const reviewSystem = (system, review) => (review ? `${system}\n\n${REVIEW_RULES}` : system);
 const reviewInput = (review) => (review ? { previous_draft: review.previous, reviewer_findings: review.findings } : {});
 
+// Autonomy plan step 3 (15 Nov, Jon): what has lately been done, so nothing already done
+// is chased, asked for or promised. sender_items = this sender's Pending rows of the last
+// 60 days and what became of each; recent_site_changes = hand changes to the website in the
+// last 14 days, from git (sitechanges.js). Given to Holly's answer, follow-up and redraft
+// prompts (SITE_RULES) and to Rimmer. Empty parts are left out; never throws.
+const SITE_RULES = `sender_items, when the input has it: what this sender has sent us in the last two
+months and what became of each (state; page = its link when it is on the website now).
+recent_site_changes, when the input has it: hand changes the team made to the website in the
+last two weeks (date, what was changed, the entries or pages touched).
+Read both before you write. Never ask for, chase, offer or promise something they show is
+already done. If their message is about something these show has been done, say plainly
+that it is done (with its page link when one is given), rather than that we will look into
+it. They are the only evidence that something has changed: a change they do not show has
+not been made, so the rules above about never claiming a change still hold for everything
+else.`;
+function siteContext(msg, existing = []) {
+  const out = {};
+  try {
+    const mine = [msg && msg.fromAddress, msg && g.addressOf(msg.replyTo)].filter(Boolean);
+    const isSender = (from) => {
+      const a = g.addressOf(from) || String(from || '').trim();
+      return mine.some((m) => sameAddress(m, a) || samePerson(m, a));
+    };
+    let live = new Map();
+    try { live = new Map(dupes.listings([]).filter((l) => l.key.startsWith('p:') && l.url).map((l) => [l.key.slice(2), l.url])); } catch { /* none known */ }
+    const items = mine.length ? sitechanges.senderItems(existing, isSender, { live, today: londonDate(Date.now()), skipMessageId: msg.id }) : [];
+    if (items.length) out.sender_items = items;
+    const changes = sitechanges.recentChanges();
+    if (changes.length) out.recent_site_changes = changes;
+  } catch { /* nothing known: the drafts go without it */ }
+  return out;
+}
+const siteSystem = (system, site) => (site && Object.keys(site).length ? `${system}\n\n${SITE_RULES}` : system);
+
 // What the team holds for the message's items, for Rimmer: the Pending cells and, when the
 // item is already listed and live (duplicates.js), that entry's title, link and wording.
 function rimmerItems(rows = [], existing = []) {
@@ -763,6 +798,7 @@ async function rimmerReads({ type, body, msg, rows = [], existing = [] }) {
       email: { from: msg.from, subject: msg.subject, text: msg.text },
       thread: await rimmerThread(msg),
       items: rimmerItems(rows, existing),
+      site: siteContext(msg, existing),
     }, { client: claude() });
   } catch { /* never blocks a draft */ }
   if (!out) {
@@ -1447,7 +1483,7 @@ function sanitiseAnswer(text, urls, { emails = [], max = MAX_ANSWER_CHARS } = {}
 
 // Returns { text, drafted, warnings }. drafted false: holding wording (Claude unavailable or
 // the draft failed the checks). warnings: risky phrases or a missing page link.
-async function draftAnswer({ emailClass, result, msg, said, hold, contact = null, review = null }) {
+async function draftAnswer({ emailClass, result, msg, said, hold, contact = null, review = null, site = null }) {
   const fallback = (why) => ({ text: ANSWER_FALLBACK, drafted: false, warnings: why ? [why] : [] });
   if (!process.env.ANTHROPIC_API_KEY) return fallback('No API key: no draft');
   let facts;
@@ -1460,7 +1496,7 @@ async function draftAnswer({ emailClass, result, msg, said, hold, contact = null
     const res = await claude().messages.create({
       model: MODEL(),
       max_tokens: 900,
-      system: cachedSystem(withVoice(reviewSystem(ANSWER_SYSTEM, review), contact)),
+      system: cachedSystem(withVoice(reviewSystem(siteSystem(ANSWER_SYSTEM, site), review), contact)),
       messages: [{
         role: 'user',
         content: JSON.stringify({
@@ -1472,6 +1508,7 @@ async function draftAnswer({ emailClass, result, msg, said, hold, contact = null
           hold_reason: hold || 'none',
           known_contact: promptContact(contact),
           site_facts: facts.facts,
+          ...(site || {}),
           ...reviewInput(review),
         }),
       }],
@@ -1492,7 +1529,8 @@ async function draftAnswer({ emailClass, result, msg, said, hold, contact = null
 // draftAnswer, then Rimmer's reading and (if he found anything in the text) one redraft by
 // Holly. Returns the draft to use, with `name` (the greeting name) and `rimmer` (the note
 // for Jon, or ''). A fallback (fixed wording) draft is not checked.
-async function reviewedAnswer(args, { type, name = '', rows = [], existing = [] }) {
+async function reviewedAnswer(given, { type, name = '', rows = [], existing = [] }) {
+  const args = { ...given, site: siteContext(given.msg, existing) };
   const d = await draftAnswer(args);
   if (!d.drafted) return { ...d, name, rimmer: '' };
   const rv = await rimmerReads({ type, body: wrap(d.text, name), msg: args.msg, rows, existing });
@@ -1786,13 +1824,14 @@ function itemState(reply, ctx) {
 // Returns { needsHuman, reason, draft, drafted }. Any failure flags it (with holding
 // wording) rather than letting a follow-up go unnoticed.
 async function triageFollowup(input, contact = null, review = null) {
+  const site = input.sender_items || input.recent_site_changes ? input : null;
   const fail = (why) => ({ needsHuman: true, reason: why, draft: FOLLOWUP_FALLBACK, drafted: false });
   if (!process.env.ANTHROPIC_API_KEY) return fail('Automatic check unavailable (no API key)');
   try {
     const res = await claude().messages.create({
       model: MODEL(),
       max_tokens: 800,
-      system: cachedSystem(withVoice(reviewSystem(FOLLOWUP_SYSTEM, review), contact)),
+      system: cachedSystem(withVoice(reviewSystem(siteSystem(FOLLOWUP_SYSTEM, site), review), contact)),
       messages: [{ role: 'user', content: JSON.stringify({ ...input, known_contact: promptContact(contact), ...reviewInput(review) }) }],
     });
     const raw = textOf(res);
@@ -1870,6 +1909,7 @@ async function planFollowup({ msg, reply, ctx, added = [], result = {} }) {
     has_attachments: (msg.attachments || []).length > 0,
     details_added: added,
     items: itemState(reply, ctx),
+    ...siteContext(msg, ctx.existing),
   };
   const t = await triageFollowup(triageInput, contact);
   // A possible auto-responder always goes to Jon (never dropped on a heuristic).
@@ -2263,14 +2303,20 @@ async function redraftReply(replyId, instruction) {
   const urls = new Set([...facts.urls, ...(previous.match(/https?:\/\/[^\s<>"]+/g) || [])]);
   const emails = want.match(/[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[a-z]{2,}/gi) || [];
   const contact = contactFor(row.to);
+  // What the team holds for this email and its sender (for Holly and for Rimmer).
+  let pendingRows = [];
+  if (original && row.type !== 'outreach') {
+    try { pendingRows = await g.readTable('Pending'); } catch { /* without items */ }
+  }
+  const site = original && row.type !== 'outreach' ? siteContext(original, pendingRows) : {};
   // review: Rimmer's findings on the first redraft (the instruction still wins).
   const ask = async (review = null) => {
     const res = await claude().messages.create({
       model: MODEL(),
       max_tokens: 900,
       system: cachedSystem(withVoice(review
-        ? `${REDRAFT_SYSTEM}\n\nreviewer_findings, when the input has it: an independent second reader found these problems in first_redraft, your rewrite. Write it again with each one put right, still following the instruction, which wins. Every rule above still applies in full.`
-        : REDRAFT_SYSTEM, contact)),
+        ? `${siteSystem(REDRAFT_SYSTEM, site)}\n\nreviewer_findings, when the input has it: an independent second reader found these problems in first_redraft, your rewrite. Write it again with each one put right, still following the instruction, which wins. Every rule above still applies in full.`
+        : siteSystem(REDRAFT_SYSTEM, site), contact)),
       messages: [{
         role: 'user',
         content: JSON.stringify({
@@ -2283,6 +2329,7 @@ async function redraftReply(replyId, instruction) {
           hold_reason: row.hold_reason || 'none',
           known_contact: promptContact(contact),
           site_facts: facts.facts,
+          ...site,
           ...(review ? { first_redraft: review.previous, reviewer_findings: review.findings } : {}),
         }),
       }],
@@ -2308,9 +2355,8 @@ async function redraftReply(replyId, instruction) {
   // rewrites once more with what he found. Any failure keeps the redraft as it is.
   let rimmer = '';
   if (original && row.type !== 'outreach') {
-    let held = [];
-    try { held = (await g.readTable('Pending')).filter((r) => r.message_id === row.message_id); } catch { /* without items */ }
-    const rv = await rimmerReads({ type: 'redraft', body: [hello, text, fill('signature')].join('\n\n'), msg: original, rows: held, existing: [] });
+    const held = pendingRows.filter((r) => r.message_id === row.message_id);
+    const rv = await rimmerReads({ type: 'redraft', body: [hello, text, fill('signature')].join('\n\n'), msg: original, rows: held, existing: pendingRows });
     if (rv) {
       if (rv.name) hello = greeting(rv.name);
       let outcome = greetingOutcome(rv);
@@ -2445,6 +2491,7 @@ module.exports = {
   firstName,
   redraftReply,
   rimmerItems,
+  siteContext,
   signedNameIn,
   owedReplies,
   owedDue,

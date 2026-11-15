@@ -118,6 +118,11 @@ const SYSTEM = `You are Holly, who writes up listings for a village community we
 Worcestershire). A new submission has arrived. Decide whether it is the SAME real-world event or
 notice as one of the listings the site already has (same thing, same occasion; a different date,
 a different year or a different event at the same venue is NOT the same). Use the record_match tool.
+The same venue, organiser and day are not enough: it must be the same thing happening. A second
+event at that venue on the same day, something that goes with an event (a drinks or food offer, a
+raffle, a ticket sale, a closure) or another session of a regular event is its own listing: answer
+-1 for those. When the two titles name different things, match only if the texts plainly describe
+one and the same occasion.
 - match: the number of the matching listing, or -1 if none is the same.
 - confidence: 0 to 1 that it is the same.
 - details: if matched, a short plain list of facts in the new submission that the listing does not
@@ -162,14 +167,27 @@ function setClient(c) { client = c; } // offline tests
 
 const linkOf = (l) => (l && str(l.url) ? `${str(l.text)} ${str(l.url)}`.trim() : '');
 
+// Do two titles name the same thing? (pure) The venue after " — " and filler words are set
+// aside; true when the rest share a word, or either has nothing left to compare.
+const FILLER = new Set(['the', 'a', 'an', 'and', 'at', 'in', 'on', 'of', 'for', 'to', 'with', 'night', 'evening', 'day', 'club', 'lenches', 'lench', 'village', 'hall', 'annual']);
+const subjectWords = (t) => words(str(t).split(/\s[—–]\s/)[0]).filter((w) => !FILLER.has(w)).map((w) => w.replace(/s$/, ''));
+function sameSubject(a, b) {
+  const x = subjectWords(a);
+  const y = subjectWords(b);
+  return !x.length || !y.length || x.some((w) => y.includes(w));
+}
+
 // Holly's answer -> the duplicate object, or null (pure). text: what Holly was given of the
 // submission (links are kept only if written there word for word).
-function resultFrom(answer, cands, text) {
+function resultFrom(answer, cands, text, titleItem = '') {
   const n = Number(answer && answer.match);
   if (!Number.isInteger(n) || n < 1 || n > cands.length) return null;
   const c = cands[n - 1];
-  const confidence = Math.max(0, Math.min(1, Number(answer.confidence) || 0));
+  let confidence = Math.max(0, Math.min(1, Number(answer.confidence) || 0));
   if (confidence < 0.5) return null;
+  // Titles naming different things (15 Nov, Jon): never "sure", so the sender isn't told we
+  // already have it and the panel shows the match as a maybe.
+  if (titleItem && !sameSubject(titleItem, c.title)) confidence = Math.min(confidence, SURE - 0.05);
   const changes = {};
   const body = str(answer.body);
   if (body && !c.official && body !== c.body) changes.body = body.slice(0, 2000);
@@ -219,7 +237,7 @@ async function check(item, list, { messageId = '', text = '' } = {}) {
       messages: [{ role: 'user', content: `<submission>\n${given}\n</submission>\n<listings>\n${JSON.stringify(listed)}\n</listings>` }],
     }, 'record_match');
     if (!block) throw new Error('no structured answer');
-    return resultFrom(block.input, cands, given);
+    return resultFrom(block.input, cands, given, item.title);
   } catch (err) {
     console.warn(`Duplicate check failed (treated as new): ${(err && err.message) || err}`);
     return null;
@@ -252,6 +270,7 @@ const parse = (json) => { try { const o = JSON.parse(str(json)); return o && typ
 const listedUrl = (d) => (d && d.sure && /^https:\/\//.test(str(d.url)) ? d.url : '');
 
 module.exports = {
+  sameSubject,
   listings, candidatesFor, check, resultFrom, noteFor, parse, listedUrl, setClient, words, sameSender,
   SURE, DIFFERENT_SENDER, CHANGE_FIELDS, ITEMS, PIPELINE, SYSTEM,
 };
