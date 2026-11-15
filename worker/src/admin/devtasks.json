@@ -10,7 +10,7 @@
       "added": "2026-11-15"
     },
     {
-      "task": "Sponsor plan (Jon, 15 Nov): fixed monthly price shown on the sponsor page with a Stripe pay button (Jon to give the figure); Holly sends the approach and one chaser without a tap; replies wait in the panel",
+      "task": "Sponsor plan (Jon, 15 Nov): £50 introductory price now on the sponsor page and terms. Still to build: Stripe pay button (Jon to open a Stripe account; Kryten to give steps), Holly sending the approach (filling {price} from sponsors.json) and one chaser without a tap, replies waiting in the panel",
       "added": "2026-11-15"
     },
     {
