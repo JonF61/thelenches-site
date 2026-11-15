@@ -2,6 +2,35 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Harvington (Jon, 15 Nov): wants its own domain, site and newsletter; Kryten to propose a second edition built from the same code and pipeline",
+      "added": "2026-11-15"
+    },
+    {
+      "task": "Sharing plan: share links on events and issues, forward-to-a-neighbour line, link previews with pictures; check what exists first",
+      "added": "2026-11-15"
+    },
+    {
+      "task": "Sponsor plan (Jon, 15 Nov): fixed monthly price shown on the sponsor page with a Stripe pay button (Jon to give the figure); Holly sends the approach and one chaser without a tap; replies wait in the panel",
+      "added": "2026-11-15"
+    },
+    {
+      "task": "Autonomy plan step 4: stage 3 veto window for emailed listing write-ups (21 of 22 went out as written), then acknowledgements",
+      "added": "2026-11-15"
+    },
+    {
+      "task": "Autonomy plan step 3: Holly's prompt carries recent site edits for the sender's entries (so nothing already done is chased); Already listed stops matching different events at one venue (4 of 5 matches were published as new)",
+      "added": "2026-11-15"
+    },
+    {
+      "task": "Autonomy plan step 2: Rimmer reads each of Holly's reply drafts against the email, thread, signature and live entry before Jon sees it; Holly redrafts once",
+      "added": "2026-11-15"
+    },
+    {
+      "task": "Autonomy plan step 1 (done 15 Nov: Holly asks only for an event's date or place): on the next few submissions, check no reply asks about cost, time or contact",
+      "added": "2026-11-15",
+      "kryten": true
+    },
+    {
       "task": "Harvington PC and South Lenches PC feeds refused with HTTP 415 (from about 13 Nov): check the 16 Nov Daily diagnostic and the next feed ingest after the plain-Accept retry (PR 346). Still 415 = their firewall blocks us: draft a note for Jon asking the councils to allow our feed reader. Also add Build history entries for PRs 344 and 346.",
       "added": "2026-11-15",
       "kryten": true

@@ -728,6 +728,11 @@ function testManyItems() {
   await testRouting();
   await testSending();
   await testActionEmail(process.argv[2]);
+  // 15 Nov: Holly asks only for an event's date or place.
+  ok(replies.askCodes({ missing: 'where,date,time,cost,contact' }).join() === 'where,date', 'asks only where and date');
+  ok(replies.askCodes({ missing: 'cost,time,contact' }).length === 0, 'cost, time and contact are never asked for');
+  ok(replies.askCodes({ missing: 'date', category: 'notice' }).length === 0, 'notices get no questions');
+  ok(replies.askCodes({ missing: 'date', category: 'event' }).join() === 'date', 'an event with no date is asked');
   console.log(`All reply tests passed (${checks} checks, ${fixtures.length} fixtures x 2 modes).`);
 })().catch((err) => {
   console.error(err);

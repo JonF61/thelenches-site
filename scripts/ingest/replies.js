@@ -167,6 +167,12 @@ const MANY_TEMPLATES = {
 };
 // Pending field that answers each missing-detail code.
 const FIELD_FOR = { where: 'village', date: 'event_date', time: 'event_time', cost: 'cost', contact: 'contact' };
+// What Holly may ask a submitter for (15 Nov, Jon: 1 of 13 question emails went out as
+// drafted): only an event's date or place. Time, cost and contact are never asked for;
+// the item goes ahead with what we have. Other codes stay in Pending "missing" for Jon.
+const ASK_CODES = ['where', 'date'];
+const askCodes = (r) => (String(r.category || 'event').trim().toLowerCase() === 'event'
+  ? splitCodes(r.missing).filter((c) => ASK_CODES.includes(c)) : []);
 const FIELD_WORDS = {
   where: 'where it is (which village or venue)',
   date: 'the date',
@@ -1001,9 +1007,7 @@ async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, sa
   const listedOf = (r) => dupes.listedUrl(dupes.parse(r.duplicate));
   const needs = rows
     .filter((r) => !listedOf(r))
-    // A booking or details link is enough for enquiries: no "who do we contact?" (27 Oct).
-    .map((r) => ({ title: r.title,
-      missing: splitCodes(r.missing).filter((c) => FIELD_FOR[c] && !(c === 'contact' && String(r.link_url || '').trim())) }))
+    .map((r) => ({ title: r.title, missing: askCodes(r) }))
     .filter((n) => n.missing.length);
   const type = needs.length || anonymous ? 'clarify' : 'ack';
   if (limit.over && type === 'ack') return skip(`${limit.note}: acknowledgement dropped`);
@@ -1395,7 +1399,7 @@ function originalRows(reply, ctx) {
 function answerContext(reply, ctx) {
   const lines = ['This email answers our request for missing details about these items:'];
   for (const r of originalRows(reply, ctx)) {
-    const missing = splitCodes(r.missing).map((c) => FIELD_WORDS[c]).filter(Boolean);
+    const missing = askCodes(r).map((c) => FIELD_WORDS[c]).filter(Boolean);
     lines.push(`- "${r.title}"${r.event_date ? ` (${r.event_date})` : ''}${missing.length ? `; we asked for ${missing.join(', ')}` : ''}`);
   }
   lines.push('Record each item it refers to under the same title, with whatever details it gives.');
@@ -1614,7 +1618,7 @@ function itemState(reply, ctx) {
     event_time: r.event_time || '',
     cost: r.cost || '',
     contact: r.contact || '',
-    still_missing: splitCodes(r.missing).map((c) => FIELD_WORDS[c]).filter(Boolean),
+    still_missing: askCodes(r).map((c) => FIELD_WORDS[c]).filter(Boolean),
   }));
 }
 
@@ -2233,6 +2237,8 @@ module.exports = {
   rowsForAlert,
   FALLBACK_TYPES,
   TIMEOUT_SEND,
+  ASK_CODES,
+  askCodes,
   REPLY_FROM,
   AWAIT_HOURS,
   // For reader feedback replies (scripts/readerfeedback): same voice, sign-off and checks.
