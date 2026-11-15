@@ -47,6 +47,9 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           NODE_OPTIONS: --require ./lib/claudeusage.js
           CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
+          # Rimmer reads Holly's redrafts (scripts/rimmer/replycheck.js); RIMMER_REPLIES = off turns it off.
+          RIMMER_MODEL: ${{ vars.RIMMER_MODEL }}
+          RIMMER_REPLIES: ${{ vars.RIMMER_REPLIES }}
           APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
           WORKER_URL: https://approvals.lenches.workers.dev
 

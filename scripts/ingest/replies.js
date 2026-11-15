@@ -111,6 +111,7 @@ const itemFeedback = require('./itemfeedback');
 const { siteFacts } = require('./sitefacts');
 const { applyListRequest } = require('./subscriptions');
 const welcome = require('./welcome');
+const replycheck = require('../rimmer/replycheck');
 
 const TZ = 'Europe/London';
 const REPLY_FROM = 'website@thelenches.org.uk'; // never jon@: replies must not expose it
@@ -677,6 +678,110 @@ const cachedSystem = (text) => [{ type: 'text', text, cache_control: { type: 'ep
 
 const textOf = (res) => res.content.filter((b) => b.type === 'text').map((b) => b.text).join(' ');
 
+/* ------------------------------------------------- Rimmer reads the draft -- */
+
+// Autonomy plan step 2 (15 Nov, Jon): before a Claude-written draft is saved, Rimmer
+// (scripts/rimmer/replycheck.js, Opus) reads it against the sender's email with its
+// signature, the earlier thread, the Pending rows for the message and the live entry when
+// it is already listed, and reports problems from his fixed checklist. Holly then redrafts
+// once with his findings (REVIEW_RULES; her fixed rules and the code checks still apply),
+// and the row's notes say "Rimmer: …". He is never asked about the redraft, never sends,
+// and a failed check leaves the draft exactly as it was. Fixed wording is never checked.
+// Logs print counts only.
+const REVIEW_RULES = `reviewer_findings, when the input has it: an independent second reader checked
+previous_draft, your earlier draft, against what the sender wrote and what the team holds,
+and found these problems. Write it again with each one put right and keep what was fine.
+Every rule above still applies in full: the findings never widen what you may say, promise
+or link to.`;
+const reviewSystem = (system, review) => (review ? `${system}\n\n${REVIEW_RULES}` : system);
+const reviewInput = (review) => (review ? { previous_draft: review.previous, reviewer_findings: review.findings } : {});
+
+// What the team holds for the message's items, for Rimmer: the Pending cells and, when the
+// item is already listed and live (duplicates.js), that entry's title, link and wording.
+function rimmerItems(rows = [], existing = []) {
+  let listed = null;
+  return rows.map((r) => {
+    const d = dupes.parse(r.duplicate);
+    let live;
+    if (d && dupes.listedUrl(d)) {
+      if (!listed) { try { listed = dupes.listings(existing); } catch { listed = []; } }
+      const entry = listed.find((e) => e.key === d.key);
+      live = { title: d.title, url: d.url, text: entry ? String(entry.body || '').slice(0, 600) : '' };
+    }
+    return {
+      title: r.title,
+      category: r.category || '',
+      date: r.event_date || '',
+      time: r.event_time || '',
+      place: r.village || '',
+      cost: r.cost || '',
+      contact: r.contact || '',
+      status: r.status || '',
+      still_missing: askCodes(r).map((c) => FIELD_WORDS[c]).filter(Boolean),
+      live,
+    };
+  });
+}
+
+// Earlier messages on the thread, oldest first: [{ who: 'us' | 'them', text }]. [] on any error.
+async function rimmerThread(msg) {
+  if (!msg || !msg.threadId) return [];
+  try {
+    const ids = await g.threadMessageIds(msg.threadId);
+    const at = ids.indexOf(msg.id);
+    const earlier = (at >= 0 ? ids.slice(0, at) : ids.filter((id) => id !== msg.id)).slice(-5);
+    const team = [REPLY_FROM, String(process.env.GMAIL_USER || '').trim().toLowerCase()].filter(Boolean);
+    const out = [];
+    for (const id of earlier) {
+      const m = await g.getMessage(id);
+      out.push({ who: team.includes(String(m.fromAddress || '').toLowerCase()) ? 'us' : 'them', text: stripQuoted(m.text) });
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+// The name Rimmer says they sign with, only if it is a plain first name written word for
+// word in their email (the greeting is code's, so nothing unseen goes into it).
+function signedNameIn(name, text) {
+  const n = String(name || '').trim();
+  if (!/^[A-Z][a-z'’-]{1,19}$/.test(n) || NOT_A_NAME.has(n.toLowerCase())) return '';
+  return new RegExp(`(^|[^A-Za-z])${n}([^A-Za-z]|$)`).test(String(text || '')) ? n : '';
+}
+
+// Rimmer's reading of one draft. Returns null when there is nothing to act on (no problems,
+// check off, no key, or it failed), else { problems, textFindings (for Holly's redraft: all
+// but the greeting's name), name (a corrected greeting name, or ''), nothingToAsk }.
+async function rimmerReads({ type, body, msg, rows = [], existing = [] }) {
+  if (!process.env.ANTHROPIC_API_KEY || !replycheck.enabled() || !msg) return null;
+  let out = null;
+  try {
+    out = await replycheck.checkReply({
+      draft: body,
+      type,
+      email: { from: msg.from, subject: msg.subject, text: msg.text },
+      thread: await rimmerThread(msg),
+      items: rimmerItems(rows, existing),
+    }, { client: claude() });
+  } catch { /* never blocks a draft */ }
+  if (!out) {
+    console.log(`Rimmer: ${type} draft not checked (check unavailable); kept as drafted.`);
+    return null;
+  }
+  console.log(`Rimmer read the ${type} draft: ${out.problems.length} problem(s).`);
+  if (!out.problems.length) return null;
+  return {
+    problems: out.problems,
+    textFindings: replycheck.findingsFor(out.problems.filter((p) => p.code !== 'wrong_name')),
+    name: signedNameIn(out.signedName, msg.text),
+    nothingToAsk: out.nothingToAsk,
+  };
+}
+
+// The outcome words for a finding that needed no redraft of the text.
+const greetingOutcome = (rv) => (rv.name ? 'greeting corrected' : 'left for you to check');
+
 /* -------------------------------------------------------- clarification -- */
 
 const CLARIFY_SYSTEM = `You write one short paragraph (2 to 4 sentences) in British English for a
@@ -711,7 +816,7 @@ function sanitiseDraft(text) {
 }
 
 // Returns { text, drafted } — drafted false means the fixed fallback wording was used.
-async function draftClarification(needs, anonymous, contact = null) {
+async function draftClarification(needs, anonymous, contact = null, review = null) {
   const fallback = fallbackClarification(needs, anonymous);
   if (!process.env.ANTHROPIC_API_KEY) return { text: fallback, drafted: false };
   try {
@@ -719,11 +824,12 @@ async function draftClarification(needs, anonymous, contact = null) {
       items: needs.map((n) => ({ title: n.title, missing: n.missing.map((c) => FIELD_WORDS[c]) })),
       also_ask_for_sender_name_or_group: anonymous,
       known_contact: promptContact(contact),
+      ...reviewInput(review),
     };
     const res = await claude().messages.create({
       model: MODEL(),
       max_tokens: 400,
-      system: cachedSystem(withVoice(CLARIFY_SYSTEM, contact)),
+      system: cachedSystem(withVoice(reviewSystem(CLARIFY_SYSTEM, review), contact)),
       messages: [{ role: 'user', content: JSON.stringify(input) }],
     });
     const text = sanitiseDraft(textOf(res));
@@ -771,19 +877,20 @@ function sanitiseAckLine(text, contact) {
   return /[.!]$/.test(t) ? t : `${t}.`;
 }
 
-async function draftAckLine({ contact, items, said }) {
+async function draftAckLine({ contact, items, said, review = null }) {
   if (!contact || !process.env.ANTHROPIC_API_KEY) return '';
   try {
     const res = await claude().messages.create({
       model: MODEL(),
       max_tokens: 200,
-      system: cachedSystem(withVoice(ACK_LINE_SYSTEM, contact)),
+      system: cachedSystem(withVoice(reviewSystem(ACK_LINE_SYSTEM, review), contact)),
       messages: [{
         role: 'user',
         content: JSON.stringify({
           known_contact: promptContact(contact),
           items: items.map((i) => i.title),
           their_message: String(said || '').slice(0, MAX_FOLLOWUP_INPUT),
+          ...reviewInput(review),
         }),
       }],
     });
@@ -883,6 +990,7 @@ function logNotes(notes) {
       const rest = s.slice('Follow-up: '.length);
       return /^[a-z_]+ \([\d.]*\)$/.test(rest) ? s : 'Follow-up';
     }
+    if (/^Rimmer: /.test(s)) return s.split(': ').slice(0, 2).join(': '); // count and outcome only
     if (/^Couldn't use: /.test(s)) return `Couldn't use: ${s.slice(14).split(', ').length} attachment(s)`;
     return s.replace(/"[^"]*"?/g, '"…"').replace(/:\s*"…"$/, '');
   }).filter(Boolean).join(' | ');
@@ -1009,7 +1117,7 @@ async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, sa
     .filter((r) => !listedOf(r))
     .map((r) => ({ title: r.title, missing: askCodes(r) }))
     .filter((n) => n.missing.length);
-  const type = needs.length || anonymous ? 'clarify' : 'ack';
+  let type = needs.length || anonymous ? 'clarify' : 'ack';
   if (limit.over && type === 'ack') return skip(`${limit.note}: acknowledgement dropped`);
 
   const items = rows.map((r) => ({ title: r.title, event_date: r.event_date, policy: splitCodes(r.policy_flags), listed: listedOf(r) }));
@@ -1025,8 +1133,34 @@ async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, sa
   let clarification = '';
   let drafted = true;
   if (type === 'clarify') ({ text: clarification, drafted } = await draftClarification(needs, anonymous, contact));
-  const personal = type === 'ack' ? await draftAckLine({ contact, items, said }) : '';
+  let personal = type === 'ack' ? await draftAckLine({ contact, items, said }) : '';
   const joined = await joinNewsletter(msg, mode);
+
+  // Rimmer reads what Claude wrote (the question paragraph, or the personal line) in the
+  // whole reply; Holly redrafts once. Every question already answered: a plain thank-you.
+  let hello = name;
+  let rimmer = '';
+  if ((type === 'clarify' && drafted) || personal) {
+    const bodyNow = buildBody({ items, outOfScope: result.outOfScope, clarification, unusable, name, personal, joined });
+    const rv = await rimmerReads({ type, body: bodyNow, msg, rows, existing: ctx.existing });
+    if (rv) {
+      hello = rv.name || name;
+      let outcome = greetingOutcome(rv);
+      if (type === 'clarify' && rv.nothingToAsk && !anonymous) {
+        clarification = '';
+        type = 'ack';
+        outcome = 'question dropped, plain thanks instead';
+      } else if (type === 'clarify' && rv.textFindings.length) {
+        const again = await draftClarification(needs, anonymous, contact, { previous: clarification, findings: rv.textFindings });
+        if (again.drafted) clarification = again.text;
+        outcome = again.drafted ? 'Holly redrafted' : 'redraft failed, first draft kept';
+      } else if (type === 'ack' && rv.textFindings.length) {
+        personal = await draftAckLine({ contact, items, said, review: { previous: personal, findings: rv.textFindings } });
+        outcome = personal ? 'Holly redrafted the personal line' : 'personal line dropped';
+      }
+      rimmer = replycheck.noteFor(rv.problems, outcome);
+    }
+  }
 
   let status = 'queued';
   if (mode === 'shadow') status = 'shadow';
@@ -1038,9 +1172,10 @@ async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, sa
     type,
     policy_codes: codes.join(','),
     subject: replySubject(msg.subject),
-    body: buildBody({ items, outOfScope: result.outOfScope, clarification, unusable, name, personal, joined }),
+    body: buildBody({ items, outOfScope: result.outOfScope, clarification, unusable, name: hello, personal, joined }),
     status,
     notes: [
+      rimmer,
       personal ? 'Personal line from their Contacts row' : '',
       joined ? JOINED_NOTE : '',
       type === 'clarify' && contact && drafted ? PERSONAL_NOTE : '',
@@ -1079,9 +1214,11 @@ const theyWroteNote = (said) => {
 // Held for Jon: the holding reply goes automatically (dropped over the sender limit), and
 // Holly's draft of the real reply waits for Jon in every mode. why: extra note for Jon
 // (e.g. a holiday-mode answer that failed the checks).
-async function planHeld({ msg, result, ctx, mode, base, said, limit, contact, name }, { hold, why = '', draft = null }) {
+async function planHeld({ msg, result, rows, ctx, mode, base, said, limit, contact, name: given }, { hold, why = '', draft = null }) {
   const label = modeLabel(mode, ctx.holiday);
-  const d = draft || await draftAnswer({ emailClass: base.class, result, msg, said, hold, contact });
+  const d = draft || await reviewedAnswer({ emailClass: base.class, result, msg, said, hold, contact },
+    { type: hold ? 'held' : 'answer', name: given, rows, existing: ctx.existing });
+  const name = d.name || given;
   let holding = null;
   if (!limit.over) {
     holding = await appendReply(ctx, {
@@ -1111,6 +1248,7 @@ async function planHeld({ msg, result, ctx, mode, base, said, limit, contact, na
       theyWroteNote(said),
       d.drafted ? '' : 'Draft is holding wording: edit before approving',
       d.personal ? PERSONAL_NOTE : '',
+      d.rimmer,
       ...d.warnings,
     ].filter(Boolean).join(' | '),
   });
@@ -1121,11 +1259,13 @@ async function planHeld({ msg, result, ctx, mode, base, said, limit, contact, na
 // Possible auto-responder (sender or subject only): nothing goes automatically, not even a
 // holding reply. Holly's draft of the reply it would otherwise get waits for Jon's Send
 // (type "held", never sent without him, in every mode), so a real villager isn't lost.
-async function planProbable({ msg, result, rows, ctx, unusable, mode, base, said, limit, contact, name }, why, isSubmission) {
+async function planProbable({ msg, result, rows, ctx, unusable, mode, base, said, limit, contact, name: given }, why, isSubmission) {
   // A submission (e.g. a booking site's no-reply notice) gets its plain acknowledgement.
   const d = isSubmission
     ? { text: '', drafted: true, warnings: [] }
-    : await draftAnswer({ emailClass: base.class, result, msg, said, hold: base.hold_reason, contact });
+    : await reviewedAnswer({ emailClass: base.class, result, msg, said, hold: base.hold_reason, contact },
+      { type: 'held', name: given, rows, existing: ctx.existing });
+  const name = d.name || given;
   const items = rows.map((r) => ({ title: r.title, event_date: r.event_date, policy: splitCodes(r.policy_flags) }));
   const row = await appendReply(ctx, {
     ...base,
@@ -1144,6 +1284,7 @@ async function planProbable({ msg, result, rows, ctx, unusable, mode, base, said
       theyWroteNote(said),
       d.drafted ? '' : 'Draft is holding wording: edit before approving',
       d.personal ? PERSONAL_NOTE : '',
+      d.rimmer,
       ...d.warnings,
     ].filter(Boolean).join(' | '),
   });
@@ -1192,15 +1333,16 @@ async function planEnquiry(job) {
     });
   }
 
-  const d = await draftAnswer({ emailClass: base.class, result, msg, said, hold: '', contact });
+  const d = await reviewedAnswer({ emailClass: base.class, result, msg, said, hold: '', contact },
+    { type: 'answer', name, rows: job.rows, existing: ctx.existing });
   // Holiday mode never sends a draft that failed a check: holding reply + draft for Jon.
   if (ctx.holiday && mode !== 'shadow' && (!d.drafted || d.warnings.length)) {
     return planHeld(job, { hold: '', why: 'Holiday mode: draft failed a check, so it waits for you', draft: d });
   }
   return write({
     reply_id: `${msg.id}-answer`, type: 'answer', policy_codes: codes(`answer:${base.class}`),
-    body: wrap(d.text, name), status,
-    extra: [listNote, d.drafted ? '' : 'Draft is holding wording: edit before approving', d.personal ? PERSONAL_NOTE : '', ...d.warnings],
+    body: wrap(d.text, d.name || name), status,
+    extra: [listNote, d.drafted ? '' : 'Draft is holding wording: edit before approving', d.personal ? PERSONAL_NOTE : '', d.rimmer, ...d.warnings],
   });
 }
 
@@ -1305,7 +1447,7 @@ function sanitiseAnswer(text, urls, { emails = [], max = MAX_ANSWER_CHARS } = {}
 
 // Returns { text, drafted, warnings }. drafted false: holding wording (Claude unavailable or
 // the draft failed the checks). warnings: risky phrases or a missing page link.
-async function draftAnswer({ emailClass, result, msg, said, hold, contact = null }) {
+async function draftAnswer({ emailClass, result, msg, said, hold, contact = null, review = null }) {
   const fallback = (why) => ({ text: ANSWER_FALLBACK, drafted: false, warnings: why ? [why] : [] });
   if (!process.env.ANTHROPIC_API_KEY) return fallback('No API key: no draft');
   let facts;
@@ -1318,7 +1460,7 @@ async function draftAnswer({ emailClass, result, msg, said, hold, contact = null
     const res = await claude().messages.create({
       model: MODEL(),
       max_tokens: 900,
-      system: cachedSystem(withVoice(ANSWER_SYSTEM, contact)),
+      system: cachedSystem(withVoice(reviewSystem(ANSWER_SYSTEM, review), contact)),
       messages: [{
         role: 'user',
         content: JSON.stringify({
@@ -1330,6 +1472,7 @@ async function draftAnswer({ emailClass, result, msg, said, hold, contact = null
           hold_reason: hold || 'none',
           known_contact: promptContact(contact),
           site_facts: facts.facts,
+          ...reviewInput(review),
         }),
       }],
     });
@@ -1344,6 +1487,24 @@ async function draftAnswer({ emailClass, result, msg, said, hold, contact = null
     console.warn(`Answer draft failed, using holding wording: ${(err && err.message) || err}`);
     return fallback('Claude draft unavailable');
   }
+}
+
+// draftAnswer, then Rimmer's reading and (if he found anything in the text) one redraft by
+// Holly. Returns the draft to use, with `name` (the greeting name) and `rimmer` (the note
+// for Jon, or ''). A fallback (fixed wording) draft is not checked.
+async function reviewedAnswer(args, { type, name = '', rows = [], existing = [] }) {
+  const d = await draftAnswer(args);
+  if (!d.drafted) return { ...d, name, rimmer: '' };
+  const rv = await rimmerReads({ type, body: wrap(d.text, name), msg: args.msg, rows, existing });
+  if (!rv) return { ...d, name, rimmer: '' };
+  let use = d;
+  let outcome = greetingOutcome(rv);
+  if (rv.textFindings.length) {
+    const again = await draftAnswer({ ...args, review: { previous: d.text, findings: rv.textFindings } });
+    if (again.drafted) use = again;
+    outcome = again.drafted ? 'Holly redrafted' : 'redraft failed, first draft kept';
+  }
+  return { ...use, name: rv.name || name, rimmer: replycheck.noteFor(rv.problems, outcome) };
 }
 
 /* ---------------------------------------------------------------- sorry -- */
@@ -1624,15 +1785,15 @@ function itemState(reply, ctx) {
 
 // Returns { needsHuman, reason, draft, drafted }. Any failure flags it (with holding
 // wording) rather than letting a follow-up go unnoticed.
-async function triageFollowup(input, contact = null) {
+async function triageFollowup(input, contact = null, review = null) {
   const fail = (why) => ({ needsHuman: true, reason: why, draft: FOLLOWUP_FALLBACK, drafted: false });
   if (!process.env.ANTHROPIC_API_KEY) return fail('Automatic check unavailable (no API key)');
   try {
     const res = await claude().messages.create({
       model: MODEL(),
       max_tokens: 800,
-      system: cachedSystem(withVoice(FOLLOWUP_SYSTEM, contact)),
-      messages: [{ role: 'user', content: JSON.stringify({ ...input, known_contact: promptContact(contact) }) }],
+      system: cachedSystem(withVoice(reviewSystem(FOLLOWUP_SYSTEM, review), contact)),
+      messages: [{ role: 'user', content: JSON.stringify({ ...input, known_contact: promptContact(contact), ...reviewInput(review) }) }],
     });
     const raw = textOf(res);
     const out = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
@@ -1703,15 +1864,34 @@ async function planFollowup({ msg, reply, ctx, added = [], result = {} }) {
     if (list) listNote = list.refused;
   }
 
-  const t = await triageFollowup({
+  const triageInput = {
     our_reply: String(reply.body || '').slice(0, 2000),
     their_message: said,
     has_attachments: (msg.attachments || []).length > 0,
     details_added: added,
     items: itemState(reply, ctx),
-  }, contact);
+  };
+  const t = await triageFollowup(triageInput, contact);
   // A possible auto-responder always goes to Jon (never dropped on a heuristic).
   if (!t.needsHuman && !hold && !listNote && !responder) return { flagged: false, reason: t.reason };
+
+  // Rimmer reads Holly's draft; she redrafts once with what he found.
+  let hello = nameFor(msg, contact);
+  let rimmer = '';
+  if (t.drafted && mode !== 'off') {
+    const rv = await rimmerReads({ type: 'followup', body: wrap(t.draft, hello), msg, rows: originalRows(reply, ctx), existing: ctx.existing });
+    if (rv) {
+      hello = rv.name || hello;
+      let outcome = greetingOutcome(rv);
+      if (rv.textFindings.length) {
+        const again = await triageFollowup(triageInput, contact, { previous: t.draft, findings: rv.textFindings });
+        const ok = again.needsHuman && again.drafted;
+        if (ok) t.draft = again.draft;
+        outcome = ok ? 'Holly redrafted' : 'redraft failed, first draft kept';
+      }
+      rimmer = replycheck.noteFor(rv.problems, outcome);
+    }
+  }
 
   const flat = said.replace(/\s+/g, ' ');
   const excerpt = flat.length > FOLLOWUP_EXCERPT ? `${flat.slice(0, FOLLOWUP_EXCERPT)}…` : flat;
@@ -1722,7 +1902,7 @@ async function planFollowup({ msg, reply, ctx, added = [], result = {} }) {
     type: 'followup',
     policy_codes: 'followup',
     subject: replySubject(msg.subject),
-    body: wrap(t.draft || FOLLOWUP_FALLBACK, nameFor(msg, contact)),
+    body: wrap(t.draft || FOLLOWUP_FALLBACK, hello),
     status: mode === 'shadow' ? 'shadow' : 'awaiting',
     notes: [
       `Follow-up: ${t.reason}`,
@@ -1732,6 +1912,7 @@ async function planFollowup({ msg, reply, ctx, added = [], result = {} }) {
       excerpt ? `They wrote: "${excerpt}"` : 'No text (attachment only?)',
       t.drafted ? '' : 'Draft is holding wording: edit before sending',
       t.drafted && contact ? PERSONAL_NOTE : '',
+      rimmer,
     ].filter(Boolean).join(' | '),
   });
   await feedback.record(row, { theyWrote: said, mode: modeLabel(mode, ctx.holiday) });
@@ -2063,9 +2244,14 @@ async function redraftReply(replyId, instruction) {
   if (!process.env.ANTHROPIC_API_KEY) throw new Error('No ANTHROPIC_API_KEY (is it passed in approval.yml?); the old draft is unchanged');
 
   let said = '';
+  let original = null; // the email this replies to, for Rimmer
   try {
-    if (row.message_id) said = stripQuoted((await g.getMessage(row.message_id)).text);
+    if (row.message_id) {
+      original = await g.getMessage(row.message_id);
+      said = stripQuoted(original.text);
+    }
   } catch (err) {
+    original = null;
     console.warn(`Redraft for ${replyId}: original email unreadable, using the note: ${(err && err.message) || err}`);
     const m = String(row.notes || '').match(/They wrote: "([^"]*)"/);
     said = m ? m[1] : '';
@@ -2077,39 +2263,67 @@ async function redraftReply(replyId, instruction) {
   const urls = new Set([...facts.urls, ...(previous.match(/https?:\/\/[^\s<>"]+/g) || [])]);
   const emails = want.match(/[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[a-z]{2,}/gi) || [];
   const contact = contactFor(row.to);
-  const res = await claude().messages.create({
-    model: MODEL(),
-    max_tokens: 900,
-    system: cachedSystem(withVoice(REDRAFT_SYSTEM, contact)),
-    messages: [{
-      role: 'user',
-      content: JSON.stringify({
-        instruction: want,
-        previous_draft: previous,
-        their_message: said,
-        subject: row.subject || '',
-        email_class: row.class || '',
-        reply_type: row.type || '',
-        hold_reason: row.hold_reason || 'none',
-        known_contact: promptContact(contact),
-        site_facts: facts.facts,
-      }),
-    }],
-  });
-  const raw = textOf(res);
-  let out;
-  try {
-    out = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
-  } catch {
-    throw new Error(`Redraft for ${replyId}: Claude gave no usable answer; the old draft is unchanged`);
-  }
-  const text = sanitiseAnswer(out.draft, urls, { emails, max: MAX_REDRAFT_CHARS });
+  // review: Rimmer's findings on the first redraft (the instruction still wins).
+  const ask = async (review = null) => {
+    const res = await claude().messages.create({
+      model: MODEL(),
+      max_tokens: 900,
+      system: cachedSystem(withVoice(review
+        ? `${REDRAFT_SYSTEM}\n\nreviewer_findings, when the input has it: an independent second reader found these problems in first_redraft, your rewrite. Write it again with each one put right, still following the instruction, which wins. Every rule above still applies in full.`
+        : REDRAFT_SYSTEM, contact)),
+      messages: [{
+        role: 'user',
+        content: JSON.stringify({
+          instruction: want,
+          previous_draft: previous,
+          their_message: said,
+          subject: row.subject || '',
+          email_class: row.class || '',
+          reply_type: row.type || '',
+          hold_reason: row.hold_reason || 'none',
+          known_contact: promptContact(contact),
+          site_facts: facts.facts,
+          ...(review ? { first_redraft: review.previous, reviewer_findings: review.findings } : {}),
+        }),
+      }],
+    });
+    const raw = textOf(res);
+    let out;
+    try {
+      out = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
+    } catch {
+      return null;
+    }
+    return sanitiseAnswer(out.draft, urls, { emails, max: MAX_REDRAFT_CHARS });
+  };
+  let text = await ask();
+  if (text === null) throw new Error(`Redraft for ${replyId}: Claude gave no usable answer; the old draft is unchanged`);
   if (!text) throw new Error(`Redraft for ${replyId} failed the checks (length, links or email address); the old draft is unchanged`);
-  const warnings = RISKY.filter(([re]) => re.test(text)).map(([, why]) => `Check: draft ${why}`);
 
   const now = londonDateTime(Date.now());
   const paras = String(row.body || '').trim().split(/\n{2,}/);
-  const hello = isGreeting(paras[0] || '') ? paras[0].trim() : greeting('');
+  let hello = isGreeting(paras[0] || '') ? paras[0].trim() : greeting('');
+
+  // Rimmer reads the redraft of a reply to someone's email (not our own outreach); Holly
+  // rewrites once more with what he found. Any failure keeps the redraft as it is.
+  let rimmer = '';
+  if (original && row.type !== 'outreach') {
+    let held = [];
+    try { held = (await g.readTable('Pending')).filter((r) => r.message_id === row.message_id); } catch { /* without items */ }
+    const rv = await rimmerReads({ type: 'redraft', body: [hello, text, fill('signature')].join('\n\n'), msg: original, rows: held, existing: [] });
+    if (rv) {
+      if (rv.name) hello = greeting(rv.name);
+      let outcome = greetingOutcome(rv);
+      if (rv.textFindings.length) {
+        let again = '';
+        try { again = await ask({ previous: text, findings: rv.textFindings }); } catch { again = ''; }
+        if (again) text = again;
+        outcome = again ? 'Holly redrafted' : 'redraft failed, first draft kept';
+      }
+      rimmer = replycheck.noteFor(rv.problems, outcome);
+    }
+  }
+  const warnings = RISKY.filter(([re]) => re.test(text)).map(([, why]) => `Check: draft ${why}`);
   const fresh = {
     reply_id: redraftId(replyId, rows),
     message_id: row.message_id,
@@ -2124,7 +2338,7 @@ async function redraftReply(replyId, instruction) {
     body: [hello, text, optout, fill('signature')].filter(Boolean).join('\n\n'),
     status: mode === 'shadow' ? 'shadow' : 'awaiting',
     created_at: now,
-    notes: [`Redraft of ${replyId}, as you asked: "${want}"`, theyWroteNote(said), contact ? PERSONAL_NOTE : '', ...warnings].filter(Boolean).join(' | '),
+    notes: [`Redraft of ${replyId}, as you asked: "${want}"`, theyWroteNote(said), contact ? PERSONAL_NOTE : '', rimmer, ...warnings].filter(Boolean).join(' | '),
   };
   await g.appendRows('Replies', [fresh]);
   await g.updateRow('Replies', row._row, {
@@ -2230,6 +2444,8 @@ module.exports = {
   fixLinks,
   firstName,
   redraftReply,
+  rimmerItems,
+  signedNameIn,
   owedReplies,
   owedDue,
   closeOwed,

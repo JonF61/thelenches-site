@@ -64,5 +64,8 @@ jobs:
           GMAIL_LABEL: "Lenches Website/2 Pipeline"
           START_DATE_OVERRIDE: ${{ github.event.inputs.start_date }}
           INBOUND_MODEL: ${{ vars.INBOUND_MODEL }}
+          # Rimmer reads Holly's reply drafts (scripts/rimmer/replycheck.js); RIMMER_REPLIES = off turns it off.
+          RIMMER_MODEL: ${{ vars.RIMMER_MODEL }}
+          RIMMER_REPLIES: ${{ vars.RIMMER_REPLIES }}
           APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
           WORKER_URL: https://approvals.lenches.workers.dev

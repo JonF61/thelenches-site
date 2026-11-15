@@ -14,6 +14,7 @@ const fs = require('fs');
 const path = require('path');
 
 process.env.ANTHROPIC_API_KEY = 'test';
+process.env.RIMMER_REPLIES = 'off'; // Rimmer's reading of drafts has its own test (test-replycheck.js)
 process.env.GMAIL_USER = 'owner@thelenches.org.uk';
 process.env.WORKER_URL = 'https://worker.example';
 process.env.APPROVAL_SIGNING_KEY = 'test-key';
