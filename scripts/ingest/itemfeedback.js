@@ -108,6 +108,9 @@ function diff(draft, current) {
 function duplicateOutcome(row, action, merged = {}) {
   const proposed = (dupOf(row) || {}).changes || {};
   const flat = (o) => JSON.stringify(Object.keys(o).sort().map((k) => [k, str(o[k]).replace(/\s+/g, ' ')]));
+  // Replace with the organiser's version (15 Nov): Holly's match was right and Jon chose the
+  // organiser's wording, so it isn't counted for or against her.
+  if (action === 'replace') return { outcome: 'replaced', changed: 'replaced the listed item', final: '' };
   if (action === 'reject') return { outcome: 'done', changed: '', final: '' };
   if (action === 'merge') {
     const same = flat(merged) === flat(proposed);

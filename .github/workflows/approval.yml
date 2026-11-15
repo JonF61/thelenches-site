@@ -53,16 +53,17 @@ jobs:
           APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
           WORKER_URL: https://approvals.lenches.workers.dev
 
-      - name: Commit item changes (Add details)
-        if: ${{ success() && github.event.client_payload.action == 'merge' }}
+      - name: Commit item changes (Add details, Replace)
+        if: ${{ success() && (github.event.client_payload.action == 'merge' || github.event.client_payload.action == 'replace') }}
         env:
           GH_TOKEN: ${{ github.token }}
+          SUBJECT: ${{ github.event.client_payload.action == 'replace' && 'Remove a listed item replaced by its organiser''s version (admin panel)' || 'Add details to a listed item (admin panel)' }}
         run: |
-          git add src/items
+          git add -A src/items
           if git diff --cached --quiet; then echo "No item files changed."; exit 0; fi
           git config user.name "Lenches Pipeline"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Add details to a listed item (admin panel)"
+          git commit -m "$SUBJECT"
           git pull --rebase
           git push
           gh workflow run build.yml --ref main

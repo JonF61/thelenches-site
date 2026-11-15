@@ -13,6 +13,9 @@ export const ACTIONS = {
   done: ['Done already', 'Marked done already', 'reject'],
   // Already listed (admin panel only, 3 Nov): add the new details to the existing entry; this item becomes done.
   merge: ['Add details', 'Details being added to the listed item', 'approve'],
+  // Already listed (admin panel only, 15 Nov): the organiser's own version replaces the listed
+  // entry: this item is approved and the listed one removed, in the one decision.
+  replace: ["Replace with the organiser's version", 'Replacing the listed item', 'approve'],
   approve_own: ['Approve with their wording', 'Approved with their wording', 'approve'],
   approve_rewrite: ['Approve with rewrite', 'Approved with our rewrite', 'approve'],
   trust: ['Trust this source', 'Source trusted', 'approve'],
@@ -74,7 +77,7 @@ export const ACTIONS = {
 };
 
 // Never valid in a signed email link (index.js /a).
-export const PANEL_ONLY = ['nlquiet', 'nltest', 'contactmail', 'done', 'merge', 'sug_ok', 'sug_no', 'rfix', 'rfix_ok', 'rfix_all', 'entryedit'];
+export const PANEL_ONLY = ['nlquiet', 'nltest', 'contactmail', 'done', 'merge', 'replace', 'sug_ok', 'sug_no', 'rfix', 'rfix_ok', 'rfix_all', 'entryedit'];
 
 export const FEEDBACK_ACTIONS = ['fb_approve', 'fb_reject', 'fb_postpone', 'fb_done', 'fb_send', 'fb_edit', 'fb_skip'];
 
