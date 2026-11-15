@@ -18,7 +18,7 @@ signup: false
       <p class="sp-kicker">Sponsor of the month</p>
       <h1>Sponsor the Lenches newsletter</h1>
       <p class="lead">The Lenches Website and its free weekly newsletter keep five villages in touch: events, news, roads, bins and local services, all in one place, updated daily. Each month, one local business can support it.</p>
-      <p class="sp-hero-meta"><strong>Price on application (POA)</strong> &middot; one sponsor at a time &middot; no contract</p>
+      <p class="sp-hero-meta"><strong>&pound;{{ sponsors.price.amount }} a month{% if sponsors.price.intro %}, introductory price{% endif %}</strong> &middot; one sponsor at a time &middot; no contract</p>
       <p class="sp-actions"><a class="btn sp-btn" href="mailto:{{ site.email }}?subject=Sponsoring%20the%20newsletter">Book a month</a> <a class="sp-link-light" href="#what-you-get">See what you get</a></p>
     </div>
   </section>
@@ -81,8 +81,9 @@ signup: false
     <section class="sp-block sp-price-row">
       <div class="sp-price">
         <h2>Price</h2>
-        <p class="sp-price-num">POA</p>
-        <p class="sp-price-per">for the calendar month</p>
+        <p class="sp-price-num">&pound;{{ sponsors.price.amount }}</p>
+        <p class="sp-price-per">for the calendar month</p>{% if sponsors.price.intro %}
+        <p class="sp-price-per">Introductory price for months booked before {{ sponsors.price.introBefore }}.</p>{% endif %}
         <ul class="sp-ticks">
           <li><svg class="sp-tick" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".15"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Usually an allowable business expense (check with your accountant).</span></li>
           <li><svg class="sp-tick" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".15"/><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>We're not VAT registered.</span></li>

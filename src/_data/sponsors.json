@@ -1,5 +1,10 @@
 {
-  "_help": "Sponsor of the month (14 Nov 2026, Jon). audience: the figures the /sponsor/ page and Holly's approach email quote (update by hand until automated). months: keyed YYYY-MM (UK); each {name, line (up to 15 words), url, logo (site path, e.g. /images/sponsors/<new-name>.png; optional), approved, paid}. The banner shows only an entry with approved AND paid true, during its month (sponsorNow.js; the nightly rebuild moves it on). One sponsor a month; never political or gambling.",
+  "_help": "Sponsor of the month (14 Nov 2026, Jon). price: the monthly price in pounds shown on /sponsor/, its terms and in Holly's approach email ({price}); intro true = called the introductory price, for months booked before introBefore (set by Jon 15 Nov 2026: 50; change amount here to raise it, months already booked keep their price). audience: the figures the /sponsor/ page and Holly's approach email quote (update by hand until automated). months: keyed YYYY-MM (UK); each {name, line (up to 15 words), url, logo (site path, e.g. /images/sponsors/<new-name>.png; optional), approved, paid}. The banner shows only an entry with approved AND paid true, during its month (sponsorNow.js; the nightly rebuild moves it on). One sponsor a month; never political or gambling.",
+  "price": {
+    "amount": 50,
+    "intro": true,
+    "introBefore": "1 March 2027"
+  },
   "audience": {
     "subscribers": 450,
     "opensPerMonth": 550,
