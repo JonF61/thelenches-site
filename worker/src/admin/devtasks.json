@@ -19,8 +19,9 @@
       "kryten": true
     },
     {
-      "task": "Autonomy, acknowledgements: count Jon's decisions on Holly's acknowledgements in Reply feedback (they are not recorded today), then give them the same veto window once they qualify",
-      "added": "2026-11-15"
+      "task": "Autonomy, acknowledgements: counted from 15 Nov in three kinds (fixed wording, personal line, already listed) on the Autonomy screen. Once a kind has enough clean decisions, propose its veto window to Jon (fixed wording first); check the first few rows appear in Reply feedback with the right kind",
+      "added": "2026-11-15",
+      "kryten": true
     },
     {
       "task": "Autonomy plan step 3 (built 15 Nov: Holly and Rimmer see the sender's recent items and recent site changes; Already listed capped when titles differ): on the next few replies, check nothing already done is chased, and that the next Already listed matches are real repeats. No Ingest run had happened since the merge when checked 15 Nov 21:10 UTC: also confirm the Ingest checkout step (full history, blob:none) succeeds and the run is no slower than the usual 20 to 40 seconds",

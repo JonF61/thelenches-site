@@ -193,7 +193,7 @@ async function testRouting() {
     ok(tables.Replies.find((r) => r.type === 'list' && r.to === 'ali@example.com').body.includes("you're now on the list"), 'subscribe confirmed');
     const outside = tables.Replies.find((r) => r.notes.includes('Is there a bus'));
     ok(outside && !outside.body.includes('example-buses'), 'outside link never kept');
-    ok(tables['Reply feedback'].length === tables.Replies.filter((r) => ['clarify', 'answer', 'whattodo', 'held'].includes(r.type)).length,
+    ok(tables['Reply feedback'].length === tables.Replies.filter((r) => ['clarify', 'answer', 'whattodo', 'held', 'ack'].includes(r.type)).length,
       'every draft logged in Reply feedback');
   }
 
@@ -296,7 +296,7 @@ async function testSending() {
     && byType('list').every((r) => r.status === 'sent'), 'holiday mode: confident answers, list confirmations and what-to-do replies sent');
   ok(byType('held').every((r) => r.status === 'awaiting'), 'holiday mode: held drafts still wait');
   ok(byType('answer').filter((r) => r.status === 'awaiting').length === 3, 'holiday mode: drafts that failed a check, and refused list requests, wait');
-  ok(fb().filter((r) => r.outcome === 'auto_sent').length === 7, 'feedback: auto_sent (clarify, 4 answers, 2 what-to-do)');
+  ok(fb().filter((r) => r.outcome === 'auto_sent' && r.type !== 'ack').length === 7, 'feedback: auto_sent (clarify, 4 answers, 2 what-to-do)');
 
   // Welcome back: everything Holly sent in holiday mode, once, after holiday mode goes off.
   const holidaySent = tables.Replies.filter((r) => r.status === 'sent').length;

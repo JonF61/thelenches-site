@@ -4,7 +4,8 @@
 // the latest corrections (replies.js primeLearning), and scripts/lessons proposes weekly
 // lessons from them for Jon to approve.
 //
-// One row per drafted reply (clarify, answer, whattodo, held, followup, sorry), written
+// One row per drafted reply (clarify, answer, whattodo, held, followup, sorry and, since 15 Nov
+// 2026, ack), written
 // when the draft is made; outcome, final_text, reason and decided_at are filled in later:
 //   approved     Jon pressed Approve and the draft went as written
 //   edited       Jon changed it (Edit email, or the Replies body cell) before it went
@@ -18,6 +19,11 @@
 //   shadow       shadow mode: never sent
 //   ignored:<was> Jon's Ignore on the panel's Autonomy screen (a test or a slip): left out of
 //                the autonomy counts and of Holly's learning; Count again restores it
+// Acknowledgements (15 Nov 2026, towards their veto window): logged so Jon's Approve / Edit /
+// Reject on them is counted on the panel's Autonomy screen. Their `class` cell holds the kind of
+// acknowledgement, not the email's class: plain (fixed wording only), personal (with Holly's
+// personal line) or listed (the Already listed wording). Only personal ones teach Holly
+// (replies.js correctionsFrom): the rest is fixed wording she doesn't write.
 // Jon can type a reason in the tab by hand at any time.
 // The tab is created (at the end, after every other tab) the first time it is needed.
 // Writes here never stop a reply: failures only warn.
@@ -28,7 +34,8 @@ const g = require('./google');
 const TAB = 'Reply feedback';
 const HEADERS = ['reply_id', 'created_at', 'type', 'class', 'class_confidence', 'mode', 'they_wrote',
   'draft', 'outcome', 'final_text', 'reason', 'decided_at'];
-const TYPES = ['clarify', 'answer', 'whattodo', 'held', 'followup', 'sorry', 'outreach'];
+const TYPES = ['clarify', 'answer', 'whattodo', 'held', 'followup', 'sorry', 'outreach', 'ack'];
+const ACK_KINDS = ['plain', 'personal', 'listed'];
 const EXCERPT = 600;
 
 const flat = (s) => String(s || '').replace(/\s+/g, ' ').trim();
@@ -38,7 +45,8 @@ const warn = (what, err) => console.warn(`Reply feedback: ${what} failed: ${(err
 
 // row: the Replies row just written. theyWrote: the sender's text (quoted text removed).
 // A redraft is logged whatever its type.
-async function record(row, { theyWrote = '', mode = '' } = {}) {
+// ackKind: plain | personal | listed, for an acknowledgement.
+async function record(row, { theyWrote = '', mode = '', ackKind = '' } = {}) {
   if (!TYPES.includes(row.type) && !/(^|,)redraft(,|$)/.test(String(row.policy_codes || ''))) return;
   try {
     await g.ensureTab(TAB, HEADERS);
@@ -46,7 +54,7 @@ async function record(row, { theyWrote = '', mode = '' } = {}) {
       reply_id: row.reply_id,
       created_at: row.created_at,
       type: row.type,
-      class: row.class || '',
+      class: row.type === 'ack' ? (ACK_KINDS.includes(ackKind) ? ackKind : 'plain') : row.class || '',
       class_confidence: row.class_confidence === undefined ? '' : row.class_confidence,
       mode,
       they_wrote: excerpt(theyWrote),

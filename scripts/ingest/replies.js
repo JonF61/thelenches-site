@@ -539,6 +539,8 @@ function correctionsFrom(rows, n = RECENT_CORRECTIONS) {
     // "already replied in Gmail", which would teach the wrong thing).
     .filter((r) => String(r.decided_at || '') >= itemFeedback.LEARN_FROM)
     .filter((r) => ['edited', 'redrafted'].includes(r.outcome) || (r.outcome === 'rejected' && String(r.reason || '').trim()))
+    // Acknowledgements (logged since 15 Nov): only those with Holly's personal line teach her.
+    .filter((r) => r.type !== 'ack' || r.class === 'personal')
     .sort((a, b) => String(b.decided_at || b.created_at).localeCompare(String(a.decided_at || a.created_at)))
     .slice(0, n)
     .map((r) => ({
@@ -1220,7 +1222,10 @@ async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, sa
       unusable.length ? `Couldn't use: ${unusable.join(', ')}` : '',
     ].filter(Boolean).join(' | '),
   });
-  await feedback.record(row, { theyWrote: stripQuoted(msg.text), mode: modeLabel(mode, ctx.holiday) });
+  await feedback.record(row, {
+    theyWrote: stripQuoted(msg.text), mode: modeLabel(mode, ctx.holiday),
+    ackKind: personal ? 'personal' : items.some((i) => i.listed) ? 'listed' : 'plain',
+  });
   return row;
 }
 

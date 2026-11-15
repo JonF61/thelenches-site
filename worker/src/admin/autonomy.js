@@ -79,9 +79,12 @@ function replyDecision(r) {
   if (!v && !ignored) return null;
   const type = str(r.type).toLowerCase() || 'reply';
   const cls = str(r.class).toLowerCase();
-  const label = type === 'answer' && cls ? `Answer · ${cls}` : cap(type);
+  // Acknowledgements (logged since 15 Nov): class is the kind of ack (feedback.js ACK_KINDS).
+  const ACK = { plain: 'fixed wording', personal: 'with a personal line', listed: 'already listed' };
+  const sub = type === 'answer' || type === 'ack' ? cls : '';
+  const label = type === 'answer' && cls ? `Answer · ${cls}` : type === 'ack' ? `Acknowledgement${ACK[cls] ? ` · ${ACK[cls]}` : ''}` : cap(type);
   return {
-    kind: 'reply', id: str(r.reply_id), key: `reply:${type}${type === 'answer' && cls ? `:${cls}` : ''}`, label,
+    kind: 'reply', id: str(r.reply_id), key: `reply:${type}${sub ? `:${sub}` : ''}`, label,
     never: NEVER_REPLY.has(type), at: str(r.decided_at || r.created_at),
     verdict: ignored ? 'ignored' : v, outcome: str(r.outcome), changed: '',
     // What it was: the opening words of their email (quoted text already removed), else of Holly's draft.
