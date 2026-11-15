@@ -94,6 +94,12 @@
       "link": "https://thelenches.org.uk/regulars/",
       "text": "The Regular activities section is now shorter: it shows newly listed activities, with a button to the full list on the website.",
       "until": "2026-11-12"
+    },
+    {
+      "key": "night-skyline-2026-11",
+      "from": "2026-11-19",
+      "link": "https://thelenches.org.uk/",
+      "text": "After dark, the picture at the top of the home page now turns to night, with lit windows and the moon in its real phase."
     }
   ]
 }
