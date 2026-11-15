@@ -26,7 +26,9 @@ const { anchorUrl } = require('../../lib/anchors');
 const TZ = 'Europe/London';
 const PIPELINE = path.join(__dirname, '..', '..', 'src', '_data', 'pipeline.json');
 // Only items decided from when this was switched on: older ones never get a late email.
-const LIVE_FROM = process.env.LIVE_FROM_TEST || '2026-11-03 21:00';
+// Moved from 3 Nov to 15 Nov 2026 21:30: until then google.js readTable never saw the
+// live_notified_at column (it sits past AZ), so nothing was ever sent.
+const LIVE_FROM = process.env.LIVE_FROM_TEST || '2026-11-15 21:30';
 const COLUMN = 'live_notified_at';
 const CHECKS = Number(process.env.LIVE_CHECKS || 6);
 const WAIT_MS = Number(process.env.LIVE_WAIT_MS || 60000);

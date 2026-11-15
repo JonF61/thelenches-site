@@ -14,17 +14,18 @@
       "added": "2026-11-15"
     },
     {
-      "task": "Autonomy plan step 4: stage 3 veto window for emailed listing write-ups (21 of 22 went out as written), then acknowledgements",
-      "added": "2026-11-15"
+      "task": "Autonomy plan step 4 (stage 3 veto window): researched 15 Nov and design sent to Jon. No kind qualifies yet under the Autonomy screen's rule: emailed events 10 of 30 decisions (all as written), emailed notices 4 (3 as written), acknowledgements 2 sent and not counted at all. Jon to choose: wait for 30, or a lower bar for emailed events",
+      "added": "2026-11-15",
+      "waiting": "Jon"
     },
     {
-      "task": "Autonomy plan step 3 (built 15 Nov: Holly and Rimmer see the sender's recent items and recent site changes; Already listed capped when titles differ): on the next few replies, check nothing already done is chased, and that the next Already listed matches are real repeats",
+      "task": "Autonomy plan step 3 (built 15 Nov: Holly and Rimmer see the sender's recent items and recent site changes; Already listed capped when titles differ): on the next few replies, check nothing already done is chased, and that the next Already listed matches are real repeats. No Ingest run had happened since the merge when checked 15 Nov 21:10 UTC: also confirm the Ingest checkout step (full history, blob:none) succeeds and the run is no slower than the usual 20 to 40 seconds",
       "added": "2026-11-15",
       "kryten": true
     },
     {
-      "task": "Already listed: 4 of the 5 matches so far were published as new although 4 were the same thing (same title and day); Jon to say why he chose new over Add details or Done already, so the right fix can be built (e.g. a Replace the listed entry button when the organiser sends their own version)",
-      "waiting": "Jon",
+      "task": "Already listed, Replace with the organiser's version (Jon, 15 Nov: the organiser's own version takes precedence over what we gleaned elsewhere): a panel button on the Already listed card that publishes the new item and removes the listed entry in one decision. Design sent to Jon 15 Nov; build on his go-ahead",
+      "waiting": "Jon's go-ahead",
       "added": "2026-11-15"
     },
     {
@@ -65,7 +66,7 @@
       "added": "2026-11-14"
     },
     {
-      "task": "SDK 1.6 (new API version 2026-10-21): ingest and Holly runs are fine (15 Nov); check the next Rimmer run (Sunday listings) makes its Claude calls without errors",
+      "task": "SDK 1.6 (new API version 2026-10-21): ingest and Holly runs are fine (15 Nov); check the next Rimmer run makes its Claude calls without errors. Rimmer's scheduled runs start hours late (Sunday's 19:17 run had not started by 21:15 UTC on 15 Nov; the 8 Nov one ran at 22:53)",
       "added": "2026-11-14",
       "kryten": true
     },
@@ -111,13 +112,9 @@
       "added": "2026-11-03"
     },
     {
-      "task": "Now live emails: check the first one sends after a build, on the ack thread, with the right link, and only once",
-      "added": "2026-11-03"
-    },
-    {
-      "task": "Graduated autonomy stage 3 (a veto window for a kind that qualifies on the Autonomy screen): propose once one qualifies",
-      "waiting": "A kind qualifying, then Jon's go-ahead",
-      "added": "2026-11-02"
+      "task": "Now on the website emails and the Already listed card had never worked (Pending columns past AZ were not read or written; fixed 15 Nov): on the next emailed item approved, check a Now on the website draft waits in Replies and live_notified_at is filled; on the next Already listed match, check Pending duplicate is filled and the panel shows the card with Add details",
+      "added": "2026-11-15",
+      "kryten": true
     },
     {
       "task": "Contacts page: check the first Done already item reads (…, done) in its contact's Contributions after the next daily contacts run",
