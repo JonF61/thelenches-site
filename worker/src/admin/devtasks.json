@@ -14,9 +14,8 @@
       "added": "2026-11-15"
     },
     {
-      "task": "Autonomy plan step 4 (stage 3 veto window): researched 15 Nov and design sent to Jon. No kind qualifies yet under the Autonomy screen's rule: emailed events 10 of 30 decisions (all as written), emailed notices 4 (3 as written), acknowledgements 2 sent and not counted at all. Jon to choose: wait for 30, or a lower bar for emailed events",
-      "added": "2026-11-15",
-      "waiting": "Jon"
+      "task": "Autonomy plan step 4 (stage 3 veto window; Jon said go 15 Nov, emailed events to switch on at 20 decisions all as written): being built",
+      "added": "2026-11-15"
     },
     {
       "task": "Autonomy plan step 3 (built 15 Nov: Holly and Rimmer see the sender's recent items and recent site changes; Already listed capped when titles differ): on the next few replies, check nothing already done is chased, and that the next Already listed matches are real repeats. No Ingest run had happened since the merge when checked 15 Nov 21:10 UTC: also confirm the Ingest checkout step (full history, blob:none) succeeds and the run is no slower than the usual 20 to 40 seconds",
@@ -24,9 +23,9 @@
       "kryten": true
     },
     {
-      "task": "Already listed, Replace with the organiser's version (Jon, 15 Nov: the organiser's own version takes precedence over what we gleaned elsewhere): a panel button on the Already listed card that publishes the new item and removes the listed entry in one decision. Design sent to Jon 15 Nov; build on his go-ahead",
-      "waiting": "Jon's go-ahead",
-      "added": "2026-11-15"
+      "task": "Replace with the organiser's version (built 15 Nov): on its first real use, check the Apply approval run removes the listed entry (file deleted and site rebuilt, or the older row done), the new item publishes with the right picture, and the listed entry is gone from the site",
+      "added": "2026-11-15",
+      "kryten": true
     },
     {
       "task": "Autonomy plan step 2 (built 15 Nov: Rimmer reads Holly's reply drafts): on the next few drafts, check the Ingest log shows \"Rimmer read the … draft\", that his \"Rimmer: …\" notes are fair (few false alarms), and the extra cost in the Claude usage tab",

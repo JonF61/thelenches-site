@@ -28,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '55';
+export const UI_VERSION = '56';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -96,6 +96,7 @@ export const CLIENT_JS = String.raw`
       ['Done already', 'you have dealt with it another way: nothing publishes and no note is sent.'],
       ['Trust this source', 'approves this item and marks the sender trusted. For now their items still wait here, marked "trusted source".'],
       ['Already listed', 'the site has this already; Add details puts any new facts into the existing entry.'],
+      ['Replace with the organiser\'s version', 'for an Already listed item sent by the organiser, when the listed entry came from elsewhere (a feed, Facebook, typed in by hand, someone else): this item is published and the listed entry is taken off, keeping its picture if this one has none. Not offered for official entries.'],
       ['Different sender', 'an Already listed update not from whoever sent the entry in (hand-written entries always show it): check it is genuine before adding details.'],
       ['Possible repeat', 'it may be something already sent in: check before approving.'],
       ['Official, own words', 'from a council or other official body: only typos may be corrected.'],
@@ -975,6 +976,13 @@ export const CLIENT_JS = String.raw`
     // Already listed: Add details (Holly's proposal, editable) comes first.
     if (listed) {
       a.push(h('button', { class: 'btn primary', onclick: function () { overlay('Add details', mergeForm(r)); } }, 'Add details'));
+      // Replace with the organiser's version (15 Nov, Jon): the organiser's own version wins over
+      // what we gleaned elsewhere. Not for official entries, nor when the same sender sent both.
+      if (!listed.official && listed.same_sender !== true) {
+        a.push(h('button', { class: 'btn', disabled: blocked, title: why || 'For when this email is from the organiser: publishes this item and takes the listed entry off the website', onclick: function () {
+          if (window.confirm('Replace "' + str(listed.title) + '" with this version?\n\nUse this when the sender is the organiser. This item is published and the listed entry is taken off the website; its picture is kept if this item has none.')) act('pending', r.id, 'replace', null, 'Replacing');
+        } }, "Replace with the organiser's version"));
+      }
     }
     // Already listed (4 Nov, Jon): no Approve button; publishing as new is a small link below.
     if (!listed) {

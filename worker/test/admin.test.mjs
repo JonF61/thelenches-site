@@ -930,7 +930,22 @@ test('Newsletter draft: Rebuild and Test send map to nlquiet / nltest, panel onl
   assert.deepEqual(dispatchFor({ a: 'nlquiet', i: '2026-10-29' }), ['newsletter', { action: 'build', issue_date: '2026-10-29', rebuild: true, step: 'build' }]);
   assert.deepEqual(dispatchFor({ a: 'nltest', i: '2026-10-29' }), ['newsletter', { action: 'build', issue_date: '2026-10-29', step: 'preview' }]);
   assert.equal(validPayload({ a: 'nltest', i: 'abc' }), false);
-  assert.deepEqual(PANEL_ONLY, ['nlquiet', 'nltest', 'contactmail', 'done', 'merge', 'sug_ok', 'sug_no', 'rfix', 'rfix_ok', 'rfix_all', 'entryedit']);
+  assert.deepEqual(PANEL_ONLY, ['nlquiet', 'nltest', 'contactmail', 'done', 'merge', 'replace', 'sug_ok', 'sug_no', 'rfix', 'rfix_ok', 'rfix_all', 'entryedit']);
+});
+
+test("Replace with the organiser's version: an already-listed item only, never official or the same sender, panel only", async () => {
+  const dup = (extra = {}) => JSON.stringify({ key: 'h:events/a.json', title: 'Carols', ...extra });
+  const row = (extra) => ({ id: 'r1-1', status: 'pending', duplicate: dup(extra) });
+  const plan = planPending({ action: 'replace', id: 'r1-1' }, row({ same_sender: false }));
+  assert.deepEqual(plan.p, { a: 'replace', i: 'r1-1' });
+  assert.deepEqual(dispatchFor(plan.p), ['approval', { id: 'r1-1', action: 'replace' }]);
+  assert.ok(PANEL_ONLY.includes('replace'));
+  assert.equal(planPending({ action: 'replace', id: 'r1-1' }, { id: 'r1-1', status: 'pending' }).status, 409);
+  assert.equal(planPending({ action: 'replace', id: 'r1-1' }, row({ official: true })).status, 409);
+  assert.equal(planPending({ action: 'replace', id: 'r1-1' }, row({ same_sender: true })).status, 409);
+  assert.equal(planPending({ action: 'replace', id: 'r1-1' }, { ...row(), status: 'approved' }).status, 409);
+  // It publishes, so an image showing people still needs the tick.
+  assert.equal(planPending({ action: 'replace', id: 'r1-1' }, { ...row(), people_in_image: 'TRUE', people_ok: '' }, { hasPeopleOk: true }).status, 409);
 });
 
 test('Add details (merge): only for an already-listed item, panel only, fields as JSON in the body', async () => {

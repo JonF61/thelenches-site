@@ -88,6 +88,10 @@ try {
     await anyway.click();
     assert.match(dialogs[0] || '', /Publish it as a new item anyway/, `${name}: the link asks first`);
     assert.equal(posts.length, 0, `${name}: dismissed link posts nothing`);
+    // 15 Nov: Replace with the organiser's version asks first (the listed entry is hand-written).
+    await card.getByRole('button', { name: "Replace with the organiser's version" }).click();
+    assert.match(dialogs[dialogs.length - 1] || '', /Use this when the sender is the organiser/, `${name}: Replace asks first`);
+    assert.equal(posts.length, 0, `${name}: dismissed Replace posts nothing`);
     await page.getByRole('button', { name: 'Add details' }).first().click();
     const body = page.locator('#mg-body');
     assert.match(await body.inputValue(), /Entry £3, including cake/, `${name}: Holly's proposal prefilled`);

@@ -46,6 +46,14 @@
 //                     pipeline or waiting item's Pending row gets the new values (publish
 //                     rebuilds the site from it). An official entry's wording is never changed.
 //                     This item becomes "done". Nothing is sent to anyone.
+//   replace           Replace with the organiser's version (admin panel only, 15 Nov; Jon: the
+//                     organiser's own version takes precedence over what we gleaned elsewhere).
+//                     The item is already listed (Pending `duplicate`): this item is approved
+//                     and the listed entry goes in the same decision: a hand-written file in
+//                     src/items/ is deleted (approval.yml commits it and starts the build), a
+//                     pipeline or waiting Pending row becomes "done". The listed entry's
+//                     picture is kept when this item has none, and a replaced submission's
+//                     newsletter and flyer counts carry over. Never an official entry.
 // Every item decision also completes its Item feedback row (ingest/itemfeedback.js): what Jon
 // changed in Holly's write-up before approving, for her lessons and the stage 2 stats.
 // Rejecting an item whose acknowledgement said it was on its way drafts a "sorry, we
@@ -196,6 +204,72 @@ async function mergeItem(id, json) {
   console.log(`Item ${id} done: ${changed.length ? `${changed.join(', ')} added to ${dup.key.startsWith('h:') ? 'a hand-written item' : 'a pipeline item'}` : 'nothing changed'}.`);
 }
 
+// Replace with the organiser's version. Checks everything before it changes anything.
+async function replaceItem(id, itemsDir = dupes.ITEMS) {
+  const rows = await g.readTable('Pending');
+  const row = rows.find((r) => r.id === id);
+  if (!row) throw new Error(`Item ${id} not found in Pending`);
+  if (row.status !== 'pending') {
+    console.log(`Item ${id} is already "${row.status}"; nothing to do.`);
+    return;
+  }
+  const dup = dupes.parse(row.duplicate);
+  if (!dup) throw new Error(`Item ${id} isn't marked as already listed`);
+  const yes = (v) => v === true || /^(true|yes|y|1)$/i.test(String(v ?? '').trim());
+  const has = (v) => Boolean(String(v ?? '').trim());
+  if (dup.official) throw new Error('The listed item is official: it is never replaced');
+  // Keep the listed entry's picture only when this item has none of its own.
+  const noImage = !has(row.image_part_id) && !has(row.image_choice) && !has(row.image_url);
+  const carry = {};
+  const hand = HAND_KEY.exec(dup.key);
+  let file = '';
+  let target = null;
+  if (hand) {
+    file = path.join(itemsDir, hand[1], hand[2]);
+    if (fs.existsSync(file)) {
+      const item = JSON.parse(fs.readFileSync(file, 'utf8'));
+      if (item.official) throw new Error('The listed item is official: it is never replaced');
+      const img = item.image || {};
+      if (noImage && /^(\/|https:\/\/)/i.test(String(img.url || ''))) {
+        Object.assign(carry, { image_url: img.url, alt_text: img.alt || '', image_credit: img.credit || '', image_credit_url: img.creditUrl || '' });
+      }
+    } else {
+      file = ''; // already gone: just publish this one
+    }
+  } else {
+    const m = /^p:([A-Za-z0-9_:.-]{1,100})$/.exec(dup.key);
+    if (!m) throw new Error(`Bad listed-item key "${dup.key}"`);
+    target = rows.find((r) => r.id === m[1]);
+    if (!target) throw new Error(`The listed item ${m[1]} is no longer in Pending`);
+    if (target.id === row.id) throw new Error('An item cannot replace itself');
+    if (yes(target.official)) throw new Error('The listed item is official: it is never replaced');
+    if (noImage && /^(\/|https:\/\/)/i.test(String(target.image_url || ''))) {
+      Object.assign(carry, { image_url: target.image_url, alt_text: target.alt_text || '', image_credit: target.image_credit || '', image_credit_url: target.image_credit_url || '' });
+    }
+    // Replacing doesn't reset limits (as a resubmission doesn't, ingest index.js).
+    carry.newsletter_count = Math.max(Number(row.newsletter_count) || 0, Number(target.newsletter_count) || 0);
+    carry.flyer_count = Math.max(Number(row.flyer_count) || 0, Number(target.flyer_count) || 0);
+  }
+  const decidedAt = londonDateTime(Date.now());
+  // The listed entry goes first: if that fails, nothing has been published twice.
+  if (file) fs.unlinkSync(file);
+  if (target && ['pending', 'approved', 'auto'].includes(String(target.status))) {
+    const was = String(target.status);
+    await g.updateRow('Pending', target._row, {
+      status: 'done',
+      ...(was === 'pending' ? { decided_at: decidedAt } : {}),
+      notes: [target.notes, `Replaced by the organiser's version (${row.id})`].filter(Boolean).join(' | '),
+    });
+    if (was === 'pending') await itemFeedback.resolve(target, 'done', { decidedAt });
+  }
+  await g.updateRow('Pending', row._row, {
+    status: 'approved', decided_at: decidedAt, ...carry,
+    notes: [row.notes, `Replaced "${dup.title}" (organiser's version)${carry.image_url ? '; its picture kept' : ''}`].filter(Boolean).join(' | '),
+  });
+  await itemFeedback.resolve(row, 'replace', { decidedAt });
+  console.log(`Item ${id} approved: it replaced ${hand ? 'a hand-written item' : 'a pipeline item'}${carry.image_url ? ' (picture kept)' : ''}.`);
+}
+
 async function trustSource(id) {
   const [rows, { sources }] = await Promise.all([g.readTable('Pending'), g.readSettings()]);
   const row = rows.find((r) => r.id === id);
@@ -228,13 +302,14 @@ async function main() {
   const typed = payloadText();
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) throw new Error(`Bad id "${id}"`);
   // Holly's lessons and recent corrections, for any draft this action leads to.
-  if (!['send', 'skip', 'close', 'edit', 'lesson_ok', 'lesson_no', 'orgcheck', 'done', 'merge'].includes(action)) await replies.primeLearning();
+  if (!['send', 'skip', 'close', 'edit', 'lesson_ok', 'lesson_no', 'orgcheck', 'done', 'merge', 'replace'].includes(action)) await replies.primeLearning();
 
   if (ITEM_ACTIONS.includes(action)) {
     return decideItem(id, action, action === 'reject' ? String(typed.reason).replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 300) : '');
   }
   if (action === 'trust') return trustSource(id);
   if (action === 'merge') return mergeItem(id, typed.body);
+  if (action === 'replace') return replaceItem(id);
   if (action.startsWith('fb_')) {
     return readerFeedback.decide(id, action, String(typed.reason).replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 300),
       String(typed.body).replace(/\r\n?/g, '\n').trim().slice(0, 3000));
@@ -283,7 +358,7 @@ async function main() {
 }
 
 if (require.main !== module) {
-  module.exports = { mergeFields, applyDetails, mergeItem, HAND_KEY };
+  module.exports = { mergeFields, applyDetails, mergeItem, replaceItem, HAND_KEY };
 } else main().catch((err) => {
   console.error('Fatal:', err && err.stack ? err.stack : err);
   process.exit(1);

@@ -13,10 +13,10 @@
 
 import { validPayload, cleanReason, cleanBody } from '../core.js';
 
-export const PENDING_ACTIONS = ['approve', 'approve_own', 'approve_rewrite', 'reject', 'done', 'trust', 'merge'];
+export const PENDING_ACTIONS = ['approve', 'approve_own', 'approve_rewrite', 'reject', 'done', 'trust', 'merge', 'replace'];
 export const REPLY_ACTIONS = { approve: 'send', reject: 'skip', edit: 'edit', redraft: 'redraft', close: 'close' };
 export const PHOTO_ACTIONS = { approve: 'approved', reject: 'rejected' };
-const APPROVING = new Set(['approve', 'approve_own', 'approve_rewrite', 'trust']);
+const APPROVING = new Set(['approve', 'approve_own', 'approve_rewrite', 'trust', 'replace']);
 const PHOTO_CONSENT = new Set(['identifiable', 'children', 'unknown']);
 const NOT_TRUSTABLE = /@(.+\.)?(facebook\.com|facebookmail\.com)$/i;
 const OWN_DOMAIN = 'thelenches.org.uk';
@@ -83,6 +83,14 @@ export function planPending({ action, id, reason = '', fields = null }, row, { h
     if (!listedOf(row)) return refuse(409, 'This item is not marked as already listed');
     p.b = mergeBody(fields);
     if (p.b === null) return refuse(400, 'A link must start with http:// or https://');
+  }
+  // Replace with the organiser's version (15 Nov): never an official entry, and not when the
+  // same sender sent the listed entry in (that is an update: Add details).
+  if (action === 'replace') {
+    const d = listedOf(row);
+    if (!d) return refuse(409, 'This item is not marked as already listed');
+    if (d.official) return refuse(409, 'The listed entry is official, so it is never replaced');
+    if (d.same_sender === true) return refuse(409, 'The same sender sent the listed entry in: use Add details');
   }
   if (action === 'trust') {
     p.k = trustKeyFor(row, sources);
