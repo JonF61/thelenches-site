@@ -1,0 +1,13 @@
+---
+layout: base.njk
+title: Living here
+description: "Practical information for Harvington, Norton and Lenchwick: regular activities, roads and more."
+---
+{#- The same cards as the home page's Living here section (sites/harvington/_data/livinghere.json); more are added as their pages are built. -#}
+<main class="container">
+  <div class="page-head">
+    <h1>Living here</h1>
+    <p class="page-intro">{{ livinghere.intro }}</p>
+  </div>
+  {% set cards = livinghere.cards %}{% set cardHeading = "h2" %}{% include "hub-cards.njk" %}
+</main>

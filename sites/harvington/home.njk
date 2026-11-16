@@ -1,0 +1,55 @@
+---
+layout: base.njk
+title: Home
+search: false
+permalink: /preview/
+noindex: true
+eleventyExcludeFromCollections: true
+description: "Community website and free weekly newsletter for Harvington, Norton and Lenchwick near Evesham: events, news, regular activities and roadworks."
+seoTitle: "Harvington Village Website — events, news and roadworks near Evesham"
+cards:
+  - { title: "Events", url: "/events/", icon: calendar, text: "Coming up in the village and close by." }
+  - { title: "News", url: "/notices/", icon: notice, text: "Parish council notices and news from around Harvington." }
+  - { title: "Roads", url: "/living-here/roads/", icon: road, text: "Closures and roadworks, on now and on the way." }
+---
+{#- Harvington's Home (wording approved by Jon 16 Nov 2026). Built at /preview/ until launch (stage 7), when it replaces the
+    holding page (index.njk) at "/". Live lines as on the Lenches Home, without bins. The Facebook card shows once
+    site.json has facebookGroup { name, url }. -#}
+{%- set nextEvent = (whatson.events | merge(pipeline.events) | upcoming) | first -%}
+{%- set allN = pipeline | allNotices(whatson) -%}
+{%- set newCount = allN | notRoadItems | newThisWeek -%}
+{%- set roads = allN | roadItems | roadSplit -%}
+{%- set roadParts = [] -%}
+{%- if roads.now | length %}{% set roadParts = (roadParts.push((roads.now | length) + " on now"), roadParts) %}{% endif -%}
+{%- if roads.soon | length %}{% set roadParts = (roadParts.push((roads.soon | length) + " coming up"), roadParts) %}{% endif -%}
+{%- set live = {
+  "/events/": ("Next: " + nextEvent.title + " · " + (nextEvent.date | shortDate)) if nextEvent else "",
+  "/notices/": (newCount + " new this week") if newCount else "",
+  "/living-here/roads/": roadParts | join(" · ") if roadParts | length else "No works listed"
+} -%}
+<main class="container">
+  {% include "home-skyline.njk" %}
+  <section class="intro">
+    <p class="intro-head">What's happening in Harvington, Norton and Lenchwick</p>
+    <p class="intro-news">Get it all by email, free, every Thursday morning: <a href="{{ '/newsletter/' | url }}">join the newsletter</a>.</p>
+    <p class="muted">We gather it from village groups, the parish council and neighbours, and check it as carefully as we can.</p>
+  </section>
+  <section class="home-cards">
+    {% set signupCard = true %}{% include "hub-cards.njk" %}{% set signupCard = false %}
+  </section>
+  {% if site.facebookGroup %}<section class="home-section home-fb">
+    <div class="card fb-card">
+      <svg class="fb-logo" viewBox="0 0 36 36" width="44" height="44" aria-hidden="true" focusable="false"><circle cx="18" cy="18" r="18" fill="#0866FF"/><path fill="#fff" d="M20.2 36V24.4h3.9l.6-4.6h-4.5v-2.9c0-1.3.4-2.2 2.3-2.2h2.4V10.6c-.4-.1-1.8-.2-3.5-.2-3.5 0-5.8 2.1-5.8 6v3.4h-3.9v4.6h3.9V36z"/></svg>
+      <div>
+        <h2>Harvington's community Facebook group</h2>
+        <p>For quick questions, lost pets, recommendations and the day-to-day goings-on, many villagers use the {{ site.facebookGroup.name }} group on Facebook. It's run by local volunteers, not by us.</p>
+        <p class="mb0"><a class="btn btn-outline" href="{{ site.facebookGroup.url }}" target="_blank" rel="noopener">Go to the group on Facebook</a></p>
+      </div>
+    </div>
+  </section>{% endif %}
+  <section id="living-here" class="home-section">
+    <h2>Living here</h2>
+    <p class="muted">{{ livinghere.intro }}</p>
+    {% set cards = livinghere.cards %}{% set cardHeading = "h3" %}{% include "hub-cards.njk" %}
+  </section>
+</main>

@@ -1,0 +1,44 @@
+---
+layout: base.njk
+title: Contact & About
+description: "Contact the Harvington website and newsletter, and find out how to send in news and events."
+---
+{#- Harvington's Contact & About (wording approved by Jon 16 Nov 2026). A village contacts table (as on the Lenches page) comes
+    once Harvington's council and schools data exist. Holly's replies link to #submit (replies.js GUIDELINES_URL). -#}
+<main class="container">
+
+  <section>
+    <h1>Contact &amp; About</h1>
+    <p class="lead">This website and the Thursday newsletter bring Harvington's news, events and village information together in one place. They're run by a local volunteer, independently of the parish council.</p>
+  </section>
+
+  <section>
+    <h2>Get in touch</h2>
+    <div class="card">
+      <p class="mt0">Questions, corrections or ideas for the website or newsletter: email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Useful local links</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Councils</h3>
+        <p>
+          <a href="https://harvington-pc.gov.uk/" target="_blank" rel="noopener">Harvington Parish Council</a><br>
+          <a href="https://www.wychavon.gov.uk/" target="_blank" rel="noopener">Wychavon District Council</a><br>
+          <a href="https://www.worcestershire.gov.uk/" target="_blank" rel="noopener">Worcestershire County Council</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="submit">
+    <h2>Send us something</h2>
+    <p>Have an event, notice or piece of news? Email it to <a href="mailto:{{ site.email }}">{{ site.email }}</a> and we'll put it on the website and in Thursday's newsletter.</p>
+    <div id="guidelines">
+{% renderFile "./sites/harvington/guidelines.md" %}
+    </div>
+  </section>
+
+</main>

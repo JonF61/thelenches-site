@@ -1,0 +1,8 @@
+{
+  "_help": "Harvington's Living here cards (home page and /living-here/; hub-cards.njk). More cards are added as their pages are built.",
+  "intro": "The practical side of village life: who meets when, and what's happening on the roads.",
+  "cards": [
+    { "title": "Regular activities", "url": "/regulars/", "icon": "users", "text": "Clubs, classes and groups that meet week by week." },
+    { "title": "Roads", "url": "/living-here/roads/", "icon": "road", "text": "Closures and roadworks on the way in and out." }
+  ]
+}

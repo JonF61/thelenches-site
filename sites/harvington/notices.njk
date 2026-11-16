@@ -1,0 +1,12 @@
+---
+layout: base.njk
+title: News and notices
+description: "News and notices for Harvington, Norton and Lenchwick: parish council statements and news from around the village."
+seoTitle: "News and notices from Harvington, near Evesham"
+---
+{#- Harvington's wording (approved by Jon 16 Nov 2026) for the shared News page, src/_includes/pages/notices.njk. -#}
+{%- set aroundHeading -%}Around the village{%- endset -%}
+{%- set emptyNote -%}No news just now.{%- endset -%}
+{%- set roadsNote -%}Closures and roadworks have their own page: <a href="{{ '/living-here/roads/' | url }}">Roads</a>.{%- endset -%}
+{%- set submitNote -%}Running something? Send the details to <a href="mailto:{{ site.email }}">{{ site.email }}</a>. Anything in by 6pm on Wednesday goes in that Thursday's newsletter. How to send it: our <a href="{{ '/contact/' | url }}#submit">guidelines</a>.{%- endset -%}
+{%- include "pages/notices.njk" %}

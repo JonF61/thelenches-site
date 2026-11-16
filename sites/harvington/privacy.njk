@@ -1,0 +1,98 @@
+---
+layout: base.njk
+title: Privacy Policy
+description: How the Harvington website and newsletter collect, use and look after your personal information.
+---
+{#- Harvington's own privacy policy (Harvington stage 6b, 16 Nov 2026; the outline approved by Jon 16 Nov), written afresh rather
+    than the Lenches page with switches: the Lenches Club CIC joint list, Recommend and Photos don't apply here, and this page
+    says what the two sites share. Form, visit-count and newsletter-count wording follows site.json (feedbackUrl, signupUrl,
+    turnstileSiteKey, cfAnalyticsToken, newsletterCounts), as on the Lenches page, so it switches on with those at launch. -#}
+{%- set forms = [] -%}
+{%- if site.signupUrl and site.turnstileSiteKey %}{% set forms = (forms.push("the newsletter sign-up, which sends us the email address you type"), forms) %}{% endif -%}
+{%- if site.feedbackUrl and site.turnstileSiteKey %}{% set forms = (forms.push("&ldquo;Suggest an update&rdquo; at the foot of each page, which sends us your message, the page you were on and, only if you choose, your email address"), forms) %}{% endif -%}
+<main class="container">
+  <section>
+    <h1>Privacy Policy</h1>
+    <p class="lead">For harvingtonvillage.org.uk and The Harvington Newsletter.</p>
+
+    <h2>1. About this policy</h2>
+    <p>This policy explains what personal information we hold, why we hold it, who else handles it and what you can ask us to do about it. It follows the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.</p>
+
+    <h2>2. Who we are</h2>
+    <p>The website and newsletter are run by a local volunteer as a private individual. They are not run by Harvington Parish Council or any other village body. That volunteer decides how your information is used (the &ldquo;data controller&rdquo;) and can be reached at <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+    <p>The same volunteer also runs <a href="https://thelenches.org.uk/">thelenches.org.uk</a> and its newsletter for the neighbouring Lenches villages, using the same email account and the same tools. Each website keeps its own mailing list and its own records.</p>
+
+    <h2>3. What we collect</h2>
+    {% set visits = "We count visits to this website anonymously (see section 10) but don&rsquo;t track you." if site.cfAnalyticsToken else "This website has no visit counting and no tracking." %}
+    {% if forms.length %}
+    <p>{{ visits | safe }} Its forms are {{ forms | join(", and ") | safe }}.</p>
+    {% else %}
+    <p>{{ visits | safe }} It has no forms, so simply visiting it gives us no personal information.</p>
+    {% endif %}
+    <p>We hold personal information only when you give it to us:</p>
+    <ul>
+      <li><strong>If you join the newsletter:</strong> your email address and when you joined.</li>
+      <li><strong>If you email us:</strong> your name and email address, what you wrote and our replies.</li>
+      <li><strong>If you send us something to publish:</strong> the item itself, and a short note of who you are (for example the group you write for and your role in it) and what you have sent before.</li>
+    </ul>
+
+    <h2>4. How we use it</h2>
+    <ul>
+      <li>To send you the newsletter.</li>
+      <li>To reply to you, and to deal with the items you send us.</li>
+      <li>To put your items on the website and in the newsletter. Items are usually shared with thelenches.org.uk and its newsletter too, unless they matter only to Harvington.</li>
+      <li>Now and then, to ask people who send us news whether they have anything new.</li>
+    </ul>
+    <p>When you send us something to publish, we add you to the newsletter so you can see your item go in. You can leave at any time; if you do, we won&rsquo;t publish anything more you send us.</p>
+
+    <h2>5. Our lawful basis</h2>
+    <ul>
+      <li><strong>Consent:</strong> you asked to join the newsletter, signed up for it, or sent us something to publish.</li>
+      <li><strong>Legitimate interests:</strong> replying to you, keeping track of what contributors have sent, and sharing local information that is useful to people in and around the village.</li>
+      <li><strong>Legal obligations:</strong> where the law requires us to keep or share something.</li>
+    </ul>
+
+    <h2>6. Who else handles it</h2>
+    <p>We use a few services to run the website and newsletter. Each handles your information only on our behalf:</p>
+    <ul>
+      <li><strong>Google:</strong> our email account, which also sends the newsletter, and the private spreadsheets that hold the mailing list and our records.</li>
+      <li><strong>Anthropic:</strong> its Claude AI service reads the emails sent to us, turns them into website items and drafts replies. A person checks replies before they go, apart from routine ones such as confirming you&rsquo;ve joined.</li>
+      <li><strong>Cloudflare:</strong> runs the links and forms we use to approve items and manage the newsletter.</li>
+      <li><strong>GitHub:</strong> hosts the website&rsquo;s pages, which hold only what is published on them.</li>
+    </ul>
+    <p>We never sell your information or pass it to anyone for marketing, sponsors and advertisers included.</p>
+
+    <h2>7. Keeping it safe</h2>
+    <p>The website is served over a secure (HTTPS) connection, and only the volunteer who runs it can see the mailing list and our records.</p>
+
+    <h2>8. How long we keep it</h2>
+    <p>We keep your email address while you get the newsletter. If you leave, we delete you from the mailing list and keep only your address on a &ldquo;do not send&rdquo; list, so that you are never added again by mistake. The note we keep about people who send us news stays while you keep sending it, and we delete it if you ask.</p>
+    {% if site.signupUrl %}<p>If you sign up on the website, we email you a link to confirm. If you don&rsquo;t use it within 30 days, we delete your address.</p>{% endif %}
+    {% if site.feedbackUrl and site.turnstileSiteKey %}<p>If you give your email address with a &ldquo;Suggest an update&rdquo; message, we use it only to tell you what happened, and delete it once we have, or after 6 months at the latest. The message itself is kept, without it, as a record of changes to the website.</p>{% endif %}
+
+    <h2>9. Your rights</h2>
+    <p>You can ask us to:</p>
+    <ul>
+      <li>show you the information we hold about you</li>
+      <li>correct anything that&rsquo;s wrong</li>
+      <li>delete it</li>
+      <li>stop using it, or stop using it for a particular purpose</li>
+    </ul>
+    <p>You can withdraw your consent at any time. If you&rsquo;re unhappy with how we have handled your information, you can complain to the <a href="https://ico.org.uk/make-a-complaint/" target="_blank" rel="noopener">Information Commissioner&rsquo;s Office</a>. To ask about any of this, email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+
+    <h2>10. Cookies, visit counts and newsletter counts</h2>
+    {% if site.cfAnalyticsToken %}
+    <p>This website sets no cookies and doesn&rsquo;t track you. Cloudflare Web Analytics counts how many visits each page gets: we see totals only, never anything about one visitor. Loading a page sends your IP address and some browser details to Cloudflare, which doesn&rsquo;t use cookies or fingerprinting to recognise you; Cloudflare&rsquo;s own privacy policy applies.</p>
+    {% else %}
+    <p>This website sets no cookies, counts no visits and doesn&rsquo;t track you in any way.</p>
+    {% endif %}
+    {% if forms.length %}<p>Our forms use Cloudflare Turnstile to check that a person, not a robot, is using them. It loads only when you start to fill one in, and sends your IP address and some browser details to Cloudflare, whose own privacy policy applies.</p>{% endif %}
+    <p>The map on the Roads page uses map pictures from OpenStreetMap and map software from Cloudflare (cdnjs), so opening that page sends your IP address to the OpenStreetMap Foundation and to Cloudflare, whose own privacy policies apply. Links to other websites, such as booking pages and club or council sites, take you to services with their own cookies and privacy policies.</p>
+    <p>{% if site.newsletterCounts %}We count, without knowing who you are, how often each newsletter is opened and how often each link in it is clicked. Each newsletter carries a tiny image, and its links pass briefly through our Cloudflare service on the way. The counts are totals for each issue: we can&rsquo;t tell who opened a newsletter or clicked a link. If your email program blocks images, your opens aren&rsquo;t counted.{% else %}We don&rsquo;t check whether newsletters are opened or their links clicked.{% endif %} To leave the newsletter, use the unsubscribe link at the foot of any issue, reply with the word UNSUBSCRIBE, or email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+
+    <h2>11. Changes to this policy</h2>
+    <p>If we change this policy we&rsquo;ll update this page, and tell newsletter readers by email when the change matters to them.</p>
+
+    <p class="small muted">Last updated 16 November 2026.</p>
+  </section>
+</main>

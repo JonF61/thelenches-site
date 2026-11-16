@@ -1,0 +1,11 @@
+---
+layout: base.njk
+title: Events
+description: "What's on in Harvington, Norton and Lenchwick near Evesham: village events, concerts, talks and family days, updated through the week."
+seoTitle: "What's on in Harvington, near Evesham — Events"
+---
+{#- Harvington's wording (approved by Jon 16 Nov 2026) for the shared Events page, src/_includes/pages/events.njk. -#}
+{%- set pageIntro -%}Coming up in Harvington and nearby &middot; updated {{ updated | longDate }}{%- endset -%}
+{%- set emptyNote -%}No events listed just now. New ones are added through the week.{%- endset -%}
+{%- set submitNote -%}Running something? Send the details to <a href="mailto:{{ site.email }}">{{ site.email }}</a>. Anything in by 6pm on Wednesday goes in that Thursday's newsletter. How to send it: our <a href="{{ '/contact/' | url }}#submit">guidelines</a>.{%- endset -%}
+{%- include "pages/events.njk" %}

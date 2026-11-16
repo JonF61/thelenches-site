@@ -161,7 +161,7 @@ function imageRow(img, width, href) {
   return `${pic}<div style="font-family:${SANS};font-size:11px;line-height:1.4;color:${C.muted};padding-top:3px;">${credit}</div>`;
 }
 
-// "Lenches" badge (site: .lenches-badge in src/events.njk). A table cell, not a styled
+// "Lenches" badge (site: .lenches-badge in src/_includes/pages/events.njk). A table cell, not a styled
 // span, so classic Outlook keeps the padding and background.
 function titleWithBadge(titleHtml, style) {
   return `<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>`
