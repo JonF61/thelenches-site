@@ -4,84 +4,14 @@ title: Churches
 description: Churches serving the Lenches, Harvington and Abbots Morton — the ARCH Benefice and its service times, plus Unitarian and Methodist congregations in Evesham.
 seoTitle: "Church services in the Lenches — ARCH Benefice service times"
 ---
-<style>
-  /* Service times — month heading > date heading; single column of date cards, stacked list inside */
-  #services h3{font-size:1.6rem;margin:1.5rem 0 .75rem}
-  .svc-col{display:flex;flex-direction:column;gap:1rem;max-width:680px}
-  .svc-col .card{margin:0}
-  .svc-col .card .svc-date{font-size:1.15rem;line-height:1.3;color:var(--green);margin:0 0 .15rem}
-  .svc-readings{margin:.4rem 0 0;font-size:.92rem;line-height:1.55}
-  .svc-readings a{color:var(--green)}
-  .svc-list{margin:.5rem 0 0}
-  .svc{padding:.55rem 0;border-bottom:1px solid var(--line)}
-  .svc:last-child{border-bottom:0;padding-bottom:0}
-  .svc-head{display:flex;flex-wrap:wrap;gap:.1rem .6rem;align-items:baseline}
-  .svc-time{font-weight:700;color:var(--green-dark);white-space:nowrap}
-  .svc-church{font-weight:600}
-  .svc-detail{margin:.1rem 0 0}
-</style>
-<main class="container">
-
-  {%- set churchNames = { "Rous Lench": "St Peter's, Rous Lench", "Church Lench": "All Saints', Church Lench", "Harvington": "St James the Great, Harvington", "Abbots Morton": "St Peter's, Abbots Morton", "Norton": "St Egwin's, Norton" } %}
-
-  {#- Each reading links to the NRSV Anglicised on Bible Gateway. r.ref is shown as printed; r.q (optional) is the search used when the ref says "end". -#}
-  {%- macro refs(list) -%}
-    {%- for r in list %}<a href="https://www.biblegateway.com/passage/?search={{ (r.q or r.ref) | urlencode }}&amp;version=NRSVA" target="_blank" rel="noopener">{{ r.ref | replace("-", "–") }}</a>{% if not loop.last %}, {% endif %}{% endfor -%}
-  {%- endmacro %}
-
-  <div class="page-head" id="arch">
-    <h1>Churches</h1>
-    <p class="page-intro">The Lenches and their neighbours are served by the ARCH Benefice, named after the parishes of <strong>A</strong>bbots Morton, <strong>R</strong>ous Lench, <strong>C</strong>hurch Lench and <strong>H</strong>arvington, which were brought together in 2001 within the Diocese of Worcester. Its churches are All Saints', Church Lench; St Peter's, Rous Lench; St James the Great, Harvington; St Peter's, Abbots Morton; and St Egwin's at Norton &amp; Lenchwick, which shares the rota though the parish formally sits in the Evesham benefice. Several other congregations are a short drive away in Evesham.</p>
+{#- The Lenches' wording for the shared Churches page, src/_includes/pages/churches.njk. -#}
+{%- set headIntro -%}<p class="page-intro">The Lenches and their neighbours are served by the ARCH Benefice, named after the parishes of <strong>A</strong>bbots Morton, <strong>R</strong>ous Lench, <strong>C</strong>hurch Lench and <strong>H</strong>arvington, which were brought together in 2001 within the Diocese of Worcester. Its churches are All Saints', Church Lench; St Peter's, Rous Lench; St James the Great, Harvington; St Peter's, Abbots Morton; and St Egwin's at Norton &amp; Lenchwick, which shares the rota though the parish formally sits in the Evesham benefice. Several other congregations are a short drive away in Evesham.</p>
     <p>All Saints' stands at the top of the hill with one of the best views in Worcestershire, looking west towards the Malverns. St Peter's at Rous Lench is unusual in having two pulpits and no fixed pews, so the space can be used flexibly.</p>
-    <p class="small"><a href="https://www.archbenefice.org.uk/" target="_blank" rel="noopener">ARCH Benefice website &rarr;</a> &middot; <a href="https://www.archbenefice.org.uk/information/arch-messenger" target="_blank" rel="noopener">Read the ARCH Messenger &rarr;</a></p>
-  </div>
-
-  {#- Photos come from src/_data/photos.json (Photos tab, target "churches"). Caption = church name by village. -#}
-  <div class="gallery">
-  {%- for p in photos %}{% if "churches" in p.targets %}
-    <figure style="margin:0" id="photo-{{ p.slug }}">
-      <a href="{{ p.src | url }}" data-viewer data-caption="{{ p.alt | escape }}"><img src="{{ p.src | url }}" alt="{{ p.alt | escape }}" width="{{ p.width }}" height="{{ p.height }}" loading="lazy"{% if p.height > p.width %} style="object-position:50% 20%"{% endif %}></a>
-      <figcaption class="small muted">{{ churchNames[p.village] or p.village }}{% if p.credit %} &middot; {{ p.credit | escape }}{% endif %}</figcaption>
-    </figure>
-  {%- endif %}{% endfor %}
-  </div>
-
-  {#- Service times and readings come from src/_data/services.json (typed from the ARCH Messenger rota). Past dates drop off at the nightly rebuild. A trailing "@10"/"@11" on a service name is stripped when rendering. -#}
-  <section id="services">
-    <h2>Service times</h2>
-    <p>Services rotate around the churches, so the pattern changes from week to week. {{ services.midweek }} <span class="small muted">From the {{ services.source }}.</span></p>
-    <p class="small muted">Each Sunday's readings link to the NRSV (Anglicised) on Bible Gateway; tap one to read it.</p>
-
-    {%- set svc = services.dates | upcoming %}
-    {%- if svc.length %}
-    {%- for g in svc | byMonth %}
-    <h3>{{ g.label }}</h3>
-    <div class="svc-col">
-      {%- for d in g.items %}
-      <div class="card">
-        <h4 class="svc-date">{{ d.date | longDate }}</h4>
-        {% if d.name %}<p class="small muted mt0">{{ d.name }}</p>{% endif %}
-        {%- if d.readings %}
-        <p class="svc-readings"><span class="muted">Readings and notes:</span> {{ refs(d.readings) }}{% if d.harvest %}<br><span class="muted">Or, for Harvest:</span> {{ refs(d.harvest) }}{% endif %}</p>
-        {%- endif %}
-        <div class="svc-list">
-          {%- for s in d.services %}
-          <div class="svc">
-            <div class="svc-head"><span class="svc-time">{{ s.time }}</span> <span class="svc-church">{{ churchNames[s.village] or s.village }}</span></div>
-            <p class="svc-detail">{{ s.service | replace(r/\s*@\s*\d+\s*$/, "") }}{% if s.note %} <span class="small muted">({{ s.note }})</span>{% endif %}</p>
-          </div>
-          {%- endfor %}
-        </div>
-      </div>
-      {%- endfor %}
-    </div>
-    {%- endfor %}
-    {%- else %}
-    <p>No service times are listed for the coming weeks yet; please check the ARCH Messenger.</p>
-    {%- endif %}
-  </section>
-
-  <section id="evesham">
+    <p class="small"><a href="https://www.archbenefice.org.uk/" target="_blank" rel="noopener">ARCH Benefice website &rarr;</a> &middot; <a href="https://www.archbenefice.org.uk/information/arch-messenger" target="_blank" rel="noopener">Read the ARCH Messenger &rarr;</a></p>{%- endset -%}
+{%- set servicesNote -%}<p>Services rotate around the churches, so the pattern changes from week to week. {{ services.midweek }} <span class="small muted">From the {{ services.source }}.</span></p>{%- endset -%}
+{%- set readingsNote -%}<p class="small muted">Each Sunday's readings link to the NRSV (Anglicised) on Bible Gateway; tap one to read it.</p>{%- endset -%}
+{%- set noServices -%}<p>No service times are listed for the coming weeks yet; please check the ARCH Messenger.</p>{%- endset -%}
+{%- set otherChurches -%}  <section id="evesham">
     <h2>Other congregations in Evesham</h2>
     <div class="grid">
 
@@ -101,10 +31,6 @@ seoTitle: "Church services in the Lenches — ARCH Benefice service times"
     <p>Both welcome visitors.</p>
   </section>
 
-  <section id="accuracy">
-    <div class="notice">
-      <p class="small" style="margin:0">These details are gathered from published sources and may not be complete. We'd welcome hearing directly from the churches so we can keep this page accurate — please email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
-    </div>
-  </section>
-
-</main>
+{%- endset -%}
+{%- set accuracyNote -%}These details are gathered from published sources and may not be complete. We'd welcome hearing directly from the churches so we can keep this page accurate — please email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.{%- endset -%}
+{%- include "pages/churches.njk" %}

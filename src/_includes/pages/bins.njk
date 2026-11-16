@@ -1,0 +1,90 @@
+{#- Shared Bins page (Harvington stage 6c-1, 16 Nov 2026): each site's bins.njk sets its wording (pageLead, gridFallback,
+    putOutNote, binGuide: everything from What goes where down), then includes this; collection days from its _data/bins.json. #}
+<main class="container">
+
+  <section>
+    <h1>Bin Collections</h1>
+    <p class="lead">{{ pageLead | safe }}</p>
+    <p><span class="datestamp">Page updated {{ updated | longDate }}</span></p>
+  </section>
+
+  <section>
+    <h2>Next collections</h2>
+    <div class="grid" id="bin-grid">
+      <p class="mut">{{ gridFallback | safe }}</p>
+    </div>
+    <p class="small mut">{{ putOutNote | safe }}</p>
+  </section>
+
+{{ binGuide | safe }}
+
+</main>
+
+<script>
+(function () {
+  var data = {{ bins | dump | safe }};
+  var wrap = document.getElementById('bin-grid');
+  if (!wrap || !data || !data.collections || !data.areas) return;
+
+  var colours = { black: '#2f2f2f', green: '#7ab648', brown: '#6b4a2c' };
+
+  var now = new Date();
+  var today = new Date(now); today.setHours(0, 0, 0, 0);
+
+  function toDate(s) { var p = s.split('-'); return new Date(+p[0], p[1] - 1, +p[2]); }
+  function shift(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+  function when(d) {
+    return d.getTime() === today.getTime()
+      ? 'Today'
+      : d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+  function label(list) {
+    return list.indexOf('black') > -1
+      ? 'Black bin'
+      : 'Green recycling bin' + (list.indexOf('brown') > -1 ? ' &amp; brown garden bin' : '');
+  }
+  function names(list) {
+    return list.length < 2 ? list[0] : list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1];
+  }
+
+  // One entry per collection day, however many villages share it
+  var groups = [];
+  data.areas.forEach(function (area) {
+    var off = area.offset || 0;
+    var g = null;
+    for (var i = 0; i < groups.length; i++) { if (groups[i].offset === off) g = groups[i]; }
+    if (!g) { g = { offset: off, villages: [] }; groups.push(g); }
+    g.villages.push(area.name);
+  });
+
+  groups.forEach(function (g) {
+    g.found = [];
+    for (var i = 0; i < data.collections.length && g.found.length < 2; i++) {
+      var c = data.collections[i];
+      var d = shift(toDate(c.date), g.offset);
+      var cutoff = new Date(d); cutoff.setHours(10, 0, 0, 0);
+      if (cutoff > now) g.found.push({ date: d, bins: c.bins, note: c.note });
+    }
+  });
+
+  // Boxes keep the order of areas in bins.json, so Church Lench's group always comes first.
+  groups = groups.filter(function (g) { return g.found.length; });
+
+  var html = groups.map(function (g) {
+    var n = g.found[0];
+    var swatches = n.bins.map(function (b) {
+      return '<div class="bin-swatch" style="background:' + (colours[b] || '#999') + ';"></div>';
+    }).join('');
+
+    // Text on the left (fills the box), bin colours on the right
+    return '<div class="bin-box">' +
+      '<div style="flex:1;min-width:0"><h3 class="mt0">' + names(g.villages) + '</h3>' +
+      '<div><strong>' + when(n.date) + ' &mdash; ' + label(n.bins) + '</strong></div>' +
+      (g.found[1] ? '<div class="small mut">Then ' + when(g.found[1].date) + ' &mdash; ' + label(g.found[1].bins) + '</div>' : '') +
+      (n.note ? '<div class="small mut">' + n.note + '</div>' : '') +
+      '</div>' + swatches + '</div>';
+  }).join('');
+
+  if (html) wrap.innerHTML = html;
+})();
+</script>

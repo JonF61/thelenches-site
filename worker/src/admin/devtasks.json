@@ -2,11 +2,24 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Harvington stage 6c-1 (16 Nov): after the merge, check the Build Harvington site run succeeds and /bins/, /churches/, /living-here/council/ and /living-here/ show Harvington's wording, /preview/ has the Bins card with the next collection, and /living-here/roads/ shows the report-a-problem box; and that the Lenches Build run succeeds",
+      "added": "2026-11-16",
+      "kryten": true
+    },
+    {
+      "task": "Harvington facts to confirm (6c-1): Lenchwick's bin day (assumed Monday, as Harvington and Norton); Harvington Parish Council's meeting months (add a rule to its council.json for a Next date); Norton and Lenchwick Parish Council's clerk and meetings; Craig Reeves' own Wychavon profile link; Harvington Baptist Church's address and service time. Also: Holly's site facts (scripts/ingest/sitefacts.js) read services.json only from the site's own folder, so Harvington runs have no church services yet",
+      "added": "2026-11-16"
+    },
+    {
+      "task": "Harvington bins: its bins.json copies the Lenches' collection dates (ending 14 Dec); extend both together when the 2027 Wychavon calendar is out",
+      "added": "2026-11-16"
+    },
+    {
       "task": "Harvington stage 6b (16 Nov): Jon to give the Harvington community Facebook group's link; Kryten then adds site.json facebookGroup {name, url} so the Home card shows",
       "added": "2026-11-16"
     },
     {
-      "task": "Harvington before launch: add one line to the Lenches privacy page saying items may also appear on the Harvington website (wording for Jon to approve); Harvington's Contact page gets a village contacts table and Roads its report-a-problem box once its council and schools data exist (stage 6c); Harvington regular activities need entries (sites/harvington/items/regulars.json)",
+      "task": "Harvington before launch: add one line to the Lenches privacy page saying items may also appear on the Harvington website (wording for Jon to approve); Harvington's Contact page gets a village contacts table once its schools data exist (stage 6c-2); Harvington regular activities need entries (sites/harvington/items/regulars.json)",
       "added": "2026-11-16"
     },
     {
@@ -15,8 +28,9 @@
       "kryten": true
     },
     {
-      "task": "Harvington stage 6 (pages): 6a shared layout done 16 Nov. Next 6b: Home, Events, Notices, Regular activities, Roads, Newsletter sign-up, Search, Contact, Privacy, 404 and a small Living here hub, with fresh Harvington wording for Jon to approve; then 6c: Bins, Churches, Parish council, Schools, Where to eat, Local trades (facts researched one page per session)",
-      "added": "2026-11-16"
+      "task": "Harvington stage 6 (pages): 6a, 6b and 6c-1 (Bins, Churches, Council & planning) done 16 Nov. Next 6c-2: Schools, Where to eat, Local trades and the Contact page's contacts table, with facts researched from official sources and fresh wording for Jon to approve",
+      "added": "2026-11-16",
+      "kryten": true
     },
     {
       "task": "Harvington stage 5a (newsletter per site, 16 Nov): on Thursday 19 Nov check the Lenches issue builds at 06:30 and looks as before (subject, heading, villages line, links), the Worker log shows no Harvington newsletter dispatch (its newsletter is off), the send log's Last 24h line names both websites, and Newsletter stats still shows the Lenches' opens and clicks; and Harvington's shadow run: built at 06:30, Rimmer's check on Wednesday 19:00, the 08:00 autosend a dry run with 0 recipients (nothing emailed)",
