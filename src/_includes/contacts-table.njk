@@ -1,0 +1,24 @@
+{#- Village contacts table (Contact page), shared by both sites since Harvington stage 6c-2 (16 Nov 2026): rows from
+    _data/contacts.json `table` / `orgs`; council and school rows read council.json and schools.json. #}
+    <table class="contacts">
+      <caption class="sr-only">Village contacts</caption>
+      <thead><tr><th scope="col">Organisation</th><th scope="col">Contact</th></tr></thead>
+      <tbody>
+        {#- Rows come from src/_data/contacts.json (council and school rows read council.json and schools.json). -#}
+        {%- for id in contacts.table %}
+        {%- set o = contacts.orgs[id] %}
+        {%- set d = o %}
+        {%- if o.council %}{% for p in council.parishes %}{% if p.key == o.council %}{% set d = p %}{% endif %}{% endfor %}{% endif %}
+        {%- if o.school %}{% for sc in schools.local %}{% if sc.name == o.school %}{% set d = sc %}{% endif %}{% endfor %}{% endif %}
+        {%- set email = site.email if o.siteEmail else d.email %}
+        <tr><th scope="row">{{ o.name }}</th><td>
+          {%- if o.see %}<a href="{{ o.see | url }}">Contact details on the Groups page</a>
+          {%- else %}
+            {%- if o.council %}Clerk: {% endif %}
+            {%- if email %}<a href="mailto:{{ email }}">{{ email }}</a>{% endif %}
+            {%- if d.phone %}{% if email %} &middot; {% endif %}{{ d.phone }}{% endif %}
+            {%- if not email and not d.phone %}{% if d.contactUrl %}<a href="{{ d.contactUrl }}" target="_blank" rel="noopener">Contact form</a>{% elif o.url %}<a href="{{ o.url }}" target="_blank" rel="noopener">Website</a>{% endif %}{% endif %}
+          {%- endif %}</td></tr>
+        {%- endfor %}
+      </tbody>
+    </table>

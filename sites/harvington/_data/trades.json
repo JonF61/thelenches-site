@@ -1,0 +1,95 @@
+{
+  "intro": "Tradespeople based in and around Harvington. We list them for information only and can't vouch for anyone's work, so get quotes and check references as you would with anyone. If you're listed and would rather not be, let us know and we'll take you off.",
+  "trades": [
+    {
+      "id": "burgoine-and-weston-construction",
+      "name": "Burgoine and Weston Construction",
+      "trade": "Builders",
+      "what": "Building contractors",
+      "base": "Harvington",
+      "phone": "07789 325879"
+    },
+    {
+      "id": "will-begg-carpentry-services",
+      "name": "Will Begg Carpentry Services",
+      "trade": "Carpenters",
+      "what": "Carpentry; established 2006",
+      "base": "Harvington",
+      "phone": "07979 104449"
+    },
+    {
+      "id": "marchwood-maintenance-co",
+      "name": "Marchwood Maintenance Co",
+      "trade": "Electricians",
+      "what": "Electrical contractor",
+      "base": "Harvington",
+      "phone": "07771 616189"
+    },
+    {
+      "id": "automotiv-ltd",
+      "name": "Automotiv Ltd",
+      "trade": "Car repairs",
+      "what": "Vehicle repairs",
+      "base": "Harvington",
+      "phone": "07930 753786"
+    },
+    {
+      "id": "rural-and-town-architecture-and-planning",
+      "name": "Rural and Town Architecture and Planning",
+      "trade": "Architects and planning",
+      "what": "Architectural design, planning and construction advice",
+      "base": "Harvington",
+      "phone": "07917 565525"
+    },
+    {
+      "id": "panther-architectural-design",
+      "name": "Panther Architectural Design",
+      "trade": "Architects and planning",
+      "what": "Architectural design, including agricultural buildings",
+      "base": "Harvington",
+      "phone": "01789 224560"
+    },
+    {
+      "id": "cotswold-furniture-makers",
+      "name": "Cotswold Furniture Makers",
+      "trade": "Garden rooms",
+      "what": "Garden rooms designed and built to order",
+      "base": "Harvington",
+      "phone": "07818 954203"
+    },
+    {
+      "id": "b-tomes-son",
+      "name": "B Tomes & Son",
+      "trade": "Landscaping and groundworks",
+      "what": "Fencing, gates, sleeper steps and landscaping; fully insured",
+      "covers": "Evesham area",
+      "phone": "07956 077775",
+      "email": "b.tomesandson@gmail.com",
+      "base": "Norton, Evesham"
+    },
+    {
+      "id": "jd-landscape-groundwork-contractors",
+      "name": "JD Landscape & Groundwork Contractors",
+      "trade": "Landscaping and groundworks",
+      "what": "Decking, fencing, driveways, patios, drainage and footings",
+      "base": "Harvington",
+      "phone": "07789 325879"
+    },
+    {
+      "id": "garraiodoir-landscaping-design",
+      "name": "Garraiodoir Landscaping & Design",
+      "trade": "Landscaping and groundworks",
+      "what": "Garden design and landscaping, since 1997",
+      "base": "Harvington",
+      "phone": "07413 837599"
+    },
+    {
+      "id": "dcsm-sewing-machine-repairs",
+      "name": "DCSM Sewing Machine Repairs",
+      "trade": "Sewing machine repairs",
+      "what": "Repairs and servicing of home sewing machines and overlockers",
+      "base": "Harvington",
+      "phone": "01386 871308"
+    }
+  ]
+}

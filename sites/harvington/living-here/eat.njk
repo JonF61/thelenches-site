@@ -1,0 +1,10 @@
+---
+layout: base.njk
+title: Where to eat
+description: "Pubs, cafés and farm-shop cafés in Harvington, Norton and Lenchwick and a short drive away."
+seoTitle: "Where to eat in Harvington, Norton and Lenchwick — pubs and cafés"
+---
+{#- Harvington's wording for the shared Where to eat page, src/_includes/pages/eat.njk (places in _data/eat.json). -#}
+{%- set suggestLead -%}Is there somewhere we should add? Suggest it with the <a href="#suggest">form at the bottom of this page</a>.{%- endset -%}
+{%- set tellUs -%}Is there somewhere we should add, or has something changed? <a href="mailto:{{ site.email }}?subject=Where%20to%20eat">Email us</a>.{%- endset -%}
+{%- include "pages/eat.njk" %}

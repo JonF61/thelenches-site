@@ -1,6 +1,6 @@
 {
   "_help": "Harvington's Living here cards (home page and /living-here/; hub-cards.njk). More cards are added as their pages are built.",
-  "intro": "The practical side of village life: bins, churches, the parish councils, regular activities and the roads.",
+  "intro": "The practical side of village life: schools, places to eat, local trades, bins, churches, the parish councils, regular activities and the roads.",
   "cards": [
     {
       "title": "Regular activities",
@@ -19,6 +19,24 @@
       "url": "/living-here/council/",
       "icon": "council",
       "text": "Parish councils, councillors, planning and reporting problems."
+    },
+    {
+      "title": "Schools",
+      "url": "/living-here/schools/",
+      "icon": "school",
+      "text": "Nursery, first, middle and high schools, applying and holidays."
+    },
+    {
+      "title": "Where to eat",
+      "url": "/living-here/eat/",
+      "icon": "eat",
+      "text": "Pubs and cafés in the villages and close by."
+    },
+    {
+      "title": "Local trades",
+      "url": "/living-here/trades/",
+      "icon": "tools",
+      "text": "Builders, electricians, landscapers and more."
     },
     {
       "title": "Bins",

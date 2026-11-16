@@ -1,0 +1,10 @@
+---
+layout: base.njk
+title: Schools
+description: "Harvey Bears pre-school, Harvington CofE First School and the middle and high schools after it, with applying, school travel and holiday dates."
+seoTitle: "Schools for Harvington, Norton and Lenchwick — first, middle and high schools"
+---
+{#- Harvington's wording for the shared Schools page, src/_includes/pages/schools.njk (facts in _data/schools.json). -#}
+{%- set localHeading = "In Harvington" -%}
+{%- set checkedNote -%}Checked {{ schools.checked }}. If anything here has changed, please tell us at <a href="mailto:{{ site.email }}">{{ site.email }}</a>.{%- endset -%}
+{%- include "pages/schools.njk" %}
