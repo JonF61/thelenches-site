@@ -31,6 +31,8 @@ const wv = require('./wordingview');
 const { editLink } = require('./edits');
 
 const TZ = 'Europe/London';
+// Which site's mail this is, in subjects (Harvington stage 4b): "(Lenches)" / "(Harvington)".
+const SITE_TAG = require('../../lib/site').shortName(require('../../lib/site').SITE);
 const DEFAULT_WINDOW_DAYS = 7; // override with Settings key urgent_window_days
 const RECENT_DAYS = 3;         // only items received this recently are considered
 
@@ -379,23 +381,23 @@ function buildText(ctx) {
 function subjectFor(items, choices, drafts, stuck, owed = []) {
   if (items.length) {
     return items.length === 1
-      ? `URGENT: ${items[0].title || 'new item'} (Lenches)`
-      : `URGENT: ${items.length} items (Lenches)`;
+      ? `URGENT: ${items[0].title || 'new item'} (${SITE_TAG})`
+      : `URGENT: ${items.length} items (${SITE_TAG})`;
   }
   if (choices.length) {
     return choices.length === 1
-      ? `Choose the wording: ${choices[0].title || 'new item'} (Lenches)`
-      : `Choose the wording: ${choices.length} items (Lenches)`;
+      ? `Choose the wording: ${choices[0].title || 'new item'} (${SITE_TAG})`
+      : `Choose the wording: ${choices.length} items (${SITE_TAG})`;
   }
-  if (stuck.length) return `Action needed: ${stuck.length} reply(ies) stuck (Lenches)`;
-  if (owed.length) return `Action needed: ${owed.length} email(s) still owed a reply (Lenches)`;
+  if (stuck.length) return `Action needed: ${stuck.length} reply(ies) stuck (${SITE_TAG})`;
+  if (owed.length) return `Action needed: ${owed.length} email(s) still owed a reply (${SITE_TAG})`;
   const held = drafts.filter((r) => r.status === 'awaiting' && isHeld(r)).length;
-  if (held) return `Action needed: ${held} email(s) held for you (Lenches)`;
+  if (held) return `Action needed: ${held} email(s) held for you (${SITE_TAG})`;
   const follow = drafts.filter((r) => r.status === 'awaiting' && isFollowup(r)).length;
-  if (follow) return `Action needed: ${follow} follow-up(s) need a reply (Lenches)`;
+  if (follow) return `Action needed: ${follow} follow-up(s) need a reply (${SITE_TAG})`;
   const awaiting = drafts.filter((r) => r.status === 'awaiting').length;
-  if (awaiting) return `Action needed: ${awaiting} reply(ies) to approve (Lenches)`;
-  return `Reply drafts (shadow): ${drafts.length} (Lenches)`;
+  if (awaiting) return `Action needed: ${awaiting} reply(ies) to approve (${SITE_TAG})`;
+  return `Reply drafts (shadow): ${drafts.length} (${SITE_TAG})`;
 }
 
 /* ----------------------------------------------------------------- main -- */
@@ -526,7 +528,7 @@ async function sendReplyCard(replyId, settings, { title = 'Redrafted reply', sub
   };
   const id = await g.sendMail({
     to: alertTo(),
-    subject: subject || `Redraft ready: reply to ${r.to} (Lenches)`,
+    subject: subject || `Redraft ready: reply to ${r.to} (${SITE_TAG})`,
     text: buildText(ctx),
     html: buildHtml(ctx),
     fromName: g.fromNameFor(settings),

@@ -2,13 +2,9 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
-      "task": "Harvington stage 4a (site-aware Sheets and workflows): once Jon has made the Harvington Pipeline Sheet and its id is in sites/harvington/_data/site.json, run Set up a site's Sheet (dry run, then apply), check the tabs with Read Sheet tab (site harvington), and confirm the next Lenches Ingest, Publish and Apply approval runs still succeed",
+      "task": "Harvington stage 4b (both sites' pipeline, 16 Nov): check the next Worker-fired ingest starts two Ingest runs (Lenches and Harvington) and both succeed; the next Publish run publishes both sites and builds whichever changed; Jon's test email in the Harvington label gives a Pending row in the Harvington Sheet (replies shadow, nothing sent); and the first item Holly marks for one site carries the Pending sites cell and note",
       "added": "2026-11-16",
       "kryten": true
-    },
-    {
-      "task": "Harvington stage 4b: ingest from the Harvington label, Holly's site flag (Pending sites column), publish and newsletter reading the other Sheet's approved rows, cross-site repeat check, scheduled runs for both sites",
-      "added": "2026-11-16"
     },
     {
       "task": "Harvington stage 4c: panel site switcher (top bar, site in every API call and decide() payload, Worker Sheet per site)",

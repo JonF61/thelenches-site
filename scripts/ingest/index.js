@@ -33,6 +33,7 @@ const { pathToFileURL } = require('url');
 const { primeWriteups } = require('./extract');
 const dupes = require('./duplicates');
 const logsafe = require('../../lib/logsafe'); // public logs: no contact details
+const site = require('../../lib/site'); // which site this run is for (Harvington stage 4b)
 
 const MAX_RETRIES = 3;            // after this, a failing message is left for the diagnostic
 const MAX_MESSAGES_PER_RUN = 25;  // caps run time and spend; the rest wait for the next run
@@ -270,9 +271,14 @@ async function processMessage(id, ctx) {
   const rows = items.map((item, n) => {
     const img = item.image_index >= 0 ? images[item.image_index] : null;
     const repeat = findRepeat(item, img && img.hash, ctx.existing);
+    // The same item sent to the other site's address (stage 4b): waits for Jon, never published twice.
+    const cross = repeat ? null : findRepeat(item, img && img.hash, ctx.otherExisting || []);
     const noteParts = [item.notes, ...notes];
     if (repeat) {
       noteParts.push(`Possible repeat of ${repeat.row.id} (${repeat.byImage ? 'same image' : 'same title/date'})`);
+    }
+    if (cross) {
+      noteParts.push(`Possible repeat of ${cross.row.id} on the ${site.shortName(cross.row._site)} website (${cross.byImage ? 'same image' : 'same title/date'})`);
     }
     // Trusted sender: published without approval unless the item needs a human anyway.
     let decided = spam
@@ -286,7 +292,9 @@ async function processMessage(id, ctx) {
       noteParts.push(dupes.noteFor(dup));
       decided = { ...decided, status: 'pending' }; // never published as a new item, in any mode
     }
+    if (cross) decided = { ...decided, status: 'pending' };
     decided = holdRegular(item, decided, noteParts);
+    if (item.sites) noteParts.push(`Holly: only for the ${site.shortName(item.sites)} website${item.sites_reason ? `: ${item.sites_reason}` : ''}`);
     if (item.holly_note) noteParts.push(`Holly: ${item.holly_note}`);
     if (spam) noteParts.push(`Possible spam (confidence ${result.classConfidence})`);
     const row = {
@@ -311,7 +319,9 @@ async function processMessage(id, ctx) {
       urgent: item.urgent,
       people_in_image: item.people_in_image,
       political_commercial: item.political_commercial,
-      possible_repeat: Boolean(repeat),
+      possible_repeat: Boolean(repeat || cross),
+      // Which sites (stage 4b): '' = both; added at the end of Pending the first time it is needed.
+      sites: item.sites || '',
       image_part_id: img ? img.partId : '',
       image_filename: img ? img.filename : '',
       image_hash: img ? img.hash : '',
@@ -358,6 +368,7 @@ async function processMessage(id, ctx) {
     return row;
   });
 
+  if (rows.some((r) => r.sites)) await g.ensureColumn('Pending', 'sites');
   if (rows.length) await g.appendRows('Pending', rows);
   rows.forEach((r) => ctx.existing.push(r)); // later emails in this run can match these
   await itemFeedback.record(rows); // Holly's drafts, for Jon's edits to teach her
@@ -415,8 +426,28 @@ async function main() {
     console.warn(`Trusted tab unreadable, trust ignored this run: ${(err && err.message) || err}`);
   }
 
-  const ids = (await g.listMessageIds(process.env.GMAIL_LABEL || 'Lenches Website/2 Pipeline', londonMidnightEpoch(startYmd)))
+  const label = process.env.GMAIL_LABEL || site.siteConfig().gmailLabel || 'Lenches Website/2 Pipeline';
+  const ids = (await g.listMessageIds(label, londonMidnightEpoch(startYmd)))
     .reverse(); // oldest first
+  // One email to both sites' addresses carries both labels: it belongs to the site listed first
+  // (the Lenches), whose run handles it for both (Harvington stage 4b).
+  const elsewhere = new Map();
+  for (const s of site.SITES.slice(0, site.SITES.indexOf(site.SITE))) {
+    const theirs = site.siteConfigFor(s).gmailLabel;
+    if (!theirs) continue;
+    for (const mid of await g.listMessageIds(theirs, londonMidnightEpoch(startYmd))) elsewhere.set(mid, s);
+  }
+  // The other sites' waiting and live items, for the cross-site repeat check. Read-only; a
+  // failure only skips the check.
+  const otherExisting = [];
+  for (const s of site.otherSites()) {
+    try {
+      const rows = await g.readOtherTable(s, 'Pending');
+      otherExisting.push(...rows.filter((r) => ['pending', 'approved', 'auto'].includes(String(r.status || '').trim().toLowerCase())));
+    } catch (err) {
+      console.warn(`${s} Pending unreadable, no cross-site repeat check this run: ${(err && err.message) || err}`);
+    }
+  }
   const todo = ids.filter((id) => {
     const r = logById.get(id);
     return !r || (r.status === 'error' && (Number(r.retries) || 0) < MAX_RETRIES);
@@ -437,6 +468,7 @@ async function main() {
     today: londonDate(Date.now()),
     tokensIn: 0,
     tokensOut: 0,
+    otherExisting,
     offList: await loadOffList(),
     offListAlerts: [],
     window: holiday ? null : await loadWindow(settings),
@@ -450,7 +482,10 @@ async function main() {
     const prevRetries = prev ? Number(prev.retries) || 0 : 0;
     let outcome;
     try {
-      outcome = await processMessage(id, ctx);
+      const other = elsewhere.get(id);
+      outcome = other
+        ? { status: 'skipped', received: '', source: '', items: 0, error: `Also sent to the ${site.shortName(other)} website: handled there` }
+        : await processMessage(id, ctx);
       outcome.retries = prevRetries;
     } catch (err) {
       const retries = prevRetries + 1;
@@ -578,4 +613,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { offListReason, offListAlertText };
+module.exports = { main, findRepeat, offListReason, offListAlertText };

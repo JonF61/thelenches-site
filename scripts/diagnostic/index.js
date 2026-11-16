@@ -25,7 +25,10 @@ const SITE_HOST = process.env.SITE_HOST || 'thelenches.org.uk';
 const WORKER_URL = (process.env.WORKER_URL || 'https://approvals.lenches.workers.dev').replace(/\/+$/, '');
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL || 'claude-haiku-4-5-20251001';
 const DKIM_SELECTOR = process.env.DKIM_SELECTOR || 'google';
-const GMAIL_LABEL = process.env.GMAIL_LABEL || 'Lenches Website/2 Pipeline';
+// Every site's Pipeline label (site.json gmailLabel; Harvington stage 4b); GMAIL_LABEL adds one.
+const { SITES, siteConfigFor } = require('../../lib/site');
+const GMAIL_LABELS = [...new Set([process.env.GMAIL_LABEL, ...SITES.map((s) => siteConfigFor(s).gmailLabel)]
+  .map((l) => String(l || '').trim()).filter(Boolean))];
 const TZ = 'Europe/London';
 
 const DAY = 86400000;
@@ -216,8 +219,8 @@ async function checkWorkflows() {
 async function checkGmail() {
   try {
     const res = await gmail().users.labels.list({ userId: 'me' });
-    const found = (res.data.labels || []).some((l) => l.name.toLowerCase() === GMAIL_LABEL.toLowerCase());
-    if (!found) problem(`Gmail: label "${GMAIL_LABEL}" missing`);
+    const names = (res.data.labels || []).map((l) => l.name.toLowerCase());
+    for (const label of GMAIL_LABELS) if (!names.includes(label.toLowerCase())) problem(`Gmail: label "${label}" missing`);
   } catch (e) {
     problem('Gmail: access failed (auth or delegation)', errText(e));
   }
