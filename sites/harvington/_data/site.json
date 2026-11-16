@@ -1,5 +1,5 @@
 {
-  "_help": "Harvington site config (Harvington stage 2, 16 Nov 2026; Plan doc: Harvington website). Same keys as sites/lenches/_data/site.json, plus the multi-site keys read by lib/site.js and worker/src/sites.js. Hidden from search (noindex) until Jon launches it. Form and panel URLs, Turnstile and analytics are added at launch (stage 7).",
+  "_help": "Harvington site config (Harvington stage 2, 16 Nov 2026; Plan doc: Harvington website). Same keys as sites/lenches/_data/site.json, plus the multi-site keys read by lib/site.js and worker/src/sites.js. Launched (stage 7b): forms, Turnstile, analytics and newsletter counts on; no Team or Edit page links yet.",
   "site": "harvington",
   "sheetId": "1SoY62hibCRgSM6SM4LTE46X32-NoWeIkfKGWmEd-YqQ",
   "url": "https://harvingtonvillage.org.uk",
@@ -9,15 +9,30 @@
   "brandLine": "including Norton and Lenchwick",
   "titleName": "Harvington",
   "region": "Worcestershire",
+  "areaServed": [
+    "Harvington",
+    "Norton",
+    "Lenchwick"
+  ],
   "email": "website@harvingtonvillage.org.uk",
   "description": "News, events and village information for Harvington, near Evesham in Worcestershire.",
-  "noindex": true,
   "gmailLabel": "Harvington Website/2 Pipeline",
   "fromName": "The Harvington Website and Newsletter Team",
   "hollySignoff": "Holly / Harvington website assistant",
   "newsletterName": "The Harvington Newsletter",
   "areaName": "Harvington",
   "skyline": "spire",
+  "feedbackUrl": "https://approvals.lenches.workers.dev/f",
+  "signupUrl": "https://approvals.lenches.workers.dev/s",
+  "recommendUrl": "https://approvals.lenches.workers.dev/r",
+  "suggestUrl": "https://approvals.lenches.workers.dev/sg",
+  "turnstileSiteKey": "0x4AAAAAAFleBJ36URNQhdUv",
+  "cfAnalyticsToken": "d413c71d263941c9bbdd458afebf812d",
+  "newsletterCounts": true,
+  "facebookGroup": {
+    "name": "Harvington (Near Evesham) Community",
+    "url": "https://www.facebook.com/groups/234024320065656"
+  },
   "palette": {
     "_help": "Option B, river blue (the Avon); Jon chose it 16 Nov 2026. vars override style.css's :root colours; green/ridge/window colour the Home skyline and seasonal corner.",
     "green": "#2D4A63",

@@ -11,7 +11,11 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { CLIENT_JS } from '../src/admin/ui/client.js';
 import { CLIENT_CSS } from '../src/admin/ui/css.js';
-import { siteList } from '../src/sites.js';
+import { siteList, SITES } from '../src/sites.js';
+
+// Harvington before launch (it has its analytics beacon since stage 7b): checks the panel's
+// "counted from launch" notes for a site without one.
+delete SITES.harvington.cfAnalyticsToken;
 
 const require = createRequire(import.meta.url);
 let chromium;

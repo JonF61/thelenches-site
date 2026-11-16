@@ -14,15 +14,11 @@
       "added": "2026-11-16"
     },
     {
-      "task": "Harvington stage 6b (16 Nov): Jon to give the Harvington community Facebook group's link; Kryten then adds site.json facebookGroup {name, url} so the Home card shows",
-      "added": "2026-11-16"
-    },
-    {
       "task": "Harvington before launch: add one line to the Lenches privacy page saying items may also appear on the Harvington website (wording for Jon to approve); Harvington's Contact page gets a village contacts table once its schools data exist (stage 6c-2); Harvington regular activities need entries (sites/harvington/items/regulars.json)",
       "added": "2026-11-16"
     },
     {
-      "task": "Harvington stage 7: 7a (the four public forms and their links per site) done 16 Nov. Next: 7b, the launch switch (Home at /, holding page gone, noindex off, sitemap, signupUrl, feedbackUrl, recommendUrl, suggestUrl, turnstileSiteKey, newsletterCounts, cfAnalyticsToken and facebookGroup in site.json) once Jon has added harvingtonvillage.org.uk to the Turnstile widget; then check a real Harvington sign-up lands in the Harvington Sheet's Sign-ups tab and its confirmation email comes from website@harvingtonvillage.org.uk",
+      "task": "Harvington launched (stage 7b, 16 Nov): check a real Harvington sign-up lands in the Harvington Sheet's Sign-ups tab and its confirmation email comes from website@harvingtonvillage.org.uk; check Site visitors shows Harvington counts the next day; Jon to add the site in Google Search Console and submit https://harvingtonvillage.org.uk/sitemap.xml, check his ICO registration covers it, and say when to move Harvington's replies_mode and newsletter_mode from shadow",
       "added": "2026-11-16",
       "kryten": true
     },
@@ -55,11 +51,6 @@
     },
     {
       "task": "Lenches files moved from src/ to sites/lenches/ (16 Nov): after the merge, check the next Build, Publish, Apply approval and Entry edit runs succeed and commit to sites/lenches/, the Edit page still saves page text, and the Deploy Worker run succeeds",
-      "added": "2026-11-16",
-      "kryten": true
-    },
-    {
-      "task": "Harvington hosting: confirm Enforce HTTPS is ticked on the harvington-site repo's Pages settings, the nightly Build Harvington site run succeeds, and the holding page shows at https://harvingtonvillage.org.uk",
       "added": "2026-11-16",
       "kryten": true
     },

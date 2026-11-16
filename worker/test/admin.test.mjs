@@ -1084,8 +1084,17 @@ test('4c-2: visitor counts per site host; none for a site without the analytics 
   assert.equal(hostFor(siteEnv(base, 'lenches')), 'thelenches.org.uk');
   assert.equal(hostFor(siteEnv(base, 'harvington')), 'harvingtonvillage.org.uk');
   assert.equal(hostFor({}), 'thelenches.org.uk');
-  globalThis.fetch = async () => { throw new Error('must not ask Cloudflare'); };
-  assert.deepEqual(await visitors(siteEnv(base, 'harvington')), { off: true, notLive: true });
+  // Harvington has its beacon since launch (stage 7b); a site without one is never asked about.
+  const { SITES, hasAnalytics } = await import('../src/sites.js');
+  assert.ok(hasAnalytics('harvington'));
+  const token = SITES.harvington.cfAnalyticsToken;
+  delete SITES.harvington.cfAnalyticsToken;
+  try {
+    globalThis.fetch = async () => { throw new Error('must not ask Cloudflare'); };
+    assert.deepEqual(await visitors(siteEnv(base, 'harvington')), { off: true, notLive: true });
+  } finally {
+    SITES.harvington.cfAnalyticsToken = token;
+  }
 });
 
 /* ------------------------------------------- newsletter per site (5a) -- */
