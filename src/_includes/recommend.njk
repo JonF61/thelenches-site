@@ -3,7 +3,7 @@
     on a click, moves the one form below into that card. It posts to the approvals Worker
     (POST /r, worker/src/recommend.js), which checks Turnstile, saves a Recommendations row
     and has recommend.yml email a confirm link; nothing counts until that is pressed. Counts
-    come from src/_data/recommends.json. Shown only when site.json has recommendUrl and
+    come from sites/<site>/_data/recommends.json. Shown only when site.json has recommendUrl and
     turnstileSiteKey; without JavaScript the buttons stay hidden. -#}
 {% if site.recommendUrl and site.turnstileSiteKey %}
 <form class="rec-form" method="post" action="{{ site.recommendUrl }}" data-sitekey="{{ site.turnstileSiteKey }}" hidden>

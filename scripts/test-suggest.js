@@ -10,6 +10,7 @@
 // Run: node scripts/test-suggest.js
 'use strict';
 
+const { SITE_REL } = require('../lib/site.js');
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -23,7 +24,7 @@ const suggest = require('./suggest/index');
 const g = require('./ingest/google');
 
 const ROOT = path.join(__dirname, '..');
-const photos = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', '_data', 'photos.json'), 'utf8'));
+const photos = JSON.parse(fs.readFileSync(path.join(ROOT, SITE_REL, '_data', 'photos.json'), 'utf8'));
 const tests = [];
 const test = (name, fn) => tests.push([name, fn]);
 
@@ -331,7 +332,7 @@ test('Publish: a chosen own photo is copied, an external one downloaded; caption
   const { chosenImage } = require('./publish/index');
   const ownSlug = photos.find((p) => p.village === 'Rous Lench').slug;
   const id = 'zztest-suggest-1';
-  const dest = path.join(ROOT, 'src', 'images', 'items', `${id}.webp`);
+  const dest = path.join(ROOT, SITE_REL, 'images', 'items', `${id}.webp`);
   const sugg = new Map([
     [`${id}#1`, { id: `${id}#1`, item: id, source: 'own', url: `/images/photos/${ownSlug}.webp`, caption: '', credit_url: '', alt: 'A hall' }],
     [`${id}#2`, { id: `${id}#2`, item: id, source: 'organiser', url: 'https://hall.example.org/quiz.jpg', caption: 'Image: Rous Lench Village Hall', credit_url: 'https://hall.example.org/quiz', alt: '' }],

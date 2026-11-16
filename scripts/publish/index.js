@@ -1,11 +1,11 @@
 // scripts/publish/index.js
-// Regenerates src/_data/pipeline.json from approved and auto rows in Pending,
+// Regenerates sites/<site>/_data/pipeline.json from approved and auto rows in Pending,
 // and saves each item's image (resized WebP) the first time it is published.
 // The stored part may be a photo, an iPhone HEIC or a 1-2 page PDF flyer:
 // images.toRaster() turns it into a picture first (PDF = page 1).
 // Each WebP also gets a JPEG copy (same name, .jpg) for the email newsletter:
 // classic Outlook can't show WebP. Missing JPEGs are made from the WebP, so
-// existing items are backfilled on the next run, including images used in src/items/ (hand-written).
+// existing items are backfilled on the next run, including images used in sites/<site>/items/ (hand-written).
 // Each item carries "village" from the Pending village column, so the site's
 // inLenches filter (lib/lenches.js) doesn't have to guess from the text.
 // Idempotent: safe to run as often as you like; the workflow commits only if files changed.
@@ -19,16 +19,17 @@
 // Road items (one.network link, lib/roads.js) also carry "start" (event_date), "end" (Pending
 // end_date, the works' last day) and "road" (Pending road, else guessed from the title), and
 // stay listed until "end" if that is later than the usual expiry. Their roads are looked up
-// once for the Roads page map and cached in src/_data/roadgeo.json (roadgeo.js), with any
+// once for the Roads page map and cached in sites/<site>/_data/roadgeo.json (roadgeo.js), with any
 // coordinates from Pending road_coords or the link used first.
 // Suggested images (scripts/suggest): an item with no email image whose image_choice names an
 // "Image suggestions" row gets that image on approval: an own photo is copied from
-// src/images/photos, an organiser's or Pexels image is downloaded (scripts/suggest/web.js
+// sites/<site>/images/photos, an organiser's or Pexels image is downloaded (scripts/suggest/web.js
 // guards). Its caption goes to image_credit (and image_credit_url) unless already filled, and
 // the item carries image.credit / image.creditUrl for the site and newsletter captions.
 // image_choice "none" = no image.
 'use strict';
 
+const { SITE_REL } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
@@ -43,9 +44,9 @@ const { fetchImage } = require('../suggest/web');
 
 const TZ = 'Europe/London';
 const ROOT = path.join(__dirname, '..', '..');
-const DATA_FILE = path.join(ROOT, 'src', '_data', 'pipeline.json');
-const IMAGE_DIR = path.join(ROOT, 'src', 'images', 'items');
-const PHOTO_DIR = path.join(ROOT, 'src', 'images', 'photos');
+const DATA_FILE = path.join(ROOT, SITE_REL, '_data', 'pipeline.json');
+const IMAGE_DIR = path.join(ROOT, SITE_REL, 'images', 'items');
+const PHOTO_DIR = path.join(ROOT, SITE_REL, 'images', 'photos');
 const SUGGESTIONS = 'Image suggestions';
 const IMAGE_URL = '/images/items';
 const IMAGE_EDGE = 1200;  // longest side, px
@@ -266,7 +267,7 @@ async function main() {
     notices: out.notices.map((x) => x.item),
   };
 
-  // JPEG copies for hand-added src/items/ images too (the newsletter uses them).
+  // JPEG copies for hand-added sites/<site>/items/ images too (the newsletter uses them).
   const whatson = loadWhatson({ all: true });
   for (const list of ['events', 'news', 'notices']) {
     for (const it of whatson[list] || []) {
@@ -283,7 +284,7 @@ async function main() {
   }
   const geo = await updateRoadGeo(roadsWanted);
   if (geo.failed.length) console.warn(`Road map lookups to check by hand:\n${geo.failed.join('\n')}`);
-  if (geo.changed) console.log('src/_data/roadgeo.json updated.');
+  if (geo.changed) console.log(`${SITE_REL}/_data/roadgeo.json updated.`);
 
   const json = `${JSON.stringify(data, null, 2)}\n`;
   const old = fs.existsSync(DATA_FILE) ? fs.readFileSync(DATA_FILE, 'utf8') : '';

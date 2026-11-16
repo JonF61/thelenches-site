@@ -22,6 +22,10 @@ concurrency:
   group: entry-edit-${{ github.event.client_payload.id }}
   cancel-in-progress: false
 
+env:
+  # Which site this workflow is for (lib/site.js; Harvington stage 2, 16 Nov 2026).
+  SITE: lenches
+
 jobs:
   edit:
     runs-on: ubuntu-latest
@@ -51,7 +55,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git add -A src
+          git add -A "sites/$SITE" src
           if git diff --cached --quiet; then echo "No files changed."; exit 0; fi
           git config user.name "Lenches Pipeline"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -73,7 +77,7 @@ jobs:
         run: gh workflow run publish.yml --ref main
 
       # The newsletter build waits for any Publish run first (scripts/newsletter/waitruns.js) and
-      # reads src/items and the Pending tab from main, so it picks up this edit.
+      # reads sites/<site>/items and the Pending tab from main, so it picks up this edit.
       - name: Rebuild the built newsletter (sends nothing)
         if: ${{ success() && steps.edit.outputs.rebuild == 'true' }}
         env:

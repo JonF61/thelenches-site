@@ -8,7 +8,7 @@
 //   after LIVE_FROM, not yet in any newsletter (newsletter_count 0), live_notified_at blank, and
 //   whose acknowledgement (Replies type ack or clarify) was sent. Several items from one email
 //   go in one message.
-//   Live: the item is in src/_data/pipeline.json (this checkout is the latest main) AND a fresh
+//   Live: the item is in sites/<site>/_data/pipeline.json (this checkout is the latest main) AND a fresh
 //   copy of its page (/events/ or /notices/, cache-busted) has its anchor. The Pages cache can lag
 //   the build, so the page is checked up to CHECKS times, WAIT_MS apart; items still not shown
 //   wait for the next run, and after GIVE_UP_DAYS are marked "not shown" and dropped.
@@ -17,6 +17,7 @@
 // live_notified_at (needs the column; without it nothing is sent). Logs print counts only.
 'use strict';
 
+const { SITE_REL } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const g = require('../ingest/google');
@@ -24,7 +25,7 @@ const replies = require('../ingest/replies');
 const { anchorUrl } = require('../../lib/anchors');
 
 const TZ = 'Europe/London';
-const PIPELINE = path.join(__dirname, '..', '..', 'src', '_data', 'pipeline.json');
+const PIPELINE = path.join(__dirname, '..', '..', SITE_REL, '_data', 'pipeline.json');
 // Only items decided from when this was switched on: older ones never get a late email.
 // Moved from 3 Nov to 15 Nov 2026 21:30: until then google.js readTable never saw the
 // live_notified_at column (it sits past AZ), so nothing was ever sent.

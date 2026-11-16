@@ -3,7 +3,7 @@
 // the picture library (Pexels, else Pixabay; library.js) for QUERY, typed by Kryten or Jon,
 // never taken from an email. Each result is cropped to 3:2 (1200x800 JPEG, the news-column
 // shape) into OUT_DIR with candidates.json (credit, page, licence), for Kryten to look at on
-// the library-candidates branch and copy the chosen one into src/images/items.
+// the library-candidates branch and copy the chosen one into sites/<site>/images/items.
 'use strict';
 
 const fs = require('fs');

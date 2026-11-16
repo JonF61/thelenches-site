@@ -2,8 +2,8 @@
 // Already listed (Jon, 3 Nov 2026): a submission for something the site already has (from
 // another sender, a feed or a hand-written item) is flagged, never published as a new item.
 //   1. Code finds candidates: listed events on the same day (or within a multi-day event), or
-//      items whose titles share enough words. Sources: hand-written items (src/items/, still
-//      shown), published pipeline items (src/_data/pipeline.json) and Pending rows waiting or
+//      items whose titles share enough words. Sources: hand-written items (sites/<site>/items/, still
+//      shown), published pipeline items (sites/<site>/_data/pipeline.json) and Pending rows waiting or
 //      approved but not yet published (the run's own new rows included).
 //   2. Holly (Opus, INBOUND_MODEL) decides whether one of them is the same thing, lists any
 //      facts the new email adds, and proposes the existing entry's text and links with those
@@ -20,6 +20,7 @@
 // Logs print counts and ids only.
 'use strict';
 
+const { SITE_REL } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const { anchorUrl } = require('../../lib/anchors');
@@ -27,8 +28,8 @@ const { ukToday } = require('../../lib/whatson');
 const { callTool } = require('./toolcall');
 
 const ROOT = path.join(__dirname, '..', '..');
-const ITEMS = path.join(ROOT, 'src', 'items');
-const PIPELINE = path.join(ROOT, 'src', '_data', 'pipeline.json');
+const ITEMS = path.join(ROOT, SITE_REL, 'items');
+const PIPELINE = path.join(ROOT, SITE_REL, '_data', 'pipeline.json');
 const MODEL = process.env.INBOUND_MODEL || 'claude-opus-5-5';
 const SURE = 0.8;          // Holly's confidence for "already listed" to reach the sender
 const MAX_CANDIDATES = 6;
@@ -52,7 +53,7 @@ function readJson(file) {
 // link2, official, url, source }].
 function listings(existing = [], { root = ROOT, today = ukToday() } = {}) {
   const out = [];
-  const items = path.join(root, 'src', 'items');
+  const items = path.join(root, SITE_REL, 'items');
   for (const folder of ['events', 'notices']) {
     const dir = path.join(items, folder);
     if (!fs.existsSync(dir)) continue;
@@ -67,7 +68,7 @@ function listings(existing = [], { root = ROOT, today = ukToday() } = {}) {
         url: anchorUrl(kind, it), source: 'hand-written' });
     }
   }
-  const pipe = readJson(path.join(root, 'src', '_data', 'pipeline.json')) || {};
+  const pipe = readJson(path.join(root, SITE_REL, '_data', 'pipeline.json')) || {};
   const published = new Set();
   for (const [list, kind] of [['events', 'event'], ['notices', 'notice']]) {
     for (const it of pipe[list] || []) {

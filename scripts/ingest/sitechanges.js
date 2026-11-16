@@ -12,6 +12,7 @@
 // Both are pure apart from the git call and file reads, and never throw.
 // Test: scripts/test-sitechanges.js.
 
+const { SITE, SITE_REL } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
@@ -29,32 +30,35 @@ const str = (v) => (v === undefined || v === null ? '' : String(v).trim());
 // not here (pipeline.json, recommends.json, roadgeo.json, cartoons, sponsors, site
 // settings, images) is left out: automatic, or not about anyone's entry.
 const DATA_PAGES = {
-  'src/items/regulars.json': 'Regular activities page',
-  'src/items/bin-and-footnote.json': 'bin collection line',
-  'src/_data/eat.json': 'Where to eat page',
-  'src/_data/trades.json': 'Local trades page',
-  'src/_data/schools.json': 'Schools page',
-  'src/_data/services.json': 'church services',
-  'src/_data/council.json': 'Councils page',
-  'src/_data/health.json': 'Health page',
-  'src/_data/transport.json': 'Transport page',
-  'src/_data/contacts.json': 'Groups and contacts page',
-  'src/_data/bins.json': 'bin collections',
+  'items/regulars.json': 'Regular activities page',
+  'items/bin-and-footnote.json': 'bin collection line',
+  '_data/eat.json': 'Where to eat page',
+  '_data/trades.json': 'Local trades page',
+  '_data/schools.json': 'Schools page',
+  '_data/services.json': 'church services',
+  '_data/council.json': 'Councils page',
+  '_data/health.json': 'Health page',
+  '_data/transport.json': 'Transport page',
+  '_data/contacts.json': 'Groups and contacts page',
+  '_data/bins.json': 'bin collections',
 };
 const VERB = { A: 'added', M: 'changed', D: 'removed', R: 'changed' };
 
 // One changed file -> words for it, or '' to leave it out.
 function describeFile(status, file, root = ROOT) {
   const verb = VERB[String(status || '').charAt(0)] || 'changed';
-  const item = file.match(/^src\/items\/(events|notices)\/(.+)\.json$/);
+  // Paths inside the site's folder (sites/<site>/…; before 16 Nov 2026 the Lenches files were in src/).
+  const rel = file.startsWith(`${SITE_REL}/`) ? file.slice(SITE_REL.length + 1)
+    : SITE === 'lenches' && file.startsWith('src/') ? file.slice(4) : '';
+  const item = rel.match(/^items\/(events|notices)\/(.+)\.json$/);
   if (item) {
     let title = '';
     try { title = str(JSON.parse(fs.readFileSync(path.join(root, file), 'utf8')).title); } catch { /* removed or unreadable */ }
     if (!title) title = item[2].replace(/^\d{4}-\d{2}-\d{2}-/, '').replace(/-/g, ' ');
     return `${item[1] === 'events' ? 'event' : 'notice'} "${title}" ${verb}`;
   }
-  if (DATA_PAGES[file]) return `${DATA_PAGES[file]} changed`;
-  const page = file.match(/^src\/(.+)\.njk$/);
+  if (DATA_PAGES[rel]) return `${DATA_PAGES[rel]} changed`;
+  const page = rel.match(/^(.+)\.njk$/);
   // Unlisted pages (the sponsor pages) and includes are nobody's entry.
   if (page && !/^(_includes|sponsor)\//.test(page[1])) {
     return `page /${page[1].replace(/(^|\/)index$/, '').replace(/\/$/, '')}${page[1] === 'index' ? '' : '/'} wording changed`;
@@ -73,6 +77,8 @@ function parseLog(out, { root = ROOT, max = MAX_CHANGES } = {}) {
     for (const line of lines) {
       const parts = line.split('\t');
       if (parts.length < 2) continue;
+      // The 16 Nov 2026 move of the Lenches files from src/ to sites/lenches/ is not a change.
+      if (parts.length === 3 && parts[0].startsWith('R') && parts[1].startsWith('src/') && parts[2] === `sites/lenches/${parts[1].slice(4)}`) continue;
       const what = describeFile(parts[0], parts[parts.length - 1], root);
       if (what && !entries.includes(what)) entries.push(what);
     }
@@ -93,7 +99,7 @@ function recentChanges({ days = CHANGE_DAYS, root = ROOT, run = execFileSync, fr
   if (cache && !fresh) return cache;
   let out = [];
   try {
-    const log = run('git', ['log', `--since=${days} days ago`, '--date=short', '--format=%x01%ad%x02%s', '--name-status', '--', 'src'],
+    const log = run('git', ['log', `--since=${days} days ago`, '--date=short', '--format=%x01%ad%x02%s', '--name-status', '--', SITE_REL, 'src'],
       { cwd: root, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] });
     out = parseLog(log, { root });
   } catch { /* no git or no history: nothing known */ }

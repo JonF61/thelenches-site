@@ -3,10 +3,21 @@ module.exports = async function (eleventyConfig) {
   const { RenderPlugin } = await import("@11ty/eleventy");
   eleventyConfig.addPlugin(RenderPlugin); // {% renderFile %} for src/_includes/guidelines.md
 
-  eleventyConfig.addPassthroughCopy("src/style.css");
-  eleventyConfig.addPassthroughCopy("src/images");
-  // Hand-written items (src/items/, read by src/_data/whatson.js): rebuild on change when serving
-  eleventyConfig.addWatchTarget("src/items/");
+  // Two sites, one repo (16 Nov 2026): the SITE env picks sites/<site>/ as the input (pages,
+  // _data/*.json, items/, images/); layouts, style.css and the computed data in src/_data/*.js
+  // are shared by every site (lib/site.js).
+  const { SITE_REL } = require("./lib/site.js");
+  const fs = require("fs");
+  const path = require("path");
+  for (const f of fs.readdirSync(path.join(__dirname, "src/_data")).filter((n) => n.endsWith(".js")).sort()) {
+    eleventyConfig.addGlobalData(f.replace(/\.js$/, ""), require(`./src/_data/${f}`));
+  }
+
+  eleventyConfig.addPassthroughCopy({ "src/style.css": "style.css" });
+  eleventyConfig.addPassthroughCopy({ [`${SITE_REL}/images`]: "images" });
+  // Hand-written items (sites/<site>/items/, read by src/_data/whatson.js): rebuild on change when serving
+  eleventyConfig.addWatchTarget(`${SITE_REL}/items/`);
+  eleventyConfig.addWatchTarget("src/");
 
   // Today in Europe/London as YYYY-MM-DD, so dates compare as plain strings
   const today = () =>
@@ -42,7 +53,7 @@ module.exports = async function (eleventyConfig) {
     return groups;
   });
 
-  // Join two lists, e.g. hand-written src/items/ items plus pipeline.json items
+  // Join two lists, e.g. hand-written sites/<site>/items/ items plus pipeline.json items
   eleventyConfig.addFilter("merge", (a, b) => [...(a || []), ...(b || [])]);
 
   // Edit page "edit everything" (4 Nov): the entry's source key for data-entry (as in
@@ -82,7 +93,7 @@ module.exports = async function (eleventyConfig) {
   });
 
   // Road closures and roadworks (the Roads page; left off Notices): "roads": true on
-  // a src/items/ notice, or any item linking to one.network (all pipeline roadworks alerts do).
+  // a sites/<site>/items/ notice, or any item linking to one.network (all pipeline roadworks alerts do).
   // Shared with scripts/publish: lib/roads.js.
   const roads = require("./lib/roads.js");
   eleventyConfig.addFilter("roadItems", (items) => (items || []).filter(roads.isRoad));
@@ -92,8 +103,8 @@ module.exports = async function (eleventyConfig) {
   eleventyConfig.addFilter("roadKind", roads.roadKind);
   eleventyConfig.addFilter("roadTitle", roads.roadTitle);
 
-  // Roads page map data: one entry per current road item (pipeline, then src/items/), with its
-  // dates and cached geometry (src/_data/roadgeo.json; else a pin at the village). The page's
+  // Roads page map data: one entry per current road item (pipeline, then sites/<site>/items/), with its
+  // dates and cached geometry (sites/<site>/_data/roadgeo.json; else a pin at the village). The page's
   // script picks the works active on the chosen day. Plus the home frame and centre.
   eleventyConfig.addFilter("roadMap", (pipeline, whatson, roadgeo) => {
     const now = today();
@@ -125,9 +136,9 @@ module.exports = async function (eleventyConfig) {
     };
   });
 
-  // All current notices, roads included: pipeline (newest first) then src/items/ (by "order").
+  // All current notices, roads included: pipeline (newest first) then sites/<site>/items/ (by "order").
   // "news" lists are read as notices (the News page was retired 21 Oct 2026; pipeline.json
-  // drops "news" on its next publish run, src/items/ has none).
+  // drops "news" on its next publish run, sites/<site>/items/ has none).
   eleventyConfig.addFilter("allNotices", (pipeline, whatson) => {
     const now = today();
     const p = pipeline || {};
@@ -139,7 +150,7 @@ module.exports = async function (eleventyConfig) {
   });
 
   // Home page: notices added (approved) in the last 7 days. Pipeline items carry "added";
-  // hand-written src/items/ notices count only if given one.
+  // hand-written sites/<site>/items/ notices count only if given one.
   eleventyConfig.addFilter("newThisWeek", (items) => {
     const d = new Date(today() + "T12:00:00Z");
     d.setUTCDate(d.getUTCDate() - 6);
@@ -287,15 +298,14 @@ module.exports = async function (eleventyConfig) {
   // "On the website" links: _site/photo-pages.json, public facts only (lib/photopages.js)
   const { photoPages, eventEnds } = require("./lib/photopages.js");
   eleventyConfig.on("eleventy.after", ({ results, dir }) => {
-    const fs = require("fs");
-    const path = require("path");
-    const photos = JSON.parse(fs.readFileSync(path.join(__dirname, "src/_data/photos.json"), "utf8"));
+    const readJson = (f, d) => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, SITE_REL, "_data", f), "utf8")); } catch { return d; } };
+    const photos = readJson("photos.json", []);
     const out = photoPages(results, photos.map((p) => p.slug));
     out.eventEnds = eventEnds(require("./lib/whatson.js").loadWhatson({ all: true }).events);
     fs.writeFileSync(path.join(dir.output, "photo-pages.json"), JSON.stringify(out, null, 1) + "\n");
     // Events and road works coming up, for the admin panel's Summary page (lib/comingup.js).
     const ukToday = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
-    const pipeline = JSON.parse(fs.readFileSync(path.join(__dirname, "src/_data/pipeline.json"), "utf8"));
+    const pipeline = readJson("pipeline.json", {});
     const coming = require("./lib/comingup.js").comingUp({ whatson: require("./lib/whatson.js").loadWhatson(), pipeline }, ukToday);
     fs.writeFileSync(path.join(dir.output, "coming-up.json"), JSON.stringify(coming, null, 1) + "\n");
   });
@@ -313,8 +323,8 @@ module.exports = async function (eleventyConfig) {
   return {
     pathPrefix: "/",
     dir: {
-      input: "src",
-      includes: "_includes",
+      input: SITE_REL,
+      includes: "../../src/_includes",
       data: "_data",
       output: "_site",
     },

@@ -4,6 +4,7 @@
 // Sheet and Claude mocked; files in a temporary folder. Run: node scripts/test-rimmer-fix.js
 'use strict';
 
+const { SITE_REL } = require('../lib/site.js');
 const assert = require('assert/strict');
 const fs = require('fs');
 const os = require('os');
@@ -12,15 +13,15 @@ const fix = require('./rimmer/fix');
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'rimmer-fix-'));
 const put = (rel, obj, raw) => { fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true }); fs.writeFileSync(path.join(root, rel), raw || `${JSON.stringify(obj, null, 2)}\n`); };
-put('src/items/events/2026-11-13-quiz-night.json', { date: '2026-11-13', title: "Liz's Quiz and pub night — The Lenches Club", body: 'Teams of up to six, 7.30pm. Tickets from Fran.' });
-put('src/items/notices/council-statement.json', { title: 'Parish council statement', body: 'The council has agreed the budjet for next year.', official: true });
+put(`${SITE_REL}/items/events/2026-11-13-quiz-night.json`, { date: '2026-11-13', title: "Liz's Quiz and pub night — The Lenches Club", body: 'Teams of up to six, 7.30pm. Tickets from Fran.' });
+put(`${SITE_REL}/items/notices/council-statement.json`, { title: 'Parish council statement', body: 'The council has agreed the budjet for next year.', official: true });
 // regulars.json in a compact layout that a full rewrite would change.
-put('src/items/regulars.json', null, '{"_help": "x",\n  "regulars": [ {"day": "Tuesday", "time": "7.15pm", "what": "Lenches Ladies", "frequency": "2nd Tuesday of the month"} ]\n}\n');
-put('src/_data/eat.json', { areas: ['Nearby villages'], places: [{ id: 'boot-inn', name: 'Boot Inn', area: 'Nearby villages', where: 'Flyford Flavell', type: 'Pub' }] });
-put('src/_data/trades.json', { trades: [] });
-put('src/_data/siteupdates.json', { entries: [{ key: 'a-2026-11', from: '2026-11-05', link: 'https://x', text: 'There is a new page.' }] });
-put('src/items/bin-and-footnote.json', { bin: 'Bins: check your day.' });
-put('src/_data/pipeline.json', { events: [{ id: 'p1', title: 'Craft fair' }], notices: [] });
+put(`${SITE_REL}/items/regulars.json`, null, '{"_help": "x",\n  "regulars": [ {"day": "Tuesday", "time": "7.15pm", "what": "Lenches Ladies", "frequency": "2nd Tuesday of the month"} ]\n}\n');
+put(`${SITE_REL}/_data/eat.json`, { areas: ['Nearby villages'], places: [{ id: 'boot-inn', name: 'Boot Inn', area: 'Nearby villages', where: 'Flyford Flavell', type: 'Pub' }] });
+put(`${SITE_REL}/_data/trades.json`, { trades: [] });
+put(`${SITE_REL}/_data/siteupdates.json`, { entries: [{ key: 'a-2026-11', from: '2026-11-05', link: 'https://x', text: 'There is a new page.' }] });
+put(`${SITE_REL}/items/bin-and-footnote.json`, { bin: 'Bins: check your day.' });
+put(`${SITE_REL}/_data/pipeline.json`, { events: [{ id: 'p1', title: 'Craft fair' }], notices: [] });
 
 const pending = [
   { _row: 7, id: 'p1', title: 'Craft fair', summary: 'Stalls from 10am to 4pm at the hall, entry free.', official: '' },
@@ -82,12 +83,12 @@ const client = { messages: { create: async (req) => {
 // Wider fixes (4 Nov): event dates (file renamed), notice expires, links, removing an entry.
 async function wider() {
   const today = '2026-11-04';
-  put('src/items/events/2026-11-29-handbell-concert.json', { date: '2026-11-29', title: 'Handbell concert — St Peter\'s, Church Lench', body: 'Handbells for Advent on Sunday 6 December, 3pm.', link: { text: 'Email the ringers', url: 'mailto:ring@example.org' } });
-  put('src/items/notices/severn-trent-works.json', { title: 'Severn Trent works — Main Street', body: 'Pipe works on Main Street until Friday 13 November.', expires: '2026-12-31' });
-  put('src/items/notices/council-closed.json', { title: 'Council office closed', body: 'Closed on 20 November. See www.council.example.gov.uk for more.', official: true, expires: '2026-11-21' });
-  put('src/items/regulars.json', null, '{"_help": "x",\n  "regulars": [\n    { "day": "Monday", "what": "Yoga" },\n    { "day": "Tuesday", "what": "Lenches Ladies" }\n  ]\n}\n');
+  put(`${SITE_REL}/items/events/2026-11-29-handbell-concert.json`, { date: '2026-11-29', title: 'Handbell concert — St Peter\'s, Church Lench', body: 'Handbells for Advent on Sunday 6 December, 3pm.', link: { text: 'Email the ringers', url: 'mailto:ring@example.org' } });
+  put(`${SITE_REL}/items/notices/severn-trent-works.json`, { title: 'Severn Trent works — Main Street', body: 'Pipe works on Main Street until Friday 13 November.', expires: '2026-12-31' });
+  put(`${SITE_REL}/items/notices/council-closed.json`, { title: 'Council office closed', body: 'Closed on 20 November. See www.council.example.gov.uk for more.', official: true, expires: '2026-11-21' });
+  put(`${SITE_REL}/items/regulars.json`, null, '{"_help": "x",\n  "regulars": [\n    { "day": "Monday", "what": "Yoga" },\n    { "day": "Tuesday", "what": "Lenches Ladies" }\n  ]\n}\n');
   const pend = [{ _row: 9, id: 'p9', title: 'Fireworks', summary: 'Fireworks at the Club. Tickets at www.lenchesclub.example.org/fireworks', link_text: 'Email the club', link_url: 'mailto:club@example.org', link2_text: '', link2_url: '' }];
-  put('src/_data/pipeline.json', { events: [{ id: 'p9', title: 'Fireworks' }], notices: [] });
+  put(`${SITE_REL}/_data/pipeline.json`, { events: [{ id: 'p9', title: 'Fireworks' }], notices: [] });
   const all = fix.sources({ root, pending: pend });
   const by = (k) => all.filter((s) => s.key === k);
   const hb = 'h:events/2026-11-29-handbell-concert.json';
@@ -143,12 +144,12 @@ async function wider() {
   };
   let [out] = await applyRow(d);
   assert.equal(out.ok, true);
-  assert.ok(!fs.existsSync(path.join(root, 'src/items/events/2026-11-29-handbell-concert.json')));
-  const moved = JSON.parse(fs.readFileSync(path.join(root, 'src/items/events/2026-12-06-handbell-concert.json'), 'utf8'));
+  assert.ok(!fs.existsSync(path.join(root, `${SITE_REL}/items/events/2026-11-29-handbell-concert.json`)));
+  const moved = JSON.parse(fs.readFileSync(path.join(root, `${SITE_REL}/items/events/2026-12-06-handbell-concert.json`), 'utf8'));
   assert.equal(moved.date, '2026-12-06');
   assert.equal(moved.link.url, 'mailto:ring@example.org');
   [out] = await applyRow(fix.checkProposal({ source: st, field: 'expires', new_value: '2026-11-14' }, by(st), '', { today }));
-  assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'src/items/notices/severn-trent-works.json'), 'utf8')).expires, '2026-11-14');
+  assert.equal(JSON.parse(fs.readFileSync(path.join(root, `${SITE_REL}/items/notices/severn-trent-works.json`), 'utf8')).expires, '2026-11-14');
   [out] = await applyRow(l);
   assert.equal(out.ok, true);
   assert.equal(pend[0].link_url, 'https://www.lenchesclub.example.org/fireworks');
@@ -161,27 +162,27 @@ async function wider() {
   // Remove a regular activity: only its line goes, the rest of the layout stays.
   [out] = await applyRow(fix.checkProposal({ source: 'r:1', field: 'remove', reason: 'No longer meets.' }, by('r:1'), '', { today }));
   assert.equal(out.ok, true);
-  assert.equal(fs.readFileSync(path.join(root, 'src/items/regulars.json'), 'utf8'), '{"_help": "x",\n  "regulars": [\n    { "day": "Monday", "what": "Yoga" }\n  ]\n}\n');
+  assert.equal(fs.readFileSync(path.join(root, `${SITE_REL}/items/regulars.json`), 'utf8'), '{"_help": "x",\n  "regulars": [\n    { "day": "Monday", "what": "Yoga" }\n  ]\n}\n');
   // Remove a notice: the file goes. A changed entry is never removed.
   const rmOc = fix.checkProposal({ source: oc, field: 'remove', reason: 'It has passed.' }, by(oc), '', { today });
-  put('src/items/notices/council-closed.json', { title: 'Council office closed', body: 'Changed.', official: true });
+  put(`${SITE_REL}/items/notices/council-closed.json`, { title: 'Council office closed', body: 'Changed.', official: true });
   [out] = await applyRow(rmOc);
   assert.equal(out.ok, false);
-  assert.ok(fs.existsSync(path.join(root, 'src/items/notices/council-closed.json')));
+  assert.ok(fs.existsSync(path.join(root, `${SITE_REL}/items/notices/council-closed.json`)));
   [out] = await applyRow(fix.checkProposal({ source: st, field: 'remove', reason: 'Works over.' }, fix.sources({ root }).filter((s) => s.key === st), '', { today }));
   assert.equal(out.ok, true);
-  assert.ok(!fs.existsSync(path.join(root, 'src/items/notices/severn-trent-works.json')));
+  assert.ok(!fs.existsSync(path.join(root, `${SITE_REL}/items/notices/severn-trent-works.json`)));
   // Remove a trade: the Worker is redeployed too.
-  put('src/_data/trades.json', { trades: [{ id: 'a-plumber', name: 'A Plumber', trade: 'Plumbers' }, { id: 'b-builder', name: 'B Builder', trade: 'Builders' }] });
+  put(`${SITE_REL}/_data/trades.json`, { trades: [{ id: 'a-plumber', name: 'A Plumber', trade: 'Plumbers' }, { id: 'b-builder', name: 'B Builder', trade: 'Builders' }] });
   fs.writeFileSync(process.env.GITHUB_OUTPUT, '');
   const tr = fix.sources({ root }).filter((s) => s.key === 't:a-plumber');
   [out] = await applyRow(fix.checkProposal({ source: 't:a-plumber', field: 'remove', reason: 'Retired.' }, tr, '', { today }));
   assert.equal(out.ok, true);
-  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, 'src/_data/trades.json'), 'utf8')).trades.map((t) => t.id), ['b-builder']);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, `${SITE_REL}/_data/trades.json`), 'utf8')).trades.map((t) => t.id), ['b-builder']);
   assert.match(fs.readFileSync(process.env.GITHUB_OUTPUT, 'utf8'), /worker=true/);
   // Apply all ticked (5 Nov): several fixes in one run, in turn against the files as the previous
   // one left them; two to the same entry both apply, a stale one fails, the rest still go.
-  put('src/items/regulars.json', { regulars: [{ day: 'Monday', time: '9am', what: 'Yoga', where: 'Hall' }, { day: 'Friday', time: '7pm', what: 'Quizz', where: 'Club' }] });
+  put(`${SITE_REL}/items/regulars.json`, { regulars: [{ day: 'Monday', time: '9am', what: 'Yoga', where: 'Hall' }, { day: 'Friday', time: '7pm', what: 'Quizz', where: 'Club' }] });
   const batch = [
     ['B1', 'r:0', 'what', 'Yoga', 'Gentle yoga'],
     ['B2', 'r:0', 'time', '9am', '9.30am'],
@@ -192,7 +193,7 @@ async function wider() {
   fs.writeFileSync(process.env.GITHUB_OUTPUT, '');
   const many = await fix.applyMany(['B1', 'B2', 'B3', 'B4'], { g: g2, root });
   assert.deepEqual(many.map((r) => r.ok), [true, true, false, true]);
-  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, 'src/items/regulars.json'), 'utf8')).regulars.map((r) => [r.time, r.what]), [['9.30am', 'Gentle yoga'], ['7pm', 'Quiz']]);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root, `${SITE_REL}/items/regulars.json`), 'utf8')).regulars.map((r) => [r.time, r.what]), [['9.30am', 'Gentle yoga'], ['7pm', 'Quiz']]);
   assert.deepEqual(['B1', 'B2', 'B3', 'B4'].map((id) => rows.find((r) => r.id === id).fix_status), ['applied', 'applied', 'failed', 'applied']);
   assert.match(fs.readFileSync(process.env.GITHUB_OUTPUT, 'utf8'), /commit=true/);
   // A finding no longer waiting is left alone.
@@ -215,7 +216,7 @@ async function wider() {
   assert.equal(sheet[1].fix_old, '');
   sheet[1].fix_status = 'applying';
   assert.equal((await fix.apply('K1-n5', { g, root })).ok, true);
-  assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'src/items/regulars.json'), 'utf8')).regulars[0].where, 'The Lenches Club');
+  assert.equal(JSON.parse(fs.readFileSync(path.join(root, `${SITE_REL}/items/regulars.json`), 'utf8')).regulars[0].where, 'The Lenches Club');
   // Holly may not fill a field with details nobody gave (Jon's note had none).
   current = 'K1-n5';
   Object.assign(sheet[1], { status: 'open', fix_status: 'asked', fix_note: '' });
@@ -241,7 +242,7 @@ async function wider() {
   sheet[0].fix_status = 'applying';
   process.env.GITHUB_OUTPUT = path.join(root, 'out.txt');
   assert.equal((await fix.apply('K1-n2', { g, root })).ok, true);
-  const ev = JSON.parse(fs.readFileSync(path.join(root, 'src/items/events/2026-11-13-quiz-night.json'), 'utf8'));
+  const ev = JSON.parse(fs.readFileSync(path.join(root, `${SITE_REL}/items/events/2026-11-13-quiz-night.json`), 'utf8'));
   assert.equal(ev.body, 'Teams of up to six, 7.30pm. Tickets from Fran on 01386 123456.');
   assert.equal(sheet[0].status, 'fixed');
   assert.equal(sheet[0].fix_status, 'applied');
@@ -257,10 +258,10 @@ async function wider() {
   assert.equal((await fix.apply('K1-n5', { g, root })).ok, false);
   assert.equal(sheet[1].fix_status, 'failed');
   // writeRepoField keeps a file's own layout when the old text is unique
-  put('src/items/regulars.json', null, '{"_help": "x",\n  "regulars": [ {"day": "Tuesday", "time": "7.15pm", "what": "Lenches Ladies"} ]\n}\n');
-  const regs = { file: 'src/items/regulars.json', path: ['regulars', 0] };
+  put(`${SITE_REL}/items/regulars.json`, null, '{"_help": "x",\n  "regulars": [ {"day": "Tuesday", "time": "7.15pm", "what": "Lenches Ladies"} ]\n}\n');
+  const regs = { file: `${SITE_REL}/items/regulars.json`, path: ['regulars', 0] };
   fix.writeRepoField(regs, 'time', '7.15pm', '7.30pm', root);
-  assert.equal(fs.readFileSync(path.join(root, 'src/items/regulars.json'), 'utf8'), '{"_help": "x",\n  "regulars": [ {"day": "Tuesday", "time": "7.30pm", "what": "Lenches Ladies"} ]\n}\n');
+  assert.equal(fs.readFileSync(path.join(root, `${SITE_REL}/items/regulars.json`), 'utf8'), '{"_help": "x",\n  "regulars": [ {"day": "Tuesday", "time": "7.30pm", "what": "Lenches Ladies"} ]\n}\n');
   assert.throws(() => fix.writeRepoField(regs, 'time', '7.15pm', '8pm', root), /changed since/);
 
   await wider();

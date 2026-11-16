@@ -7,7 +7,7 @@
 //            Otherwise one confirmation email with a signed /r link lasting LINK_DAYS ("sent").
 //   confirm  the reader pressed the button behind that link: the row is "counted" (or
 //            "already" if another confirmed row got there first).
-//   counts   rewrites src/_data/recommends.json ({ trades: { id: n }, eat: { id: n } }: one
+//   counts   rewrites sites/<site>/_data/recommends.json ({ trades: { id: n }, eat: { id: n } }: one
 //            per address per entry), which the workflow commits and builds.
 // The address is wiped from a row as soon as it is counted or found to be a repeat, and
 // from rows never confirmed within KEEP_DAYS ("expired"), as the privacy page says; the
@@ -16,6 +16,7 @@
 // Env: GOOGLE_SA_KEY, SHEET_ID, GMAIL_USER, APPROVAL_SIGNING_KEY, WORKER_URL, ACTION, RECOMMEND_ID.
 'use strict';
 
+const { SITE_REL } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -29,7 +30,7 @@ const HEADERS = ['id', 'requested', 'kind', 'entry', 'email', 'key', 'status', '
 const FROM = 'website@thelenches.org.uk';
 const LINK_DAYS = 7;
 const KEEP_DAYS = 30;
-const DATA_DIR = path.join(__dirname, '..', '..', 'src', '_data');
+const DATA_DIR = path.join(__dirname, '..', '..', SITE_REL, '_data');
 const COUNTS_FILE = path.join(DATA_DIR, 'recommends.json');
 
 const str = (v) => String(v ?? '').trim();

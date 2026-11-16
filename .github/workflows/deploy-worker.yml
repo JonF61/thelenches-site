@@ -7,17 +7,19 @@ on:
       - "worker/**"
       - ".github/workflows/deploy-worker.yml"
       # Bundled into the admin panel's Organisations view (worker/src/admin/index.js).
-      - "src/_data/contacts.json"
-      - "src/_data/council.json"
-      - "src/_data/schools.json"
-      - "src/_data/health.json"
-      - "src/_data/transport.json"
+      # Each site's config (worker/src/sites.js).
+      - "sites/*/_data/site.json"
+      - "sites/*/_data/contacts.json"
+      - "sites/*/_data/council.json"
+      - "sites/*/_data/schools.json"
+      - "sites/*/_data/health.json"
+      - "sites/*/_data/transport.json"
       # Bundled into the admin panel's Summary page (worker/src/admin/summary.js).
-      - "src/_data/onthisday.json"
+      - "sites/*/_data/onthisday.json"
       # Bundled so the Recommend buttons only accept listed entries (worker/src/recommend.js),
       # and for the panel's Suggestions cards (worker/src/admin/suggestions.mjs).
-      - "src/_data/trades.json"
-      - "src/_data/eat.json"
+      - "sites/*/_data/trades.json"
+      - "sites/*/_data/eat.json"
       # Which listing fields the Edit page and the draft editor can change (worker/src/admin/entryedit.js).
       - "lib/entryfields.json"
   workflow_dispatch:
@@ -28,6 +30,10 @@ permissions:
 concurrency:
   group: deploy-worker
   cancel-in-progress: false
+
+env:
+  # Which site this workflow is for (lib/site.js; Harvington stage 2, 16 Nov 2026).
+  SITE: lenches
 
 jobs:
   deploy:

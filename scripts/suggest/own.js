@@ -1,5 +1,5 @@
 // scripts/suggest/own.js
-// Own photos for an event with no image: approved Lenches Photos images (src/_data/photos.json,
+// Own photos for an event with no image: approved Lenches Photos images (sites/<site>/_data/photos.json,
 // i.e. already published) that match the event's venue, village or subject. Photos made for
 // one particular event (target event:<key>) are offered only for that event. Among equal
 // matches, photos with no identifiable people come first (people from the Photos tab).

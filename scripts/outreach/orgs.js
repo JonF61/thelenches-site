@@ -14,6 +14,7 @@
 // Logs print the slug only, never an address.
 'use strict';
 
+const { SITE_REL } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
@@ -22,7 +23,7 @@ const replies = require('../ingest/replies');
 const feedback = require('../ingest/feedback');
 
 const TZ = 'Europe/London';
-const DATA = path.join(__dirname, '..', '..', 'src', '_data');
+const DATA = path.join(__dirname, '..', '..', SITE_REL, '_data');
 const londonDate = (ms) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(ms);
 function londonDateTime(ms) {
   const time = new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(ms);

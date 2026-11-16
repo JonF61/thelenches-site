@@ -1,7 +1,7 @@
 // scripts/ingest/sitefacts.js
 // What the website shows today, as compact facts with the page link for each: the only
 // source replies.js lets Claude answer questions from (agreed 23 Oct). Read from the repo
-// checkout (src/_data, src/items via lib/whatson.js, pipeline.json), so it is what is live
+// checkout (src/_data, sites/<site>/items via lib/whatson.js, pipeline.json), so it is what is live
 // now; Pending items are never included, so a reply can't say something is live before
 // it is. urls is every link a draft may contain.
 // 23 Oct: also the "Living here" data, including what the build computes (next parish
@@ -10,6 +10,7 @@
 // Outside links (NHS, bus and council sites) are left out: a reply links to our page.
 'use strict';
 
+const { SITE_REL } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const { loadWhatson, ukToday } = require('../../lib/whatson');
@@ -18,7 +19,7 @@ const meetings = require('../../src/_data/meetings');
 const termdates = require('../../src/_data/termdates');
 
 const SITE = 'https://thelenches.org.uk';
-const DATA = path.join(__dirname, '..', '..', 'src', '_data');
+const DATA = path.join(__dirname, '..', '..', SITE_REL, '_data');
 const EVENT_DAYS = 60;   // events this far ahead
 const MAX_EVENTS = 40;
 const MAX_NOTICES = 30;

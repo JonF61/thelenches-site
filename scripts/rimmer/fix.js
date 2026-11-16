@@ -17,6 +17,7 @@
 // Logs print the source kind and counts only (logs are public).
 'use strict';
 
+const { SITE_REL } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const { callTool } = require('../ingest/toolcall');
@@ -29,8 +30,8 @@ const MAX_CANDIDATES = 6;
 const MAX_OFFICIAL_EDITS = 12;
 
 const FILES = {
-  events: 'src/items/events', notices: 'src/items/notices', regulars: 'src/items/regulars.json', bin: 'src/items/bin-and-footnote.json',
-  eat: 'src/_data/eat.json', trades: 'src/_data/trades.json', siteupdates: 'src/_data/siteupdates.json', pipeline: 'src/_data/pipeline.json',
+  events: `${SITE_REL}/items/events`, notices: `${SITE_REL}/items/notices`, regulars: `${SITE_REL}/items/regulars.json`, bin: `${SITE_REL}/items/bin-and-footnote.json`,
+  eat: `${SITE_REL}/_data/eat.json`, trades: `${SITE_REL}/_data/trades.json`, siteupdates: `${SITE_REL}/_data/siteupdates.json`, pipeline: `${SITE_REL}/_data/pipeline.json`,
 };
 const ITEM_FIELDS = ['title', 'body'];
 const REGULAR_FIELDS = ['what', 'where', 'time', 'note', 'frequency', 'about', 'runBy', 'forWho', 'cost', 'booking', 'bring', 'phone', 'email'];

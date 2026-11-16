@@ -5,6 +5,7 @@
 // on the built site, and nothing else goes in. Run: node scripts/test-photopages.js
 'use strict';
 
+const { SITE_REL } = require('../lib/site.js');
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -60,7 +61,7 @@ assert.ok(!JSON.stringify(out).includes('1AbCdEf'), 'attributes other than src a
 fs.rmSync(path.join(REPO, '_site', 'photo-pages.json'), { force: true });
 execFileSync('npx', ['@11ty/eleventy', '--quiet'], { cwd: REPO, stdio: 'ignore' });
 const file = JSON.parse(fs.readFileSync(path.join(REPO, '_site', 'photo-pages.json'), 'utf8'));
-const published = JSON.parse(fs.readFileSync(path.join(REPO, 'src', '_data', 'photos.json'), 'utf8'));
+const published = JSON.parse(fs.readFileSync(path.join(REPO, SITE_REL, '_data', 'photos.json'), 'utf8'));
 const slugs = new Set(published.map((p) => p.slug));
 const htmlOf = (url) => fs.readFileSync(path.join(REPO, '_site', url.replace(/^\//, ''), 'index.html'), 'utf8');
 

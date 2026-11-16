@@ -1,16 +1,17 @@
 // Offline test for the newsletter's "On this day" line (28 Oct 2026): select.js picks the
-// entry for the issue's MM-DD from src/_data/onthisday.json; render.js shows it under the
+// entry for the issue's MM-DD from sites/<site>/_data/onthisday.json; render.js shows it under the
 // header (HTML and text) only when there is one. No network, no Sheet.
 // Usage: node scripts/test-onthisday.js [preview-dir]   (writes onthisday-with.html / -without.html)
 'use strict';
 
+const { SITE_REL } = require('../lib/site.js');
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const { select } = require('./newsletter/select');
 const { render } = require('./newsletter/render');
 
-const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'src/_data/onthisday.json'), 'utf8'));
+const data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', `${SITE_REL}/_data/onthisday.json`), 'utf8'));
 let checks = 0;
 const ok = (cond, what) => { assert.ok(cond, what); checks += 1; };
 

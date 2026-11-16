@@ -18,6 +18,10 @@ concurrency:
   group: live-notice
   cancel-in-progress: false
 
+env:
+  # Which site this workflow is for (lib/site.js; Harvington stage 2, 16 Nov 2026).
+  SITE: lenches
+
 jobs:
   notify:
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}

@@ -15,7 +15,7 @@ import {
 import { dispatchFor, validPayload, ACTIONS } from '../src/core.js';
 
 const data = Object.fromEntries(['contacts', 'council', 'schools', 'health', 'transport']
-  .map((n) => [n, JSON.parse(fs.readFileSync(new URL(`../../src/_data/${n}.json`, import.meta.url)))]));
+  .map((n) => [n, JSON.parse(fs.readFileSync(new URL(`../../sites/lenches/_data/${n}.json`, import.meta.url)))]));
 const ORGS = orgEntries(data);
 const TODAY = '2026-10-27';
 const org = (id) => ORGS.find((o) => o.id === id);
@@ -129,7 +129,7 @@ test('orgcheck goes to approval.yml with the slug only', () => {
 // Listings (5 Nov): Local trades and Where to eat entries get the same yearly check.
 test('listings: every trade and eatery, linked to its own card, address from the entry or the tab', async () => {
   const { listingEntries, emailOf, planListingEmail } = await import('../src/admin/orgoutreach.mjs');
-  const ld = Object.fromEntries(['trades', 'eat'].map((n) => [n, JSON.parse(fs.readFileSync(new URL(`../../src/_data/${n}.json`, import.meta.url)))]));
+  const ld = Object.fromEntries(['trades', 'eat'].map((n) => [n, JSON.parse(fs.readFileSync(new URL(`../../sites/lenches/_data/${n}.json`, import.meta.url)))]));
   const L = listingEntries(ld);
   assert.equal(L.length, ld.trades.trades.length + ld.eat.places.length);
   const ids = new Set([...ORGS, ...L].map((o) => o.id));

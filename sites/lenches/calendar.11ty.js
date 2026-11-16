@@ -1,8 +1,8 @@
 // One "Add to calendar" file per upcoming event: /calendar/<event id>.ics, where the id is the
 // Events page anchor ('ev-' + date + '-' + title, slugified), so events.njk can link to it.
 // Same list as the Events page (hand-written items plus pipeline.json, finished events dropped). See lib/ics.js.
-const { eventIcs } = require('../lib/ics.js');
-const { ukToday } = require('../lib/whatson.js');
+const { eventIcs } = require('../../lib/ics.js');
+const { ukToday } = require('../../lib/whatson.js');
 
 module.exports = class {
   data() {

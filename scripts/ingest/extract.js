@@ -436,7 +436,7 @@ async function extract(input) {
 
 // Regular activities (8 Nov): the pipeline has no regulars category, so a weekly class
 // would publish as a one-off on its next date. Hold it for Jon with a note instead;
-// regulars are added to src/items/regulars.json by hand.
+// regulars are added to sites/<site>/items/regulars.json by hand.
 const REGULAR_NOTE = 'Regular activity: add it to the Regular activities page by hand (ask Kryten) rather than approving it as a one-off event';
 function holdRegular(item, decided, noteParts) {
   if (!item || item.regular !== true) return decided;

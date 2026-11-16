@@ -23,6 +23,10 @@ concurrency:
   group: delete-run-logs
   cancel-in-progress: false
 
+env:
+  # Which site this workflow is for (lib/site.js; Harvington stage 2, 16 Nov 2026).
+  SITE: lenches
+
 jobs:
   delete:
     runs-on: ubuntu-latest

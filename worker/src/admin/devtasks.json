@@ -2,8 +2,18 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
-      "task": "Harvington (Jon, 15 Nov): wants its own domain, site and newsletter; Kryten to propose a second edition built from the same code and pipeline",
-      "added": "2026-11-15"
+      "task": "Harvington website: stages 1 (email and domain) and 2 (multi-site foundation: sites/lenches and sites/harvington, SITE setting, river blue palette and spire) done 16 Nov. Next: stage 3 hosting (build-only repo for harvingtonvillage.org.uk, DNS, noindex), then 4 Sheet and pipeline with the panel's site switcher, 5 newsletter, 6 content (including the shared header and footer, which still say The Lenches), 7 launch",
+      "added": "2026-11-16"
+    },
+    {
+      "task": "Lenches files moved from src/ to sites/lenches/ (16 Nov): after the merge, check the next Build, Publish, Apply approval and Entry edit runs succeed and commit to sites/lenches/, the Edit page still saves page text, and the Deploy Worker run succeeds",
+      "added": "2026-11-16",
+      "kryten": true
+    },
+    {
+      "task": "Plan doc Build history: add an entry for the Harvington stage 2 PR (multi-site foundation, 16 Nov) and mark stage 2 done in the Project Plan's Harvington section",
+      "added": "2026-11-16",
+      "kryten": true
     },
     {
       "task": "Sharing plan: share links on events and issues, forward-to-a-neighbour line, link previews with pictures; check what exists first",

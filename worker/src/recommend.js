@@ -17,8 +17,8 @@ import { tableFrom } from './admin/sheet.js';
 import { dispatch } from './core.js';
 import { londonStamp, verifyTurnstile, allowed, reply, plainPage, siteOrigin } from './feedback.js';
 import { validateSignup } from './signup.js';
-import tradesData from '../../src/_data/trades.json' with { type: 'json' };
-import eatData from '../../src/_data/eat.json' with { type: 'json' };
+import tradesData from '../../sites/lenches/_data/trades.json' with { type: 'json' };
+import eatData from '../../sites/lenches/_data/eat.json' with { type: 'json' };
 
 export const RECOMMEND_TAB = 'Recommendations';
 export const RECOMMEND_HEADERS = ['id', 'requested', 'kind', 'entry', 'email', 'key', 'status', 'sent_at', 'confirmed_at', 'result'];

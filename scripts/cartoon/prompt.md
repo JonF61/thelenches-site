@@ -3,7 +3,7 @@
 Jon makes each week's picture in ChatGPT with this prompt (first used for 12 Nov 2026; Jon asked
 11 Nov for every cartoon to keep the same style). Kryten fills in the **Scene** and **Focus**
 paragraphs for the week's gag and keeps everything else word for word. The caption is never in the
-picture: it goes in `src/_data/cartoons.json`. The only words allowed in the image are a sign's
+picture: it goes in `sites/<site>/_data/cartoons.json`. The only words allowed in the image are a sign's
 exact text, if the gag needs one (or none: then the last line reads "no lettering or other words
 anywhere in the image.").
 

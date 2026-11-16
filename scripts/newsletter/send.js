@@ -65,7 +65,7 @@ const londonDate = (ms) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).fo
 // Anonymous open and click counts are on while site.json has "newsletterCounts": true.
 function countsOn() {
   try {
-    return JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', '..', 'src', '_data', 'site.json'), 'utf8')).newsletterCounts === true;
+    return JSON.parse(require('fs').readFileSync(require('../../lib/site.js').siteDir('_data', 'site.json'), 'utf8')).newsletterCounts === true;
   } catch {
     return false;
   }

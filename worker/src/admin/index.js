@@ -171,8 +171,8 @@ import {
 import { photoPages, pagesFor, eventEnd } from './photopages.js';
 import { feedbackRows, planFeedback, planNote } from './feedback.js';
 import { SUGGEST_TAB as LISTING_TAB, panelRows as suggestionRows, planSuggestion } from './suggestions.mjs';
-import tradesData from '../../../src/_data/trades.json' with { type: 'json' };
-import eatData from '../../../src/_data/eat.json' with { type: 'json' };
+import tradesData from '../../../sites/lenches/_data/trades.json' with { type: 'json' };
+import eatData from '../../../sites/lenches/_data/eat.json' with { type: 'json' };
 import { FEEDBACK_TAB } from '../feedback.js';
 import {
   CONTACTS_TAB, DELETED_TAB, DELETED_HEADERS, contactRows, planContact, planDelete, addressesOf, isIgnore,
@@ -183,11 +183,11 @@ import {
   ORG_TAB, ORG_HEADERS, orgEntries, listingEntries, planListingEmail, orgLists, planOrgCheck, planNext, planOtherEmails, dueOrgs, recentQuery,
 } from './orgoutreach.mjs';
 // The site's own data, bundled at deploy (deploy-worker.yml also deploys when these change).
-import contactsData from '../../../src/_data/contacts.json' with { type: 'json' };
-import councilData from '../../../src/_data/council.json' with { type: 'json' };
-import schoolsData from '../../../src/_data/schools.json' with { type: 'json' };
-import healthData from '../../../src/_data/health.json' with { type: 'json' };
-import transportData from '../../../src/_data/transport.json' with { type: 'json' };
+import contactsData from '../../../sites/lenches/_data/contacts.json' with { type: 'json' };
+import councilData from '../../../sites/lenches/_data/council.json' with { type: 'json' };
+import schoolsData from '../../../sites/lenches/_data/schools.json' with { type: 'json' };
+import healthData from '../../../sites/lenches/_data/health.json' with { type: 'json' };
+import transportData from '../../../sites/lenches/_data/transport.json' with { type: 'json' };
 import {
   LESSONS_TAB, LESSON_HEADERS, lessonRows, cleanLesson, newLessonRow, planLessonDecision,
 } from './lessons.js';

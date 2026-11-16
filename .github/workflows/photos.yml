@@ -1,8 +1,8 @@
 name: Drive photos
 
 # Scans "Lenches Photos" in Drive into the Photos tab, drafts alt text with
-# Sonnet, and publishes rows marked approved to src/images/photos +
-# src/_data/photos.json. Commits only if something changed, then starts the
+# Sonnet, and publishes rows marked approved to sites/<site>/images/photos +
+# sites/<site>/_data/photos.json. Commits only if something changed, then starts the
 # site build (a GITHUB_TOKEN push can't).
 on:
   schedule:
@@ -16,6 +16,10 @@ permissions:
 concurrency:
   group: photos
   cancel-in-progress: false
+
+env:
+  # Which site this workflow is for (lib/site.js; Harvington stage 2, 16 Nov 2026).
+  SITE: lenches
 
 jobs:
   photos:
@@ -47,7 +51,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git add -A src/_data/photos.json src/images/photos
+          git add -A sites/$SITE/_data/photos.json sites/$SITE/images/photos
           if git diff --cached --quiet; then echo "No changes."; exit 0; fi
           git config user.name "Lenches Pipeline"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

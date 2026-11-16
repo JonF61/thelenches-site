@@ -1,5 +1,5 @@
 // scripts/test-regulars.js
-// Offline test of the Weekly regulars (src/items/regulars.json via lib/whatson.js and the
+// Offline test of the Weekly regulars (sites/<site>/items/regulars.json via lib/whatson.js and the
 // newsletter): Monday first, then by time; bad entries left out; own newsletter section,
 // one line each; snapshots from before 28 Oct (a footnote string) still render.
 // Since 11 Nov: a button with the page's count plus entries listed in the last 14 days, marked

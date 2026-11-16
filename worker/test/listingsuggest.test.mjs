@@ -20,8 +20,8 @@ import { dispatchFor, validPayload, PANEL_ONLY } from '../src/core.js';
 import { resetMemoryLimit } from '../src/feedback.js';
 import { resetTokenCache } from '../src/admin/google.js';
 import worker from '../src/index.js';
-import tradesData from '../../src/_data/trades.json' with { type: 'json' };
-import eatData from '../../src/_data/eat.json' with { type: 'json' };
+import tradesData from '../../sites/lenches/_data/trades.json' with { type: 'json' };
+import eatData from '../../sites/lenches/_data/eat.json' with { type: 'json' };
 import { createRequire } from 'node:module';
 
 const { listingId } = createRequire(import.meta.url)('../../lib/listings.js');
