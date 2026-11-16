@@ -60,7 +60,10 @@ jobs:
             exit 0
           fi
           mkdir -p ~/.ssh
-          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/harvington
+          # Rebuild the key from its base64 body, so a paste with spaces before lines, Windows
+          # line ends or the line breaks lost still works.
+          body=$(printf '%s' "$DEPLOY_KEY" | sed -e 's/-----[A-Z ]*-----//g' | tr -d ' \t\r\n')
+          printf -- '-----BEGIN OPENSSH PRIVATE KEY-----\n%s\n-----END OPENSSH PRIVATE KEY-----\n' "$(printf '%s' "$body" | fold -w 70)" > ~/.ssh/harvington
           chmod 600 ~/.ssh/harvington
           ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
           export GIT_SSH_COMMAND="ssh -i ~/.ssh/harvington -o IdentitiesOnly=yes"
