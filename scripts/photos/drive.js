@@ -87,7 +87,7 @@ async function download(file) {
 async function sheetHeaders(tab) {
   if (!sheetsClient) sheetsClient = google.sheets({ version: 'v4', auth: jwt(SHEETS_READ_SCOPE) });
   const res = await sheetsClient.spreadsheets.values.get({
-    spreadsheetId: process.env.SHEET_ID,
+    spreadsheetId: require('../../lib/site').sheetId(),
     range: `'${tab}'!1:1`,
   });
   return ((res.data.values || [])[0] || []).map((h) => String(h).trim());

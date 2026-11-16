@@ -15,12 +15,14 @@ permissions:
 # One queue per item: GitHub keeps only one waiting run per group, so a shared
 # group silently cancelled taps made in quick succession (22 Oct).
 concurrency:
-  group: approval-${{ github.event.client_payload.id }}
+  group: approval-${{ github.event.client_payload.id }}-${{ github.event.client_payload.site || github.event.inputs.site || 'lenches' }}
   cancel-in-progress: false
 
 env:
-  # Which site this workflow is for (lib/site.js; Harvington stage 2, 16 Nov 2026).
-  SITE: lenches
+  # Which site this run is for (lib/site.js): the dispatch payload's or Run workflow's `site`,
+  # else the Lenches (schedules, workflow_run). The Sheet is that site's site.json sheetId
+  # (Harvington stage 4, 16 Nov 2026).
+  SITE: ${{ github.event.client_payload.site || github.event.inputs.site || 'lenches' }}
 
 jobs:
   apply:
@@ -42,7 +44,6 @@ jobs:
         run: node scripts/approve/index.js
         env:
           GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
-          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           ITEM_ID: ${{ github.event.client_payload.id }}
           ACTION: ${{ github.event.client_payload.action }}

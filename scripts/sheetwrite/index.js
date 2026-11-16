@@ -182,7 +182,7 @@ async function main() {
   const sheets = google.sheets({ version: 'v4', auth });
   const e = process.env;
   const runUrl = e.GITHUB_RUN_ID ? `${e.GITHUB_SERVER_URL}/${e.GITHUB_REPOSITORY}/actions/runs/${e.GITHUB_RUN_ID}` : '';
-  await run({ sheets, spreadsheetId: e.SHEET_ID, inputs: readInputs(e), runUrl });
+  await run({ sheets, spreadsheetId: require('../../lib/site').sheetId(e), inputs: readInputs(e), runUrl });
 }
 
 if (require.main === module) {

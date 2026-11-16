@@ -13,12 +13,14 @@ permissions:
 
 # One queue per sign-up: a shared group would let a newer run cancel a waiting one.
 concurrency:
-  group: signup-${{ github.event.client_payload.id }}
+  group: signup-${{ github.event.client_payload.id }}-${{ github.event.client_payload.site || github.event.inputs.site || 'lenches' }}
   cancel-in-progress: false
 
 env:
-  # Which site this workflow is for (lib/site.js; Harvington stage 2, 16 Nov 2026).
-  SITE: lenches
+  # Which site this run is for (lib/site.js): the dispatch payload's or Run workflow's `site`,
+  # else the Lenches (schedules, workflow_run). The Sheet is that site's site.json sheetId
+  # (Harvington stage 4, 16 Nov 2026).
+  SITE: ${{ github.event.client_payload.site || github.event.inputs.site || 'lenches' }}
 
 jobs:
   signup:
@@ -35,7 +37,6 @@ jobs:
         run: node scripts/signup/index.js
         env:
           GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
-          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
           WORKER_URL: https://approvals.lenches.workers.dev

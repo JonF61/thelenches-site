@@ -37,9 +37,7 @@ function saKey() {
 }
 
 function spreadsheetId() {
-  const id = process.env.SHEET_ID;
-  if (!id) throw new Error('SHEET_ID is not set');
-  return id;
+  return require('../../lib/site').sheetId();
 }
 
 function gmail() {

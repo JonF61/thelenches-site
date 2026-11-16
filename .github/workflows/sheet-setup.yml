@@ -1,0 +1,53 @@
+name: Set up a site's Sheet
+
+# One-off (Harvington stage 4, 16 Nov 2026): gives a second site's Pipeline Sheet the Lenches
+# tabs and header rows (never any data) and a starter Settings tab (scripts/sheetsetup).
+# Read-only on the Lenches Sheet; never touches a tab whose row 1 has anything in it.
+# Leave apply unticked first for a dry run, then run again with it ticked.
+on:
+  workflow_dispatch:
+    inputs:
+      site:
+        description: 'Site whose Sheet to set up'
+        required: true
+        type: choice
+        options: [harvington]
+        default: harvington
+      apply:
+        description: 'Write the tabs (unticked = dry run)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sheet-setup-${{ inputs.site }}
+  cancel-in-progress: false
+
+env:
+  SITE: ${{ inputs.site }}
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            scripts/sheetsetup
+            lib
+            sites/lenches/_data
+            sites/harvington/_data
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Set up the Sheet
+        run: node scripts/sheetsetup/index.js
+        env:
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          APPLY: ${{ inputs.apply }}

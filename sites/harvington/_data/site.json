@@ -1,6 +1,7 @@
 {
   "_help": "Harvington site config (Harvington stage 2, 16 Nov 2026; Plan doc: Harvington website). Same keys as sites/lenches/_data/site.json, plus the multi-site keys read by lib/site.js and worker/src/sites.js. Hidden from search (noindex) until Jon launches it. Form and panel URLs, Turnstile and analytics are added at launch (stage 7).",
   "site": "harvington",
+  "sheetId": "",
   "url": "https://harvingtonvillage.org.uk",
   "domain": "harvingtonvillage.org.uk",
   "name": "Harvington",
