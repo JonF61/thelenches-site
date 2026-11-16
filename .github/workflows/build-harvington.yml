@@ -65,6 +65,9 @@ jobs:
           body=$(printf '%s' "$DEPLOY_KEY" | sed -e 's/-----[A-Z ]*-----//g' | tr -d ' \t\r\n')
           printf -- '-----BEGIN OPENSSH PRIVATE KEY-----\n%s\n-----END OPENSSH PRIVATE KEY-----\n' "$(printf '%s' "$body" | fold -w 70)" > ~/.ssh/harvington
           chmod 600 ~/.ssh/harvington
+          # Safe to log: the key's length, a short hash and its PUBLIC half, never the key itself.
+          echo "Key body: ${#body} characters, sha256 $(printf '%s' "$body" | sha256sum | cut -c1-12)"
+          ssh-keygen -y -f ~/.ssh/harvington || { echo "::error::HARVINGTON_DEPLOY_KEY is not a valid private key: paste it into the secret again."; exit 1; }
           ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
           export GIT_SSH_COMMAND="ssh -i ~/.ssh/harvington -o IdentitiesOnly=yes"
           cd _site
