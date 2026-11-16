@@ -18,11 +18,6 @@
       "added": "2026-11-16"
     },
     {
-      "task": "Harvington stage 6c-2 (16 Nov): after the merge, check the Build Harvington site run succeeds and /living-here/schools/, /living-here/eat/, /living-here/trades/ and /contact/ (Village contacts table) show Harvington's facts, /living-here/ and /preview/ show the three new cards; and that the Lenches Build run succeeds",
-      "added": "2026-11-16",
-      "kryten": true
-    },
-    {
       "task": "Harvington stage 6 (pages): 6a, 6b, 6c-1 and 6c-2 (Schools, Where to eat, Local trades, Contact page contacts table) done 16 Nov. Next: stage 7 (launch: swap the holding page for Home, drop noindex, add the sitemap)",
       "added": "2026-11-16",
       "kryten": true
