@@ -9,6 +9,7 @@
 'use strict';
 
 const { signToken, linksEnabled } = require('../ingest/links');
+const { siteName } = require('../../lib/site');
 
 const ISSUE = /^\d{4}-\d{2}-\d{2}$/;
 const unescapeHref = (s) => s.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
@@ -33,7 +34,8 @@ function trackIssue(issue, issueDate) {
     links += 1;
     return `href="${clickUrl(url, issueDate)}"`;
   });
-  const pixel = `<img src="${worker}/o?i=${issueDate}" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0;">`;
+  // Another site's opens name it (s), so its counts stay its own (Harvington stage 5a).
+  const pixel = `<img src="${worker}/o?i=${issueDate}${siteName() === 'lenches' ? '' : `&amp;s=${siteName()}`}" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0;">`;
   html = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${pixel}</body>`) : `${html}${pixel}`;
   return { ...issue, html, trackedLinks: links };
 }

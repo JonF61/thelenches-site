@@ -33,16 +33,22 @@ const { personalise } = require('./unsub');
 const { trackIssue } = require('./track');
 
 const TZ = 'Europe/London';
-const FROM = 'website@thelenches.org.uk';
+const { siteConfig, otherSites } = require('../../lib/site');
+
+// The site's own sending address (site.json; Harvington stage 5a).
+const FROM = String(siteConfig().email || 'website@thelenches.org.uk');
 const LIVE_FROM = '2026-10-15'; // brought forward from 22 Oct (MailerLite login lost 15 Oct)
-const DAY_LIMIT = 1500;
+// Both sites send from one Workspace account (about 2,000 a day): every site's sends and replies
+// in the last 24 hours count. A warning from DAY_WARN; nothing sent past DAY_LIMIT (Jon, 16 Nov).
+const DAY_WARN = 1500;
+const DAY_LIMIT = 1900;
 const MAX_DROP = 0.10;
 const BATCH = 10;
 const GAP_MS = 1000;
 const FROM_CHECK_EVERY = 25;
 const MAX_CONSECUTIVE_FAILS = 5;
 const TIME_BUDGET_MS = 50 * 60 * 1000; // workflow timeout is 60 min
-const CANARY_DOMAINS = ['thelenches.org.uk', 'alphaquad.co.uk'];
+const CANARY_DOMAINS = [...new Set(['thelenches.org.uk', 'alphaquad.co.uk', String(siteConfig().domain || '')].filter(Boolean))];
 const MODES = ['off', 'shadow', 'canary', 'live'];
 const COUNTED = ['sent', 'shadow'];
 // Site update keys (s:..., in item_keys) are retired by select.js only once an issue is
@@ -256,6 +262,22 @@ function baseline(issues, issueDate) {
 }
 
 // Messages sent in the last 24h by the pipeline (Sends + Replies).
+// The other websites' sends and replies in the last 24 hours (their own Sheets, read-only).
+// A Sheet that can't be read counts as unknown: refuse rather than risk the account's limit.
+async function otherSitesUsed(read = g.readOtherTable) {
+  const tab = async (site, name) => {
+    try {
+      return await read(site, name);
+    } catch (e) {
+      if (/Unable to parse range/i.test(String(e.message))) return []; // no such tab yet: nothing sent
+      throw new Error(`Daily limit: could not read the ${site} Sheet's ${name} tab (${e.message}); nothing sent`);
+    }
+  };
+  let n = 0;
+  for (const site of otherSites()) n += usedLast24h(await tab(site, 'Sends'), await tab(site, 'Replies'));
+  return n;
+}
+
 function usedLast24h(sends, replies) {
   const since = stamp(Date.now() - 86400000).slice(0, 16);
   const recent = (rows, statuses) => rows.filter((r) => statuses.includes(lc(r.status)) && minuteKey(r.sent_at || r.started_at) >= since).length;
@@ -493,9 +515,12 @@ async function main() {
   }
   const already = new Set(sends.filter((r) => str(r.issue_id) === key && lc(r.status) !== 'queued').map((r) => lc(r.email)));
   const toSend = targets.filter((e) => !already.has(e)).length;
-  const used = usedLast24h(sends, replies);
-  if (used + toSend > DAY_LIMIT) problems.push(`Daily limit: ${used} sent in the last 24h + ${toSend} would pass ${DAY_LIMIT}`);
-  console.log(`Last 24h: ${used} sent; this run: up to ${toSend}.`);
+  const own = usedLast24h(sends, replies);
+  const others = await otherSitesUsed();
+  const used = own + others;
+  if (used + toSend > DAY_LIMIT) problems.push(`Daily limit: ${used} sent in the last 24h (all websites) + ${toSend} would pass ${DAY_LIMIT}`);
+  else if (used + toSend > DAY_WARN) console.warn(`Warning: ${used} sent in the last 24h (all websites) + ${toSend} passes ${DAY_WARN}; the account's limit is about 2,000 a day.`);
+  console.log(`Last 24h: ${used} sent (${own} this website, ${others} the others); this run: up to ${toSend}.`);
 
   if (problems.length) {
     console.error(`Refused (${problems.length} problem${problems.length === 1 ? '' : 's'}):\n- ${problems.join('\n- ')}`);
@@ -560,4 +585,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { buildRecipients, canaryList, baseline, usedLast24h, minuteKey, stamp, loadSnapshot };
+module.exports = { buildRecipients, canaryList, baseline, usedLast24h, otherSitesUsed, minuteKey, stamp, loadSnapshot, DAY_WARN, DAY_LIMIT };

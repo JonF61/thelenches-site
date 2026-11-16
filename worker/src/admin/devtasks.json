@@ -2,6 +2,15 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Harvington stage 5a (newsletter per site, 16 Nov): on Thursday 19 Nov check the Lenches issue builds at 06:30 and looks as before (subject, heading, villages line, links), the Worker log shows no Harvington newsletter dispatch (its newsletter is off), the send log's Last 24h line names both websites, and Newsletter stats still shows the Lenches' opens and clicks",
+      "added": "2026-11-16",
+      "kryten": true
+    },
+    {
+      "task": "Harvington stage 5b (switching its newsletter on, with Jon): check website@harvingtonvillage.org.uk is a Send mail as address on the team inbox; set Harvington Settings preview_to and test_to; a Test send from the panel (Harvington); subscribers (sign-up form at launch, stage 7); newsletter_mode off → shadow → live. Also: the newsletter draft refreshes for Harvington only from the panel's Refresh (newsletter-draft.yml's schedule is the Lenches')",
+      "added": "2026-11-16"
+    },
+    {
       "task": "Harvington stage 4c (panel site switcher, 16 Nov): after the Deploy Worker run, open the panel, check The Lenches looks unchanged, switch to Harvington (river blue), check Submissions shows the Harvington Sheet's items, Newsletter draft and Site visitors show their not-yet notes, Summary's Claude spend shows both sites, and that a Harvington approval's Apply approval run has SITE harvington",
       "added": "2026-11-16",
       "kryten": true
@@ -12,7 +21,7 @@
       "kryten": true
     },
     {
-      "task": "Harvington stage 4c leftovers (4c-1 and 4c-2 done 16 Nov): bundle Harvington's own organisations and listings for Organisations once its data files exist (stage 6); Edit page for Harvington pages (stage 6); before its newsletter (stage 5) newsletter counts (/o, /c, NL_STATS) need the site, as both issues fall on Thursdays; the Monday lessons run reads only the Lenches' Reply feedback",
+      "task": "Harvington stage 4c leftovers: bundle Harvington's own organisations and listings for Organisations once its data files exist (stage 6); Edit page for Harvington pages (stage 6); the Monday lessons run reads only the Lenches' Reply feedback",
       "added": "2026-11-16"
     },
     {

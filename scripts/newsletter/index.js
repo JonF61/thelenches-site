@@ -19,7 +19,7 @@
 // button) of the issue exactly as last built, to preview_to, then marks it tested.
 'use strict';
 
-const { SITE_REL } = require('../../lib/site.js');
+const { SITE_REL, siteConfig } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -32,8 +32,9 @@ const { buttons } = require('./actions');
 
 const TZ = 'Europe/London';
 const ROOT = path.join(__dirname, '..', '..');
-const SITE = 'https://thelenches.org.uk';
-const FROM = 'website@thelenches.org.uk';
+// The site's address and sending address (site.json; Harvington stage 5a).
+const SITE = String(siteConfig().url || 'https://thelenches.org.uk').replace(/\/+$/, '');
+const FROM = String(siteConfig().email || 'website@thelenches.org.uk');
 const SNAPSHOT_MAX = 45000; // a Sheets cell holds 50,000 characters
 // Hard limits: a Sheet edit can never point a test or preview at anyone else.
 const TEST_ALLOWED = ['jon@alphaquad.co.uk'];
@@ -49,8 +50,12 @@ function comingThursday(today) {
   return d.toISOString().slice(0, 10);
 }
 
+// A site's optional data file (cartoons, Where in…?, On this day, bins…): null when that site has
+// none (Harvington stage 5a), so its section is simply left out.
 function readJson(rel) {
-  return JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
+  const file = path.join(ROOT, rel);
+  if (!fs.existsSync(file)) return null;
+  return JSON.parse(fs.readFileSync(file, 'utf8'));
 }
 
 // client_payload of the repository_dispatch that started this run ({} otherwise).

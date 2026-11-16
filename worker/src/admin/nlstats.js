@@ -6,7 +6,7 @@
 // CF_ANALYTICS_TOKEN and CF_ACCOUNT_ID secrets). Totals only: nothing here is per person.
 // The counts keep about 3 months (Analytics Engine's limit).
 
-import { DATASET } from '../track.js';
+import { DATASET, siteTag } from '../track.js';
 
 const ISSUE = /^\d{4}-\d{2}-\d{2}$/;
 const TZ = 'Europe/London';
@@ -88,8 +88,11 @@ export async function nlStats(env, { issues, sends, dns }, pick = '', withDetail
   const out = { on, issues: list, detail: null };
   if (!on) return out;
   try {
+    // Only this site's counts (blob4: '' = the Lenches, as every point before 16 Nov; Harvington stage 5a).
+    const tag = siteTag(env.SITE) || '';
+    const mine = `blob4 = '${tag}'`;
     const totals = await sql(env, `SELECT blob1 AS kind, blob2 AS issue, SUM(_sample_interval) AS n FROM ${DATASET} `
-      + "WHERE timestamp > NOW() - INTERVAL '92' DAY GROUP BY kind, issue");
+      + `WHERE timestamp > NOW() - INTERVAL '92' DAY AND ${mine} GROUP BY kind, issue`);
     for (const x of list) {
       const n = (kind) => totals.filter((t) => t.kind === kind && t.issue === x.date).reduce((s, t) => s + (Number(t.n) || 0), 0);
       x.opens = n('open');
@@ -98,8 +101,8 @@ export async function nlStats(env, { issues, sends, dns }, pick = '', withDetail
     const date = ISSUE.test(pick) && list.some((x) => x.date === pick) ? pick : (list[0] && list[0].date);
     if (withDetail && date) {
       const [hourly, links] = await Promise.all([
-        sql(env, `SELECT toStartOfHour(timestamp) AS h, SUM(_sample_interval) AS n FROM ${DATASET} WHERE blob1 = 'open' AND blob2 = '${date}' GROUP BY h ORDER BY h`),
-        sql(env, `SELECT blob3 AS url, SUM(_sample_interval) AS n FROM ${DATASET} WHERE blob1 = 'click' AND blob2 = '${date}' GROUP BY url ORDER BY n DESC LIMIT ${TOP_LINKS}`),
+        sql(env, `SELECT toStartOfHour(timestamp) AS h, SUM(_sample_interval) AS n FROM ${DATASET} WHERE blob1 = 'open' AND blob2 = '${date}' AND ${mine} GROUP BY h ORDER BY h`),
+        sql(env, `SELECT blob3 AS url, SUM(_sample_interval) AS n FROM ${DATASET} WHERE blob1 = 'click' AND blob2 = '${date}' AND ${mine} GROUP BY url ORDER BY n DESC LIMIT ${TOP_LINKS}`),
       ]);
       out.detail = { date, ...openTimes(hourly), links: links.map((l) => ({ url: str(l.url), n: Number(l.n) || 0 })) };
     }

@@ -46,7 +46,11 @@
 'use strict';
 
 const crypto = require('crypto');
-const { inLenches } = require('../../lib/lenches');
+const { inLenches: inLenchesArea } = require('../../lib/lenches');
+const { SITE: THIS_SITE } = require('../../lib/site');
+// The "Lenches" badge marks Lenches events in the Lenches' issue only (every event in another
+// site's issue is its own; Harvington stage 5a).
+const inLenches = (x) => THIS_SITE === 'lenches' && inLenchesArea(x);
 const { bodyOf } = require('../../lib/wording');
 const { localSource } = require('../../lib/sources');
 const anchors = require('../../lib/anchors');

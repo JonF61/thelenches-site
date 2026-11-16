@@ -6,15 +6,21 @@
 //   GET /o?i=<issue date>                                  the newsletter's 1x1 image: counts
 //       one open for that issue
 // Each count is a Workers Analytics Engine data point (binding NL_STATS, dataset
-// lenches_newsletter): blobs [kind, issue, url], no address, no subscriber id, no IP.
+// lenches_newsletter): blobs [kind, issue, url, site], no address, no subscriber id, no IP.
+// site (Harvington stage 5a) is '' for the Lenches (as every point before it) or the other site's
+// name, from the click token's s or the open image's s=; an unknown name counts nothing.
 // The links are signed by scripts/newsletter/track.js with APPROVAL_SIGNING_KEY, so /c can't
 // be used to send people to other sites. A count that fails never stops the redirect.
+
+import { knownSite, DEFAULT_SITE } from './sites.js';
 
 export const DATASET = 'lenches_newsletter';
 const ISSUE = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_URL = 2000;
 const SITE = 'https://thelenches.org.uk/';
 const enc = new TextEncoder();
+// The blob4 tag for a site: '' for the Lenches, else its name; null for an unknown name.
+export const siteTag = (s) => (s === undefined || s === null || s === '' || s === DEFAULT_SITE ? '' : (knownSite(s) ? s : null));
 const dec = new TextDecoder();
 
 // 1x1 transparent GIF.
@@ -36,7 +42,9 @@ export async function verifyClick(token, secret) {
     const p = JSON.parse(dec.decode(b64urlToBytes(body)));
     const u = String((p && p.u) || '');
     if (!p || p.a !== 'c' || !ISSUE.test(String(p.i || '')) || !/^https?:\/\//i.test(u) || u.length > MAX_URL) return null;
-    return { i: p.i, u };
+    const site = siteTag(p.s);
+    if (site === null) return null;
+    return { i: p.i, u, site };
   } catch {
     return null;
   }
@@ -58,13 +66,15 @@ export async function handleClick(request, env) {
       + `<body style="font-family:system-ui,sans-serif;padding:24px">This link isn't recognised. You can find everything on <a href="${SITE}">thelenches.org.uk</a>.</body></html>`,
     { status: 400, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-robots-tag': 'noindex' } });
   }
-  count(env, ['click', p.i, p.u]);
+  count(env, ['click', p.i, p.u, p.site]);
   return new Response(null, { status: 302, headers: { location: p.u, 'cache-control': 'no-store', 'referrer-policy': 'no-referrer' } });
 }
 
 export function handleOpen(request, env) {
-  const i = String(new URL(request.url).searchParams.get('i') || '');
-  if (ISSUE.test(i)) count(env, ['open', i, '']);
+  const q = new URL(request.url).searchParams;
+  const i = String(q.get('i') || '');
+  const site = siteTag(q.get('s'));
+  if (ISSUE.test(i) && site !== null) count(env, ['open', i, '', site]);
   return new Response(GIF, {
     headers: { 'content-type': 'image/gif', 'cache-control': 'no-store, no-cache, must-revalidate, private', 'x-robots-tag': 'noindex' },
   });

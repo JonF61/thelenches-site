@@ -9,14 +9,22 @@
 
 const crypto = require('crypto');
 const { anchorUrl, calendarUrl, googleCalendarLink } = require('../../lib/anchors');
+const { siteConfig } = require('../../lib/site');
 
-const SITE = 'https://thelenches.org.uk';
+// The site's own name, address, contributions address and colours (site.json; Harvington stage 5a,
+// 16 Nov 2026). The Lenches' issue is unchanged: these are its old fixed values.
+const CFG = siteConfig();
+const SITE = String(CFG.url || 'https://thelenches.org.uk').replace(/\/+$/, '');
+const DOMAIN = String(CFG.domain || 'thelenches.org.uk');
+const NAME = String(CFG.newsletterName || 'The Lenches Newsletter');
+const TAGLINE = String(CFG.newsletterTagline || '');
+const AREA = String(CFG.areaName || 'the Lenches');
 const UNSUB_MARK = '%%UNSUBSCRIBE_URL%%';
 const LINKS = {
   site: `${SITE}/`,
   privacy: `${SITE}/privacy/`,
   bins: `${SITE}/bins/`,
-  submit: 'website@thelenches.org.uk',
+  submit: String(CFG.email || 'website@thelenches.org.uk'),
 };
 // The Website update paragraph: each entry's text, joined with spaces.
 // Website update texts, one per entry (each its own paragraph; Jon, 3 Nov: the joined block was too dense).
@@ -37,7 +45,7 @@ function regularDays(regs) {
 }
 const REGULARS_MORE = 'Who runs them, costs, contacts and flyers are on our';
 // Since 11 Nov (Jon): an intro, a button to the page and only the recently listed entries.
-const REGULARS_INTRO = 'Classes, clubs and groups that meet every week or month in and around the Lenches: when and where, who runs them, costs and contacts.';
+const REGULARS_INTRO = `Classes, clubs and groups that meet every week or month in and around ${AREA}: when and where, who runs them, costs and contacts.`;
 const REGULARS_BUTTON = (n) => `See all ${n} regular activities`;
 const FRESH_LABEL = { new: 'New activity', listed: 'Newly listed' };
 // New activities first, then newly listed; each "What · Day time (frequency) · where".
@@ -45,11 +53,17 @@ const freshRegulars = (regs) => (Array.isArray(regs) ? ['new', 'listed'].flatMap
 const freshWhen = (r) => [r.day, regularTime(r)].filter(Boolean).join(' ');
 const siteUrl = (u) => (/^\//.test(String(u || '')) ? `${SITE}${u}` : String(u || ''));
 
+// The site palette (src/style.css :root); a site.json palette's vars override it, as on the site.
+const PALETTE = (CFG.palette && CFG.palette.vars) || {};
 const C = {
   green: '#3F5233', greenDark: '#2E3D26', greenLight: '#EFE7D3', ink: '#2E2A1F',
   muted: '#5B5240', accentText: '#9A5312', cream: '#F6F1E4', paper: '#FBF8F1',
   card: '#ffffff', line: '#DCCFAE', accent: '#C0703A', red: '#A33B2B',
 };
+for (const [k, v] of Object.entries({ green: 'green', greenDark: 'green-dark', greenLight: 'green-light', ink: 'ink', muted: 'muted',
+  accentText: 'accent-text', cream: 'cream', paper: 'paper', line: 'line', accent: 'accent' })) {
+  if (/^#[0-9a-f]{6}$/i.test(String(PALETTE[v] || ''))) C[k] = PALETTE[v];
+}
 const SANS = 'Arial,Helvetica,sans-serif';
 const SERIF = 'Georgia,\'Times New Roman\',serif';
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -255,9 +269,9 @@ function renderHtml(m, subject) {
   const rows = [];
 
   rows.push(`<tr><td class="px" style="background:${C.cream};padding:18px 24px;border-bottom:3px solid ${C.accent};">`
-    + `<div style="font-family:${SANS};font-size:22px;font-weight:bold;color:${C.green};">The Lenches Newsletter</div>`
-    + `<div style="font-family:${SANS};font-size:12px;color:${C.muted};">Church · Rous · Ab · Atch · Sheriffs</div>`
-    + `<div style="font-family:${SANS};font-size:13px;color:${C.accentText};margin-top:8px;">${esc(p.long)} · ${a(LINKS.site, 'thelenches.org.uk', C.accentText)}</div>`
+    + `<div style="font-family:${SANS};font-size:22px;font-weight:bold;color:${C.green};">${esc(NAME)}</div>`
+    + (TAGLINE ? `<div style="font-family:${SANS};font-size:12px;color:${C.muted};">${esc(TAGLINE)}</div>` : '')
+    + `<div style="font-family:${SANS};font-size:13px;color:${C.accentText};margin-top:8px;">${esc(p.long)} · ${a(LINKS.site, DOMAIN, C.accentText)}</div>`
     // Contributions line at the top (Jon, 11 Nov; the footer keeps its own).
     + `<div style="font-family:${SANS};font-size:13px;line-height:1.5;color:${C.ink};margin-top:8px;"><strong>Got something for the newsletter?</strong> Email ${a(`mailto:${LINKS.submit}`, LINKS.submit, C.accentText)} by 6pm Wednesday for the next issue.</div>`
     + `</td></tr>`);
@@ -275,7 +289,7 @@ function renderHtml(m, subject) {
     rows.push(`<tr><td class="px" style="background:${C.cream};padding:10px 24px;border-bottom:1px solid ${C.line};">`
       + `<div style="font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1px;color:${C.accentText};">WEBSITE AND NEWSLETTER UPDATE</div>`
       + siteTexts(site).map((t, i, all) => `<div style="font-family:${SANS};font-size:13px;line-height:1.5;color:${C.ink};padding-top:${i ? 8 : 2}px;">${esc(t)}`
-        + (i === all.length - 1 ? ` Have a look at ${a(LINKS.site, 'thelenches.org.uk', C.accentText)}.` : '') + `</div>`).join('')
+        + (i === all.length - 1 ? ` Have a look at ${a(LINKS.site, DOMAIN, C.accentText)}.` : '') + `</div>`).join('')
       + `</td></tr>`);
   }
   rows.push(`<tr><td class="px" style="padding:16px 24px 0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${C.ink};">${esc(summaryLine(m))}</td></tr>`);
@@ -364,7 +378,7 @@ function renderHtml(m, subject) {
   rows.push(`<tr><td class="px" style="background:${C.greenDark};color:${cream};padding:16px 24px;font-family:${SANS};font-size:12px;line-height:1.6;">`
     + `Got news for next week? Email ${a(`mailto:${LINKS.submit}`, LINKS.submit, cream)} by 6pm Wednesday.<br>`
     + `To stop receiving this newsletter, ${a(UNSUB_MARK, 'unsubscribe here', cream)} or reply with UNSUBSCRIBE.<br>`
-    + `${a(LINKS.site, 'thelenches.org.uk', cream)} · ${a(LINKS.privacy, 'Privacy', cream)}`
+    + `${a(LINKS.site, DOMAIN, cream)} · ${a(LINKS.privacy, 'Privacy', cream)}`
     + `</td></tr>`);
 
   return '<!DOCTYPE html>\n<html lang="en-GB"><head><meta charset="utf-8">'
@@ -394,7 +408,7 @@ function renderText(m) {
     out.push('');
   };
 
-  out.push('THE LENCHES NEWSLETTER', 'Church · Rous · Ab · Atch · Sheriffs', `${p.long} · ${LINKS.site}`, '', `Got something for the newsletter? Email ${LINKS.submit} by 6pm Wednesday for the next issue.`, '');
+  out.push(NAME.toUpperCase(), ...(TAGLINE ? [TAGLINE] : []), `${p.long} · ${LINKS.site}`, '', `Got something for the newsletter? Email ${LINKS.submit} by 6pm Wednesday for the next issue.`, '');
   if (m.onThisDay) out.push(`On this day: ${m.onThisDay.text}`, '');
   if ((m.siteUpdates || []).length) out.push('Website and newsletter update:', ...siteTexts(m.siteUpdates).flatMap((t) => [t, '']), `Have a look at ${LINKS.site}`, '');
   out.push(summaryLine(m));
@@ -470,12 +484,12 @@ const WHERE_INTRO = "Can you place this close-up? The answer is in next week's n
 function subjectFor(model) {
   const p = dateParts(model.issueDate);
   const names = Array.isArray(model.subjectTeaser) ? model.subjectTeaser.filter(Boolean) : [];
-  if (!names.length) return `The Lenches Newsletter – ${p.subject}`;
+  if (!names.length) return `${NAME} – ${p.subject}`;
   // A name with its own "and" (e.g. "Liz's Quiz and pub night") gets a comma before the next "and".
   const hasAnd = names.some((n) => /\sand\s/i.test(n));
   const list = model.subjectMore ? `${names.join(', ')}${hasAnd ? ',' : ''} and more`
     : names.join(hasAnd ? ', ' : ' and ');
-  return `The Lenches Newsletter – ${p.date} ${p.mon}: ${list}`;
+  return `${NAME} – ${p.date} ${p.mon}: ${list}`;
 }
 
 function render(model, { entries = null } = {}) {
