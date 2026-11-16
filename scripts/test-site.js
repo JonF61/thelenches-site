@@ -54,6 +54,11 @@ async function main() {
   const out = fs.mkdtempSync(path.join(require('os').tmpdir(), 'site-h-'));
   execFileSync(path.join(ROOT, 'node_modules', '.bin', 'eleventy'), ['--quiet', `--output=${out}`], { cwd: ROOT, env: { ...process.env, SITE: 'harvington' }, stdio: 'ignore' });
   ok(fs.existsSync(path.join(out, 'style.css')), 'Harvington build ran');
+  ok(/Disallow: \//.test(fs.readFileSync(path.join(out, 'robots.txt'), 'utf8')), 'Harvington robots.txt closed while noindex');
+  const home = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
+  ok(/noindex, nofollow/.test(home) && /website@harvingtonvillage\.org\.uk/.test(home) && !/Lenches/.test(home), 'holding page: noindex, its address, no Lenches wording');
+  ok(/--green:#2D4A63/.test(home) && /M491,52 L503,16/.test(home), 'holding page: river blue and the spire');
+  ok(!fs.existsSync(path.join(out, 'sitemap.xml')), 'no sitemap before launch');
   fs.rmSync(out, { recursive: true, force: true });
 
   console.log(`All site tests passed (${checks} checks).`);
