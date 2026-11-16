@@ -1,6 +1,6 @@
 name: Write Sheet cells
 
-# Kryten's write access to the Lenches Pipeline Sheet (scripts/sheetwrite): set cells
+# Kryten's write access to a site's Pipeline Sheet (input site; default the Lenches) (scripts/sheetwrite): set cells
 # (stale-checked), append a row, or undo an earlier write. Every write is recorded first in
 # the Kryten log tab (old and new values) so it can be undone with its id; the nightly
 # Lenches backup copy is the fallback. Values are read from the event file, never printed:
@@ -9,6 +9,12 @@ name: Write Sheet cells
 on:
   workflow_dispatch:
     inputs:
+      site:
+        description: 'Which site''s Sheet'
+        required: false
+        type: choice
+        options: [lenches, harvington]
+        default: lenches
       action:
         description: 'set, append or undo'
         required: true
@@ -48,8 +54,10 @@ permissions:
 # dispatches one write at a time and waits for it.
 
 env:
-  # Which site this workflow is for (lib/site.js; Harvington stage 2, 16 Nov 2026).
-  SITE: lenches
+  # Which site this run is for (lib/site.js): the dispatch payload's or Run workflow's `site`,
+  # else the Lenches (schedules, workflow_run). The Sheet is that site's site.json sheetId
+  # (Harvington stage 4, 16 Nov 2026).
+  SITE: ${{ github.event.client_payload.site || github.event.inputs.site || 'lenches' }}
 
 jobs:
   write:
@@ -62,6 +70,9 @@ jobs:
           # Only the script (and the root package files): a full copy takes ~20s for the images.
           sparse-checkout: |
             scripts/sheettab
+            lib
+            sites/lenches/_data
+            sites/harvington/_data
             scripts/sheetwrite
       - uses: actions/setup-node@v7
         with:
@@ -72,4 +83,3 @@ jobs:
         run: node scripts/sheetwrite/index.js
         env:
           GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
-          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI

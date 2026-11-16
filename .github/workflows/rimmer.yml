@@ -23,12 +23,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: rimmer-${{ github.event.client_payload.scope || inputs.scope }}
+  group: rimmer-${{ github.event.client_payload.scope || inputs.scope }}-${{ github.event.client_payload.site || github.event.inputs.site || 'lenches' }}
   cancel-in-progress: false
 
 env:
-  # Which site this workflow is for (lib/site.js; Harvington stage 2, 16 Nov 2026).
-  SITE: lenches
+  # Which site this run is for (lib/site.js): the dispatch payload's or Run workflow's `site`,
+  # else the Lenches (schedules, workflow_run). The Sheet is that site's site.json sheetId
+  # (Harvington stage 4, 16 Nov 2026).
+  SITE: ${{ github.event.client_payload.site || github.event.inputs.site || 'lenches' }}
 
 jobs:
   check:
@@ -71,5 +73,4 @@ jobs:
           RIMMER_AUTOFIX: ${{ vars.RIMMER_AUTOFIX }}
           HOLLY_MODEL: ${{ vars.HOLLY_MODEL }}
           GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
-          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
           GMAIL_USER: ${{ secrets.GMAIL_USER }}

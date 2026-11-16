@@ -18,12 +18,14 @@ permissions:
   contents: read   # ingestion never commits; images are committed on approval (step 5)
 
 concurrency:
-  group: ingest
+  group: ingest-${{ github.event.client_payload.site || github.event.inputs.site || 'lenches' }}
   cancel-in-progress: false
 
 env:
-  # Which site this workflow is for (lib/site.js; Harvington stage 2, 16 Nov 2026).
-  SITE: lenches
+  # Which site this run is for (lib/site.js): the dispatch payload's or Run workflow's `site`,
+  # else the Lenches (schedules, workflow_run). The Sheet is that site's site.json sheetId
+  # (Harvington stage 4, 16 Nov 2026).
+  SITE: ${{ github.event.client_payload.site || github.event.inputs.site || 'lenches' }}
 
 jobs:
   ingest:
@@ -68,7 +70,6 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           NODE_OPTIONS: --require ./lib/claudeusage.js
           GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
-          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_LABEL: "Lenches Website/2 Pipeline"
           START_DATE_OVERRIDE: ${{ github.event.inputs.start_date }}

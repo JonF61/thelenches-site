@@ -1,11 +1,17 @@
 name: Read Sheet tab
 
-# Prints one tab of the Lenches Pipeline Sheet to this log as CSV with row numbers
+# Prints one tab of a site's Pipeline Sheet (input site; default the Lenches) to this log as CSV with row numbers
 # (scripts/sheettab). Read-only: spreadsheets.readonly scope. Refuses the Subscribers,
 # Do Not Send, Sends, Replies and Feedback tabs, shows only names and roles from Contacts, and masks email addresses elsewhere.
 on:
   workflow_dispatch:
     inputs:
+      site:
+        description: 'Which site''s Sheet'
+        required: false
+        type: choice
+        options: [lenches, harvington]
+        default: lenches
       tab:
         description: 'Tab name, e.g. Settings'
         required: true
@@ -25,8 +31,10 @@ permissions:
   contents: read
 
 env:
-  # Which site this workflow is for (lib/site.js; Harvington stage 2, 16 Nov 2026).
-  SITE: lenches
+  # Which site this run is for (lib/site.js): the dispatch payload's or Run workflow's `site`,
+  # else the Lenches (schedules, workflow_run). The Sheet is that site's site.json sheetId
+  # (Harvington stage 4, 16 Nov 2026).
+  SITE: ${{ github.event.client_payload.site || github.event.inputs.site || 'lenches' }}
 
 jobs:
   read:
@@ -39,6 +47,9 @@ jobs:
           # Only the script (and the root package files): a full copy takes ~20s for the images.
           sparse-checkout: |
             scripts/sheettab
+            lib
+            sites/lenches/_data
+            sites/harvington/_data
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -48,7 +59,6 @@ jobs:
         run: node scripts/sheettab/index.js
         env:
           GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
-          SHEET_ID: 1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI
           TAB: ${{ inputs.tab }}
           RANGE: ${{ inputs.range }}
           MAX_ROWS: ${{ inputs.max_rows }}

@@ -101,7 +101,7 @@ async function main() {
   const key = JSON.parse(process.env.GOOGLE_SA_KEY || '{}');
   const auth = new google.auth.JWT({ email: key.client_email, key: key.private_key, scopes: [READONLY_SCOPE] });
   const sheets = google.sheets({ version: 'v4', auth });
-  const spreadsheetId = process.env.SHEET_ID;
+  const spreadsheetId = require('../../lib/site').sheetId();
 
   const meta = await sheets.spreadsheets.get({ spreadsheetId, fields: 'sheets.properties.title' });
   const titles = meta.data.sheets.map(s => s.properties.title);

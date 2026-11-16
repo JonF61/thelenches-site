@@ -33,6 +33,7 @@ export const WORKFLOW_NAMES = {
   'suggest.yml': 'Image suggestions',
   'eventimages.yml': 'Event images',
   'read-sheet-tab.yml': 'Read Sheet tab',
+  'sheet-setup.yml': 'Set up a site\'s Sheet',
   'write-sheet.yml': 'Write Sheet cells',
   'delete-run-logs.yml': 'Delete run logs',
   'library-candidates.yml': 'Library candidates',
