@@ -10,7 +10,7 @@
   <link rel="icon" href="{{ '/images/favicon.svg' | url }}" type="image/svg+xml">
   {% if site.noindex or noindex %}<meta name="robots" content="noindex, nofollow">{% endif %}
   {#- seoTitle (front matter) = the search/tab title only; the page heading and menu keep title. -#}
-  {% set pageTitle %}{% if seoTitle %}{{ seoTitle }}{% elif page.url == "/" %}The Lenches — Village Website{% else %}{{ title }} — The Lenches{% endif %}{% endset %}
+  {% set pageTitle %}{% if seoTitle %}{{ seoTitle }}{% elif page.url == "/" %}{{ site.titleName or "The Lenches" }} — Village Website{% else %}{{ title }} — {{ site.titleName or "The Lenches" }}{% endif %}{% endset %}
   {% set pageDesc = description or site.description %}
   {% set pageImage = ogImage or site.ogImage %}
   {% set pageImageAlt = ogImageAlt or site.ogImageAlt %}
@@ -19,7 +19,7 @@
   <link rel="canonical" href="{{ site.url }}{{ page.url }}">
 
   <meta property="og:type" content="website">
-  <meta property="og:site_name" content="The Lenches Website">
+  <meta property="og:site_name" content="{{ site.brand or "The Lenches" }} Website">
   <meta property="og:locale" content="en_GB">
   <meta property="og:title" content="{{ pageTitle | safe }}">
   {% if pageDesc %}<meta property="og:description" content="{{ pageDesc }}">{% endif %}
@@ -49,9 +49,10 @@
   <header class="site-header">
     <div class="container">
       <div class="brand-wrap">
-        {#- On the home page the site name doubles as the page's H1. -#}
-        {% if page.url == "/" %}<h1 class="brand-h1">{% endif %}<a class="brand" href="{{ '/' | url }}">The Lenches <span>Website</span></a>{% if page.url == "/" %}</h1>{% endif %}
-        <p class="brand-villages">Church &middot; Rous &middot; Ab &middot; Atch &middot; Sheriffs</p>
+        {#- On the home page the site name doubles as the page's H1. The name and the line under it come from
+            site.json brand / brandLine (Harvington stage 6a): the Lenches' five villages, Harvington's Norton and Lenchwick. -#}
+        {% if page.url == "/" %}<h1 class="brand-h1">{% endif %}<a class="brand" href="{{ '/' | url }}">{{ site.brand or "The Lenches" }} <span>Website</span></a>{% if page.url == "/" %}</h1>{% endif %}
+        {% if site.brandLine %}<p class="brand-villages">{{ site.brandLine | escape | replace(" · ", " &middot; ") | safe }}</p>{% endif %}
       </div>
       <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="site-nav">Menu</button>
       <nav class="nav" id="site-nav" aria-label="Main">
@@ -81,7 +82,7 @@
   <footer class="site-footer">
     <div class="container">
       <div>
-        <strong>The Lenches Website</strong><br>
+        <strong>{{ site.brand or "The Lenches" }} Website</strong><br>
         <a href="mailto:{{ site.email }}">{{ site.email }}</a>
       </div>
       {#- Every page, grouped as on the Home page (site.json footer). -#}
