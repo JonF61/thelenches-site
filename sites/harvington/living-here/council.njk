@@ -1,0 +1,9 @@
+---
+layout: base.njk
+title: Council & planning
+description: "Harvington and Norton & Lenchwick parish councils, district and county councillors, planning applications and how to report a problem."
+seoTitle: "Parish council, councillors and planning in Harvington, near Evesham"
+---
+{#- Harvington's wording for the shared Council & planning page, src/_includes/pages/council.njk (facts in _data/council.json). -#}
+{%- set checkedNote -%}Checked {{ council.checked }}. If anything here has changed, please tell us at <a href="mailto:{{ site.email }}">{{ site.email }}</a>.{%- endset -%}
+{%- include "pages/council.njk" %}

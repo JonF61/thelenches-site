@@ -1,0 +1,117 @@
+{
+  "checked": "16 November 2026",
+  "intro": "Which council looks after what in Harvington, Norton and Lenchwick, where the parish councils meet, and how to see or comment on planning applications.",
+  "quick": [
+    {
+      "label": "Report a problem",
+      "sub": "Roads, lights, drains",
+      "url": "#report"
+    },
+    {
+      "label": "Planning",
+      "sub": "See and comment",
+      "url": "#planning"
+    },
+    {
+      "label": "Councillors",
+      "sub": "Wychavon and county",
+      "url": "#councillors"
+    },
+    {
+      "label": "Parish councils",
+      "sub": "Meetings and papers",
+      "url": "#parish"
+    }
+  ],
+  "meetingsNote": "See sites/lenches/_data/council.json. No rule yet: the meeting pattern isn't published (meetings seen on second Wednesdays).",
+  "parishes": [
+    {
+      "key": "harvington",
+      "name": "Harvington Parish Council",
+      "covers": "Harvington",
+      "meets": "Meets on Wednesday evenings at 7.45pm in Harvington Village Hall. Members of the public are welcome to attend.",
+      "rule": null,
+      "override": "",
+      "clerk": "Mrs J White",
+      "email": "clerk@harvington-pc.gov.uk",
+      "phone": "07746 948392",
+      "links": [
+        {
+          "text": "Parish council website",
+          "url": "https://harvington-pc.gov.uk/"
+        },
+        {
+          "text": "Councillors",
+          "url": "https://harvington-pc.gov.uk/the-parish-council/councillors"
+        }
+      ]
+    },
+    {
+      "key": "norton-lenchwick",
+      "name": "Norton and Lenchwick Parish Council",
+      "covers": "Norton and Lenchwick",
+      "meets": "Meeting dates, agendas and minutes are published on the council's website.",
+      "rule": null,
+      "override": "",
+      "links": [
+        {
+          "text": "Parish council website",
+          "url": "https://nortonlenchwick-pc.gov.uk/"
+        }
+      ]
+    }
+  ],
+  "roles": [
+    {
+      "title": "Parish council",
+      "text": "Gives its view on planning applications and looks after village matters such as open spaces and noticeboards."
+    },
+    {
+      "title": "Wychavon District",
+      "text": "Decides planning applications and runs bin collections, council tax, housing and licensing."
+    },
+    {
+      "title": "Worcestershire County",
+      "text": "Roads and pavements, potholes, streetlights, public footpaths, schools, libraries and social care."
+    }
+  ],
+  "councillors": [
+    {
+      "area": "Wychavon, Harvington & Norton ward",
+      "people": [
+        {
+          "name": "Craig Reeves",
+          "url": "https://mgov.wychavon.gov.uk/mgMemberIndex.aspx"
+        }
+      ]
+    },
+    {
+      "area": "Worcestershire, Harvington division",
+      "people": [
+        {
+          "name": "Satinder Bell",
+          "url": "https://worcestershire.moderngov.co.uk/mgUserInfo.aspx?UID=1878"
+        }
+      ]
+    }
+  ],
+  "planning": {
+    "text": "Wychavon decides planning applications, and you can look them up and comment on its website. Each parish council is asked for its view on applications in its own area.",
+    "commentUrl": "https://wychavon.gov.uk/planning/commenting-on-a-planning-application",
+    "weeklyUrl": "https://wychavon.gov.uk/planning/other-planning-services/planning-weekly-list",
+    "phone": "01386 565565"
+  },
+  "report": [
+    {
+      "title": "Potholes, broken streetlights, blocked drains",
+      "org": "Worcestershire County Council",
+      "url": "https://www.worcestershire.gov.uk/reportit",
+      "phone": "01905 765765"
+    },
+    {
+      "title": "Water leaks and sewers",
+      "org": "Severn Trent",
+      "phone": "0800 783 4444"
+    }
+  ]
+}

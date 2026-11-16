@@ -11,9 +11,10 @@ cards:
   - { title: "Events", url: "/events/", icon: calendar, text: "Coming up in the village and close by." }
   - { title: "News", url: "/notices/", icon: notice, text: "Parish council notices and news from around Harvington." }
   - { title: "Roads", url: "/living-here/roads/", icon: road, text: "Closures and roadworks, on now and on the way." }
+  - { title: "Bins", url: "/bins/", icon: bins, text: "Your next collection and which bin takes what." }
 ---
 {#- Harvington's Home (wording approved by Jon 16 Nov 2026). Built at /preview/ until launch (stage 7), when it replaces the
-    holding page (index.njk) at "/". Live lines as on the Lenches Home, without bins. The Facebook card shows once
+    holding page (index.njk) at "/". Live lines as on the Lenches Home, including the next bin collection. The Facebook card shows once
     site.json has facebookGroup { name, url }. -#}
 {%- set nextEvent = (whatson.events | merge(pipeline.events) | upcoming) | first -%}
 {%- set allN = pipeline | allNotices(whatson) -%}
@@ -22,10 +23,13 @@ cards:
 {%- set roadParts = [] -%}
 {%- if roads.now | length %}{% set roadParts = (roadParts.push((roads.now | length) + " on now"), roadParts) %}{% endif -%}
 {%- if roads.soon | length %}{% set roadParts = (roadParts.push((roads.soon | length) + " coming up"), roadParts) %}{% endif -%}
+{%- set binLines = [] -%}
+{%- for b in bins | nextBins %}{% set binLines = (binLines.push(b.label + ": " + (b.date | shortDate) + ", " + (b.bins | andList)), binLines) %}{% endfor -%}
 {%- set live = {
   "/events/": ("Next: " + nextEvent.title + " · " + (nextEvent.date | shortDate)) if nextEvent else "",
   "/notices/": (newCount + " new this week") if newCount else "",
-  "/living-here/roads/": roadParts | join(" · ") if roadParts | length else "No works listed"
+  "/living-here/roads/": roadParts | join(" · ") if roadParts | length else "No works listed",
+  "/bins/": binLines
 } -%}
 <main class="container">
   {% include "home-skyline.njk" %}
@@ -53,3 +57,5 @@ cards:
     {% set cards = livinghere.cards %}{% set cardHeading = "h3" %}{% include "hub-cards.njk" %}
   </section>
 </main>
+
+{% include "home-bins-script.njk" %}

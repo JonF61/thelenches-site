@@ -1,0 +1,25 @@
+---
+layout: base.njk
+title: Churches
+description: "Sunday service times at St James the Great, Harvington and St Egwin's, Norton, on the ARCH Benefice rota, and other churches nearby."
+seoTitle: "Church services in Harvington and Norton, near Evesham"
+---
+{#- Harvington's wording for the shared Churches page, src/_includes/pages/churches.njk. Service times: sites/harvington/_data/services.js
+    (the Lenches' services.json, typed from the ARCH Messenger). -#}
+{%- set headIntro -%}<p class="page-intro">Harvington's parish church is <strong>St James the Great</strong> in Church Street, and Norton's is <strong>St Egwin's</strong> on Evesham Road. They share a Sunday rota with the churches at Church Lench, Rous Lench and Abbots Morton, all part of the ARCH Benefice, so the place and time of each service move from week to week.</p>
+    <p class="small"><a href="https://www.archbenefice.org.uk/" target="_blank" rel="noopener">ARCH Benefice website &rarr;</a> &middot; <a href="https://www.archbenefice.org.uk/information/arch-messenger" target="_blank" rel="noopener">ARCH Messenger (monthly magazine) &rarr;</a></p>{%- endset -%}
+{%- set servicesNote -%}<p>Check the date before you set off, as each Sunday's services are at different churches. {{ services.midweek }} <span class="small muted">Taken from the {{ services.source }}.</span></p>{%- endset -%}
+{%- set readingsNote -%}<p class="small muted">Tap a reading to open it in the NRSV (Anglicised) on Bible Gateway.</p>{%- endset -%}
+{%- set noServices -%}<p>The next few weeks' services aren't listed here yet. The ARCH Messenger will have them.</p>{%- endset -%}
+{%- set otherChurches -%}<section id="nearby">
+    <h2>Other churches</h2>
+    <div class="grid">
+      <div class="card">
+        <h3 class="mt0">Harvington Baptist Church</h3>
+        <p class="mt0">Village Street, Harvington. Sunday morning service at 10am.</p>
+      </div>
+    </div>
+    <p>Evesham, a short drive away, has Methodist, Roman Catholic and Unitarian churches.</p>
+  </section>{%- endset -%}
+{%- set accuracyNote -%}We put this page together from what the churches publish, so it may miss something. If you run or attend one of these churches and spot a change, please email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.{%- endset -%}
+{%- include "pages/churches.njk" %}

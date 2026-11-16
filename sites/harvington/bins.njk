@@ -1,0 +1,116 @@
+---
+layout: base.njk
+title: Bins
+description: "Bin collection days for Harvington, Norton and Lenchwick, what Wychavon takes in each bin, recycling banks and the nearest tip."
+seoTitle: "Bin collection days in Harvington, Norton and Lenchwick"
+---
+{#- Harvington's wording for the shared Bins page, src/_includes/pages/bins.njk; collection days from _data/bins.json. -#}
+{% set ic = 'viewBox="0 0 120 56" width="120" height="56" aria-hidden="true" focusable="false" style="display:block;margin:.3rem 0 .6rem"' %}
+{%- set pageLead -%}When the bins go out in Harvington, Norton and Lenchwick, and which bin takes what.{%- endset -%}
+{%- set gridFallback -%}Your next collection should appear here. If it doesn't, <a href="https://wychavon.gov.uk/waste-and-recycling/wychavon-bin-hub" target="_blank" rel="noopener">look up your day on Wychavon's Bin Hub</a>.{%- endset -%}
+{%- set putOutNote -%}Put your bin out by {{ bins.putOutBy }} on collection day, at the edge of your property by the road, with the lid shut: a bin too full to close may not be emptied.{%- endset -%}
+{%- set binGuide -%}<section>
+    <h2>Which bin for what</h2>
+
+    <h3>Green bin: recycling</h3>
+    <p>Put everything in <strong>loose, rinsed and dry</strong>. Recycling tied up in black sacks won't be taken, even inside the green bin.</p>
+    <div class="grid">
+      <div class="card">
+        <h3 class="mt0">Tins, cans and foil</h3>
+        <svg {{ ic | safe }}><rect x="4" y="8" width="30" height="44" rx="4" fill="#B4B2A9"/><rect x="4" y="20" width="30" height="16" fill="#C0703A"/><circle cx="62" cy="36" r="16" fill="#D3D1C7" stroke="#888780" stroke-width="2"/><path d="M52 30l8 4 6-6 6 8" stroke="#888780" stroke-width="2" fill="none"/></svg>
+        <p class="mt0">Food, drink and pet food tins and cans, empty aerosols, biscuit and sweet tins, and metal lids from jars. Clean foil and foil trays (squash foil into a ball so it doesn't get lost) and metal tubes such as tomato purée.</p>
+        <p class="small mut mt0">Not pans, cutlery or tools, foil-lined pouches or coffee pods. Leave cans unflattened.</p>
+      </div>
+      <div class="card">
+        <h3 class="mt0">Glass bottles and jars</h3>
+        <svg {{ ic | safe }}><rect x="12" y="0" width="10" height="12" rx="2" fill="#3F5233"/><path d="M8 12h18l3 8v30a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V20z" fill="#5a8a3e"/><rect x="46" y="16" width="28" height="7" rx="2" fill="#B4B2A9"/><rect x="42" y="23" width="36" height="31" rx="6" fill="#cfe3e6" stroke="#8fb3b8" stroke-width="2"/></svg>
+        <p class="mt0">Any colour, with lids and labels left on. Perfume bottles and cosmetic jars are fine too.</p>
+        <p class="small mut mt0">Not drinking glasses, ovenware, window glass or nail varnish bottles. Households on sacks should take glass to a bank or the tip instead.</p>
+      </div>
+      <div class="card">
+        <h3 class="mt0">Plastic bottles, pots, tubs and trays</h3>
+        <svg {{ ic | safe }}><rect x="12" y="0" width="10" height="8" rx="2" fill="#378ADD"/><path d="M8 8h18v6l4 6v32a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V20l4-6z" fill="#e6f1fb" stroke="#85B7EB" stroke-width="2"/><path d="M44 26h36l-5 28H49z" fill="#fff" stroke="#B4B2A9" stroke-width="2"/><rect x="42" y="21" width="40" height="6" rx="2" fill="#C0703A"/></svg>
+        <p class="mt0">Bottles from drinks, milk, cleaning products and toiletries; yoghurt pots and spread tubs; food trays and plant pots. Squeezy tubes like toothpaste, emptied and with the cap back on.</p>
+        <p class="small mut mt0">Not black plastic, carrier bags or film, pumps and trigger sprays, or toys and other hard plastics. Put bottle tops back on rather than in loose.</p>
+      </div>
+      <div class="card">
+        <h3 class="mt0">Paper</h3>
+        <svg {{ ic | safe }}><rect x="4" y="6" width="52" height="46" rx="3" fill="#fff" stroke="#B4B2A9" stroke-width="2"/><rect x="10" y="12" width="40" height="6" fill="#5B5240"/><rect x="10" y="23" width="18" height="18" fill="#D3D1C7"/><path d="M32 25h18M32 32h18M32 39h18M10 46h40" stroke="#B4B2A9" stroke-width="3"/><rect x="66" y="20" width="44" height="30" rx="2" fill="#EFE7D3" stroke="#B4B2A9" stroke-width="2"/><path d="M66 20l22 16 22-16" stroke="#B4B2A9" stroke-width="2" fill="none"/></svg>
+        <p class="mt0">Newspapers and magazines, catalogues, post and envelopes, junk mail and cards. Shredded paper only when it's tucked inside an envelope or a cereal box.</p>
+        <p class="small mut mt0">Not glitter cards, shiny metallic wrap, labels or anything stained with food.</p>
+      </div>
+      <div class="card">
+        <h3 class="mt0">Cardboard</h3>
+        <svg {{ ic | safe }}><path d="M4 16l22-12 34 8-22 12z" fill="#e0bf8a"/><path d="M4 16v28l34 10V24z" fill="#c99a5b"/><path d="M38 24v30l22-10V12z" fill="#b5864a"/><rect x="72" y="18" width="14" height="36" rx="7" fill="#c99a5b"/></svg>
+        <p class="mt0">Boxes and packaging, cereal and pet food boxes, food sleeves, egg boxes and the tubes from kitchen and toilet rolls, all flattened.</p>
+        <p class="small mut mt0">Remove plastic film and polystyrene first. Greasy pizza boxes belong in the black bin.</p>
+      </div>
+      <div class="card">
+        <h3 class="mt0">Cartons</h3>
+        <svg {{ ic | safe }}><path d="M8 12l7-12h16l7 12z" fill="#e8e4d8"/><rect x="8" y="12" width="30" height="42" fill="#fff" stroke="#B4B2A9" stroke-width="2"/><rect x="14" y="24" width="18" height="14" rx="2" fill="#6fa8dc"/><rect x="26" y="2" width="5" height="8" rx="1" fill="#C0703A"/></svg>
+        <p class="mt0">Drinks, soup, sauce and custard cartons, flattened. Spouts can stay; loose lids can go in separately.</p>
+      </div>
+    </div>
+
+    <h3>Black bin: general rubbish</h3>
+    <div class="card">
+      <p class="mt0">Everything that can't be recycled, <strong>food waste included</strong>: Wychavon doesn't collect food separately yet.</p>
+      <p>That covers black plastic, cling film and other soft plastic, crisp and sweet wrappers, foil-lined pouches, coffee pods, drinking glasses, ovenware, pumps and trigger sprays.</p>
+      <p class="small mut mt0">Until Wychavon starts collecting plastic film, which it plans for spring 2027, bigger supermarkets take it at their carrier bag recycling points.</p>
+    </div>
+
+    <h3>Next to the black bin</h3>
+    <div class="grid">
+      <div class="card">
+        <h3 class="mt0">Batteries</h3>
+        <svg {{ ic | safe }}><path d="M4 14h56l-4 40H8z" fill="#e6f1fb" stroke="#85B7EB" stroke-width="2"/><rect x="12" y="24" width="14" height="26" rx="2" fill="#2f2f2f"/><rect x="12" y="24" width="14" height="8" fill="#C0703A"/><rect x="16" y="20" width="6" height="4" fill="#888780"/><rect x="34" y="28" width="14" height="22" rx="2" fill="#2f2f2f"/><rect x="34" y="28" width="14" height="7" fill="#C0703A"/><rect x="38" y="24" width="6" height="4" fill="#888780"/></svg>
+        <p class="mt0">Bag them in a small clear bag and leave it <em>on the lid</em> of your black bin; crews keep them apart on the lorry. Most supermarkets also collect them.</p>
+      </div>
+      <div class="card">
+        <h3 class="mt0">Small electricals</h3>
+        <svg {{ ic | safe }}><path d="M8 18h34l4 34H4z" fill="#D3D1C7" stroke="#888780" stroke-width="2"/><rect x="14" y="10" width="22" height="8" rx="3" fill="#888780"/><path d="M42 22q12 2 8 20" stroke="#888780" stroke-width="3" fill="none"/><path d="M4 50q-2 4 10 4h50" stroke="#2f2f2f" stroke-width="3" fill="none"/><rect x="62" y="40" width="18" height="16" rx="3" fill="#2f2f2f"/><path d="M80 44h8M80 52h8" stroke="#2f2f2f" stroke-width="3"/></svg>
+        <p class="mt0">Anything with a plug, battery or crossed-out wheelie bin sign. Leave it on or beside the bin, never inside it or in the recycling.</p>
+      </div>
+      <div class="card">
+        <h3 class="mt0">Clothes and textiles</h3>
+        <svg {{ ic | safe }}><path d="M12 8l12-6h10l12 6 8 12-9 5-4-5v34H17V20l-4 5-9-5z" fill="#6fa8dc"/><path d="M70 18c0-6 6-10 16-10s16 4 16 10v32a5 5 0 0 1-5 5H75a5 5 0 0 1-5-5z" fill="#EFE7D3" stroke="#B4B2A9" stroke-width="2"/><path d="M80 8l6-6 6 6" stroke="#B4B2A9" stroke-width="2" fill="none"/></svg>
+        <p class="mt0">Clean, dry clothes, towels and bedding in a well-tied bag beside the bin to keep the rain out. Things in good condition are better given to a charity shop.</p>
+      </div>
+    </div>
+
+    <h3>Brown bin: garden waste</h3>
+    <div class="card">
+      <p class="mt0">Garden waste is collected only if you <strong>pay for it</strong> each year. Brown bins go on the same day as the green bin.</p>
+      <p><a href="https://www.wychavon.gov.uk/waste-and-recycling/garden-waste-collection-service" target="_blank" rel="noopener">Sign up for garden waste collection at Wychavon &rarr;</a></p>
+    </div>
+    <p class="small mut">Some homes have sacks instead of wheelie bins; they're collected on the same days.</p>
+  </section>
+
+  <section>
+    <h2>Recycling banks</h2>
+    <div class="card">
+      <p class="mt0">Handy if you're on sacks or have more than fits in your green bin.</p>
+      <ul>
+        <li>The Fish &amp; Anchor, Evesham Road, Offenham: glass</li>
+        <li>Oat Street, Evesham: glass and cans</li>
+        <li>Morrisons, Springfield Drive, Evesham: glass and cans</li>
+        <li>Tesco, Worcester Road, Evesham: glass and cans</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>The tip</h2>
+    <div class="card">
+      <p class="mt0">The nearest household recycling centre is <strong>Hill &amp; Moor</strong>, Piddle Brook Lane, Wyre Piddle WR10 2LW.</p>
+      <p>Open 8am to 6pm Monday to Saturday and 9am to 1.30pm on Sunday; hours change with the seasons, so check before you go. Cars don't need to book, but bring proof that you live in Worcestershire.</p>
+      <p class="small mut mt0">If you're taking a van, trailer or pickup you'll need an e-permit from Worcestershire County Council first.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="card">
+      <p class="mt0 small muted">Based on Wychavon District Council and Worcestershire County Council information. Collection days can move, especially over Christmas and New Year. For a particular item, try Wychavon's <a href="https://www.wychavon.gov.uk/waste-and-recycling/recycling/a-to-z-recycling-guide" target="_blank" rel="noopener">A to Z recycling guide</a>, and if anything here looks wrong, please email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+    </div>
+  </section>{%- endset -%}
+{%- include "pages/bins.njk" %}
