@@ -16,8 +16,8 @@ import { createRequire } from 'node:module';
 import { CLIENT_JS } from '../src/admin/ui/client.js';
 import { CLIENT_CSS } from '../src/admin/ui/css.js';
 import { panelRows } from '../src/admin/suggestions.mjs';
-import tradesData from '../../src/_data/trades.json' with { type: 'json' };
-import eatData from '../../src/_data/eat.json' with { type: 'json' };
+import tradesData from '../../sites/lenches/_data/trades.json' with { type: 'json' };
+import eatData from '../../sites/lenches/_data/eat.json' with { type: 'json' };
 
 const require = createRequire(import.meta.url);
 let chromium;

@@ -7,12 +7,12 @@
 //             Suggestions screen for Jon. From the Worker (/sg?t=).
 //   approve   Jon's Approve, or Edit then Save and approve (decide() sug_ok; his edited entry
 //             is the payload's body, read from the event file): the entry, with a fixed id from
-//             lib/listings.js listingId, is added to src/_data/trades.json or eat.json. The
+//             lib/listings.js listingId, is added to sites/<site>/_data/trades.json or eat.json. The
 //             workflow commits it, then runs this again with "approved" to mark the row.
 //             The suggestion also counts as the entry's first recommendation: a "counted"
 //             Recommendations row (key = the address's hash, as scripts/recommend makes, so the
 //             same address can't recommend it again; no address) is added, and
-//             src/_data/recommends.json is rewritten for the same commit.
+//             sites/<site>/_data/recommends.json is rewritten for the same commit.
 //   approved  sends the suggester one fixed thank-you email (thanksEmail: the page link to the
 //             entry's own anchor, lib/listings.js anchorFor, and where the star is), then marks
 //             the row "approved" (decided_at, entry = the new id) and wipes the address.
@@ -31,6 +31,7 @@
 // GITHUB_EVENT_PATH (body, reason), SUGGEST_STATE (a file approve -> approved passes the new id in).
 'use strict';
 
+const { SITE_REL } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
@@ -44,7 +45,7 @@ const FROM = 'website@thelenches.org.uk';
 const SITE = 'https://thelenches.org.uk';
 const LINK_DAYS = 7;
 const KEEP_DAYS = 30;
-const DATA_DIR = path.join(__dirname, '..', '..', 'src', '_data');
+const DATA_DIR = path.join(__dirname, '..', '..', SITE_REL, '_data');
 
 const str = (v) => String(v ?? '').trim();
 const lc = (v) => str(v).toLowerCase();

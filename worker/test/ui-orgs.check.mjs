@@ -23,9 +23,9 @@ try { ({ chromium } = require('playwright')); } catch {
 const SHOTS = process.env.SHOTS || '';
 
 const data = Object.fromEntries(['contacts', 'council', 'schools', 'health', 'transport']
-  .map((n) => [n, JSON.parse(fs.readFileSync(new URL(`../../src/_data/${n}.json`, import.meta.url)))]));
+  .map((n) => [n, JSON.parse(fs.readFileSync(new URL(`../../sites/lenches/_data/${n}.json`, import.meta.url)))]));
 const ORGS = orgEntries(data);
-const LISTINGS = listingEntries(Object.fromEntries(['trades', 'eat'].map((n) => [n, JSON.parse(fs.readFileSync(new URL(`../../src/_data/${n}.json`, import.meta.url)))])));
+const LISTINGS = listingEntries(Object.fromEntries(['trades', 'eat'].map((n) => [n, JSON.parse(fs.readFileSync(new URL(`../../sites/lenches/_data/${n}.json`, import.meta.url)))])));
 const TODAY = '2026-10-27';
 const email = (id) => ORGS.find((o) => o.id === id).email;
 const sent = (id, day, kind = 'check') => ({ reply_id: `r-${id}-${kind}`, type: 'outreach', to: email(id), status: 'sent',

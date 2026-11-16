@@ -1,9 +1,10 @@
 // Offline test for the newsletter cartoon (11 Nov 2026): select.js picks the entry keyed by the
-// issue date from src/_data/cartoons.json (only when its JPEG is in the repo); render.js shows the
+// issue date from sites/<site>/_data/cartoons.json (only when its JPEG is in the repo); render.js shows the
 // picture and caption just before Notices, with no heading (HTML and text). No network, no Sheet.
 // Usage: node scripts/test-cartoon.js [preview-dir]   (writes cartoon-preview.html)
 'use strict';
 
+const { SITE_REL } = require('../lib/site.js');
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -11,7 +12,7 @@ const { select } = require('./newsletter/select');
 const { render } = require('./newsletter/render');
 
 const ROOT = path.join(__dirname, '..');
-const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/_data/cartoons.json'), 'utf8'));
+const data = JSON.parse(fs.readFileSync(path.join(ROOT, `${SITE_REL}/_data/cartoons.json`), 'utf8'));
 let checks = 0;
 const ok = (cond, what) => { assert.ok(cond, what); checks += 1; };
 
@@ -19,13 +20,13 @@ const ok = (cond, what) => { assert.ok(cond, what); checks += 1; };
 for (const [k, e] of Object.entries(data.entries)) {
   ok(/^\d{4}-\d{2}-\d{2}$/.test(k), `bad key ${k}`);
   ok(/^\/images\/cartoons\/[\w.-]+\.jpe?g$/i.test(e.image || ''), `image path for ${k}`);
-  ok(fs.existsSync(path.join(ROOT, 'src', e.image)), `image file for ${k}`);
+  ok(fs.existsSync(path.join(ROOT, SITE_REL, e.image)), `image file for ${k}`);
   ok(typeof e.alt === 'string' && e.alt.trim().length > 10, `alt for ${k}`);
   ok(typeof e.caption === 'string' && e.caption.trim().length > 5, `caption for ${k}`);
 }
 
 const SITE = 'https://thelenches.org.uk';
-const jpegFor = (u) => (fs.existsSync(path.join(ROOT, 'src', u)) ? `${SITE}${u}` : '');
+const jpegFor = (u) => (fs.existsSync(path.join(ROOT, SITE_REL, u)) ? `${SITE}${u}` : '');
 const notice = { title: 'Hall car park', body: 'Closed for resurfacing.' };
 const base = {
   pending: [], whatson: { events: [], notices: [notice] }, bins: {}, siteupdates: { entries: [] },

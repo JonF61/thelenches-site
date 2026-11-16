@@ -16,7 +16,7 @@ assert.equal(t, '## Events\nQuiz & chips Book here (https://ex.org/q) , thebooti
 // Google Calendar links show what they prefill, not the bare address (12 Nov 2026).
 assert.equal(c.htmlToText('<p><a href="https://calendar.google.com/calendar/render?action=TEMPLATE&amp;text=Quiz+%E2%80%94+Hall&amp;dates=20261114T193000%2F20261114T203000&amp;location=Hall&amp;ctz=Europe%2FLondon">Google Calendar</a></p>'),
   'Google Calendar (Google Calendar, prefilled: Quiz — Hall; 20261114T193000/20261114T203000; Hall)');
-assert.equal(c.pageContent('<nav>menu</nav><div data-src="./src/x.njk"><p>Hello</p></div><footer>foot</footer>'), 'Hello');
+assert.equal(c.pageContent('<nav>menu</nav><div data-src="./sites/lenches/x.njk"><p>Hello</p></div><footer>foot</footer>'), 'Hello');
 
 // calendar: weekdays worked out by code
 assert.match(c.calendar('2026-11-03', 3, 1), /2026-11-02 Mon, 2 Nov 2026\n2026-11-03 Tue, 3 Nov 2026 \(today\)\n2026-11-04 Wed, 4 Nov 2026\n2026-11-05 Thu, 5 Nov 2026/);

@@ -47,6 +47,10 @@ permissions:
 # No concurrency group: a shared one would silently drop a queued write. Kryten
 # dispatches one write at a time and waits for it.
 
+env:
+  # Which site this workflow is for (lib/site.js; Harvington stage 2, 16 Nov 2026).
+  SITE: lenches
+
 jobs:
   write:
     runs-on: ubuntu-latest

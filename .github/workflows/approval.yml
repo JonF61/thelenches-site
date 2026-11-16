@@ -7,7 +7,7 @@ on:
     types: [approval]
 
 # contents/actions write: Add details (action merge) may change a hand-written item in
-# src/items/, committed below, which then needs the site build (a GITHUB_TOKEN push can't start it).
+# sites/<site>/items/, committed below, which then needs the site build (a GITHUB_TOKEN push can't start it).
 permissions:
   contents: write
   actions: write
@@ -17,6 +17,10 @@ permissions:
 concurrency:
   group: approval-${{ github.event.client_payload.id }}
   cancel-in-progress: false
+
+env:
+  # Which site this workflow is for (lib/site.js; Harvington stage 2, 16 Nov 2026).
+  SITE: lenches
 
 jobs:
   apply:
@@ -59,7 +63,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SUBJECT: ${{ github.event.client_payload.action == 'replace' && 'Remove a listed item replaced by its organiser''s version (admin panel)' || 'Add details to a listed item (admin panel)' }}
         run: |
-          git add -A src/items
+          git add -A sites/$SITE/items
           if git diff --cached --quiet; then echo "No item files changed."; exit 0; fi
           git config user.name "Lenches Pipeline"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

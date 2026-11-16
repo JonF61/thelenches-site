@@ -19,6 +19,7 @@
 // button) of the issue exactly as last built, to preview_to, then marks it tested.
 'use strict';
 
+const { SITE_REL } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -66,7 +67,7 @@ function dispatchPayload() {
 // (the item then goes out text only).
 function jpegFor(webpUrl) {
   const rel = webpUrl.replace(/\.webp$/, '.jpg');
-  return fs.existsSync(path.join(ROOT, 'src', rel)) ? `${SITE}${rel}` : '';
+  return fs.existsSync(path.join(ROOT, SITE_REL, rel)) ? `${SITE}${rel}` : '';
 }
 
 function recipient(value, allowed, name) {
@@ -116,10 +117,10 @@ async function main() {
   const model = select({
     issueDate, pending, issues, settings, sources, jpegFor, cutoff,
     whatson: loadWhatson(),
-    bins: readJson('src/_data/bins.json'),
-    siteupdates: readJson('src/_data/siteupdates.json'),
-    onthisday: readJson('src/_data/onthisday.json'), cartoons: readJson('src/_data/cartoons.json'), wherelenches: readJson('src/_data/wherelenches.json'),
-    photos: readJson('src/_data/photos.json'),
+    bins: readJson(`${SITE_REL}/_data/bins.json`),
+    siteupdates: readJson(`${SITE_REL}/_data/siteupdates.json`),
+    onthisday: readJson(`${SITE_REL}/_data/onthisday.json`), cartoons: readJson(`${SITE_REL}/_data/cartoons.json`), wherelenches: readJson(`${SITE_REL}/_data/wherelenches.json`),
+    photos: readJson(`${SITE_REL}/_data/photos.json`),
   });
   const issue = render(model);
   console.log(`Issue ${issueDate}: ${model.keys.length} items (${model.events.length} events, `

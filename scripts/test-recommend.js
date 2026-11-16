@@ -113,7 +113,7 @@ console.log = (...a) => { logs.push(a.join(' ')); };
 
   // every listed entry has a unique, well-formed id
   for (const [file, list] of [['trades.json', 'trades'], ['eat.json', 'places']]) {
-    const ids = require(`../src/_data/${file}`)[list].map((e) => e.id);
+    const ids = require(`../sites/lenches/_data/${file}`)[list].map((e) => e.id);
     assert.ok(ids.every((id) => /^[a-z0-9-]{1,80}$/.test(id || '')), `${file}: an entry has no id`);
     assert.equal(new Set(ids).size, ids.length, `${file}: duplicate ids`);
   }

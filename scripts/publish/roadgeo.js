@@ -1,5 +1,5 @@
 // scripts/publish/roadgeo.js
-// Road geometry cache for the Roads page map: src/_data/roadgeo.json, keyed by
+// Road geometry cache for the Roads page map: sites/<site>/_data/roadgeo.json, keyed by
 // roadKey(road, village) (lib/roads.js). Each road is looked up once, here in the
 // publish run and never at site build, then kept:
 //   { "ab lench road|church lench": { road, village, source, looked_up, geometry } }
@@ -10,13 +10,14 @@
 // results cached; https://operations.osmfoundation.org/policies/nominatim/
 'use strict';
 
+const { SITE_REL } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const {
   roadKey, villagePoint, SEARCH_VIEWBOX, simplifyGeometry, pointGeometry, norm,
 } = require('../../lib/roads');
 
-const FILE = path.join(__dirname, '..', '..', 'src', '_data', 'roadgeo.json');
+const FILE = path.join(__dirname, '..', '..', SITE_REL, '_data', 'roadgeo.json');
 const ENDPOINT = 'https://nominatim.openstreetmap.org/search';
 const USER_AGENT = 'TheLenchesWebsite/1.0 (+https://thelenches.org.uk; website@thelenches.org.uk)';
 const GAP_MS = 1100; // a little over 1 request a second
@@ -106,7 +107,7 @@ async function updateRoadGeo(wanted, { fetchImpl = globalThis.fetch, log = conso
       }
       cache[key] = entry;
       if (entry.source === 'village') {
-        failed.push(`${w.road}, ${w.village}: not found; pinned at the village (fix "${key}" in src/_data/roadgeo.json)`);
+        failed.push(`${w.road}, ${w.village}: not found; pinned at the village (fix "${key}" in ${SITE_REL}/_data/roadgeo.json)`);
       } else {
         log(`Road geometry cached: ${key} (${entry.source}).`);
       }

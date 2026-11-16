@@ -12,11 +12,12 @@
 //     and a suggested file name (naming.js) when the name doesn't describe the picture.
 //     Rows described before suggested_name existed get one later, within the same cap.
 //  3. Publish rows with status "approved": 1400px WebP + JPEG, all metadata
-//     (GPS, EXIF) stripped, to src/images/photos/<slug>; anything else that is
+//     (GPS, EXIF) stripped, to sites/<site>/images/photos/<slug>; anything else that is
 //     live is removed. People/children/unknown need people_ok (yes/TRUE).
-//  4. Rewrite src/_data/photos.json from what is live. The workflow commits.
+//  4. Rewrite sites/<site>/_data/photos.json from what is live. The workflow commits.
 'use strict';
 
+const { SITE_REL } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
@@ -33,8 +34,8 @@ const REQUIRED = ['drive_id', 'path', 'village', 'subject', 'filename', 'drive_l
   'alt_text', 'credit', 'people', 'people_ok', 'description', 'duplicate_of', 'taken_at', 'width', 'height',
   'slug', 'image_url', 'published_at', 'drive_modified', 'first_seen', 'dhash', 'notes'];
 const REPO = path.resolve(__dirname, '..', '..');
-const IMG_DIR = path.join(REPO, 'src', 'images', 'photos');
-const DATA_FILE = path.join(REPO, 'src', '_data', 'photos.json');
+const IMG_DIR = path.join(REPO, SITE_REL, 'images', 'photos');
+const DATA_FILE = path.join(REPO, SITE_REL, '_data', 'photos.json');
 const WEB_PATH = '/images/photos';
 
 const IMAGE_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif', 'image/tiff']);
@@ -384,7 +385,7 @@ async function main() {
     .filter((r) => r.published_at && r.slug && fs.existsSync(fileFor(r.slug, 'webp')))
     .sort((a, b) => [a.village, a.subject, a.slug].join('|').localeCompare([b.village, b.subject, b.slug].join('|')));
 
-  // Files in src/images/photos belong to this job alone: drop any no row claims.
+  // Files in sites/<site>/images/photos belong to this job alone: drop any no row claims.
   if (rows.length) {
     const keep = new Set(liveRows.map((r) => r.slug));
     for (const name of fs.readdirSync(IMG_DIR)) {

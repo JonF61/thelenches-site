@@ -26,7 +26,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 
 // Thumbnails as the run makes them: small JPEG data: addresses.
 async function thumb(file, tint) {
-  const img = file ? sharp(path.join(ROOT, 'src', 'images', 'photos', file))
+  const img = file ? sharp(path.join(ROOT, 'sites', 'lenches', 'images', 'photos', file))
     : sharp({ create: { width: 640, height: 400, channels: 3, background: tint } });
   const jpg = await img.resize({ width: 240, height: 240, fit: 'inside' }).jpeg({ quality: 62 }).toBuffer();
   return `data:image/jpeg;base64,${jpg.toString('base64')}`;

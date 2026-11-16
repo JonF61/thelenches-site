@@ -18,11 +18,11 @@ const script = require('../../scripts/entryedit/index.js');
 
 const EVENT = { date: '2026-11-13', title: 'Quiz night', body: 'Teams of six, 7.30pm.', link: { text: 'Book', url: 'https://x.org/b' } };
 const files = {
-  'src/items/events/2026-11-13-quiz.json': EVENT,
-  'src/items/notices/council.json': { title: 'Council', body: 'Met.', official: true },
-  'src/items/regulars.json': { regulars: [{ day: 'Tuesday', time: '7pm', what: 'Ladies', where: 'Hall' }] },
-  'src/_data/eat.json': { places: [{ id: 'boot-inn', name: 'Boot Inn', type: 'Pub', where: 'Flyford' }] },
-  'src/_data/trades.json': { trades: [{ id: 'sparks', name: 'Sparks', trade: 'Electrician', phone: '01386 000000' }] },
+  'sites/lenches/items/events/2026-11-13-quiz.json': EVENT,
+  'sites/lenches/items/notices/council.json': { title: 'Council', body: 'Met.', official: true },
+  'sites/lenches/items/regulars.json': { regulars: [{ day: 'Tuesday', time: '7pm', what: 'Ladies', where: 'Hall' }] },
+  'sites/lenches/_data/eat.json': { places: [{ id: 'boot-inn', name: 'Boot Inn', type: 'Pub', where: 'Flyford' }] },
+  'sites/lenches/_data/trades.json': { trades: [{ id: 'sparks', name: 'Sparks', trade: 'Electrician', phone: '01386 000000' }] },
 };
 const read = async (env, p) => {
   if (!(p in files)) throw Object.assign(new Error('nf'), { status: 404 });
@@ -37,7 +37,7 @@ const table = async () => ({ headers: [], rows: PENDING });
 const deps = { read, table };
 
 test('parseKey takes only the source keys, never a path outside src/items', () => {
-  assert.deepEqual(parseKey('h:events/2026-11-13-quiz.json'), { kind: 'events', file: 'src/items/events/2026-11-13-quiz.json' });
+  assert.deepEqual(parseKey('h:events/2026-11-13-quiz.json'), { kind: 'events', file: 'sites/lenches/items/events/2026-11-13-quiz.json' });
   assert.equal(parseKey('r:3').index, 3);
   assert.equal(parseKey('e:boot-inn').id, 'boot-inn');
   assert.equal(parseKey('t:sparks').kind, 'trades');

@@ -17,6 +17,7 @@
 // feed item, and image_part_id, image_url and image_choice all blank (needsImage).
 'use strict';
 
+const { SITE_REL } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const g = require('../ingest/google');
@@ -80,7 +81,7 @@ async function suggestFor(row, ctx) {
 
   // 1. Own photos.
   for (const m of ownMatches(ev, ctx.photos, ctx.people, MAX_OWN)) {
-    const file = path.join(ROOT, 'src', m.photo.src);
+    const file = path.join(ROOT, SITE_REL, m.photo.src);
     let thumb = '';
     try { thumb = await thumbnail(fs.readFileSync(file)); } catch { notes.push(`own ${m.photo.slug}: no local file`); continue; }
     out.push({
@@ -158,7 +159,7 @@ async function main(opts = {}) {
     people = new Map((await g.readTable('Photos')).filter((r) => str(r.slug)).map((r) => [str(r.slug), str(r.people)]));
   } catch (err) { console.warn(`Photos tab unreadable, own photos ranked without people: ${err.message}`); }
   let photos = [];
-  try { photos = JSON.parse(fs.readFileSync(path.join(ROOT, 'src', '_data', 'photos.json'), 'utf8')); } catch { photos = []; }
+  try { photos = JSON.parse(fs.readFileSync(path.join(ROOT, SITE_REL, '_data', 'photos.json'), 'utf8')); } catch { photos = []; }
   const library = opts.library !== undefined ? opts.library : librarySource();
   console.log(`${todo.length} Pending event(s) with no image; looking at up to ${MAX_ITEMS}.${library ? ` Library: ${library.name}.` : ' No PEXELS_API_KEY or PIXABAY_API_KEY: library skipped.'}${DRY_RUN ? ' DRY RUN.' : ''}`);
 

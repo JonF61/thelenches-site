@@ -2,8 +2,8 @@
 // Prepares a newsletter cartoon (11 Nov 2026, Jon): resizes the picture Jon made to 920px wide,
 // stamps the "Dave" signature (dave-signature.png: Reenie Beanie, an SIL Open Font Licence
 // font, rendered once) in the bottom-right corner and saves an Outlook-safe JPEG.
-// Run by Kryten when adding a cartoon to src/_data/cartoons.json:
-//   node scripts/cartoon/sign.js <picture.png|jpg> src/images/cartoons/<issue date>-<slug>.jpg
+// Run by Kryten when adding a cartoon to sites/<site>/_data/cartoons.json:
+//   node scripts/cartoon/sign.js <picture.png|jpg> sites/<site>/images/cartoons/<issue date>-<slug>.jpg
 'use strict';
 
 const path = require('path');

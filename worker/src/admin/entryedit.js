@@ -3,9 +3,9 @@
 // page (/admin/page, ui/pageedit.js) and the Newsletter draft's editor (/admin/draft-edit).
 // Entries are tagged in the site's templates and the draft (data-entry = the source key as in
 // scripts/rimmer/fix.js sources(), data-field = the field or fields shown there):
-//   h:events/<file>  h:notices/<file>   hand-written items (src/items/)
-//   r:<index>                           Regular activities (src/items/regulars.json)
-//   e:<id>  t:<id>                      Where to eat, Local trades (src/_data/eat.json, trades.json)
+//   h:events/<file>  h:notices/<file>   hand-written items (sites/<site>/items/)
+//   r:<index>                           Regular activities (sites/<site>/items/regulars.json)
+//   e:<id>  t:<id>                      Where to eat, Local trades (sites/<site>/_data/eat.json, trades.json)
 //   p:<Pending id>                      published submissions (their Pending row)
 // Which fields can change: lib/entryfields.json (wording and links only; titles, names, dates and
 // official statements stay "Ask Kryten").
@@ -19,6 +19,7 @@
 //   GET  /admin/api/entry-status?id=&at=&p=&text=   entryStatus: saving / building / live / failed
 //   GET  /admin/draft-edit              draftEditPage: the draft with the editor script in it
 
+import { siteRel } from '../sites.js';
 import { decide, github } from '../core.js';
 import { readSource, showsText, validPagePath } from './pageedit.js';
 import { readTable } from './sheet.js';
@@ -40,10 +41,10 @@ const LIVE = new Set(['approved', 'auto']);
 export function parseKey(key) {
   const k = String(key || '');
   let m;
-  if ((m = k.match(/^h:(events|notices)\/([a-z0-9][a-z0-9._-]{0,150}\.json)$/i)) && !m[2].includes('..')) return { kind: m[1], file: `src/items/${m[1]}/${m[2]}` };
-  if ((m = k.match(/^r:(\d{1,4})$/))) return { kind: 'regulars', index: Number(m[1]), file: 'src/items/regulars.json' };
-  if ((m = k.match(/^e:([a-z0-9][a-z0-9-]{0,79})$/))) return { kind: 'eat', id: m[1], file: 'src/_data/eat.json' };
-  if ((m = k.match(/^t:([a-z0-9][a-z0-9-]{0,79})$/))) return { kind: 'trades', id: m[1], file: 'src/_data/trades.json' };
+  if ((m = k.match(/^h:(events|notices)\/([a-z0-9][a-z0-9._-]{0,150}\.json)$/i)) && !m[2].includes('..')) return { kind: m[1], file: `${siteRel()}/items/${m[1]}/${m[2]}` };
+  if ((m = k.match(/^r:(\d{1,4})$/))) return { kind: 'regulars', index: Number(m[1]), file: `${siteRel()}/items/regulars.json` };
+  if ((m = k.match(/^e:([a-z0-9][a-z0-9-]{0,79})$/))) return { kind: 'eat', id: m[1], file: `${siteRel()}/_data/eat.json` };
+  if ((m = k.match(/^t:([a-z0-9][a-z0-9-]{0,79})$/))) return { kind: 'trades', id: m[1], file: `${siteRel()}/_data/trades.json` };
   if ((m = k.match(/^p:([A-Za-z0-9_-]{1,100})$/))) return { kind: 'pending', id: m[1] };
   return null;
 }

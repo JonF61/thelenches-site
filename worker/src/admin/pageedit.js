@@ -13,6 +13,7 @@
 // notices, regular activities, places to eat, trades, published submissions; tagged data-entry
 // in the templates) have their own edit box and save path: entryedit.js (4 Nov).
 
+import { SITES } from '../sites.js';
 import { github } from '../core.js';
 
 export const BLOCK_TAGS = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'td', 'th', 'dt', 'dd', 'figcaption'];
@@ -116,10 +117,12 @@ function safeClean(html) {
   }
 }
 
-// "./src/privacy.njk" (Eleventy's page.inputPath) -> "src/privacy.njk", or '' if not a page template.
+// "./sites/lenches/privacy.njk" (Eleventy's page.inputPath) -> "sites/lenches/privacy.njk", or '' if
+// not a page template of a known site (never _includes, _data or items).
 export function sourcePath(p) {
   const s = String(p || '').replace(/^\.\//, '');
-  return /^src\/(?!_)(?:[a-z0-9-]+\/)*[a-z0-9-]+\.njk$/.test(s) && !s.startsWith('src/items/') ? s : '';
+  const m = s.match(/^sites\/([a-z]+)\/((?!_)(?:[a-z0-9-]+\/)*[a-z0-9-]+\.njk)$/);
+  return m && Object.prototype.hasOwnProperty.call(SITES, m[1]) && !m[2].startsWith('items/') ? s : '';
 }
 
 const dec = new TextDecoder();
@@ -177,7 +180,7 @@ export async function savePage(env, body) {
   const r = await github(env, `/repos/${env.REPO}/contents/${path}`, {
     method: 'PUT',
     body: JSON.stringify({
-      message: `Page edit: ${path.replace(/^src\//, '')} (${done.count} change${done.count === 1 ? '' : 's'}, from the admin panel)`,
+      message: `Page edit: ${path.replace(/^sites\/[a-z]+\//, '')} (${done.count} change${done.count === 1 ? '' : 's'}, from the admin panel)`,
       content: toB64(done.text),
       sha,
       branch: 'main',

@@ -2,7 +2,7 @@
 // rule in council.json (nth weekday of listed months). An optional
 // "override" (YYYY-MM-DD) wins while it is today or later, for one-off moves.
 // The nightly rebuild rolls the date over the day after each meeting.
-const council = require('./council.json');
+const council = require('../../lib/site.js').siteData('council');
 
 function londonToday() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/London' });

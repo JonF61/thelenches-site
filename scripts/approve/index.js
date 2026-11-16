@@ -42,7 +42,7 @@
 //                     (Pending `duplicate`, ingest/duplicates.js). BODY is JSON of the details
 //                     to add to the existing entry, as Jon left them in the panel: body,
 //                     link_text/link_url, link2_text/link2_url. A hand-written item's file in
-//                     src/items/ is rewritten (approval.yml commits it and starts the build); a
+//                     sites/<site>/items/ is rewritten (approval.yml commits it and starts the build); a
 //                     pipeline or waiting item's Pending row gets the new values (publish
 //                     rebuilds the site from it). An official entry's wording is never changed.
 //                     This item becomes "done". Nothing is sent to anyone.
@@ -50,7 +50,7 @@
 //                     organiser's own version takes precedence over what we gleaned elsewhere).
 //                     The item is already listed (Pending `duplicate`): this item is approved
 //                     and the listed entry goes in the same decision: a hand-written file in
-//                     src/items/ is deleted (approval.yml commits it and starts the build), a
+//                     sites/<site>/items/ is deleted (approval.yml commits it and starts the build), a
 //                     pipeline or waiting Pending row becomes "done". The listed entry's
 //                     picture is kept when this item has none, and a replaced submission's
 //                     newsletter and flyer counts carry over. Never an official entry.

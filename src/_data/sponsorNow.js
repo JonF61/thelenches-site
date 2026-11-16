@@ -1,6 +1,6 @@
 // This month's sponsor (UK calendar month at build time), or null: only an entry in
 // sponsors.json that Jon has approved and that is paid. The nightly rebuild moves it on.
-const sponsors = require('./sponsors.json');
+const sponsors = require('../../lib/site.js').siteData('sponsors');
 
 function ukMonth(now = new Date()) {
   const p = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit' })

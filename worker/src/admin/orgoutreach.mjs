@@ -1,6 +1,6 @@
 // worker/src/admin/orgoutreach.mjs (.mjs so scripts/outreach can import it)
 // Organisation outreach (27 Oct 2026): once a year Holly asks each organisation the site lists
-// to check its entry. The list is src/_data/contacts.json `outreach` (orgEntries resolves each
+// to check its entry. The list is sites/<site>/_data/contacts.json `outreach` (orgEntries resolves each
 // one's details from contacts.json, council.json, schools.json, health.json, transport.json);
 // what has happened is worked out from the Replies tab on each load, and the Org outreach tab
 // (id, next_check, notes, other_emails; made by the panel on its first write) holds Jon's

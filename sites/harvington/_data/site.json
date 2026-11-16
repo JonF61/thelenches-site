@@ -1,0 +1,34 @@
+{
+  "_help": "Harvington site config (Harvington stage 2, 16 Nov 2026; Plan doc: Harvington website). Same keys as sites/lenches/_data/site.json, plus the multi-site keys read by lib/site.js and worker/src/sites.js. Hidden from search (noindex) until Jon launches it. Form and panel URLs, Turnstile and analytics are added at launch (stage 7).",
+  "site": "harvington",
+  "url": "https://harvingtonvillage.org.uk",
+  "domain": "harvingtonvillage.org.uk",
+  "name": "Harvington",
+  "region": "Worcestershire",
+  "email": "website@harvingtonvillage.org.uk",
+  "description": "News, events and village information for Harvington, near Evesham in Worcestershire.",
+  "noindex": true,
+  "gmailLabel": "Harvington Website/2 Pipeline",
+  "fromName": "The Harvington Website and Newsletter Team",
+  "hollySignoff": "Holly / Harvington website assistant",
+  "newsletterName": "The Harvington Newsletter",
+  "skyline": "spire",
+  "palette": {
+    "_help": "Option B, river blue (the Avon); Jon chose it 16 Nov 2026. vars override style.css's :root colours; green/ridge/window colour the Home skyline and seasonal corner.",
+    "green": "#2D4A63",
+    "ridge": "#DAE2E9",
+    "window": "#F8F9FA",
+    "vars": {
+      "green": "#2D4A63",
+      "green-dark": "#233B50",
+      "green-light": "#E3E9EF",
+      "cream": "#F1F3F5",
+      "paper": "#F8F9FA",
+      "line": "#C9D3DC",
+      "accent": "#C0703A",
+      "accent-text": "#9A5312"
+    }
+  },
+  "footer": [],
+  "nav": []
+}

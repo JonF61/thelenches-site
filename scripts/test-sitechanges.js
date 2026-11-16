@@ -6,6 +6,7 @@
 // Run: node scripts/test-sitechanges.js
 'use strict';
 
+const { SITE_REL } = require('../lib/site.js');
 const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
@@ -53,21 +54,28 @@ async function main() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sitechanges-'));
   fs.mkdirSync(path.join(root, 'src', 'items', 'events'), { recursive: true });
   fs.writeFileSync(path.join(root, 'src/items/events/2026-12-11-xmas-fayre.json'), JSON.stringify({ title: 'Xmas Fayre — Village Hall' }));
+  fs.mkdirSync(path.join(root, SITE_REL, 'items', 'notices'), { recursive: true });
+  fs.writeFileSync(path.join(root, `${SITE_REL}/items/notices/hall-closed.json`), JSON.stringify({ title: 'Hall closed' }));
   const log = [
+    `\x012026-11-17\x02Hall closed notice\n\nA\t${SITE_REL}/items/notices/hall-closed.json\nM\t${SITE_REL}/_data/eat.json\n`,
+    '\x012026-11-16\x02Multi-site foundation\n\nR100\tsrc/bins.njk\tsites/lenches/bins.njk\nR100\tsrc/_data/eat.json\tsites/lenches/_data/eat.json\n',
     '\x012026-11-15\x02Xmas Fayre: venue is the Village Hall (#352)\n\nM\tsrc/items/events/2026-12-11-xmas-fayre.json\n',
     '\x012026-11-14\x02Publish pipeline items\n\nM\tsrc/_data/pipeline.json\nM\tsrc/_data/roadgeo.json\n',
     '\x012026-11-13\x02Pre-school entry updated (#285)\n\nM\tsrc/_data/schools.json\nA\tsrc/images/items/x.jpg\n',
     '\x012026-11-12\x02Old quiz removed\n\nD\tsrc/items/events/2026-11-01-quiz-night.json\n',
     '\x012026-11-11\x02Sponsor page and contact wording\n\nM\tsrc/sponsor/index.njk\nM\tsrc/contact.njk\nM\tsrc/_includes/base.njk\nR100\tsrc/old.njk\tsrc/living-here/eat.njk\n',
   ].join('');
-  const changes = sc.parseLog(log, { root });
+  const all = sc.parseLog(log, { root });
+  ok(all[0].entries.join(' | ') === 'notice "Hall closed" added | Where to eat page changed', 'files in the site folder (sites/lenches/)');
+  ok(all[1].date === '2026-11-15', 'the move from src/ to sites/lenches/ is not a change');
+  const changes = all.slice(1);
   ok(changes.length === 4, 'automatic commits (pipeline, road lines) are left out');
   ok(changes[0].date === '2026-11-15' && changes[0].change === 'Xmas Fayre: venue is the Village Hall' && changes[0].entries[0] === 'event "Xmas Fayre — Village Hall" changed', 'an event change, PR number dropped, title from the file');
   ok(changes[1].entries.join() === 'Schools page changed', 'a data file by its page; images left out');
   ok(changes[2].entries[0] === 'event "quiz night" removed', 'a removed file by its slug');
   ok(changes[3].entries.join(' | ') === 'page /contact/ wording changed | page /living-here/eat/ wording changed', 'page wording; sponsor pages and includes left out');
   ok(sc.recentChanges({ fresh: true, run: () => { throw new Error('no git'); } }).length === 0, 'no git: nothing, no error');
-  ok(sc.recentChanges({ fresh: true, run: (cmd, args) => { ok(cmd === 'git' && args.includes('--since=14 days ago') && args[args.length - 1] === 'src', 'last 14 days of src'); return log; }, root }).length === 4, 'read through git');
+  ok(sc.recentChanges({ fresh: true, run: (cmd, args) => { ok(cmd === 'git' && args.includes('--since=14 days ago') && args.slice(-2).join() === `${SITE_REL},src`, 'last 14 days of the site folder and src'); return log; }, root }).length === 5, 'read through git');
 
   // 2. What a sender sent and what became of it.
   const existing = [

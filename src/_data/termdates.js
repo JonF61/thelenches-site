@@ -1,6 +1,6 @@
 // Upcoming school holidays from schools.json, worked out at build time.
 // Drops breaks the schools are already back from; the nightly rebuild rolls it on.
-const schools = require('./schools.json');
+const schools = require('../../lib/site.js').siteData('schools');
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -18,7 +18,7 @@ module.exports = function () {
   const now = new Date();
   const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   const list = [];
-  for (const b of schools.terms.breaks) {
+  for (const b of ((schools.terms && schools.terms.breaks) || [])) {
     const closes = parse(b.closes);
     const reopens = b.reopens ? parse(b.reopens) : null;
     if ((reopens || closes) < today) continue;

@@ -6,6 +6,7 @@
 // Run: node scripts/test-duplicates.js
 'use strict';
 
+const { SITE_REL } = require('../lib/site.js');
 const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
@@ -62,16 +63,16 @@ const ok = (cond, msg) => { assert.ok(cond, msg); checks += 1; };
 
 // A small site: one hand-written event (the real-life case) and one published pipeline notice.
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'dupes-'));
-fs.mkdirSync(path.join(root, 'src', 'items', 'events'), { recursive: true });
-fs.mkdirSync(path.join(root, 'src', 'items', 'notices'), { recursive: true });
-fs.mkdirSync(path.join(root, 'src', '_data'), { recursive: true });
+fs.mkdirSync(path.join(root, SITE_REL, 'items', 'events'), { recursive: true });
+fs.mkdirSync(path.join(root, SITE_REL, 'items', 'notices'), { recursive: true });
+fs.mkdirSync(path.join(root, SITE_REL, '_data'), { recursive: true });
 const EVENT_FILE = '2026-11-10-autumn-coffee-morning-church-lench.json';
-fs.writeFileSync(path.join(root, 'src', 'items', 'events', EVENT_FILE), JSON.stringify({
+fs.writeFileSync(path.join(root, SITE_REL, 'items', 'events', EVENT_FILE), JSON.stringify({
   date: '2026-11-10', title: 'Autumn bring and buy coffee morning — Church Lench',
   body: 'A coffee morning with a bring and buy sale, 10am to noon. Everyone welcome.',
 }));
-fs.writeFileSync(path.join(root, 'src', 'items', 'events', '2026-10-01-old.json'), JSON.stringify({ date: '2026-10-01', title: 'Old fair' }));
-fs.writeFileSync(path.join(root, 'src', '_data', 'pipeline.json'), JSON.stringify({
+fs.writeFileSync(path.join(root, SITE_REL, 'items', 'events', '2026-10-01-old.json'), JSON.stringify({ date: '2026-10-01', title: 'Old fair' }));
+fs.writeFileSync(path.join(root, SITE_REL, '_data', 'pipeline.json'), JSON.stringify({
   events: [],
   notices: [{ id: 'p9-1', title: 'Footpath closure near Ab Lench', body: 'Closed for repairs.' }],
 }));
@@ -145,7 +146,7 @@ function testFeedback(d) {
 async function testMerge(d) {
   const fields = approve.mergeFields(JSON.stringify({ body: ' New text\r\nline ', link_url: 'https://example.org/flyer', link_text: '', link2_url: 'ftp://x' }));
   ok(fields.body === 'New text\nline' && fields.link_text === 'More details' && !fields.link2_url, 'fields cleaned');
-  const itemsDir = path.join(root, 'src', 'items');
+  const itemsDir = path.join(root, SITE_REL, 'items');
   const changed = await approve.applyDetails(d, fields, [], itemsDir);
   const item = JSON.parse(fs.readFileSync(path.join(itemsDir, 'events', EVENT_FILE), 'utf8'));
   ok(changed.join(',') === 'text,link' && item.body === 'New text\nline' && item.link.url === 'https://example.org/flyer', 'hand-written file updated');
@@ -192,7 +193,7 @@ async function testLive() {
     Pending: pending.map((r) => ({ ...r })),
     Replies: [ack],
   };
-  const fsPipe = path.join(__dirname, '..', 'src', '_data', 'pipeline.json');
+  const fsPipe = path.join(__dirname, '..', SITE_REL, '_data', 'pipeline.json');
   const realRead = fs.readFileSync;
   fs.readFileSync = (f, ...a) => (f === fsPipe ? JSON.stringify(pipeline) : realRead(f, ...a));
   let calls = 0;

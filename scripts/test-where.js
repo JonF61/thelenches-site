@@ -3,6 +3,7 @@
 // Usage: node scripts/test-where.js [preview-dir]   (writes where-12nov.html and where-19nov.html)
 'use strict';
 
+const { SITE_REL } = require('../lib/site.js');
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -10,20 +11,20 @@ const { select } = require('./newsletter/select');
 const { render } = require('./newsletter/render');
 
 const ROOT = path.join(__dirname, '..');
-const data = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/_data/wherelenches.json'), 'utf8'));
+const data = JSON.parse(fs.readFileSync(path.join(ROOT, `${SITE_REL}/_data/wherelenches.json`), 'utf8'));
 let checks = 0;
 const ok = (cond, what) => { assert.ok(cond, what); checks += 1; };
 
 for (const [k, e] of Object.entries(data.entries)) {
   ok(/^\d{4}-\d{2}-\d{2}$/.test(k), `key ${k}`);
   for (const f of ['puzzle', 'photo']) {
-    ok(/^\/images\/[\w./-]+\.jpe?g$/i.test(e[f] || '') && fs.existsSync(path.join(ROOT, 'src', e[f])), `${f} file for ${k}`);
+    ok(/^\/images\/[\w./-]+\.jpe?g$/i.test(e[f] || '') && fs.existsSync(path.join(ROOT, SITE_REL, e[f])), `${f} file for ${k}`);
   }
   ok(typeof e.answer === 'string' && e.answer.trim().length > 10, `answer for ${k}`);
 }
 
 const SITE = 'https://thelenches.org.uk';
-const jpegFor = (u) => (fs.existsSync(path.join(ROOT, 'src', u)) ? `${SITE}${u}` : '');
+const jpegFor = (u) => (fs.existsSync(path.join(ROOT, SITE_REL, u)) ? `${SITE}${u}` : '');
 const base = { pending: [], whatson: { events: [], notices: [{ title: 'Hall car park', body: 'Closed.' }] }, bins: {}, siteupdates: { entries: [] },
   issues: [], settings: {}, sources: [], onthisday: { entries: {} }, wherelenches: data, jpegFor };
 

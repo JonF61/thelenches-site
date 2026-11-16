@@ -3,7 +3,7 @@ name: Recommendation (Local trades / Where to eat)
 # Fired by the Cloudflare Worker's /r endpoint (repository_dispatch "recommend"):
 #   action "send"     the Recommend button saved a Recommendations row: email the confirm link
 #   action "confirm"  the reader pressed the link's button: count it, then rewrite
-#                     src/_data/recommends.json, commit it and start the site build
+#                     sites/<site>/_data/recommends.json, commit it and start the site build
 # The payload is a Recommendations row id, never an address: this repo's Actions logs are public.
 on:
   repository_dispatch:
@@ -18,6 +18,10 @@ permissions:
 concurrency:
   group: recommend-${{ github.event.client_payload.id || github.run_id }}
   cancel-in-progress: false
+
+env:
+  # Which site this workflow is for (lib/site.js; Harvington stage 2, 16 Nov 2026).
+  SITE: lenches
 
 jobs:
   row:
@@ -71,7 +75,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git add src/_data/recommends.json
+          git add sites/$SITE/_data/recommends.json
           if git diff --cached --quiet; then echo "No changes."; exit 0; fi
           git config user.name "Lenches Pipeline"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

@@ -7,6 +7,7 @@
 // contains an address, name or why. Google and Gmail are faked. Run: node scripts/test-listingsuggest.js
 'use strict';
 
+const { SITE_REL } = require('../lib/site.js');
 const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
@@ -21,7 +22,7 @@ const { signToken } = require('./ingest/links');
 const MS = Date.UTC(2026, 10, 3, 10, 0);
 const ID = 'sg-20261103-abc123';
 const TAB = 'Listing suggestions';
-const DATA = path.join(__dirname, '..', 'src', '_data');
+const DATA = path.join(__dirname, '..', SITE_REL, '_data');
 
 function world(rows) {
   const tabs = { [TAB]: rows, Recommendations: [] };

@@ -17,6 +17,7 @@
 // runs, every 3 hours, and from the panel's Refresh button.
 'use strict';
 
+const { SITE_REL } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -92,7 +93,7 @@ function buildDraft(inputs) {
 
 // Edit tags for the panel's draft editor (4 Nov, "edit everything"): each item's newsletter key ->
 // its source key as in scripts/rimmer/fix.js sources() (p:<Pending id>; h:events/<file> and
-// h:notices/<file> found by whatsonKey from the current src/items; r:<index> for Regular
+// h:notices/<file> found by whatsonKey from the current sites/<site>/items; r:<index> for Regular
 // activities, matched on day, what, time and where). Official statements are left out (Ask Kryten).
 // Only this copy carries them; the built issue and every sent copy never do.
 function editTags(model, inputs) {
@@ -134,7 +135,7 @@ async function loadInputs(g) {
   const readJson = (rel) => JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
   const jpegFor = (webpUrl) => {
     const rel = webpUrl.replace(/\.webp$/, '.jpg');
-    return fs.existsSync(path.join(ROOT, 'src', rel)) ? `${SITE}${rel}` : '';
+    return fs.existsSync(path.join(ROOT, SITE_REL, rel)) ? `${SITE}${rel}` : '';
   };
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(Date.now());
   const [{ sources, settings }, pending, issues, subscribers, dns] = await Promise.all([
@@ -142,8 +143,8 @@ async function loadInputs(g) {
   ]);
   return {
     today, pending, issues, settings, sources, jpegFor, whatson: loadWhatson(), subscribers, dns,
-    bins: readJson('src/_data/bins.json'), siteupdates: readJson('src/_data/siteupdates.json'), onthisday: readJson('src/_data/onthisday.json'), cartoons: readJson('src/_data/cartoons.json'), wherelenches: readJson('src/_data/wherelenches.json'),
-    photos: readJson('src/_data/photos.json'),
+    bins: readJson(`${SITE_REL}/_data/bins.json`), siteupdates: readJson(`${SITE_REL}/_data/siteupdates.json`), onthisday: readJson(`${SITE_REL}/_data/onthisday.json`), cartoons: readJson(`${SITE_REL}/_data/cartoons.json`), wherelenches: readJson(`${SITE_REL}/_data/wherelenches.json`),
+    photos: readJson(`${SITE_REL}/_data/photos.json`),
   };
 }
 

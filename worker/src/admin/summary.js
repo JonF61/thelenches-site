@@ -13,7 +13,7 @@
 //   claudeSpend         Claude API spend this month and last, by job (the "Claude usage" tab,
 //                       written by lib/claudeusage.js after each run; dollars and counts only)
 
-import onThisDayData from '../../../src/_data/onthisday.json' with { type: 'json' };
+import onThisDayData from '../../../sites/lenches/_data/onthisday.json' with { type: 'json' };
 import devTasksData from './devtasks.json' with { type: 'json' };
 
 const DAY = 86400000;

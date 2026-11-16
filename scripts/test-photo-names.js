@@ -2,10 +2,11 @@
 // Offline test: suggested file names (photos/naming.js), the describe call's new
 // fields, and a whole photos run (photos/index.js) on a copy of scripts/ in a temp
 // folder, with Google Sheets, Drive and Claude as stand-ins: nothing leaves the
-// machine and the real src/_data/photos.json is never touched.
+// machine and the real sites/<site>/_data/photos.json is never touched.
 // Run: node scripts/test-photo-names.js
 'use strict';
 
+const { SITE_REL } = require('../lib/site.js');
 const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
@@ -37,7 +38,7 @@ const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'photo-names-'));
 fs.cpSync(path.join(REPO, 'scripts'), path.join(TMP, 'scripts'), { recursive: true });
 fs.symlinkSync(path.join(REPO, 'node_modules'), path.join(TMP, 'node_modules'), 'dir');
 fs.symlinkSync(path.join(REPO, 'lib'), path.join(TMP, 'lib'), 'dir');
-fs.mkdirSync(path.join(TMP, 'src', '_data'), { recursive: true });
+fs.mkdirSync(path.join(TMP, SITE_REL, '_data'), { recursive: true });
 
 const HEADERS = ['drive_id', 'path', 'village', 'subject', 'filename', 'drive_link', 'status', 'target',
   'alt_text', 'credit', 'people', 'people_ok', 'description', 'duplicate_of', 'taken_at', 'width', 'height',

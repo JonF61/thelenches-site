@@ -1,6 +1,6 @@
 // scripts/eventimages/index.js
 // Event images from the web (agreed 4 Oct). Run by .github/workflows/eventimages.yml.
-// For upcoming events (src/items/ + pipeline.json, next 28 days) with a web link but no
+// For upcoming events (sites/<site>/items/ + pipeline.json, next 28 days) with a web link but no
 // image and no matching photos.json target, find the organiser's share image on the
 // linked page (find.js), check it with Sonnet (check.js) and add a row to the
 // "Image fetch" tab. Apps Script (image-fetch.gs) saves it to Drive; the Photos job
@@ -11,6 +11,7 @@
 // Links that can never give an image (mailto:, PDFs) are left out without a row.
 'use strict';
 
+const { SITE_REL } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const g = require('../ingest/google');
@@ -22,7 +23,7 @@ const { loadWhatson } = require('../../lib/whatson');
 const TAB = 'Image fetch';
 const REQUIRED = ['url', 'village', 'subject', 'filename', 'credit', 'source_page', 'status', 'notes',
   'event', 'suggested_target', 'found_via', 'check'];
-const DATA = path.resolve(__dirname, '..', '..', 'src', '_data');
+const DATA = path.resolve(__dirname, '..', '..', SITE_REL, '_data');
 const WINDOW_DAYS = Number(process.env.WINDOW_DAYS || 28);
 const MAX_EVENTS = Number(process.env.MAX_EVENTS || 15);
 const SAME_IMAGE_LIMIT = 3; // one image found for this many events = a site-wide default

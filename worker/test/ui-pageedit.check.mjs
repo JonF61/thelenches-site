@@ -170,13 +170,13 @@ for (const size of [{ width: 1200, height: 900, name: 'desktop' }, { width: 390,
     assert.equal(await page.locator('.le-view').getAttribute('href'), `${SITE}privacy/?v=aaaaaaa`);
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'pageedit-saved.png') });
     assert.equal(puts.length, 1);
-    assert.equal(puts[0].path, 'src/privacy.njk');
+    assert.equal(puts[0].path, 'sites/lenches/privacy.njk');
     assert.match(puts[0].message, /^Page edit: privacy\.njk \(1 change/);
     assert.ok(puts[0].text.includes('<p class="lead">For the Lenches <a href="/contact/">website</a> and community mailing list. (updated)</p>'), 'lead saved');
-    const before = fs.readFileSync(path.join(ROOT, 'src/privacy.njk'), 'utf8');
+    const before = fs.readFileSync(path.join(ROOT, 'sites/lenches/privacy.njk'), 'utf8');
     assert.equal(puts[0].text.split('\n').length, before.split('\n').length, 'only that line changed');
     // A second save of the same old text is refused (stale).
-    const again = await savePage(env, { path: 'src/privacy.njk', changes: [{ old: 'For the Lenches website and community mailing list.', new: 'x' }] });
+    const again = await savePage(env, { path: 'sites/lenches/privacy.njk', changes: [{ old: 'For the Lenches website and community mailing list.', new: 'x' }] });
     assert.equal(again.status, 409);
   } else if (SHOTS) {
     await page.screenshot({ path: path.join(SHOTS, 'pageedit-phone.png') });
@@ -189,7 +189,7 @@ for (const size of [{ width: 1200, height: 900, name: 'desktop' }, { width: 390,
   const page = await ctx.newPage();
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/fonts\.g|Failed to load resource/.test(m.text())) errors.push(m.text()); });
-  const trades = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/_data/trades.json'), 'utf8')).trades;
+  const trades = JSON.parse(fs.readFileSync(path.join(ROOT, 'sites/lenches/_data/trades.json'), 'utf8')).trades;
   const t = trades.find((x) => x.id && x.what);
   await page.goto(`${ORIGIN}/admin/page?p=/living-here/trades/`);
   await page.waitForSelector('.le-bar');
@@ -234,7 +234,7 @@ for (const size of [{ width: 1200, height: 900, name: 'desktop' }, { width: 390,
   await page.waitForSelector('.le-bar');
   const evCard = page.locator('[data-entry^="h:events/"]').filter({ has: page.locator('a[data-field="link"]') }).first();
   const key = await evCard.getAttribute('data-entry');
-  const ev = JSON.parse(fs.readFileSync(path.join(ROOT, 'src/items/events', key.slice('h:events/'.length)), 'utf8'));
+  const ev = JSON.parse(fs.readFileSync(path.join(ROOT, 'sites/lenches/items/events', key.slice('h:events/'.length)), 'utf8'));
   await evCard.locator('a[data-field="link"]').click();
   assert.match(page.url(), /\/admin\/page/);
   const lf = page.locator('.le-entry-form');
@@ -266,11 +266,11 @@ for (const size of [{ width: 1200, height: 900, name: 'desktop' }, { width: 390,
 }
 // Bad input is refused by the server whatever the page sends.
 for (const bad of ['<script>x</script>', '<a href="javascript:alert(1)">x</a>', '{{ site.email }}', '<img src=x>', '<a onclick="x" href="/">x</a>', '']) {
-  const r = await savePage(env, { path: 'src/privacy.njk', changes: [{ old: 'Name', new: bad }] });
+  const r = await savePage(env, { path: 'sites/lenches/privacy.njk', changes: [{ old: 'Name', new: bad }] });
   assert.equal(r.ok, false, `refused: ${bad}`);
 }
 // The h1 repeats the front matter title: still editable.
-assert.ok((await savePage(env, { path: 'src/privacy.njk', changes: [{ old: 'Privacy Policy', new: 'Privacy policy' }] })).ok);
+assert.ok((await savePage(env, { path: 'sites/lenches/privacy.njk', changes: [{ old: 'Privacy Policy', new: 'Privacy policy' }] })).ok);
 assert.equal((await savePage(env, { path: 'src/_includes/base.njk', changes: [] })).status, 400);
 assert.equal((await savePage(env, { path: '../package.json', changes: [] })).status, 400);
 await browser.close();

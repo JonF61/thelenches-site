@@ -6,6 +6,7 @@
 // Sheet mocked; files in a temporary folder. Run: node scripts/test-entryedit.js
 'use strict';
 
+const { SITE_REL } = require('../lib/site.js');
 const assert = require('assert/strict');
 const fs = require('fs');
 const os = require('os');
@@ -15,12 +16,12 @@ const ee = require('./entryedit');
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'entry-edit-'));
 const put = (rel, obj, raw) => { fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true }); fs.writeFileSync(path.join(root, rel), raw || `${JSON.stringify(obj, null, 2)}\n`); };
 const read = (rel) => JSON.parse(fs.readFileSync(path.join(root, rel), 'utf8'));
-const EV = 'src/items/events/2026-11-13-quiz-night.json';
+const EV = `${SITE_REL}/items/events/2026-11-13-quiz-night.json`;
 put(EV, { date: '2026-11-13', title: 'Quiz night — The Lenches Club', body: 'Teams of up to six, 7.30pm.', link: { text: 'Book', url: 'https://example.org/book' } });
-put('src/items/notices/council-statement.json', { title: 'Parish council statement', body: 'The council met.', official: true });
-put('src/items/regulars.json', null, '{"_help": "x",\n  "regulars": [ {"day": "Tuesday", "time": "7.15pm", "what": "Lenches Ladies", "where": "The hall"} ]\n}\n');
-put('src/_data/eat.json', { areas: ['Nearby'], places: [{ id: 'boot-inn', name: 'Boot Inn', area: 'Nearby', where: 'Flyford Flavell', type: 'Pub' }] });
-put('src/_data/trades.json', { trades: [] });
+put(`${SITE_REL}/items/notices/council-statement.json`, { title: 'Parish council statement', body: 'The council met.', official: true });
+put(`${SITE_REL}/items/regulars.json`, null, '{"_help": "x",\n  "regulars": [ {"day": "Tuesday", "time": "7.15pm", "what": "Lenches Ladies", "where": "The hall"} ]\n}\n');
+put(`${SITE_REL}/_data/eat.json`, { areas: ['Nearby'], places: [{ id: 'boot-inn', name: 'Boot Inn', area: 'Nearby', where: 'Flyford Flavell', type: 'Pub' }] });
+put(`${SITE_REL}/_data/trades.json`, { trades: [] });
 
 const out = {};
 process.env.GITHUB_OUTPUT = path.join(root, 'out.txt');
@@ -73,14 +74,14 @@ const payload = (key, changes) => ({ id: ID, body: JSON.stringify({ key, changes
   // Regular activity: one field, the file's compact layout kept.
   reset();
   await ee.run(payload('r:0', [{ field: 'where', old: 'The hall', new: 'Church Lench Village Hall' }]), { g, root });
-  const regText = fs.readFileSync(path.join(root, 'src/items/regulars.json'), 'utf8');
+  const regText = fs.readFileSync(path.join(root, `${SITE_REL}/items/regulars.json`), 'utf8');
   assert.match(regText, /"where": "Church Lench Village Hall"\} \]/);
   assert.equal(JSON.parse(regText).regulars[0].what, 'Lenches Ladies');
 
   // Where to eat also redeploys the Worker.
   reset();
   await ee.run(payload('e:boot-inn', [{ field: 'type', old: 'Pub', new: 'Pub and restaurant' }]), { g, root });
-  assert.equal(read('src/_data/eat.json').places[0].type, 'Pub and restaurant');
+  assert.equal(read(`${SITE_REL}/_data/eat.json`).places[0].type, 'Pub and restaurant');
   assert.deepEqual(outputs(), { commit: 'true', worker: 'true' });
 
   // Published submission: the column it publishes from (own wording or rewrite), and its link cells.
@@ -118,7 +119,7 @@ const payload = (key, changes) => ({ id: ID, body: JSON.stringify({ key, changes
   const { editTags } = require('./newsletter/draft');
   const { whatsonKey } = require('./newsletter/select');
   const { loadWhatson, entryKeyOf } = require('../lib/whatson');
-  const w = loadWhatson({ dir: path.join(root, 'src/items'), today: '2026-11-04' });
+  const w = loadWhatson({ dir: path.join(root, `${SITE_REL}/items`), today: '2026-11-04' });
   assert.equal(entryKeyOf(w.events[0]), 'h:events/2026-11-13-quiz-night.json');
   assert.equal(entryKeyOf(w.regulars[0]), 'r:0');
   assert.equal(JSON.stringify(w.events[0]).includes('_entry'), false, 'the key never reaches JSON');

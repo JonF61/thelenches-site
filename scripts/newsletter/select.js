@@ -18,18 +18,18 @@
 //               or new as for Notices (once).
 //   Bins        each area's next collection on or after the issue date, within 7 days.
 //   Elsewhere   other RSS signposts, new as for Notices, links only, once.
-//   Site        src/_data/siteupdates.json: a linked line under the header from its
+//   Site        sites/<site>/_data/siteupdates.json: a linked line under the header from its
 //               "from" date (to "until", if set) until one issue carrying it is sent
 //               live. Shadow, canary and test copies don't count, so it stays due.
-//   Cartoon     src/_data/cartoons.json: the entry keyed by the issue date, picture (its file
+//   Cartoon     sites/<site>/_data/cartoons.json: the entry keyed by the issue date, picture (its file
 //               must be in the repo) and caption, just before Notices; none = nothing (11 Nov 2026).
 //   Subject     (11 Nov 2026, Jon) subjectTeaser: the short names (title before " — ") of up to
 //               two lead events, Lenches ones first, those in the issue's first 7 days first, then
 //               by date; subjectMore when the issue has anything else. render.js puts them in the
 //               subject. Older snapshots have no subjectTeaser and keep the date-only subject.
-//   Where?      src/_data/wherelenches.json (11 Nov 2026, Jon): this issue's close-up puzzle, and
+//   Where?      sites/<site>/_data/wherelenches.json (11 Nov 2026, Jon): this issue's close-up puzzle, and
 //               the answer to the latest earlier puzzle from the last 14 days. Just for fun.
-//   On this day src/_data/onthisday.json: the entry keyed by the issue's MM-DD (any year),
+//   On this day sites/<site>/_data/onthisday.json: the entry keyed by the issue's MM-DD (any year),
 //               one italic line under the header; none = no line (28 Oct 2026).
 //   Images      Pending and whatson items: the JPEG copy of an /images/items/*.webp
 //               (publish.js makes it; classic Outlook can't show WebP); an event with no
@@ -194,7 +194,7 @@ function onThisDayFor(onthisday, issueDate) {
   return text ? { text } : null;
 }
 
-// The issue's cartoon (src/_data/cartoons.json, keyed YYYY-MM-DD): absolute image URL, alt and
+// The issue's cartoon (sites/<site>/_data/cartoons.json, keyed YYYY-MM-DD): absolute image URL, alt and
 // caption, or null when there is none, its caption is blank or its image isn't in the repo.
 function cartoonFor(cartoons, issueDate, jpegFor) {
   const e = cartoons && cartoons.entries && cartoons.entries[issueDate];
@@ -378,7 +378,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, car
     if (isNew) notices.push({ ...base, image: imageFor(row, key) });
   }
 
-  // ---- Hand-written items (src/items/, assembled by lib/whatson.js; expired ones already left out).
+  // ---- Hand-written items (sites/<site>/items/, assembled by lib/whatson.js; expired ones already left out).
   const w = whatson || {};
   for (const ev of w.events || []) {
     const date = ymd(ev.date);

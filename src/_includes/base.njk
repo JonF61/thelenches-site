@@ -36,6 +36,10 @@
   {#- pageTitle is escaped once inside its set block, so | safe stops "&" showing as "&amp;amp;". -#}
   {% if page.url == "/" %}<script type="application/ld+json">{{ site | siteLd | safe }}</script>{% endif %}
   <link rel="stylesheet" href="{{ '/style.css' | url }}?v={{ cssv }}">
+  {#- Each site's colours over style.css's (site.json palette.vars; 16 Nov 2026). The Lenches has none. -#}
+  {%- if site.palette and site.palette.vars %}
+  <style>:root{ {%- for k, v in site.palette.vars %}--{{ k }}:{{ v }};{% endfor -%} }</style>
+  {%- endif %}
   {#- Set before first paint so the phone menu starts closed without a jump; without JavaScript the menu is always shown. -#}
   <script>document.documentElement.classList.add('js')</script>
 </head>

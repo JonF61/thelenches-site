@@ -50,8 +50,8 @@ for (const [name, viewport] of [['desktop', { width: 1200, height: 900 }], ['pho
   });
   await page.route(/cloudflareinsights|static\.cloudflare/, (route) => route.abort());
 
-  const nTrades = require('../../src/_data/trades.json').trades.length;
-  const nEat = require('../../src/_data/eat.json').places.length;
+  const nTrades = require('../../sites/lenches/_data/trades.json').trades.length;
+  const nEat = require('../../sites/lenches/_data/eat.json').places.length;
   for (const [url, kind, n] of [['/living-here/trades/', 'trades', nTrades], ['/living-here/eat/', 'eat', nEat]]) {
     await page.goto(base + url);
     // each card has its own anchor (the suggester's thank-you email links to it)

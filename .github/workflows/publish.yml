@@ -1,6 +1,6 @@
 name: Publish to site
 
-# Regenerates src/_data/pipeline.json (and item images) from approved/auto rows
+# Regenerates sites/<site>/_data/pipeline.json (and item images) from approved/auto rows
 # in Pending. Runs after every approval and every ingestion run, commits only
 # if something changed, then starts the site build (a GITHUB_TOKEN push can't).
 on:
@@ -16,6 +16,10 @@ permissions:
 concurrency:
   group: publish
   cancel-in-progress: false
+
+env:
+  # Which site this workflow is for (lib/site.js; Harvington stage 2, 16 Nov 2026).
+  SITE: lenches
 
 jobs:
   publish:
@@ -45,7 +49,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git add src/_data/pipeline.json src/_data/roadgeo.json src/images
+          git add sites/$SITE/_data/pipeline.json sites/$SITE/_data/roadgeo.json sites/$SITE/images
           if git diff --cached --quiet; then echo "No changes."; exit 0; fi
           git config user.name "Lenches Pipeline"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

@@ -25,7 +25,7 @@ try { ({ chromium } = require('playwright')); } catch {
 const SHOTS = process.env.SHOTS || '';
 const { buildDraft, draftRows } = require('../../scripts/newsletter/draft.js');
 const { loadWhatson } = require('../../lib/whatson.js');
-const data = (f) => require(`../../src/_data/${f}`);
+const data = (f) => require(`../../sites/lenches/_data/${f}`);
 
 const draft = buildDraft({
   today: '2026-10-28', settings: {}, sources: [], jpegFor: () => '', whatson: loadWhatson({ today: '2026-10-28' }),
