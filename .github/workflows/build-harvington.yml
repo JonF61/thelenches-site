@@ -46,6 +46,8 @@ jobs:
           cache: npm
       - run: npm ci --no-audit --no-fund
       - run: npx @11ty/eleventy
+      # Site search index (/pagefind/, used by /search/), as build.yml. Pinned and run with npx so package.json stays as is.
+      - run: npx -y pagefind@1.5.2 --site _site
       - name: Add the domain and turn off Jekyll
         run: |
           node -p "require('./sites/harvington/_data/site.json').domain" > _site/CNAME

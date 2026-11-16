@@ -2,6 +2,19 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Harvington stage 6b (16 Nov): Jon to give the Harvington community Facebook group's link; Kryten then adds site.json facebookGroup {name, url} so the Home card shows",
+      "added": "2026-11-16"
+    },
+    {
+      "task": "Harvington before launch: add one line to the Lenches privacy page saying items may also appear on the Harvington website (wording for Jon to approve); Harvington's Contact page gets a village contacts table and Roads its report-a-problem box once its council and schools data exist (stage 6c); Harvington regular activities need entries (sites/harvington/items/regulars.json)",
+      "added": "2026-11-16"
+    },
+    {
+      "task": "Harvington stage 6b: after the merge, check the Build Harvington site run succeeds and harvingtonvillage.org.uk/preview/, /events/, /notices/, /regulars/, /living-here/roads/, /newsletter/, /search/ (needs the Pagefind step), /contact/, /privacy/ and a missing page show Harvington's wording, while / is still the holding page; and that the Lenches Build run succeeds",
+      "added": "2026-11-16",
+      "kryten": true
+    },
+    {
       "task": "Harvington stage 6 (pages): 6a shared layout done 16 Nov. Next 6b: Home, Events, Notices, Regular activities, Roads, Newsletter sign-up, Search, Contact, Privacy, 404 and a small Living here hub, with fresh Harvington wording for Jon to approve; then 6c: Bins, Churches, Parish council, Schools, Where to eat, Local trades (facts researched one page per session)",
       "added": "2026-11-16"
     },

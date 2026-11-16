@@ -17,6 +17,8 @@ module.exports = async function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy({ [`${SITE_REL}/images`]: "images" });
   // Hand-written items (sites/<site>/items/, read by src/_data/whatson.js): rebuild on change when serving
   eleventyConfig.addWatchTarget(`${SITE_REL}/items/`);
+  // A site's own submission guidelines (sites/<site>/guidelines.md) are rendered inside its Contact page, never as a page of their own.
+  eleventyConfig.ignores.add(`${SITE_REL}/guidelines.md`);
   eleventyConfig.addWatchTarget("src/");
 
   // Today in Europe/London as YYYY-MM-DD, so dates compare as plain strings

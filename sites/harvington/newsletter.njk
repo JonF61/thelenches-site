@@ -1,0 +1,24 @@
+---
+layout: base.njk
+title: The Harvington Newsletter
+description: "A free email every Thursday morning with village news, events and notices for Harvington, Norton and Lenchwick. Leave whenever you like."
+seoTitle: "Free weekly newsletter for Harvington — sign up"
+permalink: /newsletter/
+---
+{#- Harvington's sign-up page (wording approved by Jon 16 Nov 2026). The form shows once site.json has signupUrl and turnstileSiteKey (launch, stage 7). -#}
+<main class="container">
+  <section>
+    <h1>The Harvington Newsletter</h1>
+    <p class="lead">Village news, events and notices for Harvington, Norton and Lenchwick, free in your inbox every Thursday morning.</p>
+    {%- if site.signupUrl and site.turnstileSiteKey %}
+    <p>Type your email address and we'll send you a link to confirm.</p>
+    <div class="card su-page">
+      {% include "signup-form.njk" %}
+    </div>
+    <p>Or email <a href="mailto:{{ site.email }}?subject=Add%20me%20to%20the%20newsletter">{{ site.email }}</a> and ask to join.</p>
+    {%- else %}
+    <p>To join, email <a href="mailto:{{ site.email }}?subject=Add%20me%20to%20the%20newsletter">{{ site.email }}</a> and ask to join.</p>
+    {%- endif %}
+    <p class="small">Leave whenever you like &middot; <a href="{{ '/privacy/' | url }}">Privacy policy</a></p>
+  </section>
+</main>

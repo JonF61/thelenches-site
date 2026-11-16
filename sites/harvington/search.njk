@@ -1,0 +1,13 @@
+---
+layout: base.njk
+title: Search
+description: Search the Harvington website for events, news, groups and village information.
+permalink: /search/
+search: false
+---
+{#- Harvington's wording (approved by Jon 16 Nov 2026) for the shared Search page, src/_includes/pages/search.njk. -#}
+{%- set searchHelp -%}Look for events, news, groups and village information anywhere on the site.{%- endset -%}
+{%- set searchTip -%}Tip: use quotes, like "village hall", to find words side by side.{%- endset -%}
+{%- set noScript -%}Search needs JavaScript switched on. All the pages are listed at the foot of this one.{%- endset -%}
+{%- set unavailable -%}Search isn't working at the moment. All the pages are listed at the foot of this one.{%- endset -%}
+{%- include "pages/search.njk" %}

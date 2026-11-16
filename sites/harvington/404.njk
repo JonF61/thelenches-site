@@ -1,0 +1,24 @@
+---
+layout: base.njk
+title: Page not found
+description: Sorry, that page isn't on the Harvington website.
+permalink: /404.html
+search: false
+noindex: true
+eleventyExcludeFromCollections: true
+---
+<main class="container">
+  <section>
+    <h1>Page not found</h1>
+    <p class="lead">Sorry, we can't find that page. It may have moved, or the link may be mistyped.</p>
+    <p>These might help:</p>
+    <ul>
+      <li><a href="{{ '/events/' | url }}">Events</a>: what's coming up</li>
+      <li><a href="{{ '/notices/' | url }}">News</a>: notices from around the village</li>
+      <li><a href="{{ '/regulars/' | url }}">Regular activities</a>: clubs and classes each week</li>
+      <li><a href="{{ '/contact/' | url }}">Contact</a>: how to reach us and send something in</li>
+    </ul>
+    <p><a class="btn" href="{{ '/' | url }}">Go to the home page</a></p>
+    <p>Came here from a newsletter link? Tell us at <a href="mailto:{{ site.email }}">{{ site.email }}</a> so we can fix it.</p>
+  </section>
+</main>
