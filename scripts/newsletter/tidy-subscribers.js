@@ -6,6 +6,8 @@
 // Env: GOOGLE_SA_KEY, SHEET_ID, GMAIL_USER.
 'use strict';
 
+const { siteConfig } = require('../../lib/site');
+
 const g = require('../ingest/google');
 const { planTidy } = require('../ingest/subscriptions');
 
@@ -17,7 +19,7 @@ function tidyEmail(emails) {
     `I've deleted ${emails.length} row${emails.length === 1 ? '' : 's'} from the Subscribers tab for people who had already unsubscribed (they're all on Do Not Send, which keeps them off the newsletter):`, '',
     ...emails.map((e) => `- ${e}`), '',
     'From now on I\'ll do this each time someone unsubscribes, and let you know.', '',
-    'Best wishes,', 'Holly', 'Lenches website assistant', '',
+    'Best wishes,', ...String(siteConfig().hollySignoff || 'Holly / Lenches website assistant').split(' / '), '',
   ].join('\n');
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const html = text.trim().split('\n\n').map((p) => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('\n');

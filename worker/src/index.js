@@ -64,7 +64,8 @@ import { handleRecommend, listedEntry } from './recommend.js';
 import { handleSuggest, handleSuggestConfirm } from './listingsuggest.js';
 import { logVisitors } from './admin/sitestats.js';
 import { runAutoWindow } from './admin/autorun.js';
-import { SITES, siteEnv, siteIds, hasAnalytics } from './sites.js';
+import { readSettingsPairs } from './admin/sheet.js';
+import { SITES, siteEnv, siteIds, hasAnalytics, siteConfig } from './sites.js';
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -93,11 +94,13 @@ const RIMMER_SITE = { day: '01', hm: '20:17' };
 const SLOTS = [
   { dow: 'Wed', hm: '18:30', event: 'digest', payload: () => ({}) },
   // Rimmer's newsletter check, after the 6pm cutoff (rimmer.yml; was GitHub's cron, hours late).
-  { dow: 'Wed', hm: '19:00', event: 'rimmer', payload: () => ({ scope: 'newsletter' }) },
-  { dow: 'Thu', hm: '06:30', event: 'newsletter', payload: (d) => ({ action: 'build', issue_date: d }) },
-  { dow: 'Thu', hm: '08:00', event: 'newsletter', payload: (d) => ({ action: 'autosend', issue_date: d }) },
-  { dow: 'Thu', hm: '12:00', event: 'newsletter', payload: (d) => ({ action: 'remind', issue_date: d }) },
-  { dow: 'Thu', hm: '17:00', event: 'newsletter', payload: (d) => ({ action: 'remind', issue_date: d }) },
+  // perSite (Harvington stage 5a): fired for each site whose newsletter is on (Settings
+  // newsletter_mode not off), the Lenches first and always, as before.
+  { dow: 'Wed', hm: '19:00', event: 'rimmer', payload: () => ({ scope: 'newsletter' }), perSite: true },
+  { dow: 'Thu', hm: '06:30', event: 'newsletter', payload: (d) => ({ action: 'build', issue_date: d }), perSite: true },
+  { dow: 'Thu', hm: '08:00', event: 'newsletter', payload: (d) => ({ action: 'autosend', issue_date: d }), perSite: true },
+  { dow: 'Thu', hm: '12:00', event: 'newsletter', payload: (d) => ({ action: 'remind', issue_date: d }), perSite: true },
+  { dow: 'Thu', hm: '17:00', event: 'newsletter', payload: (d) => ({ action: 'remind', issue_date: d }), perSite: true },
 ];
 
 /* -------------------------------------------------------------- helpers -- */
@@ -272,8 +275,8 @@ async function handleUnsubscribe(request, env) {
     if (!p || (!p.expired && p.a !== 'unsub')) return invalidPage();
     if (p.expired) return expired();
     return page('Unsubscribe', `
-<h1>Unsubscribe from The Lenches Newsletter?</h1>
-<p>You will stop receiving the weekly email. You can rejoin at any time by emailing website@thelenches.org.uk.</p>
+<h1>Unsubscribe from ${esc(String(siteConfig(p.s).newsletterName || 'The Lenches Newsletter'))}?</h1>
+<p>You will stop receiving the weekly email. You can rejoin at any time by emailing ${esc(String(siteConfig(p.s).email || 'website@thelenches.org.uk'))}.</p>
 <form method="post" action="/u?t=${esc(token)}">
   <button class="reject" type="submit">Unsubscribe</button>
 </form>`);
@@ -288,10 +291,11 @@ async function handleUnsubscribe(request, env) {
     const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
     if (!p || (!p.expired && p.a !== 'unsub')) return invalidPage();
     if (p.expired) return expired();
-    if (!(await dispatch(env, 'unsubscribe', { id: p.i }, 2))) return failedPage();
+    // A link from another site's newsletter names it (s): that site's unsubscribe run and wording.
+    if (!(await dispatch(p.s ? siteEnv(env, p.s) : env, 'unsubscribe', { id: p.i }, 2))) return failedPage();
     return page('Unsubscribed', `
 <h1>You're unsubscribed</h1>
-<p>You won't receive The Lenches Newsletter any more. It can take a few minutes to take effect.</p>`);
+<p>You won't receive ${esc(String(siteConfig(p.s).newsletterName || 'The Lenches Newsletter'))} any more. It can take a few minutes to take effect.</p>`);
   }
 
   return new Response('Method not allowed', { status: 405 });
@@ -398,15 +402,37 @@ async function runSchedule(env, ms) {
     return;
   }
   const uk = ukNow(ms);
-  for (const s of SLOTS.filter((x) => x.dow === uk.dow && x.hm === uk.hm)) {
-    const payload = s.payload(uk.date);
-    const ok = await dispatch(env, s.event, payload, 3);
-    console.log(`${uk.dow} ${uk.hm} UK: ${s.event} ${JSON.stringify(payload)} ${ok ? 'dispatched' : 'FAILED'}`);
-    if (!ok) {
-      await alertDispatchFailed(env,
-        `Scheduled ${s.event}${payload.action ? ` (${payload.action})` : ''} at ${uk.hm} UK could not be sent to GitHub`);
+  const slots = SLOTS.filter((x) => x.dow === uk.dow && x.hm === uk.hm);
+  if (!slots.length) return;
+  const others = slots.some((x) => x.perSite) ? await newsletterSites(env) : [];
+  for (const s of slots) {
+    for (const site of s.perSite ? [null, ...others] : [null]) {
+      const payload = s.payload(uk.date);
+      const ok = await dispatch(site ? siteEnv(env, site) : env, s.event, payload, 3);
+      console.log(`${uk.dow} ${uk.hm} UK: ${s.event}${site ? ` (${site})` : ''} ${JSON.stringify(payload)} ${ok ? 'dispatched' : 'FAILED'}`);
+      if (!ok) {
+        await alertDispatchFailed(env,
+          `Scheduled ${s.event}${payload.action ? ` (${payload.action})` : ''}${site ? ` for ${site}` : ''} at ${uk.hm} UK could not be sent to GitHub`);
+      }
     }
   }
+}
+
+// The sites other than the Lenches whose newsletter is on: Settings newsletter_mode set and not
+// "off" (Harvington stage 5a). A Sheet that can't be read is left out, with a log line.
+async function newsletterSites(env, read = readSettingsPairs) {
+  const out = [];
+  for (const site of siteIds().slice(1)) {
+    if (!String(SITES[site].sheetId || '').trim()) continue;
+    try {
+      const pairs = await read(siteEnv(env, site));
+      const mode = String((pairs.find((p) => p.key === 'newsletter_mode') || {}).value || '').trim().toLowerCase();
+      if (mode && mode !== 'off') out.push(site);
+    } catch (e) {
+      console.error(`Newsletter mode for ${site} not read: ${e.message}`);
+    }
+  }
+  return out;
 }
 
 // Nightly site rebuild. Two UTC slots cover BST and GMT; only the one landing on

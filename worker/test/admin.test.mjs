@@ -1087,3 +1087,26 @@ test('4c-2: visitor counts per site host; none for a site without the analytics 
   globalThis.fetch = async () => { throw new Error('must not ask Cloudflare'); };
   assert.deepEqual(await visitors(siteEnv(base, 'harvington')), { off: true, notLive: true });
 });
+
+/* ------------------------------------------- newsletter per site (5a) -- */
+
+async function fireThu(hmUtc, mode) {
+  const tables = tablesFor();
+  if (mode) tables.SettingsKV = [...tables.SettingsKV, ['newsletter_mode', mode]];
+  const calls = fakeWorld(tables);
+  const waits = [];
+  // Thu 19 Nov 2026, GMT: UK time = UTC.
+  await worker.scheduled({ cron: '0,30 * * * WED,THU', scheduledTime: Date.parse(`2026-11-19T${hmUtc}:00Z`) }, { ...env(), SCHEDULE: 'on' }, { waitUntil: (p) => waits.push(p) });
+  await Promise.allSettled(waits);
+  return calls.dispatches.filter((d) => d.event_type === 'newsletter');
+}
+
+test('5a: Thursday build fires for the Lenches as before, and for Harvington only while its newsletter is on', async () => {
+  // fakeWorld serves one Settings tab for every Sheet: "off" there = Harvington off.
+  assert.deepEqual(await fireThu('06:30', 'off'), [{ event_type: 'newsletter', client_payload: { action: 'build', issue_date: '2026-11-19' } }]);
+  assert.deepEqual(await fireThu('06:30', ''), [{ event_type: 'newsletter', client_payload: { action: 'build', issue_date: '2026-11-19' } }]);
+  assert.deepEqual(await fireThu('08:00', 'shadow'), [
+    { event_type: 'newsletter', client_payload: { action: 'autosend', issue_date: '2026-11-19' } },
+    { event_type: 'newsletter', client_payload: { action: 'autosend', issue_date: '2026-11-19', site: 'harvington' } },
+  ]);
+});

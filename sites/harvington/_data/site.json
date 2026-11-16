@@ -13,6 +13,7 @@
   "fromName": "The Harvington Website and Newsletter Team",
   "hollySignoff": "Holly / Harvington website assistant",
   "newsletterName": "The Harvington Newsletter",
+  "areaName": "Harvington",
   "skyline": "spire",
   "palette": {
     "_help": "Option B, river blue (the Avon); Jon chose it 16 Nov 2026. vars override style.css's :root colours; green/ridge/window colour the Home skyline and seasonal corner.",

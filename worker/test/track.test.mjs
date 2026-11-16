@@ -38,7 +38,7 @@ test('send-time links: counted via /c, the open image added, nothing else touche
   const r = await handleClick(new Request(hrefs[1]), env);
   assert.equal(r.status, 302);
   assert.equal(r.headers.get('location'), 'https://example.org/a?x=1&y=2');
-  assert.deepEqual(points.pop(), { blobs: ['click', '2026-10-29', 'https://example.org/a?x=1&y=2'], doubles: [1], indexes: ['2026-10-29'] });
+  assert.deepEqual(points.pop(), { blobs: ['click', '2026-10-29', 'https://example.org/a?x=1&y=2', ''], doubles: [1], indexes: ['2026-10-29'] });
   assert.throws(() => trackIssue(issue, 'bad'), /Bad issue date/);
 });
 
@@ -63,7 +63,28 @@ test('/o: a 1x1 GIF, counted only for a real issue date', async () => {
   assert.equal((await r.arrayBuffer()).byteLength > 20, true);
   handleOpen(new Request('https://w/o?i=nonsense'), env);
   assert.equal(points.length, before + 1);
-  assert.deepEqual(points.pop().blobs, ['open', '2026-10-29', '']);
+  assert.deepEqual(points.pop().blobs, ['open', '2026-10-29', '', '']);
+});
+
+test('per site (Harvington stage 5a): opens and clicks tagged with the site; Lenches untagged; unknown counts nothing', async () => {
+  handleOpen(new Request('https://w/o?i=2026-11-19&s=harvington'), env);
+  assert.deepEqual(points.pop().blobs, ['open', '2026-11-19', '', 'harvington']);
+  handleOpen(new Request('https://w/o?i=2026-11-19&s=lenches'), env);
+  assert.deepEqual(points.pop().blobs, ['open', '2026-11-19', '', '']);
+  const before = points.length;
+  handleOpen(new Request('https://w/o?i=2026-11-19&s=evesham'), env);
+  assert.equal(points.length, before);
+  const keep = process.env.SITE;
+  process.env.SITE = 'harvington';
+  try {
+    const t = trackIssue({ subject: 's', html: '<a href="https://harvingtonvillage.org.uk/events/">x</a></body>', text: 't' }, '2026-11-19');
+    assert.match(t.html, /\/o\?i=2026-11-19&amp;s=harvington"/);
+    const href = t.html.match(/href="([^"]+\/c\?t=[^"]+)"/)[1].replace(/&amp;/g, '&');
+    assert.equal((await handleClick(new Request(href), env)).status, 302);
+    assert.deepEqual(points.pop().blobs, ['click', '2026-11-19', 'https://harvingtonvillage.org.uk/events/', 'harvington']);
+  } finally {
+    if (keep === undefined) delete process.env.SITE; else process.env.SITE = keep;
+  }
 });
 
 test('stats: sent issues, bounces in the week after, opens by UK day and hour', async () => {
@@ -106,5 +127,32 @@ test('stats: Analytics Engine totals and one issue in detail (SQL mocked)', asyn
     assert.ok(asked.slice(1).every((a) => a.body.includes("blob2 = '2026-10-22'")));
   } finally {
     globalThis.fetch = real;
+  }
+});
+
+test('/u (Harvington stage 5a): a Harvington unsubscribe link goes to its own run and says its newsletter', async () => {
+  const { default: worker } = await import('../src/index.js');
+  const keep = process.env.SITE;
+  process.env.SITE = 'harvington';
+  const { signToken } = require('../../scripts/ingest/links.js');
+  const url = signToken({ a: 'unsub', i: 'abc123', e: Math.floor(Date.now() / 1000) + 3600 }, '/u');
+  process.env.SITE = keep === undefined ? '' : keep;
+  if (keep === undefined) delete process.env.SITE;
+  const sent = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (u, opts = {}) => {
+    if (String(u).endsWith('/dispatches')) { sent.push(JSON.parse(opts.body)); return new Response(null, { status: 204 }); }
+    return realFetch(u, opts);
+  };
+  try {
+    const wenv = { APPROVAL_SIGNING_KEY: 'k'.repeat(32), REPO: 'o/r', DISPATCH_TOKEN: 'x' };
+    const path = url.replace(/^https?:\/\/[^/]+/, '');
+    const g = await worker.fetch(new Request(`https://w${path}`), wenv);
+    assert.match(await g.text(), /Unsubscribe from The Harvington Newsletter\?[\s\S]*website@harvingtonvillage\.org\.uk/);
+    const r = await worker.fetch(new Request(`https://w${path}`, { method: 'POST' }), wenv);
+    assert.match(await r.text(), /You won't receive The Harvington Newsletter/);
+    assert.deepEqual(sent, [{ event_type: 'unsubscribe', client_payload: { id: 'abc123', site: 'harvington' } }]);
+  } finally {
+    globalThis.fetch = realFetch;
   }
 });

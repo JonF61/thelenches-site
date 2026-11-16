@@ -17,7 +17,7 @@
 // runs, every 3 hours, and from the panel's Refresh button.
 'use strict';
 
-const { SITE_REL } = require('../../lib/site.js');
+const { SITE_REL, siteConfig } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -30,7 +30,7 @@ const TAB = 'Newsletter draft';
 const CHUNK = 45000;
 const FROZEN = new Set(['built', 'tested', 'shadow']);
 const ROOT = path.join(__dirname, '..', '..');
-const SITE = 'https://thelenches.org.uk';
+const SITE = String(siteConfig().url || 'https://thelenches.org.uk').replace(/\/+$/, '');
 const TZ = 'Europe/London';
 
 const str = (v) => String(v ?? '').trim();
@@ -132,7 +132,8 @@ function draftRows(meta, html, asOf) {
 // Everything buildDraft needs, read from the Sheet and the repo (shared with scripts/checker).
 async function loadInputs(g) {
   const { loadWhatson } = require('../../lib/whatson');
-  const readJson = (rel) => JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
+  // Optional per-site files: null when this site has none (Harvington stage 5a).
+  const readJson = (rel) => (fs.existsSync(path.join(ROOT, rel)) ? JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8')) : null);
   const jpegFor = (webpUrl) => {
     const rel = webpUrl.replace(/\.webp$/, '.jpg');
     return fs.existsSync(path.join(ROOT, SITE_REL, rel)) ? `${SITE}${rel}` : '';

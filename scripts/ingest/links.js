@@ -17,11 +17,13 @@ function linksEnabled() {
 }
 
 // Any payload ({ a, i, e, ... }) as a Worker URL. route: "/a" (actions) or "/u" (unsubscribe).
-// An action link made by another site's run names that site (s), so the Worker sends the
-// decision to that site's run (Harvington stage 4c); Lenches links stay as they were.
+// An action, unsubscribe or click link made by another site's run names that site (s), so the
+// Worker sends the decision or unsubscribe to that site's run and counts the click for it
+// (Harvington stages 4c and 5a); Lenches links stay as they were.
+const SITE_ROUTES = ['/a', '/u', '/c'];
 function signToken(payload, route = '/a') {
   const site = siteName();
-  if (route === '/a' && site !== 'lenches' && payload.s === undefined) payload = { ...payload, s: site };
+  if (SITE_ROUTES.includes(route) && site !== 'lenches' && payload.s === undefined) payload = { ...payload, s: site };
   const body = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
   const sig = crypto.createHmac('sha256', process.env.APPROVAL_SIGNING_KEY).update(body).digest('base64url');
   return `${workerUrl()}${route}?t=${body}.${sig}`;

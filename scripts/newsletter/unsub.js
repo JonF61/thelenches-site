@@ -10,9 +10,12 @@ const crypto = require('crypto');
 const { signToken, linksEnabled } = require('../ingest/links');
 const { UNSUB_MARK } = require('./render');
 
-const FROM = 'website@thelenches.org.uk';
+const { siteConfig } = require('../../lib/site');
+
+// The site's own address and privacy page (site.json; Harvington stage 5a).
+const FROM = String(siteConfig().email || 'website@thelenches.org.uk');
 const LINK_YEARS = 5;
-const PREVIEW_URL = 'https://thelenches.org.uk/privacy/';
+const PREVIEW_URL = `${String(siteConfig().url || 'https://thelenches.org.uk').replace(/\/+$/, '')}/privacy/`;
 
 function subscriberId(email) {
   if (!process.env.APPROVAL_SIGNING_KEY) throw new Error('APPROVAL_SIGNING_KEY is not set');
