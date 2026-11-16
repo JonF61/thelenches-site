@@ -154,6 +154,7 @@
 // (Check email now, Refresh draft, Check now for Rimmer).
 
 import { ACTIONS, decide, github, dispatch } from '../core.js';
+import { DEFAULT_SITE, knownSite, siteEnv, siteList, siteConfig } from '../sites.js';
 import { verifyAccess } from './access.js';
 import { makeCsrf, checkCsrf, sameOrigin } from './csrf.js';
 import {
@@ -323,13 +324,20 @@ async function readDraft(env, range) {
   }
 }
 
+// The Lenches Photos library (Drive folders, the Photos tab) and the visitor counts belong to the
+// Lenches alone (4c-1): another site's panel reads none of them.
+const isMain = (env) => !env.SITE || env.SITE === DEFAULT_SITE;
+const EMPTY = { headers: [], rows: [] };
+
 async function state(env, email) {
-  const photosRead = readTable(env, 'Photos');
+  const main = isMain(env);
+  const photosRead = main ? readTable(env, 'Photos') : Promise.resolve(EMPTY);
   const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite, bin, sugg, fb, draftRows, listing] = await settled([
     readTable(env, 'Pending'), readTable(env, 'Replies'), photosRead,
     readSettingsPairs(env), readTable(env, 'Health'), readTable(env, 'Issues'), sheetGids(env),
-    readSources(env), readTable(env, 'Image fetch'), watchdog(env), folderList(env), photoPages(env),
-    binList(env, photosRead), readTable(env, SUGGEST_TAB), readFeedback(env), readDraft(env, DRAFT_META_RANGE),
+    readSources(env), main ? readTable(env, 'Image fetch') : EMPTY, watchdog(env), main ? folderList(env) : [],
+    main ? photoPages(env) : { error: 'The Lenches only' },
+    main ? binList(env, photosRead) : [], main ? readTable(env, SUGGEST_TAB) : EMPTY, readFeedback(env), readDraft(env, DRAFT_META_RANGE),
     readOptional(env, LISTING_TAB),
   ]);
   const suggested = suggestionsByItem(sugg);
@@ -361,6 +369,8 @@ async function state(env, email) {
   const fromWeb = organiserImages(web, onSite);
   return {
     email,
+    // The site this panel is showing (the switcher; every call names it).
+    site: env.SITE || DEFAULT_SITE,
     sheetId: String(env.SHEET_ID || ''),
     gids: gids.error ? {} : gids,
     holiday: holiday.error ? holiday : { value: holiday.value, on: String(holiday.value).trim().toUpperCase() === 'TRUE' },
@@ -398,7 +408,7 @@ async function state(env, email) {
     listingOptions: { trades: [...new Set(tradesData.trades.map((t) => t.trade))].sort(), eat: eatData.areas },
     // Today in the UK, for the Past events filter.
     today: ukToday(),
-    photosRoot: String(env.PHOTOS_FOLDER_ID || '').trim(),
+    photosRoot: main ? String(env.PHOTOS_FOLDER_ID || '').trim() : '',
   };
 }
 
@@ -592,11 +602,13 @@ async function outreach(env) {
 
 // The Summary page's sections not in /api/state. Contacts and Replies are read once for
 // both outreach counts; organisations take the same Gmail look-ups as their own screen.
-async function summary(env) {
+async function summary(env, lenv = env) {
   const today = ukToday();
+  const main = isMain(env);
   const [issues, pending, subs, dns, lessons, contacts, replies, orgTab, runs, coming, seen, sends, usage, feedbackTab] = await settled([
     readTable(env, 'Issues'), readTable(env, 'Pending'), readTable(env, 'Subscribers'), readTable(env, 'Do Not Send'),
-    readLessons(env), readTable(env, CONTACTS_TAB), readTable(env, 'Replies'), readOrgTab(env), recentRuns(env, 50), comingUpFile(env), visitors(env), readTable(env, 'Sends'),
+    readLessons(lenv), readTable(env, CONTACTS_TAB), readTable(env, 'Replies'), readOrgTab(env), recentRuns(env, 50), comingUpFile(env),
+    main ? visitors(env) : { off: true }, readTable(env, 'Sends'),
     readTable(env, 'Claude usage'), readTable(env, ITEM_TAB),
   ]);
   const fail = (t) => (t && t.error ? { error: t.error } : null);
@@ -612,7 +624,7 @@ async function summary(env) {
     if (orgTab.error) orgsDue = fail(orgTab);
     else {
       try {
-        const { lists } = orgLists(ORGS, await orgContext(env, [replies, contacts, orgTab]));
+        const { lists } = orgLists(orgsFor(env), await orgContext(env, [replies, contacts, orgTab]));
         orgsDue = { due: lists.due.length, chase: lists.chase.length };
       } catch (e) {
         orgsDue = { error: e.message };
@@ -673,6 +685,9 @@ const ORGS = [
   ...orgEntries({ contacts: contactsData, council: councilData, schools: schoolsData, health: healthData, transport: transportData }),
   ...listingEntries({ trades: tradesData, eat: eatData }),
 ];
+// The organisations and listings come from the Lenches' bundled data files: another site has
+// none yet (its own come with 4c-2), so its Organisations view is empty.
+const orgsFor = (env) => (isMain(env) ? ORGS : []);
 
 // The Org outreach tab, or { headers: [], rows: [], missing: true } if it doesn't exist yet.
 async function readOrgTab(env) {
@@ -690,7 +705,7 @@ async function orgContext(env, pre = null) {
   const ctx = { replies: replies.rows, contacts: contacts.rows, orgRows: tab.rows, hasTab: tab.headers.includes('next_check'), today: ukToday() };
   // In regular contact: those otherwise due (or held by a date) who emailed us from any of their
   // addresses in the last 3 months (one Gmail search each, only for those; a few dozen at most).
-  const due = dueOrgs(ORGS, ctx);
+  const due = dueOrgs(orgsFor(env), ctx);
   const found = await Promise.all(due.map((d) => gmailAny(env, recentQuery(d.addresses))));
   return { ...ctx, recent: new Set(due.filter((d, i) => found[i]).map((d) => d.id)) };
 }
@@ -698,7 +713,7 @@ async function orgContext(env, pre = null) {
 async function doOrgCheck(env, body) {
   const id = String(body.id ?? '');
   const ctx = await orgContext(env);
-  const org = ORGS.find((o) => o.id === id) || null;
+  const org = orgsFor(env).find((o) => o.id === id) || null;
   const plan = planOrgCheck(org, { ...ctx, orgRow: ctx.orgRows.find((r) => String(r.id ?? '') === id) || null });
   if (plan.error) return json({ ok: false, ...plan }, plan.status);
   if (!(await decide(env, { a: 'orgcheck', i: id }))) {
@@ -733,7 +748,7 @@ async function orgWrite(env, id, field, expected, value) {
 
 async function doOrgNext(env, body) {
   const id = String(body.id ?? '');
-  if (!ORGS.some((o) => o.id === id)) return json({ ok: false, error: 'No such organisation: reload the page' }, 404);
+  if (!orgsFor(env).some((o) => o.id === id)) return json({ ok: false, error: 'No such organisation: reload the page' }, 404);
   const plan = planNext(body.value);
   if (plan.error) return json({ ok: false, ...plan }, 400);
   const res = await orgWrite(env, id, 'next_check', body.expected, plan.value);
@@ -745,7 +760,7 @@ async function doOrgNext(env, body) {
 
 async function doOrgEmails(env, body) {
   const id = String(body.id ?? '');
-  if (!ORGS.some((o) => o.id === id)) return json({ ok: false, error: 'No such organisation: reload the page' }, 404);
+  if (!orgsFor(env).some((o) => o.id === id)) return json({ ok: false, error: 'No such organisation: reload the page' }, 404);
   const plan = planOtherEmails(body.value);
   if (plan.error) return json({ ok: false, ...plan }, 400);
   return orgWrite(env, id, 'other_emails', body.expected, plan.value);
@@ -755,7 +770,7 @@ async function doOrgEmails(env, body) {
 // by hand marks email_source "panel".
 async function doListingEmail(env, body) {
   const id = String(body.id ?? '');
-  if (!ORGS.some((o) => o.id === id && o.listing)) return json({ ok: false, error: 'No such listing: reload the page' }, 404);
+  if (!orgsFor(env).some((o) => o.id === id && o.listing)) return json({ ok: false, error: 'No such listing: reload the page' }, 404);
   const plan = planListingEmail(body.value);
   if (plan.error) return json({ ok: false, ...plan }, 400);
   const res = await orgWrite(env, id, 'email', body.expected, plan.value);
@@ -1035,14 +1050,22 @@ async function image(env, path, url) {
 
 /* ---------------------------------------------------------------- entry -- */
 
-export async function handleAdmin(request, env) {
-  const auth = await verifyAccess(request, env);
+export async function handleAdmin(request, rawEnv) {
+  const auth = await verifyAccess(request, rawEnv);
   if (!auth.email) {
     console.log(`Admin refused: ${auth.error}`);
     return forbidden();
   }
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, '') || '/';
+  // The site this request is for (4c-1): the panel sends the one it shows in x-site (frames and
+  // new tabs: ?site=). An unknown name is refused, never quietly taken as the Lenches; none = the
+  // Lenches. env is that site's (its Sheet; dispatches carry it); lenv the Lenches', for what
+  // both sites share: Holly lessons (one tab, in the Lenches Sheet), Photos, Site visitors.
+  const asked = String(request.headers.get('x-site') || url.searchParams.get('site') || '').trim();
+  if (asked && !knownSite(asked)) return json({ ok: false, error: `Unknown site "${asked.slice(0, 40)}": reload the page` }, 400);
+  const env = siteEnv(rawEnv, asked || DEFAULT_SITE);
+  const lenv = siteEnv(rawEnv, DEFAULT_SITE);
 
   try {
     if (request.method === 'GET' || request.method === 'HEAD') {
@@ -1063,7 +1086,7 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/draft') return draftPage(await draftHtml(await readDraft(env, DRAFT_RANGE)));
       // The same draft with the editor in it (Edit text on the draft screen; entryedit.js).
       if (path === '/admin/draft-edit') {
-        return draftEditPage(await readDraft(env, DRAFT_RANGE), { origin: url.origin, csrf: await makeCsrf(env, auth.email), version: PAGEEDIT_VERSION });
+        return draftEditPage(await readDraft(env, DRAFT_RANGE), { origin: url.origin, csrf: await makeCsrf(env, auth.email), version: PAGEEDIT_VERSION, site: env.SITE });
       }
       if (path === '/admin/api/entry') return fromResult(await entryInfo(env, String(url.searchParams.get('key') || '')));
       if (path === '/admin/api/entry-status') {
@@ -1073,17 +1096,19 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/draft') return json({ meta: draftMeta(await readDraft(env, DRAFT_META_RANGE)) });
       if (path === '/admin/api/mail-images') return await mailImages(env, url);
       if (path === '/admin/api/mail-text') return await mailText(env, url);
-      if (path === '/admin/api/session') return json({ email: auth.email, csrf: await makeCsrf(env, auth.email) });
+      if (path === '/admin/api/session') {
+        return json({ email: auth.email, csrf: await makeCsrf(env, auth.email), site: env.SITE, siteName: String(siteConfig(env.SITE).name || env.SITE), sites: siteList() });
+      }
       if (path === '/admin/api/state') return json(await state(env, auth.email));
       if (path === '/admin/api/contacts') return json(contactRows(await readTable(env, CONTACTS_TAB)));
       if (path === '/admin/api/contact-messages') return await contactMessages(env, url);
       if (path === '/admin/api/outreach') return json(await outreach(env));
-      if (path === '/admin/api/orgs') return json(orgLists(ORGS, await orgContext(env)));
-      if (path === '/admin/api/lessons') return json(lessonRows(await readLessons(env)));
+      if (path === '/admin/api/orgs') return json(orgLists(orgsFor(env), await orgContext(env)));
+      if (path === '/admin/api/lessons') return json(lessonRows(await readLessons(lenv)));
       if (path === '/admin/api/autonomy') return json(await autonomy(env));
       if (path === '/admin/api/history') return json(await submissionsHistory(env));
-      if (path === '/admin/api/summary') return json(await summary(env));
-      if (path === '/admin/api/site-visitors') return json(await visitorHistory(env));
+      if (path === '/admin/api/summary') return json(await summary(env, lenv));
+      if (path === '/admin/api/site-visitors') return json(await visitorHistory(lenv));
       if (path === '/admin/api/nlstats') {
         const [issues, sends, dns] = await Promise.all([readTable(env, 'Issues'), readTable(env, 'Sends'), readTable(env, 'Do Not Send')]);
         return json(await nlStats(env, { issues: issues.rows, sends: sends.rows, dns: dns.rows }, String(url.searchParams.get('i') || '')));
@@ -1106,11 +1131,11 @@ export async function handleAdmin(request, env) {
         }
         return fromResult(st);
       }
-      if (path === '/admin/api/photo-file') return fromResult(await fileInfo(env, String(url.searchParams.get('id') || '')));
-      if (path === '/admin/api/photo-group') return fromResult(await dupMembers(env, String(url.searchParams.get('id') || '')));
-      if (path === '/admin/api/photo-tidy') return fromResult(await tidyList(env));
+      if (path === '/admin/api/photo-file') return fromResult(await fileInfo(lenv, String(url.searchParams.get('id') || '')));
+      if (path === '/admin/api/photo-group') return fromResult(await dupMembers(lenv, String(url.searchParams.get('id') || '')));
+      if (path === '/admin/api/photo-tidy') return fromResult(await tidyList(lenv));
       if (path === '/admin/api/photo-name') {
-        return fromResult(await previewName(env, { id: String(url.searchParams.get('id') || ''), name: String(url.searchParams.get('name') || '') }));
+        return fromResult(await previewName(lenv, { id: String(url.searchParams.get('id') || ''), name: String(url.searchParams.get('name') || '') }));
       }
       if (path.startsWith('/admin/img/')) return await image(env, path, url);
       return json({ error: 'Not found' }, 404);
@@ -1134,11 +1159,11 @@ export async function handleAdmin(request, env) {
       if (path === '/admin/api/orgnext') return await doOrgNext(env, body);
       if (path === '/admin/api/orgemails') return await doOrgEmails(env, body);
       if (path === '/admin/api/listingemail') return await doListingEmail(env, body);
-      if (path === '/admin/api/lesson') return await doLesson(env, body);
+      if (path === '/admin/api/lesson') return await doLesson(lenv, body);
       if (path === '/admin/api/autonomy-ignore') return await doAutonomyIgnore(env, body);
       if (path === '/admin/api/autonomy-audit') return await doAutonomyAudit(env, body);
       if (path === '/admin/api/auto-hold') return await doAutoHold(env, body);
-      if (path === '/admin/api/photo-file') return await doFileOp(env, body);
+      if (path === '/admin/api/photo-file') return await doFileOp(lenv, body);
       if (path === '/admin/api/ingest-now') {
         if (!(await dispatch(env, 'ingest', { by: 'panel' }, 2))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);
         return json({ ok: true, message: 'Checking email: new items show here in a few minutes.' });

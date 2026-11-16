@@ -13,7 +13,7 @@
 // /admin/api/entry-save, then shows Saving → Building → Live ✓. The same script runs in the
 // Newsletter draft's editor (/admin/draft-edit, data.mode "draft"), where only entries are editable.
 
-export const PAGEEDIT_VERSION = '6';
+export const PAGEEDIT_VERSION = '7';
 
 function editor() {
   const data = JSON.parse(document.getElementById('lenches-edit-data').textContent);
@@ -229,7 +229,7 @@ function editor() {
     try {
       const r = await fetch(data.api, {
         method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-csrf-token': data.csrf },
+        headers: { 'content-type': 'application/json', 'x-csrf-token': data.csrf, 'x-site': data.panelSite || 'lenches' },
         body: JSON.stringify({ path: data.path, changes: list.map((c) => ({ old: c.block.raw, new: serBlock(c.el) })) }),
       });
       res = await r.json().catch(() => ({ ok: false, error: `HTTP ${r.status}` }));
@@ -295,7 +295,7 @@ function editor() {
       }
       try {
         const q = new URLSearchParams({ sha: res.sha, at: res.at || '', p: data.page, text: (res.check || '').slice(0, 200) });
-        const r = await fetch(`${data.statusApi}?${q}`);
+        const r = await fetch(`${data.statusApi}?${q}`, { headers: { 'x-site': data.panelSite || 'lenches' } });
         const j = await r.json();
         if (j.ok && j.state) { state = j.state; link = j.url || link; phase = j.phase || ''; }
       } catch (e) { /* try again next time */ }
@@ -377,7 +377,7 @@ function editor() {
       }
       let info;
       try {
-        const r = await fetch(`${data.entryApi}?key=${encodeURIComponent(key)}`);
+        const r = await fetch(`${data.entryApi}?key=${encodeURIComponent(key)}`, { headers: { 'x-site': data.panelSite || 'lenches' } });
         info = await r.json().catch(() => ({ ok: false, error: `HTTP ${r.status}` }));
       } catch (e) {
         info = { ok: false, error: 'No connection.' };
@@ -453,7 +453,7 @@ function editor() {
           try {
             const r = await fetch(data.entrySaveApi, {
               method: 'POST',
-              headers: { 'content-type': 'application/json', 'x-csrf-token': data.csrf },
+              headers: { 'content-type': 'application/json', 'x-csrf-token': data.csrf, 'x-site': data.panelSite || 'lenches' },
               body: JSON.stringify({ key, changes: list.map((c) => ({ field: c.field, old: c.old, new: c.new })) }),
             });
             res = await r.json().catch(() => ({ ok: false, error: `HTTP ${r.status}` }));
@@ -532,7 +532,7 @@ function editor() {
         }
         try {
           const q = new URLSearchParams({ id: res.id, at: res.at || '', p: res.page || '', text: (res.check || '').slice(0, 200) });
-          const r = await fetch(`${data.entryStatusApi}?${q}`);
+          const r = await fetch(`${data.entryStatusApi}?${q}`, { headers: { 'x-site': data.panelSite || 'lenches' } });
           const j = await r.json();
           if (j.ok && j.state) { state = j.state; link = j.url || link; phase = j.phase || (state === 'building' ? 'building' : ''); }
         } catch (e) { /* try again next time */ }

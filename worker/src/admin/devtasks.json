@@ -2,12 +2,17 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Harvington stage 4c-1 (panel site switcher, 16 Nov): after the Deploy Worker run, open the panel, check The Lenches looks unchanged, switch to Harvington (river blue), check Submissions shows the Harvington Sheet's items, and that a Harvington approval's Apply approval run has SITE harvington",
+      "added": "2026-11-16",
+      "kryten": true
+    },
+    {
       "task": "Harvington stage 4b (both sites' pipeline, 16 Nov): check the next Worker-fired ingest starts two Ingest runs (Lenches and Harvington) and both succeed; the next Publish run publishes both sites and builds whichever changed; Jon's test email in the Harvington label gives a Pending row in the Harvington Sheet (replies shadow, nothing sent); and the first item Holly marks for one site carries the Pending sites cell and note",
       "added": "2026-11-16",
       "kryten": true
     },
     {
-      "task": "Harvington stage 4c: panel site switcher (top bar, site in every API call and decide() payload, Worker Sheet per site)",
+      "task": "Harvington stage 4c-2 (4c-1 switcher done 16 Nov): Harvington newsletter screens (show off until stage 5), Site visitors for its own host, Messages filter for the Harvington newsletter and sign-off, Claude spend card for both Sheets, the veto-window cron for each site, Organisations and listings from Harvington's own data files, Edit page for Harvington pages",
       "added": "2026-11-16"
     },
     {

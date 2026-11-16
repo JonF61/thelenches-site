@@ -78,6 +78,22 @@ const ok = (c, m) => { assert.ok(c, m); n++; };
   await require('./ingest/index.js').main();
   ok(logged.length === 1 && logged[0].status === 'skipped' && /the Lenches website: handled there/.test(logged[0].error), 'one email to both: left to the Lenches run');
 
+  // Signed action links made by this site's run name it (4c-1); others and Lenches links do not.
+  {
+    const keep = { k: process.env.APPROVAL_SIGNING_KEY, u: process.env.WORKER_URL, s: process.env.SITE };
+    process.env.APPROVAL_SIGNING_KEY = 'k'.repeat(32);
+    process.env.WORKER_URL = 'https://w.example';
+    const { signToken } = require('./ingest/links.js');
+    const payloadOf = (url) => JSON.parse(Buffer.from(url.split('?t=')[1].split('.')[0], 'base64url').toString());
+    ok(payloadOf(signToken({ a: 'approve', i: 'x' })).s === 'harvington', 'Harvington action link names its site');
+    ok(payloadOf(signToken({ a: 'unsub', i: 'x' }, '/u')).s === undefined, 'other routes unchanged');
+    process.env.SITE = 'lenches';
+    ok(payloadOf(signToken({ a: 'approve', i: 'x' })).s === undefined, 'Lenches action link unchanged');
+    process.env.APPROVAL_SIGNING_KEY = keep.k || '';
+    process.env.WORKER_URL = keep.u || '';
+    process.env.SITE = keep.s;
+  }
+
   // The mocked ingest run has no Google key, so its side jobs (reader feedback) mark the run failed.
   process.exitCode = 0;
   console.log(`twosites: ${n} checks passed`);

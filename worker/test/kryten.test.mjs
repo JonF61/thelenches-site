@@ -125,3 +125,8 @@ test('the token: off without the secret, 401 for a wrong one, POST only', async 
   // Routed by the Worker at /k (no secret here: 404).
   assert.equal((await worker.fetch(req({ op: 'read', tab: 'Rimmer' }), {})).status, 404);
 });
+
+test('/k: site names another Sheet; an unknown site is refused', async () => {
+  const r = await k.handleKryten(req({ op: 'read', tab: 'Pending', site: 'evesham' }, TOKEN), { KRYTEN_TOKEN: TOKEN });
+  assert.equal(r.status, 400);
+});

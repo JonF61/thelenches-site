@@ -18,6 +18,7 @@
 // the operation and tab.
 
 import { accessToken, SCOPES } from './admin/google.js';
+import { knownSite, siteEnv } from './sites.js';
 
 const SHEETS = 'https://sheets.googleapis.com/v4/spreadsheets';
 
@@ -236,7 +237,10 @@ export async function handleKryten(request, env, client = null) {
   let body;
   try { body = await request.json(); } catch { return json({ error: 'Body must be JSON' }, 400); }
   const op = norm(body && body.op);
-  const s = client || sheetClient(env);
+  // "site" (4c-1): another site's Sheet (harvington); none = the Lenches, as before.
+  const site = body && body.site !== undefined ? String(body.site) : '';
+  if (site && !knownSite(site)) return json({ error: `Unknown site "${site.slice(0, 40)}"` }, 400);
+  const s = client || sheetClient(site ? siteEnv(env, site) : env);
   try {
     if (op === 'read') {
       const out = await readTab(s, body);
