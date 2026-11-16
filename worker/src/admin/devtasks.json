@@ -66,6 +66,11 @@
       "added": "2026-11-14"
     },
     {
+      "task": "Plan doc Build history: add an entry for PR 364 (16 Nov: Rimmer's scheduled checks started by the Worker, Wed 19:00 / Sun 19:17 / 1st 20:17 UK; rimmer.yml schedule removed) and for the two Kryten routines fixed the same day (repository attached in their settings, instructions now use the attached repo and gh instead of add_repo)",
+      "added": "2026-11-16",
+      "kryten": true
+    },
+    {
       "task": "Rimmer's checks now started by the Worker (16 Nov): confirm Wednesday 18 Nov's newsletter check starts at 19:00 UK (Activity: Rimmer, repository_dispatch) and Sunday 22 Nov's listings check at 19:17, and that no GitHub-scheduled Rimmer run appears",
       "added": "2026-11-16",
       "kryten": true
