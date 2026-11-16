@@ -1,0 +1,10 @@
+---
+layout: base.njk
+title: Local trades
+description: "Builders, electricians, carpenters, landscapers and other tradespeople based in and around Harvington."
+seoTitle: "Local trades in Harvington — builders, electricians, landscapers"
+---
+{#- Harvington's wording for the shared Local trades page, src/_includes/pages/trades.njk (entries in _data/trades.json). -#}
+{%- set suggestLead -%}Can you recommend a local tradesperson? Suggest them with the <a href="#suggest">form at the bottom of this page</a>.{%- endset -%}
+{%- set tellUs -%}Can you recommend a local tradesperson we should add? <a href="mailto:{{ site.email }}?subject=Local%20trades">Email us</a> their name, what they do and how to reach them.{%- endset -%}
+{%- include "pages/trades.njk" %}

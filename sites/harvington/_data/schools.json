@@ -1,0 +1,174 @@
+{
+  "checked": "16 November 2026",
+  "intro": "Children in Harvington, Norton and Lenchwick go through Worcestershire's three stages: first school from Reception to Year 5, middle school for Years 6 to 8, then high school from Year 9.",
+  "stages": [
+    "Nursery 2–4",
+    "First 4–10",
+    "Middle 10–13",
+    "High 13–18"
+  ],
+  "local": [
+    {
+      "name": "Harvey Bears Nursery and Pre-School",
+      "where": "Harvington Village Hall · ages 2–4",
+      "text": "A nursery and pre-school run as a registered charity in the village hall, on the Ofsted Early Years Register.",
+      "phone": "07775 129234",
+      "email": "manager@harveybears.org.uk",
+      "links": [
+        {
+          "text": "Ofsted reports",
+          "url": "https://reports.ofsted.gov.uk/provider/16/205490"
+        }
+      ],
+      "map": "Harvington Village Hall, Village Street, Harvington, WR11 8NQ"
+    },
+    {
+      "name": "Harvington CofE First School",
+      "where": "Village Street, Harvington · ages 3–10",
+      "text": "A Church of England school run with the county council, with its own nursery class and room for 180 children. Ofsted: Outstanding in every area (July 2023).",
+      "phone": "01386 870412",
+      "links": [
+        {
+          "text": "Website",
+          "url": "https://www.harvingtonfirstschool.co.uk/"
+        },
+        {
+          "text": "Ofsted report",
+          "url": "https://reports.ofsted.gov.uk/provider/21/116819"
+        }
+      ],
+      "map": "Harvington CofE First School, Village Street, Harvington, WR11 8NQ"
+    }
+  ],
+  "catchmentText": "Harvington, Norton and Lenchwick are in the county's Evesham area. Harvington First's linked middle school is St Egwin's, which in turn links to Prince Henry's High, but your catchment schools depend on your address.",
+  "catchmentUrl": "https://capublic.worcestershire.gov.uk/FindASchoolPublic/",
+  "onward": [
+    {
+      "name": "St Egwin's CofE Middle School",
+      "where": "Worcester Road, Evesham · ages 10–13",
+      "phone": "01386 446924",
+      "url": "https://get-information-schools.service.gov.uk/Establishments/Establishment/Details/116984",
+      "urlText": "School details"
+    },
+    {
+      "name": "Prince Henry's High School",
+      "where": "Victoria Avenue, Evesham · ages 13–18, with sixth form",
+      "phone": "01386 765588",
+      "url": "https://get-information-schools.service.gov.uk/Establishments/Establishment/Details/136469",
+      "urlText": "School details"
+    },
+    {
+      "name": "Blackminster Middle School",
+      "where": "Station Road, South Littleton · ages 10–13",
+      "phone": "01386 830311",
+      "url": "http://www.blackminster.worcs.sch.uk/",
+      "urlText": "Website"
+    },
+    {
+      "name": "The De Montfort School",
+      "where": "Four Pools Road, Evesham · ages 10–18, all-through",
+      "url": "https://get-information-schools.service.gov.uk/Establishments/Establishment/Details/148338",
+      "urlText": "School details"
+    }
+  ],
+  "apply": {
+    "text": "Places at every state school, academies included, are applied for through Worcestershire County Council's online form.",
+    "links": [
+      {
+        "text": "First school",
+        "url": "https://www.worcestershire.gov.uk/council-services/schools-education-and-learning/apply-school-place/apply-primary-or-first-school-place"
+      },
+      {
+        "text": "Middle school",
+        "url": "https://www.worcestershire.gov.uk/council-services/schools-education-and-learning/apply-school-place/apply-middle-school-place"
+      },
+      {
+        "text": "High school",
+        "url": "https://www.worcestershire.gov.uk/council-services/schools-education-and-learning/apply-school-place/apply-secondary-or-high-school-school-place"
+      },
+      {
+        "text": "Changing schools mid-year",
+        "url": "https://www.worcestershire.gov.uk/council-services/schools-education-and-learning/apply-school-place/changing-schools-year-applications"
+      },
+      {
+        "text": "Admissions policies",
+        "url": "https://www.worcestershire.gov.uk/council-services/schools-education-and-learning/apply-school-place/school-admissions-policies"
+      }
+    ]
+  },
+  "travel": {
+    "text": "Your child may get free travel to their catchment or nearest suitable school if it is more than 2 miles away (under 8) or 3 miles away (8 and over), measured along the shortest walking route.",
+    "links": [
+      {
+        "text": "Eligibility and how to apply",
+        "url": "https://www.worcestershire.gov.uk/council-services/schools-education-and-learning/school-and-college-travel/mainstream-school-and-college-travel-assistance/eligibility-school-and"
+      }
+    ]
+  },
+  "terms": {
+    "note": "These are Worcestershire's dates, which council-run schools such as Harvington First, St Egwin's and Blackminster follow. Academies (De Montfort and Prince Henry's) set their own, so check with them.",
+    "source": "https://www.worcestershire.gov.uk/council-services/schools-education-and-learning/apply-school-place/school-term-dates",
+    "closures": "http://capublic.worcestershire.gov.uk/WCC_SchoolClosure/TomorrowSchoolClosures.aspx",
+    "breaks": [
+      {
+        "name": "October half term",
+        "closes": "2026-10-23",
+        "reopens": "2026-11-02"
+      },
+      {
+        "name": "Christmas",
+        "closes": "2026-12-18",
+        "reopens": "2027-01-04"
+      },
+      {
+        "name": "February half term",
+        "closes": "2027-02-12",
+        "reopens": "2027-02-22"
+      },
+      {
+        "name": "Easter",
+        "closes": "2027-03-25",
+        "reopens": "2027-04-12"
+      },
+      {
+        "name": "May half term",
+        "closes": "2027-05-28",
+        "reopens": "2027-06-07"
+      },
+      {
+        "name": "Summer holidays",
+        "closes": "2027-07-21",
+        "reopens": "2027-09-02"
+      },
+      {
+        "name": "October half term",
+        "closes": "2027-10-22",
+        "reopens": "2027-11-01"
+      },
+      {
+        "name": "Christmas",
+        "closes": "2027-12-17",
+        "reopens": "2028-01-04"
+      },
+      {
+        "name": "February half term",
+        "closes": "2028-02-11",
+        "reopens": "2028-02-21"
+      },
+      {
+        "name": "Easter",
+        "closes": "2028-04-07",
+        "reopens": "2028-04-24"
+      },
+      {
+        "name": "May half term",
+        "closes": "2028-05-26",
+        "reopens": "2028-06-05"
+      },
+      {
+        "name": "Summer term ends",
+        "closes": "2028-07-21"
+      }
+    ]
+  }
+}

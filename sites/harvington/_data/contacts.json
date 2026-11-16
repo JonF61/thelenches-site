@@ -1,0 +1,33 @@
+{
+  "_about": "Harvington's village contacts (Contact page table, src/_includes/contacts-table.njk): `table` lists `orgs` ids in order; a `council` key reads the clerk from council.json, a `school` key reads schools.json `local` by name. `outreach` (Organisation outreach) is not used for Harvington yet: the Worker bundles the Lenches' file only.",
+  "table": [
+    "harvington-pc",
+    "norton-lenchwick-pc",
+    "first-school",
+    "harvey-bears",
+    "website"
+  ],
+  "outreach": [],
+  "orgs": {
+    "harvington-pc": {
+      "name": "Harvington Parish Council",
+      "council": "harvington"
+    },
+    "norton-lenchwick-pc": {
+      "name": "Norton and Lenchwick Parish Council",
+      "url": "https://nortonlenchwick-pc.gov.uk/"
+    },
+    "first-school": {
+      "name": "Harvington CofE First School",
+      "school": "Harvington CofE First School"
+    },
+    "harvey-bears": {
+      "name": "Harvey Bears Nursery and Pre-School",
+      "school": "Harvey Bears Nursery and Pre-School"
+    },
+    "website": {
+      "name": "This website and newsletter",
+      "siteEmail": true
+    }
+  }
+}

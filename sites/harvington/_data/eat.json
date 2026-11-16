@@ -1,0 +1,101 @@
+{
+  "intro": "Pubs, cafés and other places to eat in Harvington, Norton and Lenchwick, and a few a short drive away. Opening times change, so check with the place itself before you set off.",
+  "areas": [
+    "Harvington",
+    "Norton and Lenchwick",
+    "A short drive away"
+  ],
+  "places": [
+    {
+      "id": "coach-and-horses",
+      "name": "Coach and Horses",
+      "area": "Harvington",
+      "where": "Station Road, Harvington",
+      "type": "Pub",
+      "food": "Pub food and Sunday lunch",
+      "phone": "01386 870249",
+      "website": {
+        "text": "coachandhorsesharvington.co.uk",
+        "url": "https://coachandhorsesharvington.co.uk/"
+      },
+      "garden": true
+    },
+    {
+      "id": "ellenden-farm-shop-cafe",
+      "name": "Ellenden Farm Shop Café",
+      "area": "Harvington",
+      "where": "Evesham Road, Harvington",
+      "type": "Farm shop café",
+      "food": "Home-cooked meals made with local produce",
+      "phone": "01386 870296"
+    },
+    {
+      "id": "golden-cross",
+      "name": "Golden Cross",
+      "area": "Harvington",
+      "where": "Village Street, Harvington",
+      "type": "Pub",
+      "food": "Evening meals",
+      "phone": "01386 304505",
+      "website": {
+        "text": "Facebook page",
+        "url": "https://www.facebook.com/p/The-golden-cross-inn-61581420455473/"
+      },
+      "garden": true,
+      "children": true
+    },
+    {
+      "id": "chadbury-farm-shop-cafe",
+      "name": "Chadbury Farm Shop & Café",
+      "area": "Norton and Lenchwick",
+      "where": "Chadbury, between Norton and Evesham",
+      "type": "Farm shop café",
+      "food": "Breakfast and lunch; booking advised",
+      "phone": "01386 446705",
+      "website": {
+        "text": "chadburyfarmshopandcafe.co.uk",
+        "url": "https://www.chadburyfarmshopandcafe.co.uk/"
+      }
+    },
+    {
+      "id": "norton-grange",
+      "name": "Norton Grange",
+      "area": "Norton and Lenchwick",
+      "where": "Norton",
+      "type": "Pub",
+      "food": "Lunch and evening meals",
+      "garden": true,
+      "phone": "01386 871477",
+      "website": {
+        "text": "nortongrangepub.co.uk",
+        "url": "https://www.nortongrangepub.co.uk"
+      }
+    },
+    {
+      "id": "hillers-garden-cafe",
+      "name": "Hillers Garden Café",
+      "area": "A short drive away",
+      "where": "Dunnington, near Salford Priors",
+      "type": "Farm shop café",
+      "food": "Lunches, cakes and coffee",
+      "phone": "01789 772771",
+      "website": {
+        "text": "hillers.co.uk",
+        "url": "https://hillers.co.uk/"
+      }
+    },
+    {
+      "id": "karma-salford-hall",
+      "name": "Karma Salford Hall",
+      "area": "A short drive away",
+      "where": "Abbots Salford",
+      "type": "Hotel restaurant",
+      "food": "Breakfast, lunch, dinner and afternoon tea; booking needed",
+      "phone": "01386 871300",
+      "website": {
+        "text": "karmagroup.com",
+        "url": "https://karmagroup.com/find-destination/karma-resorts/karma-salford-hall/"
+      }
+    }
+  ]
+}

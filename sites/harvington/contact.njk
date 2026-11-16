@@ -3,8 +3,8 @@ layout: base.njk
 title: Contact & About
 description: "Contact the Harvington website and newsletter, and find out how to send in news and events."
 ---
-{#- Harvington's Contact & About (wording approved by Jon 16 Nov 2026). A village contacts table (as on the Lenches page) comes
-    once Harvington's council and schools data exist. Holly's replies link to #submit (replies.js GUIDELINES_URL). -#}
+{#- Harvington's Contact & About (wording approved by Jon 16 Nov 2026). The village contacts table is shared with the Lenches
+    (src/_includes/contacts-table.njk; rows in _data/contacts.json). Holly's replies link to #submit (replies.js GUIDELINES_URL). -#}
 <main class="container">
 
   <section>
@@ -20,14 +20,27 @@ description: "Contact the Harvington website and newsletter, and find out how to
   </section>
 
   <section>
+    <h2>Village contacts</h2>
+{%- include "contacts-table.njk" %}
+  </section>
+
+  <section>
     <h2>Useful local links</h2>
     <div class="grid">
       <div class="card">
         <h3>Councils</h3>
         <p>
           <a href="https://harvington-pc.gov.uk/" target="_blank" rel="noopener">Harvington Parish Council</a><br>
+          <a href="https://nortonlenchwick-pc.gov.uk/" target="_blank" rel="noopener">Norton and Lenchwick Parish Council</a><br>
           <a href="https://www.wychavon.gov.uk/" target="_blank" rel="noopener">Wychavon District Council</a><br>
           <a href="https://www.worcestershire.gov.uk/" target="_blank" rel="noopener">Worcestershire County Council</a>
+        </p>
+      </div>
+      <div class="card">
+        <h3>Schools</h3>
+        <p>
+          <a href="https://www.harvingtonfirstschool.co.uk/" target="_blank" rel="noopener">Harvington CofE First School</a><br>
+          <a href="{{ '/living-here/schools/' | url }}">All schools for the village</a>
         </p>
       </div>
     </div>
