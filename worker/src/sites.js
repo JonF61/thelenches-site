@@ -23,9 +23,13 @@ export const knownSite = (s) => typeof s === 'string' && Object.prototype.hasOwn
 const LENCHES_GREEN = '#3F5233';
 export const siteColour = (s) => (siteConfig(s).palette && siteConfig(s).palette.green) || LENCHES_GREEN;
 
-// Every site, for the panel's switcher: [{ id, name, colour }], the default first.
-export const siteList = () => [DEFAULT_SITE, ...Object.keys(SITES).filter((s) => s !== DEFAULT_SITE)]
-  .map((id) => ({ id, name: String(SITES[id].name || id), colour: siteColour(id) }));
+// Every site, for the panel's switcher: [{ id, name, colour, analytics, url }], the default first.
+// analytics: the site's pages carry the Cloudflare Web Analytics beacon (site.json
+// cfAnalyticsToken, added at launch), so there are visitor counts to show (4c-2).
+export const siteIds = () => [DEFAULT_SITE, ...Object.keys(SITES).filter((s) => s !== DEFAULT_SITE)];
+export const hasAnalytics = (s) => Boolean(String(siteConfig(s).cfAnalyticsToken || '').trim());
+export const siteList = () => siteIds()
+  .map((id) => ({ id, name: String(SITES[id].name || id), colour: siteColour(id), analytics: hasAnalytics(id), url: String(SITES[id].url || '').replace(/\/+$/, '') }));
 
 // The Worker's env for one site's request: SHEET_ID is that site's Sheet (the Lenches keeps
 // wrangler.toml's SHEET_ID, so nothing changes for it), SITE its name (core.js dispatch adds it
@@ -35,7 +39,7 @@ export function siteEnv(env, s) {
   const site = siteName(s);
   const cfg = SITES[site];
   const sheet = site === DEFAULT_SITE ? String(env.SHEET_ID || cfg.sheetId || '') : String(cfg.sheetId || '');
-  const over = { SHEET_ID: sheet, SITE: site };
+  const over = { SHEET_ID: sheet, SITE: site, SITE_HOST: String(cfg.domain || '') };
   if (site !== DEFAULT_SITE) over.SITE_URL = String(cfg.url || '');
   return Object.assign(Object.create(env), over);
 }

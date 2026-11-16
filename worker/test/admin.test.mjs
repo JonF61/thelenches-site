@@ -1064,3 +1064,26 @@ test('Signed links: a link naming another site sends its decision there; none = 
   assert.ok(!validPayload({ a: 'approve', i: 'm1-1', s: 'evesham' }));
   assert.ok(validPayload({ a: 'approve', i: 'm1-1' }));
 });
+
+/* ------------------------------------------------- both sites (4c-2) -- */
+
+test('4c-2: Summary gives Claude spend for every site, reading each Sheet', async () => {
+  const calls = fakeWorld(tablesFor());
+  const r = await worker.fetch(await reqWith('/admin/api/summary', { site: 'harvington' }), env());
+  assert.equal(r.status, 200);
+  const j = await r.json();
+  assert.deepEqual(j.claudeSpendSites.map((x) => x.site), ['lenches', 'harvington']);
+  assert.ok(calls.sheetIds.includes('sheet123') && calls.sheetIds.includes(HARV_SHEET));
+  assert.ok(j.visitors.off, 'no visitor counts for a site not launched');
+});
+
+test('4c-2: visitor counts per site host; none for a site without the analytics beacon', async () => {
+  const { visitors, hostFor } = await import('../src/admin/visitors.js');
+  const { siteEnv } = await import('../src/sites.js');
+  const base = { CF_ANALYTICS_TOKEN: 't', CF_ACCOUNT_ID: 'a'.repeat(32), SHEET_ID: 'sheet123' };
+  assert.equal(hostFor(siteEnv(base, 'lenches')), 'thelenches.org.uk');
+  assert.equal(hostFor(siteEnv(base, 'harvington')), 'harvingtonvillage.org.uk');
+  assert.equal(hostFor({}), 'thelenches.org.uk');
+  globalThis.fetch = async () => { throw new Error('must not ask Cloudflare'); };
+  assert.deepEqual(await visitors(siteEnv(base, 'harvington')), { off: true, notLive: true });
+});

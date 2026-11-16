@@ -9,8 +9,17 @@ const ctx = { addresses: ['sue@example.org', 'sue@work.example'], hollyIds: new 
 const m = (id, at, from, text, extra = {}) => ({ id, internalDate: String(Date.parse(at)), from, subject: 'Coffee morning', text, ...extra });
 
 test('historyQuery: every address, from or to, newsletter left out', () => {
-  assert.equal(historyQuery(['a@x.org', 'b@y.org']), '{from:a@x.org to:a@x.org from:b@y.org to:b@y.org} -subject:"The Lenches Newsletter"');
+  assert.equal(historyQuery(['a@x.org', 'b@y.org']), '{from:a@x.org to:a@x.org from:b@y.org to:b@y.org} -subject:"The Lenches Newsletter" -subject:"The Harvington Newsletter"');
   assert.equal(addressIn('Sue Smith <Sue@Example.org>'), 'sue@example.org');
+});
+
+test('history: either site\'s newsletter is left out; Holly signing for Harvington counts as Holly', () => {
+  const out = history([
+    m('n1', '2026-11-19T08:00:00Z', 'website@harvingtonvillage.org.uk', 'News', { subject: 'The Harvington Newsletter – 19 Nov' }),
+    m('n2', '2026-11-19T08:00:00Z', 'website@thelenches.org.uk', 'News', { subject: 'The Lenches Newsletter – 19 Nov' }),
+    m('h9', '2026-11-18T08:00:00Z', 'website@harvingtonvillage.org.uk', 'Thanks for this.\n\nBest wishes,\nHolly\nHarvington website assistant'),
+  ], ctx);
+  assert.deepEqual(out.map((e) => [e.id, e.who, e.text]), [['h9', 'holly', 'Thanks for this.']]);
 });
 
 test('history: newest first, who wrote it, padding cut', () => {

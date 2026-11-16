@@ -64,7 +64,7 @@ import { handleRecommend, listedEntry } from './recommend.js';
 import { handleSuggest, handleSuggestConfirm } from './listingsuggest.js';
 import { logVisitors } from './admin/sitestats.js';
 import { runAutoWindow } from './admin/autorun.js';
-import { SITES, siteEnv } from './sites.js';
+import { SITES, siteEnv, siteIds, hasAnalytics } from './sites.js';
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -425,15 +425,29 @@ async function runNightly(env, ms) {
 
 // 00:10 UK every night (not switched by NIGHTLY): saves yesterday's (and any missed day's)
 // site visitor counts to the Visitors tab (admin/sitestats.js). Logs counts and dates only.
+// Each site with the analytics beacon (site.json cfAnalyticsToken) saves its own host's counts
+// to its own Sheet's Visitors tab (4c-2); Harvington joins at launch.
 async function runVisitorLog(env, ms) {
   const uk = ukNow(ms);
   if (uk.hm !== NIGHTLY_HM) return;
-  try {
-    const r = await logVisitors(env, ms);
-    if (r.off) return;
-    console.log(`${uk.date} ${uk.hm} UK: visitor counts saved for ${r.saved.length} day(s)${r.failed.length ? `; failed: ${r.failed.join('; ')}` : ''}`);
-  } catch (e) {
-    console.error(`Visitor counts not saved: ${e.message}`);
+  for (const site of siteIds()) {
+    if (!hasAnalytics(site) || !String(SITES[site].sheetId || '').trim()) continue;
+    try {
+      const r = await logVisitors(siteEnv(env, site), ms);
+      if (r.off) continue;
+      console.log(`${uk.date} ${uk.hm} UK: ${site} visitor counts saved for ${r.saved.length} day(s)${r.failed.length ? `; failed: ${r.failed.join('; ')}` : ''}`);
+    } catch (e) {
+      console.error(`Visitor counts not saved (${site}): ${e.message}`);
+    }
+  }
+}
+
+// The veto window for each site, against its own Sheet and Settings (4c-2), the Lenches first;
+// another site's publishes go to its own Apply approval run (dispatch adds the site).
+async function runAutoWindows(env, ms) {
+  for (const site of siteIds()) {
+    if (!String(SITES[site].sheetId || '').trim()) continue;
+    await runAutoWindow(siteEnv(env, site), ms).catch((e) => console.error(`Veto window run (${site}) failed: ${e.message}`));
   }
 }
 
@@ -676,7 +690,7 @@ export default {
       ctx.waitUntil(runDiagnostic(env, event.scheduledTime));
       ctx.waitUntil(runRimmer(env, event.scheduledTime));
       // Veto window (autonomy stage 3): items whose window has ended publish through decide().
-      ctx.waitUntil(runAutoWindow(env, event.scheduledTime).catch((e) => console.error(`Veto window run failed: ${e.message}`)));
+      ctx.waitUntil(runAutoWindows(env, event.scheduledTime));
     }
     else ctx.waitUntil(watchdog(env));
   },

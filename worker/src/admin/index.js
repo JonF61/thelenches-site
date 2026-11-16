@@ -154,7 +154,7 @@
 // (Check email now, Refresh draft, Check now for Rimmer).
 
 import { ACTIONS, decide, github, dispatch } from '../core.js';
-import { DEFAULT_SITE, knownSite, siteEnv, siteList, siteConfig } from '../sites.js';
+import { DEFAULT_SITE, knownSite, siteEnv, siteList, siteConfig, siteIds } from '../sites.js';
 import { verifyAccess } from './access.js';
 import { makeCsrf, checkCsrf, sameOrigin } from './csrf.js';
 import {
@@ -374,6 +374,8 @@ async function state(env, email) {
     sheetId: String(env.SHEET_ID || ''),
     gids: gids.error ? {} : gids,
     holiday: holiday.error ? holiday : { value: holiday.value, on: String(holiday.value).trim().toUpperCase() === 'TRUE' },
+    // Settings newsletter_mode (4c-2): "off" = this site has no newsletter yet (Harvington until stage 5).
+    newsletterMode: settings.error ? '' : String((settings.find((p) => p.key === 'newsletter_mode') || {}).value || '').trim().toLowerCase(),
     newsletter,
     // The Newsletter draft's meta (null until its first run).
     draft: draftRows.error ? draftRows : draftMeta(draftRows),
@@ -608,9 +610,13 @@ async function summary(env, lenv = env) {
   const [issues, pending, subs, dns, lessons, contacts, replies, orgTab, runs, coming, seen, sends, usage, feedbackTab] = await settled([
     readTable(env, 'Issues'), readTable(env, 'Pending'), readTable(env, 'Subscribers'), readTable(env, 'Do Not Send'),
     readLessons(lenv), readTable(env, CONTACTS_TAB), readTable(env, 'Replies'), readOrgTab(env), recentRuns(env, 50), comingUpFile(env),
-    main ? visitors(env) : { off: true }, readTable(env, 'Sends'),
+    visitors(env), readTable(env, 'Sends'),
     readTable(env, 'Claude usage'), readTable(env, ITEM_TAB),
   ]);
+  // Claude spend for every site (4c-2): the API key is shared, so the card gives each site's
+  // month and the total. The site shown is the one just read; the others' tabs are read here.
+  const spendBy = await settled(siteIds().map((id) => (id === env.SITE ? Promise.resolve(usage)
+    : readTable(siteEnv(env, id), 'Claude usage'))));
   const fail = (t) => (t && t.error ? { error: t.error } : null);
   const issueRows = issues.error ? [] : issues.rows;
   let outreachDue;
@@ -645,6 +651,12 @@ async function summary(env, lenv = env) {
     autoAudit: feedbackTab.error ? 0 : feedbackTab.rows.filter((r) => String(r.outcome || '').trim() === 'window').length,
     // Claude API spend (lib/claudeusage.js); no tab yet = no figures yet, not an error.
     claudeSpend: usage.error ? { none: true } : claudeSpend(usage.rows, today),
+    // [{ site, name, total, lastTotal }] for each site, a missing tab = none yet.
+    claudeSpendSites: siteIds().map((id, i) => {
+      const t = spendBy[i];
+      const c = t && !t.error && Array.isArray(t.rows) ? claudeSpend(t.rows, today) : null;
+      return { site: id, name: String(siteConfig(id).name || id), total: c ? c.total : 0, lastTotal: c ? c.lastTotal : 0, none: !c };
+    }),
     visitors: seen,
     // The last newsletter sent: sent, bounced, opens, clicks (no per-issue detail).
     lastSent: issues.error || sends.error || dns.error ? null
@@ -1108,7 +1120,7 @@ export async function handleAdmin(request, rawEnv) {
       if (path === '/admin/api/autonomy') return json(await autonomy(env));
       if (path === '/admin/api/history') return json(await submissionsHistory(env));
       if (path === '/admin/api/summary') return json(await summary(env, lenv));
-      if (path === '/admin/api/site-visitors') return json(await visitorHistory(lenv));
+      if (path === '/admin/api/site-visitors') return json(await visitorHistory(env));
       if (path === '/admin/api/nlstats') {
         const [issues, sends, dns] = await Promise.all([readTable(env, 'Issues'), readTable(env, 'Sends'), readTable(env, 'Do Not Send')]);
         return json(await nlStats(env, { issues: issues.rows, sends: sends.rows, dns: dns.rows }, String(url.searchParams.get('i') || '')));

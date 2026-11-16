@@ -8,7 +8,13 @@
 export const API = 'https://api.cloudflare.com/client/v4/graphql';
 const DAYS = 7;
 const TOP = 8;
+import { hasAnalytics } from '../sites.js';
+
 export const HOST = 'thelenches.org.uk';
+// The host counted for this request's site (sites.js siteEnv sets SITE_HOST; 4c-2).
+export const hostFor = (env) => String((env && env.SITE_HOST) || HOST);
+// A site with no analytics beacon yet (Harvington until launch) has nothing to count.
+export const notCounted = (env) => Boolean(env && env.SITE) && !hasAnalytics(env.SITE);
 
 // Values go straight into the query (no typed variables to get wrong): the account ID is
 // checked as 32 hex characters, the dates are ISO stamps made here and the host is fixed.
@@ -45,9 +51,10 @@ export async function visitors(env, now = Date.now()) {
   const token = String(env.CF_ANALYTICS_TOKEN || '').trim();
   const account = String(env.CF_ACCOUNT_ID || '').trim();
   if (!token || !account) return { off: true };
+  if (notCounted(env)) return { off: true, notLive: true };
   if (!/^[0-9a-f]{32}$/i.test(account)) return { error: 'CF_ACCOUNT_ID is not a 32-character account ID' };
   const since = new Date(now - DAYS * 86400000).toISOString();
-  const filter = { datetime_geq: since, datetime_leq: new Date(now).toISOString(), requestHost: HOST };
+  const filter = { datetime_geq: since, datetime_leq: new Date(now).toISOString(), requestHost: hostFor(env) };
   const r = await fetch(API, {
     method: 'POST',
     headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
