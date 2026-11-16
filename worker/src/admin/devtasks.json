@@ -2,12 +2,12 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
-      "task": "Harvington stage 5a (newsletter per site, 16 Nov): on Thursday 19 Nov check the Lenches issue builds at 06:30 and looks as before (subject, heading, villages line, links), the Worker log shows no Harvington newsletter dispatch (its newsletter is off), the send log's Last 24h line names both websites, and Newsletter stats still shows the Lenches' opens and clicks",
+      "task": "Harvington stage 5a (newsletter per site, 16 Nov): on Thursday 19 Nov check the Lenches issue builds at 06:30 and looks as before (subject, heading, villages line, links), the Worker log shows no Harvington newsletter dispatch (its newsletter is off), the send log's Last 24h line names both websites, and Newsletter stats still shows the Lenches' opens and clicks; and Harvington's shadow run: built at 06:30, Rimmer's check on Wednesday 19:00, the 08:00 autosend a dry run with 0 recipients (nothing emailed)",
       "added": "2026-11-16",
       "kryten": true
     },
     {
-      "task": "Harvington stage 5b (switching its newsletter on, with Jon): check website@harvingtonvillage.org.uk is a Send mail as address on the team inbox; set Harvington Settings preview_to and test_to; a Test send from the panel (Harvington); subscribers (sign-up form at launch, stage 7); newsletter_mode off → shadow → live. Also: the newsletter draft refreshes for Harvington only from the panel's Refresh (newsletter-draft.yml's schedule is the Lenches')",
+      "task": "Harvington newsletter (5b done 16 Nov: Send-as confirmed, test and preview addresses set, newsletter_mode shadow, first Test send arrived from website@harvingtonvillage.org.uk). Still to do: subscribers (the sign-up form comes with launch, stage 7), then newsletter_mode shadow → live with Jon. The draft refreshes for Harvington only from the panel's Refresh (newsletter-draft.yml's schedule is the Lenches')",
       "added": "2026-11-16"
     },
     {
