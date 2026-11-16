@@ -2,7 +2,7 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
-      "task": "Harvington website: stages 1 (email and domain) and 2 (multi-site foundation: sites/lenches and sites/harvington, SITE setting, river blue palette and spire) done 16 Nov. Next: stage 3 hosting (build-only repo for harvingtonvillage.org.uk, DNS, noindex), then 4 Sheet and pipeline with the panel's site switcher, 5 newsletter, 6 content (including the shared header and footer, which still say The Lenches), 7 launch",
+      "task": "Harvington website: stages 1 (email and domain) and 2 (multi-site foundation: sites/lenches and sites/harvington, SITE setting, river blue palette and spire) done 16 Nov. Stage 3 hosting built 16 Nov (build-harvington.yml pushes to JonF61/harvington-site; holding page, robots closed): waiting on Jon to create that repo, add the deploy key, turn on Pages and add the DNS records at 123-reg. Then 4 Sheet and pipeline with the panel's site switcher, 5 newsletter, 6 content (including the shared header and footer, which still say The Lenches), 7 launch",
       "added": "2026-11-16"
     },
     {

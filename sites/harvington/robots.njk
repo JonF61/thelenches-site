@@ -1,0 +1,13 @@
+---
+permalink: /robots.txt
+eleventyExcludeFromCollections: true
+---
+{#- Closed to search engines while site.json has noindex (until launch, Harvington stage 7). -#}
+User-agent: *
+{% if site.noindex -%}
+Disallow: /
+{%- else -%}
+Allow: /
+
+Sitemap: {{ site.url }}/sitemap.xml
+{%- endif %}

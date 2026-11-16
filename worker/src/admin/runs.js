@@ -9,6 +9,7 @@ import { github } from '../core.js';
 // Plain names for the workflow files; anything else shows GitHub's own name.
 export const WORKFLOW_NAMES = {
   'build.yml': 'Build site',
+  'build-harvington.yml': 'Build Harvington site',
   'ingest.yml': 'Ingest',
   'publish.yml': 'Publish',
   'approval.yml': 'Apply approval',

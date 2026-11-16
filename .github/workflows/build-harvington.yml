@@ -1,0 +1,75 @@
+name: Build Harvington site
+
+# Harvington stage 3 (16 Nov 2026): GitHub Pages serves one domain per repo, so this repo builds
+# the Harvington site (SITE=harvington, sites/harvington/) and force-pushes the built pages, with a
+# CNAME for its domain, as a single commit to the build-only repo JonF61/harvington-site, whose
+# Pages settings publish its main branch. The push uses a deploy key that can write to that repo
+# only (secret HARVINGTON_DEPLOY_KEY); without it the run builds and stops before pushing.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "sites/harvington/**"
+      - "src/**"
+      - "lib/**"
+      - ".eleventy.js"
+      - "package-lock.json"
+      - ".github/workflows/build-harvington.yml"
+  schedule:
+    # Nightly, so date-driven content moves on (00:07 UTC).
+    - cron: "7 0 * * *"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [rebuild-harvington]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: harvington-pages
+  cancel-in-progress: false
+
+env:
+  # Which site this workflow is for (lib/site.js).
+  SITE: harvington
+  TARGET_REPO: JonF61/harvington-site
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx @11ty/eleventy
+      - name: Add the domain and turn off Jekyll
+        run: |
+          node -p "require('./sites/harvington/_data/site.json').domain" > _site/CNAME
+          touch _site/.nojekyll
+          echo "Built $(find _site -type f | wc -l) files for $(cat _site/CNAME)"
+      - name: Push to the Harvington Pages repo
+        env:
+          DEPLOY_KEY: ${{ secrets.HARVINGTON_DEPLOY_KEY }}
+        run: |
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "::notice::No HARVINGTON_DEPLOY_KEY secret yet: built but not published."
+            exit 0
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/harvington
+          chmod 600 ~/.ssh/harvington
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/harvington -o IdentitiesOnly=yes"
+          cd _site
+          git init -q -b main
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Harvington site built from ${GITHUB_SHA::7}"
+          git push -q --force "git@github.com:${TARGET_REPO}.git" main
+          echo "Published to ${TARGET_REPO}."
+          rm -f ~/.ssh/harvington
