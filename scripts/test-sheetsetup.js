@@ -10,7 +10,8 @@ const ok = (c, m) => { assert.ok(c, m); n++; };
 
 // sheetId: env wins (tests), else site.json; a site without one fails clearly.
 ok(site.sheetId({ SHEET_ID: 'abc' }) === 'abc', 'SHEET_ID env wins');
-assert.throws(() => site.sheetId({}), /No Sheet for site "harvington"/); n++;
+ok(site.sheetId({}) === require('../sites/harvington/_data/site.json').sheetId, 'Harvington sheetId from site.json');
+ok(site.sheetId({}) !== require('../sites/lenches/_data/site.json').sheetId, 'Harvington Sheet is not the Lenches one');
 ok(require('../sites/lenches/_data/site.json').sheetId.length > 20, 'Lenches site.json has its sheetId');
 
 const source = [
