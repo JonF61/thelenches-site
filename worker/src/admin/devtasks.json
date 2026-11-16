@@ -2,7 +2,7 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
-      "task": "Harvington website: stages 1 (email and domain) and 2 (multi-site foundation: sites/lenches and sites/harvington, SITE setting, river blue palette and spire) done 16 Nov. Stage 3 hosting built 16 Nov (build-harvington.yml pushes to JonF61/harvington-site; holding page, robots closed): waiting on Jon to create that repo, add the deploy key, turn on Pages and add the DNS records at 123-reg. Then 4 Sheet and pipeline with the panel's site switcher, 5 newsletter, 6 content (including the shared header and footer, which still say The Lenches), 7 launch",
+      "task": "Harvington website: stages 1 (email and domain) and 2 (multi-site foundation: sites/lenches and sites/harvington, SITE setting, river blue palette and spire) done 16 Nov. Stage 3 hosting done 16 Nov (build-harvington.yml publishes to JonF61/harvington-site; holding page live at harvingtonvillage.org.uk once Enforce HTTPS is ticked). Next: 4 Sheet and pipeline with the panel's site switcher, 5 newsletter, 6 content (including the shared header and footer, which still say The Lenches), 7 launch",
       "added": "2026-11-16"
     },
     {
@@ -11,7 +11,7 @@
       "kryten": true
     },
     {
-      "task": "Plan doc Build history: add an entry for the Harvington stage 2 PR (multi-site foundation, 16 Nov) and mark stage 2 done in the Project Plan's Harvington section",
+      "task": "Harvington hosting: confirm Enforce HTTPS is ticked on the harvington-site repo's Pages settings, the nightly Build Harvington site run succeeds, and the holding page shows at https://harvingtonvillage.org.uk",
       "added": "2026-11-16",
       "kryten": true
     },
