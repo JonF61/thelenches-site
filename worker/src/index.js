@@ -64,7 +64,7 @@ import { handleRecommend, listedEntry } from './recommend.js';
 import { handleSuggest, handleSuggestConfirm } from './listingsuggest.js';
 import { logVisitors } from './admin/sitestats.js';
 import { runAutoWindow } from './admin/autorun.js';
-import { SITES } from './sites.js';
+import { SITES, siteEnv } from './sites.js';
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -247,7 +247,8 @@ ${confirmExtra(p)}
     if (p.a === 'redraft' && reason.length < 3) return page('Nothing to change', '<h1>Say what to change</h1><p>The box was empty. Go back and type what Holly should change.</p>', 400);
 
     if (p.a === 'edit' && body.length < 10) return page('Nothing to send', '<h1>Nothing to send</h1><p>The reply text was empty. Go back and try again.</p>', 400);
-    if (!(await decide(env, p, reason, body))) return failedPage();
+    // A link made by another site's run names it (p.s): its decision goes to that site's run.
+    if (!(await decide(p.s ? siteEnv(env, p.s) : env, p, reason, body))) return failedPage();
     const [, done] = ACTIONS[p.a];
     return page(done, `
 <h1>${esc(done)}</h1>

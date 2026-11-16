@@ -101,7 +101,7 @@ try {
     assert.match(await page.locator('.intro').innerText(), /^The daily diagnostic/);
     await page.locator('.top .chip button', { hasText: 'Watchdog' }).click();
     assert.match(await page.locator('.intro').innerText(), /^The daily diagnostic/);
-    for (const [label, start] of [['Owed', /^Emails that got an automatic holding reply/], ['Photos', /^Photos in the Lenches Photos folders/]]) {
+    for (const [label, start] of [['Owed', /^Emails that got a holding reply/], ['Photos', /^Photos in the Lenches Photos folders/]]) {
       await page.locator('nav.side button', { hasText: label }).click();
       assert.match(await page.locator('.intro').innerText(), start, label);
     }

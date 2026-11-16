@@ -3,6 +3,8 @@
 // list, payload checks and the one path to GitHub (decide -> repository_dispatch). The
 // panel never has its own approval logic; it builds the same payload and calls decide().
 
+import { DEFAULT_SITE, knownSite } from './sites.js';
+
 export const NL_MODES = ['shadow', 'canary', 'live'];
 
 // action -> [confirm verb, done word, button class]
@@ -85,6 +87,8 @@ export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export function validPayload(p) {
   if (!p || !Object.prototype.hasOwnProperty.call(ACTIONS, p.a)) return false;
+  // A link for another site names it (scripts/ingest/links.js; none = the Lenches).
+  if (p.s !== undefined && !knownSite(p.s)) return false;
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(String(p.i || ''))) return false;
   if (['nlsend', 'nlbuild', 'nlquiet', 'nltest'].includes(p.a)) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(p.i)) return false;
@@ -124,7 +128,12 @@ export function github(env, path, init = {}) {
 }
 
 // repository_dispatch with retries. Returns true on HTTP 204.
+// A request made for another site (sites.js siteEnv sets env.SITE: the panel, a signed link with
+// a site) carries it in client_payload.site, which every dispatched workflow reads (4a). No site =
+// the Lenches, so the Lenches' dispatches stay exactly as they were (the panel's still match the
+// email links'), and the crons' own are unchanged.
 export async function dispatch(env, eventType, clientPayload, tries = 1) {
+  if (env.SITE && env.SITE !== DEFAULT_SITE && clientPayload && clientPayload.site === undefined) clientPayload = { ...clientPayload, site: env.SITE };
   let last = '';
   for (let n = 1; n <= tries; n += 1) {
     try {

@@ -563,7 +563,10 @@ function correctionsFrom(rows, n = RECENT_CORRECTIONS) {
 async function primeLearning() {
   const next = { lessons: [], writeup: [], corrections: [], contacts: new Map() };
   try {
-    const approved = (await g.readTable(LESSONS_TAB)).filter((r) => String(r.status).trim().toLowerCase() === 'approved' && String(r.lesson || '').trim())
+    // One lessons list for both websites (Jon, 16 Nov): it lives in the Lenches Sheet, so another
+    // site's run reads it from there (read-only; google.js readOtherTable).
+    const lessonRows = SITE_LIB.siteName() === 'lenches' ? await g.readTable(LESSONS_TAB) : await g.readOtherTable('lenches', LESSONS_TAB);
+    const approved = lessonRows.filter((r) => String(r.status).trim().toLowerCase() === 'approved' && String(r.lesson || '').trim())
       .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
     if (approved.length > MAX_LESSONS_USED) console.warn(`Holly learning: ${approved.length} lessons in use; only the newest ${MAX_LESSONS_USED} are used. Tidy the Holly lessons tab.`);
     const used = approved.slice(0, MAX_LESSONS_USED).map((r) => clipTo(r.lesson, 400));

@@ -26,6 +26,12 @@ button,select,input,textarea{font:inherit;color:inherit}
 .app{display:flex;flex-direction:column;min-height:100vh}
 header.top{background:var(--panel);border-bottom:1px solid var(--line);padding:10px 16px}
 header.top h1{font-size:1.1rem;margin:0 0 8px;color:var(--accent)}
+.site-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 8px}
+header.top .site-row h1{margin:0}
+.site-switch{display:flex;gap:6px}
+.site-btn{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border:2px solid;border-radius:999px;background:transparent;color:var(--ink);font:inherit;font-size:.9rem;cursor:pointer}
+.site-btn.on{color:#fff;font-weight:600;cursor:default}
+.site-dot{width:10px;height:10px;border-radius:50%;display:inline-block;box-shadow:0 0 0 1px #fff}
 .strip{display:flex;flex-wrap:wrap;gap:8px}
 .chip{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:.9rem}
 .chip b{font-weight:600}

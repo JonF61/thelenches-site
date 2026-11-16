@@ -16,6 +16,7 @@ import { resetTokenCache, accessToken, serviceAccountJwt, SCOPES } from '../src/
 import { bytesToB64url, jsonToB64url } from '../src/admin/b64.js';
 import { dispatchFor, validPayload, PANEL_ONLY } from '../src/core.js';
 import worker from '../src/index.js';
+import harvingtonCfg from '../../sites/harvington/_data/site.json' with { type: 'json' };
 
 const enc = new TextEncoder();
 const TEAM = 'lenches.cloudflareaccess.com';
@@ -87,6 +88,7 @@ function fakeWorld(tables) {
     }
     if (url.hostname === 'sheets.googleapis.com') {
       assert.equal(init.headers.authorization, 'Bearer goog');
+      (calls.sheetIds = calls.sheetIds || []).push(url.pathname.split('/')[3]);
       const m = decodeURIComponent(url.pathname).match(/\/values\/'(.+)'!(.+)$/);
       if (m && method === 'GET') {
         const [, tab, range] = m;
@@ -174,8 +176,9 @@ const tablesFor = () => ({
   SettingsKV: [['key', 'value'], ['from_name', 'X'], ['holiday_mode', 'FALSE']],
 });
 
-const reqWith = async (path, { method = 'GET', body, token, csrf, origin = ORIGIN, claims } = {}) => {
+const reqWith = async (path, { method = 'GET', body, token, csrf, origin = ORIGIN, claims, site } = {}) => {
   const headers = { 'cf-access-jwt-assertion': token ?? await jwt(claims || goodClaims()) };
+  if (site) headers['x-site'] = site;
   if (origin) headers.origin = origin;
   if (csrf) headers['x-csrf-token'] = csrf;
   if (body) headers['content-type'] = 'application/json';
@@ -991,4 +994,73 @@ test('Newsletter draft meta range covers every meta row (Send to all needs hash,
   const m = draftMeta(rows);
   assert.equal(m.hash, 'x');
   assert.equal(m.send_count, 450);
+});
+
+/* ------------------------------------------------- site switcher (4c-1) -- */
+
+const HARV_SHEET = harvingtonCfg.sheetId;
+async function postSite(path, body, site) {
+  const csrf = await makeCsrf(env(), ADMIN);
+  const r = await worker.fetch(await reqWith(path, { method: 'POST', body, csrf, site }), env());
+  return { status: r.status, json: await r.json() };
+}
+
+test('Site switcher: the Lenches (no site, or x-site lenches) keeps SHEET_ID and dispatches without a site', async () => {
+  for (const site of [undefined, 'lenches']) {
+    const calls = fakeWorld(tablesFor());
+    const r = await postSite('/admin/api/action', { kind: 'pending', id: 'm1-1', action: 'approve' }, site);
+    assert.equal(r.status, 200, JSON.stringify(r.json));
+    assert.deepEqual(calls.dispatches, [{ event_type: 'approval', client_payload: { id: 'm1-1', action: 'approve' } }]);
+    assert.ok(calls.sheetIds.length && calls.sheetIds.every((id) => id === 'sheet123'), String(calls.sheetIds));
+  }
+});
+
+test('Site switcher: x-site harvington reads the Harvington Sheet and its decisions carry site', async () => {
+  const calls = fakeWorld(tablesFor());
+  const r = await postSite('/admin/api/action', { kind: 'pending', id: 'm1-1', action: 'approve' }, 'harvington');
+  assert.equal(r.status, 200, JSON.stringify(r.json));
+  assert.deepEqual(calls.dispatches, [{ event_type: 'approval', client_payload: { id: 'm1-1', action: 'approve', site: 'harvington' } }]);
+  assert.ok(calls.sheetIds.length && calls.sheetIds.every((id) => id === HARV_SHEET), String(calls.sheetIds));
+  // Check email now fires that site's ingest.
+  const c2 = fakeWorld(tablesFor());
+  const n = await postSite('/admin/api/ingest-now', {}, 'harvington');
+  assert.equal(n.status, 200, JSON.stringify(n.json));
+  assert.deepEqual(c2.dispatches, [{ event_type: 'ingest', client_payload: { by: 'panel', site: 'harvington' } }]);
+});
+
+test('Site switcher: an unknown site is refused, never taken as the Lenches', async () => {
+  const calls = fakeWorld(tablesFor());
+  const r = await postSite('/admin/api/action', { kind: 'pending', id: 'm1-1', action: 'approve' }, 'evesham');
+  assert.equal(r.status, 400);
+  assert.equal(calls.dispatches.length, 0);
+  const g = await worker.fetch(await reqWith('/admin/api/state', { site: 'Lenches ' }), env());
+  assert.equal(g.status, 400);
+});
+
+test('Site switcher: session lists both sites; state says which site it is for', async () => {
+  fakeWorld(tablesFor());
+  const s = await (await worker.fetch(await reqWith('/admin/api/session', { site: 'harvington' }), env())).json();
+  assert.equal(s.site, 'harvington');
+  assert.equal(s.siteName, 'Harvington');
+  assert.deepEqual(s.sites.map((x) => x.id), ['lenches', 'harvington']);
+  assert.ok(s.sites.every((x) => /^#[0-9A-Fa-f]{6}$/.test(x.colour)));
+  const calls = fakeWorld(tablesFor());
+  const st = await (await worker.fetch(await reqWith('/admin/api/state', { site: 'harvington' }), env())).json();
+  assert.equal(st.site, 'harvington');
+  assert.equal(st.sheetId, HARV_SHEET);
+  assert.equal(st.photosRoot, '', 'the Photos library is the Lenches\' alone');
+  assert.ok(!calls.sheetIds.includes('sheet123'), 'nothing read from the Lenches Sheet');
+});
+
+test('Site switcher: Holly lessons are one list, always the Lenches Sheet', async () => {
+  const calls = fakeWorld(tablesFor());
+  const r = await worker.fetch(await reqWith('/admin/api/lessons', { site: 'harvington' }), env());
+  assert.equal(r.status, 200);
+  assert.ok(calls.sheetIds.length && calls.sheetIds.every((id) => id === 'sheet123'), String(calls.sheetIds));
+});
+
+test('Signed links: a link naming another site sends its decision there; none = the Lenches', () => {
+  assert.ok(validPayload({ a: 'approve', i: 'm1-1', s: 'harvington' }));
+  assert.ok(!validPayload({ a: 'approve', i: 'm1-1', s: 'evesham' }));
+  assert.ok(validPayload({ a: 'approve', i: 'm1-1' }));
 });

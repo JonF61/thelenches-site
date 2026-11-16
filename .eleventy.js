@@ -297,17 +297,19 @@ module.exports = async function (eleventyConfig) {
   // Where each published photo appears (slug -> page links), for the admin panel's
   // "On the website" links: _site/photo-pages.json, public facts only (lib/photopages.js)
   const { photoPages, eventEnds } = require("./lib/photopages.js");
-  eleventyConfig.on("eleventy.after", ({ results, dir }) => {
+  eleventyConfig.on("eleventy.after", ({ results, dir, directories }) => {
+    // directories.output follows --output (dir.output stays the config's "_site").
+    const outDir = (directories && directories.output) || dir.output;
     const readJson = (f, d) => { try { return JSON.parse(fs.readFileSync(path.join(__dirname, SITE_REL, "_data", f), "utf8")); } catch { return d; } };
     const photos = readJson("photos.json", []);
     const out = photoPages(results, photos.map((p) => p.slug));
     out.eventEnds = eventEnds(require("./lib/whatson.js").loadWhatson({ all: true }).events);
-    fs.writeFileSync(path.join(dir.output, "photo-pages.json"), JSON.stringify(out, null, 1) + "\n");
+    fs.writeFileSync(path.join(outDir, "photo-pages.json"), JSON.stringify(out, null, 1) + "\n");
     // Events and road works coming up, for the admin panel's Summary page (lib/comingup.js).
     const ukToday = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
     const pipeline = readJson("pipeline.json", {});
     const coming = require("./lib/comingup.js").comingUp({ whatson: require("./lib/whatson.js").loadWhatson(), pipeline }, ukToday);
-    fs.writeFileSync(path.join(dir.output, "coming-up.json"), JSON.stringify(coming, null, 1) + "\n");
+    fs.writeFileSync(path.join(outDir, "coming-up.json"), JSON.stringify(coming, null, 1) + "\n");
   });
 
   // "October 2026" from "2026-10" (Regular activities: details last checked)

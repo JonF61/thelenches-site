@@ -37,14 +37,14 @@ const LIVE = new Set(['approved', 'auto']);
 
 /* ------------------------------------------------------------ keys -- */
 
-// { kind, file?, index?, id? } or null.
-export function parseKey(key) {
+// { kind, file?, index?, id? } or null. site: the panel's site (its repo folder; default the Lenches).
+export function parseKey(key, site) {
   const k = String(key || '');
   let m;
-  if ((m = k.match(/^h:(events|notices)\/([a-z0-9][a-z0-9._-]{0,150}\.json)$/i)) && !m[2].includes('..')) return { kind: m[1], file: `${siteRel()}/items/${m[1]}/${m[2]}` };
-  if ((m = k.match(/^r:(\d{1,4})$/))) return { kind: 'regulars', index: Number(m[1]), file: `${siteRel()}/items/regulars.json` };
-  if ((m = k.match(/^e:([a-z0-9][a-z0-9-]{0,79})$/))) return { kind: 'eat', id: m[1], file: `${siteRel()}/_data/eat.json` };
-  if ((m = k.match(/^t:([a-z0-9][a-z0-9-]{0,79})$/))) return { kind: 'trades', id: m[1], file: `${siteRel()}/_data/trades.json` };
+  if ((m = k.match(/^h:(events|notices)\/([a-z0-9][a-z0-9._-]{0,150}\.json)$/i)) && !m[2].includes('..')) return { kind: m[1], file: `${siteRel(site)}/items/${m[1]}/${m[2]}` };
+  if ((m = k.match(/^r:(\d{1,4})$/))) return { kind: 'regulars', index: Number(m[1]), file: `${siteRel(site)}/items/regulars.json` };
+  if ((m = k.match(/^e:([a-z0-9][a-z0-9-]{0,79})$/))) return { kind: 'eat', id: m[1], file: `${siteRel(site)}/_data/eat.json` };
+  if ((m = k.match(/^t:([a-z0-9][a-z0-9-]{0,79})$/))) return { kind: 'trades', id: m[1], file: `${siteRel(site)}/_data/trades.json` };
   if ((m = k.match(/^p:([A-Za-z0-9_-]{1,100})$/))) return { kind: 'pending', id: m[1] };
   return null;
 }
@@ -172,7 +172,7 @@ const fail = (status, error) => ({ ok: false, status, error });
 
 // The entry from main (repo files) or the Pending tab. { ok, parsed, view } or a failure.
 export async function readEntry(env, key, { read = readSource, table = readTable } = {}) {
-  const parsed = parseKey(key);
+  const parsed = parseKey(key, env.SITE);
   if (!parsed) return fail(400, 'Not an entry that can be edited here: ask Kryten');
   let entry;
   if (parsed.kind === 'pending') {
@@ -278,9 +278,10 @@ export function draftEditCsp(origin) {
 }
 
 // The draft (as /admin/draft shows it) with the editor in it, framed by the panel only.
-export function draftEditHtml(html, { origin, csrf, version }) {
+// panelSite: the panel's site, sent back on every call (x-site) so edits go to its Sheet and files.
+export function draftEditHtml(html, { origin, csrf, version, site: panelSite = 'lenches' }) {
   const data = {
-    mode: 'draft', csrf, blocks: [], entryApi: `${origin}/admin/api/entry`, entrySaveApi: `${origin}/admin/api/entry-save`,
+    mode: 'draft', csrf, panelSite, blocks: [], entryApi: `${origin}/admin/api/entry`, entrySaveApi: `${origin}/admin/api/entry-save`,
     entryStatusApi: `${origin}/admin/api/entry-status`, site: 'https://thelenches.org.uk',
   };
   const tail = `<link rel="stylesheet" href="${esc(origin)}/admin/pageedit.css?v=${esc(version)}">`

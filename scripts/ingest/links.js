@@ -4,6 +4,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const { siteName } = require('../../lib/site');
 
 const LINK_DAYS = 14; // approve/reject links expire after this
 
@@ -16,7 +17,11 @@ function linksEnabled() {
 }
 
 // Any payload ({ a, i, e, ... }) as a Worker URL. route: "/a" (actions) or "/u" (unsubscribe).
+// An action link made by another site's run names that site (s), so the Worker sends the
+// decision to that site's run (Harvington stage 4c); Lenches links stay as they were.
 function signToken(payload, route = '/a') {
+  const site = siteName();
+  if (route === '/a' && site !== 'lenches' && payload.s === undefined) payload = { ...payload, s: site };
   const body = Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
   const sig = crypto.createHmac('sha256', process.env.APPROVAL_SIGNING_KEY).update(body).digest('base64url');
   return `${workerUrl()}${route}?t=${body}.${sig}`;

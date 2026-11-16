@@ -28,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '58';
+export const UI_VERSION = '59';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -38,6 +38,27 @@ export const CLIENT_JS = String.raw`
     picked: {}, ff: '', openF: {}, drag: null, busy: false, order: {}, shown: '' };
   var wideQ = window.matchMedia('(min-width: 900px)');
   var wide = function () { return wideQ.matches; };
+  // The site this tab shows (Harvington stage 4c-1, 16 Nov): ?site= in the address, else the one
+  // chosen last time in this browser, else the Lenches. Fixed for the life of the tab (the address
+  // keeps it, so a reload stays put and two tabs can show different sites); every call sends it
+  // (x-site) and the Worker reads and writes that site's Sheet.
+  var MAIN_SITE = 'lenches';
+  var SITE = (function () {
+    var q = '';
+    var kept = '';
+    try { q = new URLSearchParams(location.search).get('site') || ''; } catch (e) { q = ''; }
+    try { kept = localStorage.getItem('panelSite') || ''; } catch (e) { kept = ''; }
+    var ok = function (x) { return /^[a-z]{1,30}$/.test(x); };
+    var s = ok(q) ? q : (ok(kept) ? kept : MAIN_SITE);
+    try { localStorage.setItem('panelSite', s); } catch (e) { /* private window: not remembered */ }
+    try { if (q !== s) history.replaceState(null, '', location.pathname + '?site=' + encodeURIComponent(s) + location.hash); } catch (e) { /* fine */ }
+    return s;
+  })();
+  var mainSite = function () { return SITE === MAIN_SITE; };
+  // Screens for the Lenches alone until 4c-2 (its newsletter, visitor counts and Photos library).
+  var LENCHES_ONLY = { draft: 1, stats: 1, visitors: 1, photos: 1 };
+  var shownHere = function (view) { return mainSite() || !LENCHES_ONLY[view]; };
+  var withSite = function (path) { return path + (path.indexOf('?') < 0 ? '?' : '&') + 'site=' + encodeURIComponent(SITE); };
   var VIEWS = [['summary', 'Summary'], ['draft', 'Newsletter draft'], ['stats', 'Newsletter stats'], ['visitors', 'Site visitors'], ['queue', 'Submissions'], ['suggestions', 'Suggestions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['autonomy', 'Autonomy'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
   // Health has no menu entry (28 Oct): the top bar's Diagnostic and Watchdog open it, as does Summary's Site health.
   // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
@@ -52,7 +73,7 @@ export const CLIENT_JS = String.raw`
     owed: 'Emails that got a holding reply over 2 days ago but no real answer yet. Redraft one, reply yourself, or close it.',
     suggestions: 'New Local trades and Where to eat entries suggested by readers through the forms on those pages, already confirmed by email. Approve adds the entry to the page as shown; Edit lets you change it first.',
     feedback: 'Comments and corrections from readers via the website\'s feedback form, to approve, reject or postpone, with Holly\'s replies to them.',
-    lessons: 'Rules Holly follows in every draft. Approve or reject the weekly suggestions, edit or delete any lesson, or add your own (yours count as approved).',
+    lessons: 'Rules Holly follows in every draft, for both websites (one list, kept in the Lenches Sheet). Approve or reject the weekly suggestions, edit or delete any lesson, or add your own (yours count as approved).',
     contacts: 'Everyone who sends in, or could send in, news and events, with their profile, contributions and status. Outreach shows who is due a friendly nudge; Organisations, the yearly check of each organisation\'s entry on the site.',
     photos: 'Photos in the Lenches Photos folders in Google Drive. Approve or reject new ones, rename them, or move them between folders.',
     health: 'The daily diagnostic, the watchdog and the Google account the panel uses. Look here if something seems wrong.',
@@ -63,6 +84,7 @@ export const CLIENT_JS = String.raw`
   var HELP = {
     summary: [
       'Each box is one screen in short. Tap its heading to open that screen.',
+      ['Website buttons (top bar)', 'which website the panel is showing: its name and colour. Everything you see and every tap is for that website alone (its own Sheet, submissions, replies and contacts); Holly lessons are shared. The panel remembers your choice; each browser tab keeps the website it opened with.'],
       ['No action needed on…', 'the screens with nothing waiting for you.'],
       ['Red numbers and badges', 'something needs you, e.g. a failed job or an urgent item.'],
       ['Claude spend', 'what the Claude API has cost this month in US dollars (as Anthropic bills), worked out from each job\'s own counts at list prices, so it can differ from the Console by a few cents. Cache = text Claude had read moments before, charged at a fraction of the price.']],
@@ -219,10 +241,10 @@ export const CLIENT_JS = String.raw`
   }
 
   async function api(path, body) {
-    var init = { credentials: 'same-origin' };
+    var init = { credentials: 'same-origin', headers: { 'x-site': SITE } };
     if (body) {
       init.method = 'POST';
-      init.headers = { 'content-type': 'application/json', 'x-csrf-token': S.csrf };
+      init.headers = { 'content-type': 'application/json', 'x-csrf-token': S.csrf, 'x-site': SITE };
       init.body = JSON.stringify(body);
     }
     var r;
@@ -284,11 +306,22 @@ export const CLIENT_JS = String.raw`
     try {
       if (!S.csrf) {
         var s = await api('/admin/api/session');
+        // A remembered site this panel no longer has: back to the Lenches.
+        if (s.status === 400 && !mainSite()) {
+          try { localStorage.removeItem('panelSite'); } catch (e) { /* fine */ }
+          location.replace(location.pathname + '?site=' + MAIN_SITE);
+          return;
+        }
         if (!s.ok) throw new Error(s.json.error || 'Not signed in');
         S.csrf = s.json.csrf;
+        S.sites = Array.isArray(s.json.sites) ? s.json.sites : [];
+        S.siteName = str(s.json.siteName) || SITE;
+        document.title = S.siteName + ' admin';
       }
       var r = await api('/admin/api/state');
       if (!r.ok) throw new Error(r.json.error || 'Could not load');
+      // Never show one site's items under the other's name.
+      if (r.json.site && r.json.site !== SITE) throw new Error('the answer was for another website: reload the page');
       S.data = r.json;
       S.done = {};
       S.files = {};
@@ -402,6 +435,7 @@ export const CLIENT_JS = String.raw`
 
   function render() {
     var d = S.data;
+    if (!shownHere(S.view)) S.view = 'summary';
     var view = S.view + '|' + S.pf + '|' + (wide() ? 'w' : 'n');
     var same = S.shown === view;
     var keep = same ? saveScroll() : null;
@@ -471,13 +505,14 @@ export const CLIENT_JS = String.raw`
       nl && !nl.error ? [str(nl.issue_date || nl.issue_id), ' · ', str(nl.status) || 'no state',
         nl.sent_at ? ' · sent ' + when(nl.sent_at) : '', sheetLink('Issues', nl._row)]
         : (nl && nl.error ? 'not readable' : 'none yet'),
-      h('button', { class: 'btn link', title: 'The next newsletter as it would be built now', onclick: go('draft') },
-        dm ? 'Draft ' + day(dm.issue_date) + ' · ' + hhmm(dm.as_of) : 'Draft'));
+      shownHere('draft') ? h('button', { class: 'btn link', title: 'The next newsletter as it would be built now', onclick: go('draft') },
+        dm ? 'Draft ' + day(dm.issue_date) + ' · ' + hhmm(dm.as_of) : 'Draft') : null);
     var hl = Array.isArray(d.health) ? d.health[0] : null;
     var hs = hl ? str(hl.status).toUpperCase() : '';
     var dog = d.watchdog || {};
-    return h('header', { class: 'top' },
-      h('h1', null, 'Lenches admin'),
+    var here = siteOf(SITE);
+    return h('header', { class: 'top', style: 'border-top:4px solid ' + here.colour },
+      h('div', { class: 'site-row' }, h('h1', { style: 'color:' + here.colour }, here.name + ' admin'), siteSwitcher()),
       h('div', { class: 'strip' },
         h('div', { class: 'chip' }, h('b', null, 'Holiday mode'), holSwitch, hol.error ? 'not readable' : (hol.on ? 'ON' : 'off')),
         nlChip,
@@ -487,6 +522,30 @@ export const CLIENT_JS = String.raw`
         h('div', { class: 'chip' }, h('span', { class: 'dot ' + (dog.error ? 'warn' : dog.open ? 'bad' : 'ok') }),
           h('button', { class: 'btn link chip-link', title: 'Open the Health page', onclick: go('health') }, h('b', null, 'Watchdog')), dog.error ? 'not readable' : dog.open ? 'alert since ' + when(dog.since) : 'clear'),
         h('button', { class: 'btn', onclick: function () { load(); } }, 'Reload')));
+  }
+
+  // The site switcher (4c-1): each site's name with its colour; choosing one reopens the panel
+  // for that site (and remembers it). Only shown when there is more than one site.
+  function siteOf(id) {
+    var list = S.sites || [];
+    for (var i = 0; i < list.length; i += 1) if (list[i].id === id) return list[i];
+    return { id: id, name: S.siteName || id, colour: '#3F5233' };
+  }
+  function siteSwitcher() {
+    var list = S.sites || [];
+    if (list.length < 2) return null;
+    return h('div', { class: 'site-switch', role: 'group', 'aria-label': 'Website' }, list.map(function (x) {
+      var on = x.id === SITE;
+      return h('button', {
+        class: on ? 'site-btn on' : 'site-btn', 'aria-pressed': on ? 'true' : 'false',
+        title: on ? 'Showing ' + x.name : 'Switch to ' + x.name,
+        style: on ? 'background:' + x.colour + ';border-color:' + x.colour : 'border-color:' + x.colour,
+        onclick: on ? null : function () {
+          try { localStorage.setItem('panelSite', x.id); } catch (e) { /* fine */ }
+          location.href = location.pathname + '?site=' + encodeURIComponent(x.id);
+        }
+      }, h('span', { class: 'site-dot', style: 'background:' + x.colour }), x.name);
+    }));
   }
 
   // Marks the latest diagnostic run's problems as dealt with (Health status CLEARED).
@@ -530,7 +589,7 @@ export const CLIENT_JS = String.raw`
 
   function nav(d) {
     var c = counts(d);
-    return h('nav', { class: 'side', 'aria-label': 'Sections' }, VIEWS.map(function (v) {
+    return h('nav', { class: 'side', 'aria-label': 'Sections' }, VIEWS.filter(function (v) { return shownHere(v[0]); }).map(function (v) {
       var b = h('button', {
         'aria-current': S.view === v[0] ? 'page' : null,
         onclick: function () { S.view = v[0]; closeOverlay(); render(); window.scrollTo(0, 0); }
@@ -3734,7 +3793,7 @@ export const CLIENT_JS = String.raw`
     S.draftAuth = 'checking';
     var out = false;
     try {
-      var r = await fetch('/admin/api/draft', { credentials: 'same-origin', redirect: 'manual' });
+      var r = await fetch('/admin/api/draft', { credentials: 'same-origin', redirect: 'manual', headers: { 'x-site': SITE } });
       out = r.type === 'opaqueredirect' || r.status === 401 || r.status === 403 || (r.status >= 300 && r.status < 400);
     } catch (e) {
       out = true;
@@ -3772,7 +3831,7 @@ export const CLIENT_JS = String.raw`
         canSend(m) && !sentFor(m) ? h('button', { class: 'btn send-all', disabled: S.draftBusy ? true : null, title: 'Send this built issue to every subscriber (asks first)', onclick: function () { sendConfirm(m); } }, m.send_mode === 'live' ? 'Send to all' : m.send_mode === 'canary' ? 'Canary send' : 'Shadow run') : null,
         m ? h('button', { class: S.draftEdit ? 'btn primary' : 'btn', title: 'Click an entry in the draft to change its wording or links (the website changes too)', 'aria-pressed': S.draftEdit ? 'true' : 'false',
           onclick: function () { S.draftEdit = !S.draftEdit; render(); } }, S.draftEdit ? 'Stop editing' : 'Edit text') : null,
-        h('a', { class: 'btn link', href: S.draftEdit ? '/admin/draft-edit' : '/admin/draft', target: '_blank', rel: 'noopener' }, 'Open in new tab'))));
+        h('a', { class: 'btn link', href: withSite(S.draftEdit ? '/admin/draft-edit' : '/admin/draft'), target: '_blank', rel: 'noopener' }, 'Open in new tab'))));
     // Edit text (4 Nov, "edit everything"): the same draft with the entry editor in it.
     if (S.draftEdit) {
       els.push(h('div', { class: 'note' }, 'Editing: click an outlined entry in the draft to change its wording or links, then Save and publish. The website changes too.'
@@ -3782,7 +3841,7 @@ export const CLIENT_JS = String.raw`
       'Rimmer reads the issue as a villager would and lists anything wrong. He runs on Wednesday evening after the deadline; Check runs him now.'));
     // The draft at its full height (3 Nov, Jon): the page scrolls as one, Rimmer's notes above it.
     els.push(S.draftAuth === 'ok'
-      ? h('iframe', { class: 'draft-frame', src: S.draftEdit ? '/admin/draft-edit?v=' + encodeURIComponent(m ? str(m.as_of) : '0') : '/admin/draft?v=' + encodeURIComponent(m ? str(m.as_of) : '0'),
+      ? h('iframe', { class: 'draft-frame', src: withSite((S.draftEdit ? '/admin/draft-edit?v=' : '/admin/draft?v=') + encodeURIComponent(m ? str(m.as_of) : '0')),
         title: S.draftEdit ? 'Newsletter draft (editing)' : 'Newsletter draft', scrolling: 'no', onload: fitFrame })
       : h('p', { class: 'loading' }, 'Loading the draft…'));
     return els;
