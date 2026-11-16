@@ -61,6 +61,14 @@ async function main() {
   ok(!fs.existsSync(path.join(out, 'sitemap.xml')), 'no sitemap before launch');
   fs.rmSync(out, { recursive: true, force: true });
 
+  // Shared layout from site.json (stage 6a): the name, the line under it and the title suffix.
+  const cfg = (s) => require(path.join(ROOT, 'sites', s, '_data', 'site.json'));
+  ok(cfg('lenches').brand === 'The Lenches' && cfg('lenches').brandLine === 'Church · Rous · Ab · Atch · Sheriffs' && cfg('lenches').titleName === 'The Lenches', 'Lenches header keys');
+  ok(cfg('harvington').brand === 'The Harvington' && cfg('harvington').brandLine === 'including Norton and Lenchwick' && cfg('harvington').titleName === 'Harvington', 'Harvington header keys');
+  ok(cfg('harvington').nav.length && cfg('harvington').footer.length, 'Harvington menu and footer');
+  const base = fs.readFileSync(path.join(ROOT, 'src/_includes/base.njk'), 'utf8');
+  ok(!/>The Lenches <span>|<strong>The Lenches Website|Church &middot; Rous/.test(base), 'base.njk: no fixed Lenches wording');
+
   console.log(`All site tests passed (${checks} checks).`);
 }
 main().catch((e) => { console.error(e); process.exit(1); });
