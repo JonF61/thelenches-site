@@ -10,6 +10,7 @@
 // gets the same answer. Never logs the address: this repo's Actions logs are public, and
 // the dispatch carries the row id only.
 
+import { siteWords, ownDomains } from './sites.js';
 import { getValues, appendValues, sheetGids, addTab, writeCells } from './admin/google.js';
 import { tableFrom } from './admin/sheet.js';
 import { dispatch } from './core.js';
@@ -34,7 +35,7 @@ export function validateSignup(fields) {
   const email = oneLine(fields.email).toLowerCase();
   if (!email) return { ok: false, error: 'Please enter your email address.' };
   if (email.length > MAX_EMAIL || !EMAIL_RE.test(email)) return { ok: false, error: 'That email address doesn\'t look right. Please check it.' };
-  if (email.endsWith('@thelenches.org.uk')) return { ok: false, error: 'Please use your own email address.' };
+  if (ownDomains().some((d) => email.endsWith(`@${d}`))) return { ok: false, error: 'Please use your own email address.' };
   return { ok: true, email };
 }
 
@@ -103,7 +104,7 @@ export async function handleSignup(request, env, { fetchImpl = fetch, now = Date
 
   const back = String(env.SITE_URL || '');
   const sentOrigin = request.headers.get('origin');
-  if (sentOrigin && sentOrigin !== origin) return reply(env, false, { ok: false, status: 403, message: 'This form only works on the Lenches website.', back });
+  if (sentOrigin && sentOrigin !== origin) return reply(env, false, { ok: false, status: 403, message: `This form only works on ${siteWords(env).website}.`, back });
   if (Number(request.headers.get('content-length') || 0) > MAX_POST) {
     return reply(env, false, { ok: false, status: 413, message: 'That was too long to send.', back });
   }
@@ -134,18 +135,18 @@ export async function handleSignup(request, env, { fetchImpl = fetch, now = Date
 
   if (!(await verifyTurnstile(env, fields['cf-turnstile-response'], ip, fetchImpl))) {
     return fail(403, js
-      ? 'We couldn\'t confirm you\'re not a robot. Please try again, or email website@thelenches.org.uk and ask to be added.'
-      : 'This form needs JavaScript turned on to check you\'re not a robot. Please email website@thelenches.org.uk and ask to be added instead.');
+      ? `We couldn't confirm you're not a robot. Please try again, or email ${siteWords(env).email} and ask to be added.`
+      : `This form needs JavaScript turned on to check you're not a robot. Please email ${siteWords(env).email} and ask to be added instead.`);
   }
 
   try {
     const saved = await saveSignup(env, v.email, now());
-    if (saved.full) return fail(503, 'We\'re receiving a lot of sign-ups today. Please try again tomorrow, or email website@thelenches.org.uk.');
-    if (saved.failed) return fail(502, 'Sorry, something went wrong. Please try again in a few minutes, or email website@thelenches.org.uk.');
+    if (saved.full) return fail(503, `We're receiving a lot of sign-ups today. Please try again tomorrow, or email ${siteWords(env).email}.`);
+    if (saved.failed) return fail(502, `Sorry, something went wrong. Please try again in a few minutes, or email ${siteWords(env).email}.`);
     console.log(saved.repeat ? 'Sign-up repeated today: no second email.' : `Sign-up ${saved.id} saved; confirmation dispatched.`);
   } catch (e) {
     console.error(`Sign-up not saved: ${e.message}`);
-    return fail(502, 'Sorry, something went wrong. Please try again later, or email website@thelenches.org.uk.');
+    return fail(502, `Sorry, something went wrong. Please try again later, or email ${siteWords(env).email}.`);
   }
   return done();
 }

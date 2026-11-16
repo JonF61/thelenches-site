@@ -17,16 +17,21 @@ import { tableFrom } from './admin/sheet.js';
 import { dispatch } from './core.js';
 import { londonStamp, verifyTurnstile, allowed, reply, plainPage, siteOrigin } from './feedback.js';
 import { validateSignup } from './signup.js';
-import tradesData from '../../sites/lenches/_data/trades.json' with { type: 'json' };
-import eatData from '../../sites/lenches/_data/eat.json' with { type: 'json' };
+import { listingData } from './listings.js';
+import { siteWords } from './sites.js';
 
 export const RECOMMEND_TAB = 'Recommendations';
 export const RECOMMEND_HEADERS = ['id', 'requested', 'kind', 'entry', 'email', 'key', 'status', 'sent_at', 'confirmed_at', 'result'];
 
-export const LISTINGS = {
-  trades: { entries: tradesData.trades, page: '/living-here/trades/', label: 'Local trades' },
-  eat: { entries: eatData.places, page: '/living-here/eat/', label: 'Where to eat' },
-};
+// The two lists for a site (its own trades.json and eat.json, worker/src/listings.js).
+export function listingsFor(site) {
+  const d = listingData(site);
+  return {
+    trades: { entries: d.trades.trades || [], page: '/living-here/trades/', label: 'Local trades' },
+    eat: { entries: d.eat.places || [], page: '/living-here/eat/', label: 'Where to eat' },
+  };
+}
+export const LISTINGS = listingsFor();
 
 const MAX_POST = 5000;
 const DAILY_CAP = 200;      // recommendations a day in all
@@ -36,9 +41,10 @@ export const RECOMMEND_THANKS = 'Nearly done: check your inbox for an email from
 
 const lc = (v) => String(v ?? '').trim().toLowerCase();
 
-// The listed entry for kind + id, or null.
-export function listedEntry(kind, id) {
-  const l = Object.prototype.hasOwnProperty.call(LISTINGS, kind) ? LISTINGS[kind] : null;
+// The listed entry for kind + id on a site (default: the Lenches), or null.
+export function listedEntry(kind, id, site) {
+  const lists = listingsFor(site);
+  const l = Object.prototype.hasOwnProperty.call(lists, kind) ? lists[kind] : null;
   if (!l || !/^[a-z0-9-]{1,80}$/.test(String(id || ''))) return null;
   const e = l.entries.find((x) => x.id === id);
   return e ? { ...e, kind, page: l.page, label: l.label } : null;
@@ -112,7 +118,7 @@ export async function handleRecommend(request, env, { fetchImpl = fetch, now = D
 
   const back = String(env.SITE_URL || '');
   const sentOrigin = request.headers.get('origin');
-  if (sentOrigin && sentOrigin !== origin) return reply(env, false, { ok: false, status: 403, message: 'This form only works on the Lenches website.', back });
+  if (sentOrigin && sentOrigin !== origin) return reply(env, false, { ok: false, status: 403, message: `This form only works on ${siteWords(env).website}.`, back });
   if (Number(request.headers.get('content-length') || 0) > MAX_POST) {
     return reply(env, false, { ok: false, status: 413, message: 'That was too long to send.', back });
   }
@@ -137,7 +143,7 @@ export async function handleRecommend(request, env, { fetchImpl = fetch, now = D
 
   if (fields.website.trim()) return done();   // honeypot
 
-  const entry = listedEntry(fields.kind, fields.entry);
+  const entry = listedEntry(fields.kind, fields.entry, env.SITE);
   if (!entry) return fail(400, 'We couldn\'t find that entry. Please reload the page and try again.');
   const v = validateSignup(fields);
   if (!v.ok) return fail(400, v.error);

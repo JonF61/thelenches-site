@@ -11,6 +11,7 @@
 // The tab is created here on the first submission (at the end, header row only); columns
 // are read by header name, so Jon can add columns at the end later.
 
+import { siteWords } from './sites.js';
 import { getValues, appendValues, sheetGids, addTab, writeCells } from './admin/google.js';
 import { tableFrom } from './admin/sheet.js';
 
@@ -213,7 +214,7 @@ export async function handleFeedback(request, env, { fetchImpl = fetch, now = Da
   }
 
   const sentOrigin = request.headers.get('origin');
-  if (sentOrigin && sentOrigin !== origin) return reply(env, false, { ok: false, status: 403, message: 'This form only works on the Lenches website.' });
+  if (sentOrigin && sentOrigin !== origin) return reply(env, false, { ok: false, status: 403, message: `This form only works on ${siteWords(env).website}.` });
   if (Number(request.headers.get('content-length') || 0) > MAX_POST) {
     return reply(env, false, { ok: false, status: 413, message: 'That was too long to send.' });
   }
@@ -247,17 +248,17 @@ export async function handleFeedback(request, env, { fetchImpl = fetch, now = Da
 
   if (!(await verifyTurnstile(env, fields['cf-turnstile-response'], ip, fetchImpl))) {
     return fail(403, js
-      ? 'We couldn\'t confirm you\'re not a robot. Please try again, or email website@thelenches.org.uk.'
-      : 'This form needs JavaScript turned on to check you\'re not a robot. Please email website@thelenches.org.uk instead.');
+      ? `We couldn't confirm you're not a robot. Please try again, or email ${siteWords(env).email}.`
+      : `This form needs JavaScript turned on to check you're not a robot. Please email ${siteWords(env).email} instead.`);
   }
 
   try {
     const saved = await saveFeedback(env, v.value, now());
-    if (saved.full) return fail(503, 'We\'re receiving a lot of messages today. Please try again tomorrow, or email website@thelenches.org.uk.');
+    if (saved.full) return fail(503, `We're receiving a lot of messages today. Please try again tomorrow, or email ${siteWords(env).email}.`);
     console.log(`Feedback ${saved.id} saved (${v.value.type}).`);
   } catch (e) {
     console.error(`Feedback not saved: ${e.message}`);
-    return fail(502, 'Sorry, something went wrong and your message wasn\'t saved. Please try again later, or email website@thelenches.org.uk.');
+    return fail(502, `Sorry, something went wrong and your message wasn't saved. Please try again later, or email ${siteWords(env).email}.`);
   }
   const done = v.value.email ? `${thanks} We'll email you to let you know what happens.` : thanks;
   return reply(env, js, { ok: true, message: done, back });

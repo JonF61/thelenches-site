@@ -43,7 +43,8 @@ ok(typeof select.select === 'function', 'select loads');
 const payloadOf = (url) => JSON.parse(Buffer.from(url.split('?t=')[1].split('.')[0], 'base64url').toString());
 ok(payloadOf(signToken({ a: 'unsub', i: 'x' }, '/u')).s === 'harvington', 'unsubscribe link names the site');
 ok(payloadOf(signToken({ a: 'c', i: '2026-11-19', u: 'https://x' }, '/c')).s === 'harvington', 'click link names the site');
-ok(payloadOf(signToken({ a: 'sug', i: 'x' }, '/sg')).s === undefined, 'other routes unchanged');
+ok(['/s', '/r', '/sg'].every((r) => payloadOf(signToken({ a: 'sug', i: 'x' }, r)).s === 'harvington'), 'Harvington sign-up, recommend and suggest links name its site (stage 7)');
+    ok(payloadOf(signToken({ a: 'x', i: 'x' }, '/f')).s === undefined, 'other routes unchanged');
 const mail = unsub.forPreview(out);
 ok(mail.html.includes('https://harvingtonvillage.org.uk/privacy/'), 'preview unsubscribe link is Harvington\'s privacy page');
 
