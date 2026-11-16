@@ -28,7 +28,7 @@
 // Written without backticks or dollar-brace so it can live inside String.raw below.
 
 // Bump when the script or stylesheet changes, so browsers fetch the new one.
-export const UI_VERSION = '59';
+export const UI_VERSION = '60';
 
 export const CLIENT_JS = String.raw`
 (function () {
@@ -55,9 +55,25 @@ export const CLIENT_JS = String.raw`
     return s;
   })();
   var mainSite = function () { return SITE === MAIN_SITE; };
-  // Screens for the Lenches alone until 4c-2 (its newsletter, visitor counts and Photos library).
-  var LENCHES_ONLY = { draft: 1, stats: 1, visitors: 1, photos: 1 };
+  // Screens for the Lenches alone: the Photos library (Lenches Photos in Drive).
+  var LENCHES_ONLY = { photos: 1 };
   var shownHere = function (view) { return mainSite() || !LENCHES_ONLY[view]; };
+  // This site's address (no trailing slash), for links to its pages.
+  var siteUrl = function () { return str(siteOf(SITE).url) || 'https://thelenches.org.uk'; };
+  // Screens with nothing to show yet on this site (4c-2), with what to say instead: no newsletter
+  // while Settings newsletter_mode is off (Harvington until stage 5), no visitor counts until the
+  // site carries the analytics beacon (launch). The Lenches always shows everything.
+  function notYet(view) {
+    if (mainSite() || !S.data) return '';
+    var name = siteOf(SITE).name;
+    if ((view === 'draft' || view === 'stats') && S.data.newsletterMode === 'off') {
+      return name + ' has no newsletter yet (its Settings tab has newsletter_mode off). This screen fills in once its newsletter starts.';
+    }
+    if (view === 'visitors' && !siteOf(SITE).analytics) {
+      return 'Visitor counts for ' + name + ' start when the website launches and its pages carry the analytics code.';
+    }
+    return '';
+  }
   var withSite = function (path) { return path + (path.indexOf('?') < 0 ? '?' : '&') + 'site=' + encodeURIComponent(SITE); };
   var VIEWS = [['summary', 'Summary'], ['draft', 'Newsletter draft'], ['stats', 'Newsletter stats'], ['visitors', 'Site visitors'], ['queue', 'Submissions'], ['suggestions', 'Suggestions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['autonomy', 'Autonomy'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
   // Health has no menu entry (28 Oct): the top bar's Diagnostic and Watchdog open it, as does Summary's Site health.
@@ -87,7 +103,7 @@ export const CLIENT_JS = String.raw`
       ['Website buttons (top bar)', 'which website the panel is showing: its name and colour. Everything you see and every tap is for that website alone (its own Sheet, submissions, replies and contacts); Holly lessons are shared. The panel remembers your choice; each browser tab keeps the website it opened with.'],
       ['No action needed on…', 'the screens with nothing waiting for you.'],
       ['Red numbers and badges', 'something needs you, e.g. a failed job or an urgent item.'],
-      ['Claude spend', 'what the Claude API has cost this month in US dollars (as Anthropic bills), worked out from each job\'s own counts at list prices, so it can differ from the Console by a few cents. Cache = text Claude had read moments before, charged at a fraction of the price.']],
+      ['Claude spend', 'for the website shown, with all websites\' total underneath: what the Claude API has cost this month in US dollars (as Anthropic bills), worked out from each job\'s own counts at list prices, so it can differ from the Console by a few cents. Cache = text Claude had read moments before, charged at a fraction of the price.']],
     autonomy: [
       'Each kind of submission or reply counts your decisions on Holly\'s work.',
       ['As written / changed / rejected', 'approved unchanged, approved after your edits, or turned down.'],
@@ -505,7 +521,7 @@ export const CLIENT_JS = String.raw`
       nl && !nl.error ? [str(nl.issue_date || nl.issue_id), ' · ', str(nl.status) || 'no state',
         nl.sent_at ? ' · sent ' + when(nl.sent_at) : '', sheetLink('Issues', nl._row)]
         : (nl && nl.error ? 'not readable' : 'none yet'),
-      shownHere('draft') ? h('button', { class: 'btn link', title: 'The next newsletter as it would be built now', onclick: go('draft') },
+      !notYet('draft') ? h('button', { class: 'btn link', title: 'The next newsletter as it would be built now', onclick: go('draft') },
         dm ? 'Draft ' + day(dm.issue_date) + ' · ' + hhmm(dm.as_of) : 'Draft') : null);
     var hl = Array.isArray(d.health) ? d.health[0] : null;
     var hs = hl ? str(hl.status).toUpperCase() : '';
@@ -613,6 +629,7 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'lessons') return [h('div', { class: 'list wide' }, top, lessonsView())];
     if (S.view === 'autonomy') return [h('div', { class: 'list wide' }, top, autonomyView())];
     if (S.view === 'activity') return [h('div', { class: 'list wide' }, top, activityView())];
+    if (notYet(S.view)) return [h('div', { class: 'list wide' }, top, h('div', { class: 'note' }, notYet(S.view)))];
     if (S.view === 'stats') return [h('div', { class: 'list wide' }, top, statsView())];
     // Site visitors: Refresh at the top right, beside the intro (Jon, 3 Nov).
     if (S.view === 'visitors') return [h('div', { class: 'list wide' }, h('div', { class: 'intro-row' }, top,
@@ -3625,7 +3642,7 @@ export const CLIENT_JS = String.raw`
       els.push(h('div', { class: 'card' },
         h('h2', null, 'Most viewed pages: ' + monthName(pick.month)),
         pick.pages.length ? h('table', { class: 'h' }, h('tbody', null, pick.pages.map(function (p) {
-          return h('tr', null, h('td', { class: 'run-t' }, String(p.views)), h('td', null, h('a', { href: 'https://thelenches.org.uk' + p.path, target: '_blank', rel: 'noopener' }, p.path)));
+          return h('tr', null, h('td', { class: 'run-t' }, String(p.views)), h('td', null, h('a', { href: siteUrl() + p.path, target: '_blank', rel: 'noopener' }, p.path)));
         }))) : h('p', { class: 'meta' }, 'No page views counted.')));
     }
     els.push(h('p', { class: 'meta' }, 'Days run midnight to midnight UK time. A visit is one person’s session; page views count every page they open. Counted by Cloudflare without cookies, so some visitors who block it are missed. Each day is saved to the Visitors tab of the Sheet just after midnight.'));
@@ -4394,7 +4411,7 @@ export const CLIENT_JS = String.raw`
 
     // 8. Coming up this week.
     var cw = all.coming || {};
-    els.push(sumCard('Coming up this week', 'https://thelenches.org.uk/events/', cw.error ? [] : (cw.events || []).map(function (e) {
+    els.push(sumCard('Coming up this week', siteUrl() + '/events/', cw.error ? [] : (cw.events || []).map(function (e) {
       return [h('span', { class: 'meta' }, dayRange(e.date, e.end) + ' · '), e.url ? h('a', { href: e.url, target: '_blank', rel: 'noopener' }, str(e.title)) : str(e.title)];
     }), { top: cw.error ? errorNote(cw, 'The site\'s coming-up list') : null, empty: 'Nothing in the next 7 days' }));
 
@@ -4424,6 +4441,12 @@ export const CLIENT_JS = String.raw`
       if ((cs.jobs || []).length) cl.push(h('span', { class: 'meta' }, 'By job: ' + cs.jobs.slice(0, 6).map(function (j) { return j.job + ' ' + usd(j.cost); }).join(' · ')));
       if (cs.calls) cl.push(h('span', { class: 'meta' }, cs.cacheShare + '% of what Claude read came from the cache (cheaper)'));
     }
+    // Both websites share the Claude API key: each site's month and the total (4c-2).
+    var bySite = (all.claudeSpendSites || []).filter(function (x) { return !x.none; });
+    if (bySite.length > 1 || (bySite.length === 1 && bySite[0].site !== SITE)) {
+      var sum = bySite.reduce(function (n, x) { return n + Number(x.total || 0); }, 0);
+      cl.push(h('span', { class: 'meta' }, 'All websites this month: ' + usd(sum) + ' (' + bySite.map(function (x) { return x.name + ' ' + usd(x.total); }).join(' · ') + ')'));
+    }
     els.push(sumCard('Claude spend', null, cl, {}));
 
     // 12. Visitors (Cloudflare Web Analytics, admin/visitors.js).
@@ -4433,12 +4456,12 @@ export const CLIENT_JS = String.raw`
       vl.push(line(plural(vs.views, 'page view') + ', ' + plural(vs.visits, 'visit'), 'last 7 days', []));
       if ((vs.days || []).length) vl.push(h('span', { class: 'meta' }, 'By day: ' + vs.days.map(function (x) { return day(x.date) + ' ' + x.views; }).join(' · ')));
       (vs.pages || []).forEach(function (p) {
-        vl.push([h('a', { href: 'https://thelenches.org.uk' + str(p.path), target: '_blank', rel: 'noopener' }, str(p.path)), h('span', { class: 'meta' }, ' · ' + plural(p.views, 'view'))]);
+        vl.push([h('a', { href: siteUrl() + str(p.path), target: '_blank', rel: 'noopener' }, str(p.path)), h('span', { class: 'meta' }, ' · ' + plural(p.views, 'view'))]);
       });
     }
     els.push(sumCard('Visitors', go('visitors'), vl, {
       top: vs.error ? errorNote(vs, 'Visitor counts') : null,
-      empty: vs.off ? 'Not set up: the Worker needs CF_ANALYTICS_TOKEN and CF_ACCOUNT_ID' : 'No visits counted yet'
+      empty: vs.notLive ? 'Counted from launch, once the website\'s pages carry the analytics code' : vs.off ? 'Not set up: the Worker needs CF_ANALYTICS_TOKEN and CF_ACCOUNT_ID' : 'No visits counted yet'
     }));
     return els;
   }

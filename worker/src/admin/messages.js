@@ -9,15 +9,18 @@
 // Gmail id is a sent Replies row (sent_gmail_id), or one from us that ends with her sign-off;
 // anything else from us is "you". Nothing is stored or logged.
 import { splitSignature } from './google.js';
+import { SITES } from '../sites.js';
 
 export const MAX_MESSAGES = 25;
-const NEWSLETTER_SUBJECT = 'The Lenches Newsletter';
+// Every site's newsletter is left out (4c-2: "The Lenches Newsletter", "The Harvington Newsletter").
+export const NEWSLETTER_SUBJECTS = [...new Set(['The Lenches Newsletter',
+  ...Object.values(SITES).map((c) => String(c.newsletterName || '').trim()).filter(Boolean)])];
 const str = (v) => String(v ?? '').trim();
 
 // The Gmail search for these addresses.
 export function historyQuery(addresses) {
   const parts = addresses.flatMap((a) => [`from:${a}`, `to:${a}`]);
-  return `{${parts.join(' ')}} -subject:"${NEWSLETTER_SUBJECT}"`;
+  return `{${parts.join(' ')}} ${NEWSLETTER_SUBJECTS.map((n) => `-subject:"${n}"`).join(' ')}`;
 }
 
 // The bare address in a From/To header.
@@ -34,7 +37,7 @@ const OPTOUT = /\n+If you'd rather we didn't get in touch[^\n]*$/;
 // auto, internalDate, id }) -> a history entry, or null if it is left out.
 export function entryFor(m, { addresses, hollyIds }) {
   if (/auto-generated/i.test(m.auto || '')) return null;
-  if (String(m.subject || '').includes(NEWSLETTER_SUBJECT)) return null;
+  if (NEWSLETTER_SUBJECTS.some((n) => String(m.subject || '').includes(n))) return null;
   const from = addressIn(m.from);
   const theirs = addresses.includes(from);
   const raw = String(m.text || '');

@@ -7,7 +7,7 @@
 // pages = "path count | path count …" (top PAGES of that day). Counts only: no addresses or IPs.
 // visitorHistory() reads the tab and adds today so far, live from Cloudflare.
 
-import { API, HOST } from './visitors.js';
+import { API, HOST, hostFor, notCounted } from './visitors.js';
 import { readTable } from './sheet.js';
 import { addTab, appendValues } from './google.js';
 
@@ -40,8 +40,8 @@ export function ukMidnight(iso) {
 }
 
 // One UK day's (or part day's) totals and top pages.
-export function dayQuery(account, from, to) {
-  const f = `{ datetime_geq: "${from}", datetime_lt: "${to}", requestHost: "${HOST}" }`;
+export function dayQuery(account, from, to, host = HOST) {
+  const f = `{ datetime_geq: "${from}", datetime_lt: "${to}", requestHost: "${host}" }`;
   return `{
   viewer {
     accounts(filter: { accountTag: "${account}" }) {
@@ -81,7 +81,7 @@ export async function fetchDay(env, iso, untilMs) {
   const r = await fetch(API, {
     method: 'POST',
     headers: { authorization: `Bearer ${s.token}`, 'content-type': 'application/json' },
-    body: JSON.stringify({ query: dayQuery(s.account, from, to) }),
+    body: JSON.stringify({ query: dayQuery(s.account, from, to, hostFor(env)) }),
   });
   if (!r.ok) throw new Error(`Cloudflare analytics: HTTP ${r.status}`);
   return parseDay(await r.json());
@@ -115,6 +115,7 @@ export function missingDays(rows, today) {
 // Nightly: saves each missing finished day. Returns { saved, failed } (counts and dates only).
 export async function logVisitors(env, ms = Date.now()) {
   if (!secrets(env)) return { off: true };
+  if (notCounted(env)) return { off: true, notLive: true };
   const tab = await readVisitors(env);
   if (tab.missing) await addTab(env, VISITORS_TAB);
   if (tab.missing || !tab.headers.includes('date')) await appendValues(env, VISITORS_TAB, [HEADERS]);
@@ -169,6 +170,7 @@ export function history(rows, today = null) {
 // The screen's data: { off } | { days, months, todayError? }.
 export async function visitorHistory(env, ms = Date.now()) {
   if (!secrets(env)) return { off: true };
+  if (notCounted(env)) return { off: true, notLive: true };
   const tab = await readVisitors(env);
   const date = ukDate(ms);
   let today = null;

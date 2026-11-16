@@ -2,8 +2,8 @@
 // Browser check of the panel's site switcher (Harvington stage 4c-1, ui/client.js) against a
 // mock API, on desktop and phone sizes: the top bar shows each site's name and colour; every API
 // call carries x-site for the site the tab shows; choosing the other site reopens the panel for
-// it (?site=) and remembers it; the Lenches-only screens (Newsletter draft and stats, Site
-// visitors, Photos) are not in Harvington's menu. Saves screenshots (SHOTS=dir).
+// it (?site=) and remembers it; Photos is not in Harvington's menu, and its newsletter and
+// visitor screens say they start later (4c-2); Summary's Claude spend gives every site's month. Saves screenshots (SHOTS=dir).
 // Run: node worker/test/ui-sites.check.mjs
 import http from 'node:http';
 import assert from 'node:assert/strict';
@@ -28,6 +28,7 @@ const stateData = (site) => ({
   pending: { headers: [], rows: [{ _row: 2, id: `${site}-1`, status: 'pending', category: 'event', title: `A ${site} event`, summary: 'x' }] },
   replies: { headers: [], rows: [] }, owed: [], photos: { headers: [], rows: [] },
   photoFolders: [], photosRoot: site === 'lenches' ? 'r' : '', today: '2026-11-16', toDelete: [], feedback: { headers: [], rows: [] }, sent: [],
+  newsletterMode: site === 'lenches' ? 'live' : 'off',
 });
 
 const seen = [];
@@ -42,7 +43,14 @@ const server = http.createServer(async (req, res) => {
   if (!NAMES[site]) return send({ error: 'Unknown site' }, 'application/json', 400);
   if (url.pathname === '/admin/api/session') return send({ email: 'admin@example.org', csrf: 'c', site, siteName: NAMES[site], sites: siteList() });
   if (url.pathname === '/admin/api/state') return send(stateData(site));
-  if (url.pathname === '/admin/api/summary') return send({ today: '2026-11-16', devTasks: [] });
+  if (url.pathname === '/admin/api/summary') {
+    return send({ today: '2026-11-16', devTasks: [], failing: [], lessons: [], outreach: { seasonal: 0, quiet: 0, lead: 0 }, orgs: { due: 0, chase: 0 },
+      coming: { events: [], roads: [] }, subscribers: { since: '2026-11-12', joined: 0, left: 0, total: 0 },
+      issue: { date: '2026-11-19', deadline: '2026-11-18 18:00', deadlineAt: '2026-11-18T18:00:00Z', status: '', row: 0, onThisDay: '', events: 0, fresh: 0 },
+      visitors: site === 'lenches' ? { off: true } : { off: true, notLive: true },
+      claudeSpend: { month: '2026-11', total: site === 'lenches' ? 4.5 : 0.25, calls: 3, jobs: [], cacheShare: 0 },
+      claudeSpendSites: [{ site: 'lenches', name: 'The Lenches', total: 4.5 }, { site: 'harvington', name: 'Harvington', total: 0.25 }] });
+  }
   return send({ ok: true });
 });
 await new Promise((r) => server.listen(0, r));
@@ -53,6 +61,8 @@ try {
   for (const [name, viewport] of [['desktop', { width: 1280, height: 900 }], ['phone', { width: 390, height: 844 }]]) {
     const ctx = await browser.newContext({ viewport });
     const page = await ctx.newPage();
+    const errors = [];
+    page.on('pageerror', (e) => errors.push(e.message));
     seen.length = 0;
 
     // First visit: the Lenches, its name in the top bar, the full menu.
@@ -78,8 +88,15 @@ try {
     assert.equal(border, 'rgb(45, 74, 99)', 'Harvington river blue');
     if (name === 'desktop') {
       const items = await menu();
-      for (const gone of ['Newsletter draft', 'Newsletter stats', 'Site visitors', 'Photos']) assert.ok(!items.some((t) => t.startsWith(gone)), gone);
-      assert.ok(items.some((t) => t.startsWith('Submissions')));
+      assert.ok(!items.some((t) => t.startsWith('Photos')), 'Photos is the Lenches\' alone');
+      for (const v of ['Newsletter draft', 'Newsletter stats', 'Site visitors', 'Submissions']) assert.ok(items.some((t) => t.startsWith(v)), v);
+      await page.locator('nav.side button', { hasText: 'Newsletter draft' }).click();
+      await page.locator('.main .note', { hasText: 'Harvington has no newsletter yet' }).waitFor();
+      await page.locator('nav.side button', { hasText: 'Site visitors' }).click();
+      await page.locator('.main .note', { hasText: 'Visitor counts for Harvington start when the website launches' }).waitFor();
+      await page.locator('nav.side button', { hasText: 'Summary' }).click();
+      await page.getByText('All websites this month: $4.75 (The Lenches $4.50 · Harvington $0.25)').waitFor();
+      await page.getByText('Counted from launch').waitFor();
       await page.locator('nav.side button', { hasText: 'Submissions' }).click();
       await page.getByText('A harvington event').first().waitFor();
     }
@@ -105,6 +122,7 @@ try {
     await page.evaluate(() => localStorage.setItem('panelSite', 'gone'));
     await page.goto(`${base}/admin`);
     await page.locator('header.top h1', { hasText: 'The Lenches admin' }).waitFor();
+    assert.deepEqual(errors, [], 'no script errors');
     await ctx.close();
   }
   console.log('ui-sites: all checks passed');
