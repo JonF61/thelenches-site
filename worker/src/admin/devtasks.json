@@ -7,7 +7,7 @@
       "kryten": true
     },
     {
-      "task": "Harvington stage 4b (both sites' pipeline, 16 Nov): check the next Worker-fired ingest starts two Ingest runs (Lenches and Harvington) and both succeed; the next Publish run publishes both sites and builds whichever changed; Jon's test email in the Harvington label gives a Pending row in the Harvington Sheet (replies shadow, nothing sent); and the first item Holly marks for one site carries the Pending sites cell and note",
+      "task": "Harvington stage 4b: confirmed 16 Nov 20:17 (two Ingest runs, both succeeded; Publish generated both sites' data; Harvington Settings starter rows read back). Still to see: an emailed event or notice to the Harvington address becoming a Pending row in the Harvington Sheet (Jon's first test email was read as a question, no items; Holly drafted an answer in shadow, nothing sent), and the first item Holly marks for one site carrying the sites column",
       "added": "2026-11-16",
       "kryten": true
     },
