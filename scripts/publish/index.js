@@ -27,9 +27,13 @@
 // guards). Its caption goes to image_credit (and image_credit_url) unless already filled, and
 // the item carries image.credit / image.creditUrl for the site and newsletter captions.
 // image_choice "none" = no image.
+// Two sites (Harvington stage 4b): an item is for the sites in its Pending `sites` cell (blank =
+// both). Each site's run publishes its own Sheet's items for it plus the other Sheet's live items
+// for it, read-only (it never writes to the other Sheet); an item whose image the other site has
+// saved is copied across, else taken from the email. This site's own copy wins a title/date clash.
 'use strict';
 
-const { SITE_REL } = require('../../lib/site.js');
+const { SITE, SITE_REL, otherSites, itemSites, siteConfigFor } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
@@ -147,6 +151,35 @@ async function ensureJpeg(url, id, failures) {
   }
 }
 
+// An image for another site's item, without touching that site's Sheet: its saved file copied
+// into this site's images (WebP and JPEG), else taken from the email as imageFor would.
+async function imageForOther(row, failures) {
+  const current = str(row.image_url);
+  if (current.toLowerCase() === 'none' || current.startsWith('failed')) return '';
+  if (/^https:\/\//i.test(current)) return current;
+  if (!/^[A-Za-z0-9_-]{1,100}$/.test(str(row.id))) return '';
+  const m = current.match(/^\/images\/items\/([A-Za-z0-9_-]{1,100})\.webp$/);
+  try {
+    if (m) {
+      const theirs = path.join(ROOT, 'sites', row._site, 'images', 'items');
+      for (const ext of ['webp', 'jpg']) {
+        const src = path.join(theirs, `${m[1]}.${ext}`);
+        const dest = path.join(IMAGE_DIR, `${m[1]}.${ext}`);
+        if (!fs.existsSync(dest) && fs.existsSync(src)) {
+          fs.mkdirSync(IMAGE_DIR, { recursive: true });
+          fs.copyFileSync(src, dest);
+        }
+      }
+      if (fs.existsSync(path.join(IMAGE_DIR, `${m[1]}.webp`))) return current;
+    }
+    if (str(row.image_part_id) && str(row.message_id)) return await saveImage(row);
+  } catch (err) {
+    // The other site's own run records its image failures; here the item just goes without one.
+    console.warn(`${row._site} item ${row.id}: no image (${String((err && err.message) || err)})`);
+  }
+  return '';
+}
+
 async function imageFor(row, failures, suggestions) {
   const current = str(row.image_url);
   if (current.toLowerCase() === 'none' || current.startsWith('failed')) return '';
@@ -204,12 +237,24 @@ function windowFor(row, today) {
 
 async function main() {
   const today = londonDate(Date.now());
-  const rows = (await g.readTable('Pending'))
-    .filter((r) => LIVE.has(str(r.status).toLowerCase()) && str(r.title));
+  const forUs = (r) => LIVE.has(str(r.status).toLowerCase()) && str(r.title) && itemSites(r.sites).includes(SITE);
+  const rows = (await g.readTable('Pending')).filter(forUs);
+  // The other sites' live items for this site (read-only). An unreadable Sheet only leaves them
+  // out this run.
+  const others = [];
+  for (const s of otherSites()) {
+    if (!str(siteConfigFor(s).sheetId)) continue;
+    try {
+      others.push(...(await g.readOtherTable(s, 'Pending')).filter(forUs));
+    } catch (err) {
+      console.warn(`${s} Pending unreadable, its items left out this run: ${(err && err.message) || err}`);
+    }
+  }
 
-  // Later rows win, so a resubmitted item replaces the earlier copy on the site.
+  // Later rows win, so a resubmitted item replaces the earlier copy on the site; this site's own
+  // rows come last, so they win over the other site's copy of the same item.
   const byKey = new Map();
-  for (const r of rows) byKey.set(`${normTitle(r.title)}|${ymd(r.event_date)}`, r);
+  for (const r of [...others, ...rows]) byKey.set(`${normTitle(r.title)}|${ymd(r.event_date)}`, r);
 
   const out = { events: [], notices: [] };
   const failures = [];
@@ -250,7 +295,7 @@ async function main() {
     // Second link (2 Nov): e.g. a police reporting page named in the text; never a repeat of the first.
     const url2 = safeUrl(row.link2_url);
     if (url2 && url2 !== url) item.link2 = { text: str(row.link2_text) || 'More details', url: url2 };
-    const img = await imageFor(row, failures, suggestions);
+    const img = row._site ? await imageForOther(row, failures) : await imageFor(row, failures, suggestions);
     if (img) {
       item.image = { url: img, alt: str(row.alt_text) };
       if (str(row.image_credit)) item.image.credit = str(row.image_credit).slice(0, 120);
@@ -289,6 +334,7 @@ async function main() {
   const json = `${JSON.stringify(data, null, 2)}\n`;
   const old = fs.existsSync(DATA_FILE) ? fs.readFileSync(DATA_FILE, 'utf8') : '';
   if (json !== old) fs.writeFileSync(DATA_FILE, json);
+  if (others.length) console.log(`${others.length} live item(s) from the other site's Sheet.`);
   console.log(`${data.events.length} events, ${data.notices.length} notices`
     + `${json === old ? ' (unchanged)' : ' (updated)'}.`);
 
@@ -305,4 +351,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { imageFor, chosenImage, windowFor };
+module.exports = { main, imageFor, imageForOther, chosenImage, windowFor };

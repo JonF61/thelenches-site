@@ -1,7 +1,7 @@
 name: Publish to site
 
-# Regenerates sites/<site>/_data/pipeline.json (and item images) from approved/auto rows
-# in Pending. Runs after every approval and every ingestion run, commits only
+# Regenerates each site's sites/<site>/_data/pipeline.json (and item images) from approved/auto
+# rows in both sites' Pending tabs (Harvington stage 4b). Runs after every approval and every ingestion run, commits only
 # if something changed, then starts the site build (a GITHUB_TOKEN push can't).
 on:
   workflow_run:
@@ -14,19 +14,14 @@ permissions:
   actions: write
 
 concurrency:
-  group: publish-${{ github.event.client_payload.site || github.event.inputs.site || 'lenches' }}
+  # One run publishes both sites (Harvington stage 4b), so one queue.
+  group: publish
   cancel-in-progress: false
-
-env:
-  # Which site this run is for (lib/site.js): the dispatch payload's or Run workflow's `site`,
-  # else the Lenches (schedules, workflow_run). The Sheet is that site's site.json sheetId
-  # (Harvington stage 4, 16 Nov 2026).
-  SITE: ${{ github.event.client_payload.site || github.event.inputs.site || 'lenches' }}
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         with:
@@ -39,9 +34,22 @@ jobs:
 
       - run: npm ci --no-audit --no-fund
 
-      - name: Generate site data
+      # Each site: its own Sheet's items for it plus the other Sheet's live items for it
+      # (Pending `sites`; blank = both). A site without a sheetId is skipped by the script.
+      - name: Generate the Lenches site data
+        id: lenches
         run: node scripts/publish/index.js
         env:
+          SITE: lenches
+          GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+
+      - name: Generate the Harvington site data
+        id: harvington
+        if: ${{ !cancelled() }}
+        run: node scripts/publish/index.js
+        env:
+          SITE: harvington
           GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
 
@@ -50,11 +58,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git add sites/$SITE/_data/pipeline.json sites/$SITE/_data/roadgeo.json sites/$SITE/images
+          built=""
+          for site in lenches harvington; do
+            for f in sites/$site/_data/pipeline.json sites/$site/_data/roadgeo.json sites/$site/images; do
+              if [ -e "$f" ]; then git add "$f"; fi
+            done
+            if ! git diff --cached --quiet -- sites/$site; then built="$built $site"; fi
+          done
           if git diff --cached --quiet; then echo "No changes."; exit 0; fi
           git config user.name "Lenches Pipeline"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "Publish pipeline items"
           git pull --rebase
           git push
-          gh workflow run build.yml --ref main
+          for site in $built; do
+            if [ "$site" = lenches ]; then gh workflow run build.yml --ref main; fi
+            if [ "$site" = harvington ]; then gh workflow run build-harvington.yml --ref main; fi
+          done

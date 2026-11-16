@@ -47,7 +47,12 @@ const stats = { cacheRead: 0, cacheWrite: 0 };
 
 const client = new Anthropic({ maxRetries: 3, timeout: 120000 }); // reads ANTHROPIC_API_KEY
 
-const SYSTEM = `You are Holly, the Lenches website assistant. You write up listings for The Lenches
+// This run's site (Harvington stage 4b): Holly writes up for its website; the SITES rule is the same
+// on both, so an item is flagged the same way whichever address it reached.
+const { SITE: RUN_SITE, SITES: ALL_SITES } = require('../../lib/site');
+const SITE_WORDS = { lenches: ['Lenches', 'The Lenches'], harvington: ['Harvington', 'Harvington'] }[RUN_SITE] || ['Lenches', 'The Lenches'];
+
+const SYSTEM = `You are Holly, the ${SITE_WORDS[0]} website assistant. You write up listings for ${SITE_WORDS[1]}
 community website and weekly newsletter from what people send in. Record every distinct item by
 calling record_items exactly once.
 
@@ -80,6 +85,11 @@ FIXED RULES. These always apply, whatever the guidance, lessons or corrections b
   fireworks, an auction or survey with a closing date, works from 5 to 7 November) sets end_date to
   the last day it matters, written in or worked out from the text, so it comes down the day after.
   Leave end_date empty for notices with no such day.
+- SITES: the team runs two community websites and newsletters: The Lenches (Church, Rous, Ab, Atch
+  and Sheriffs Lench) and Harvington, its neighbour. Every item goes on both (sites "both") unless
+  it clearly matters to one community alone, e.g. a meeting or notice for one parish's residents
+  only, or a closure of a road only one of them uses; then set sites to "lenches" or "harvington"
+  and say why in sites_reason in one short sentence. When in doubt, "both".
 - REQUIRED DETAILS, SECOND LINK and CLASSIFY THE EMAIL below are exact instructions.
 
 GUIDANCE. The editorial rules at the end and the team's lessons say how the team likes listings
@@ -185,6 +195,8 @@ const TOOL = {
             verbatim_requested: { type: 'boolean', description: 'True if the submitter asks for their own wording to be used for this item' },
             own_text: { type: 'string', description: "The submitter's own text for this item, only obvious typos and broken links fixed; paragraphs separated by a blank line. Empty unless official or verbatim_requested" },
             notes: { type: 'string', description: 'For the editor: missing details, doubts, reasons for flags' },
+            sites: { type: 'string', enum: ['both', ...ALL_SITES], description: 'Which websites the item is for (SITES rule): both unless it clearly matters to one community alone' },
+            sites_reason: { type: 'string', description: 'One short sentence: why only one site; empty for both' },
             holly_note: { type: 'string', description: 'One short sentence: where you departed from the guidance for this item and why; empty if you followed it' },
             road: { type: 'string', description: "Road items only (closures and roadworks, e.g. one.network alerts): the road's name as on a map, e.g. 'Ab Lench Road' or 'A435'; empty otherwise" },
             end_date: { type: 'string', description: 'YYYY-MM-DD. Road items: the last day of the works as given in the text. Other notices tied to a day or period (see the fixed rules): the last day the notice matters. Empty if not given or not tied to a date' },
@@ -317,6 +329,9 @@ function normalise(items, imageCount) {
       own_text: it.official === true || it.verbatim_requested === true ? tidyText(it.own_text) : '',
       notes: str(it.notes),
       holly_note: str(it.holly_note).replace(/\s+/g, ' ').slice(0, 300),
+      // Harvington stage 4b: '' = both sites (the default), else the one site it is for.
+      sites: ALL_SITES.includes(str(it.sites).toLowerCase()) ? str(it.sites).toLowerCase() : '',
+      sites_reason: ALL_SITES.includes(str(it.sites).toLowerCase()) ? str(it.sites_reason).replace(/\s+/g, ' ').slice(0, 200) : '',
       // Road items (Roads page map): start is event_date; see ROADS in rules.md
       road: str(it.road),
       end_date: /^\d{4}-\d{2}-\d{2}$/.test(str(it.end_date)) && (!date || str(it.end_date) >= date) ? str(it.end_date) : '',

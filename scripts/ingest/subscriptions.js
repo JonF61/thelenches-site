@@ -13,7 +13,11 @@
 
 const g = require('./google');
 
-const OWN_DOMAIN = 'thelenches.org.uk';
+const { SITES, siteConfigFor, siteConfig } = require('../../lib/site');
+// Every site's domain is our own (Harvington stage 4b).
+const OWN_DOMAINS = SITES.map((s) => String(siteConfigFor(s).domain || '').toLowerCase()).filter(Boolean);
+const ownDomain = (a) => OWN_DOMAINS.some((d) => a.endsWith(`@${d}`));
+const SIGN_ROLE = String(siteConfig().hollySignoff || 'Holly / Lenches website assistant').split(' / ').slice(1).join(' / ') || 'Lenches website assistant';
 const ADDRESS_RE = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[a-z]{2,}$/i;
 const lc = (v) => String(v ?? '').trim().toLowerCase();
 
@@ -23,7 +27,7 @@ const lc = (v) => String(v ?? '').trim().toLowerCase();
 // Returns { done: 'subscribed' | 'already' | 'unsubscribed' | 'already_off' } or { refused: why }.
 async function applyListRequest(kind, address, stamp, opts = {}) {
   const email = lc(address);
-  if (!ADDRESS_RE.test(email) || email.endsWith(`@${OWN_DOMAIN}`)) return { refused: 'not a usable address' };
+  if (!ADDRESS_RE.test(email) || ownDomain(email)) return { refused: 'not a usable address' };
   const [subscribers, dns] = await Promise.all([g.readTable('Subscribers'), g.readTable('Do Not Send')]);
   if (subscribers.length && !subscribers.some((r) => 'email' in r)) return { refused: 'Subscribers has no "email" header' };
   const onDns = dns.some((r) => lc(r.email) === email);
@@ -91,7 +95,7 @@ function planContactSubscriptions(addresses, subscribers, dns) {
   let offList = 0;
   let unusable = 0;
   for (const a of new Set(addresses.map(lc).filter(Boolean))) {
-    if (!ADDRESS_RE.test(a) || a.endsWith(`@${OWN_DOMAIN}`)) unusable++;
+    if (!ADDRESS_RE.test(a) || ownDomain(a)) unusable++;
     else if (off.has(a)) offList++;
     else if (listed.has(a)) already++;
     else add.push(a);
@@ -127,7 +131,7 @@ function unsubscribedEmail(email, how, removed) {
     'Hi Jon,', '',
     `${email} has unsubscribed from the newsletter ${HOW[how] || HOW.link}.`, '',
     `${did} They've had the usual confirmation and won't get the newsletter again.`, '',
-    'Best wishes,', 'Holly', 'Lenches website assistant', '',
+    'Best wishes,', 'Holly', SIGN_ROLE, '',
   ].join('\n');
   const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const html = text.trim().split('\n\n').map((p) => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('\n');

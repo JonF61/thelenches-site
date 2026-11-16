@@ -64,6 +64,6 @@ const EXPR = "SITE: ${{ github.event.client_payload.site || github.event.inputs.
 for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.yml'))) {
   const y = fs.readFileSync(require('path').join(dir, f), 'utf8');
   ok(!/SHEET_ID:/.test(y), `${f}: no hard-coded SHEET_ID`);
-  if (/GOOGLE_SA_KEY/.test(y) && f !== 'sheet-setup.yml' && f !== 'build.yml') ok(y.includes(EXPR), `${f}: SITE from the run`);
+  if (/GOOGLE_SA_KEY/.test(y) && !['sheet-setup.yml', 'build.yml', 'publish.yml'].includes(f)) ok(y.includes(EXPR), `${f}: SITE from the run`);
 }
 console.log(`sheetsetup + workflows: ${n} checks passed`);

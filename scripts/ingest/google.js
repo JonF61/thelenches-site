@@ -437,6 +437,23 @@ async function readTable(tab) {
   });
 }
 
+// Another site's tab (Harvington stage 4b), read-only: rows keyed by header, each with _site
+// and _row. Never cached as this site's headers, and there is no matching write: cross-site
+// reads only ever look. Used by publish (items for both sites) and ingest (repeat check).
+async function readOtherTable(site, tab) {
+  const { siteConfigFor } = require('../../lib/site');
+  const id = String(siteConfigFor(site).sheetId || '').trim();
+  if (!id) return [];
+  const res = await sheets().spreadsheets.values.get({ spreadsheetId: id, range: `'${tab}'!A1:ZZ` });
+  const rows = res.data.values || [];
+  const headers = (rows[0] || []).map((h) => String(h).trim());
+  return rows.slice(1).map((r, i) => {
+    const obj = { _row: i + 2, _site: site };
+    headers.forEach((h, c) => { if (h) obj[h] = r[c] ?? ''; });
+    return obj;
+  });
+}
+
 // Settings tab: sources in A:C, key/value settings in E:F.
 async function readSettings() {
   const rows = await getValues(`'Settings'!A1:F100`);
@@ -550,6 +567,7 @@ async function replaceTab(tab, rows) {
 module.exports = {
   setSheetsClient: (c) => { sheetsClient = c; Object.keys(headerCache).forEach((k) => delete headerCache[k]); }, // offline tests
   listMessageIds,
+  readOtherTable,
   searchMessageIds,
   searchAllMessageIds,
   sendAsAddresses,

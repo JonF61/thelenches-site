@@ -115,9 +115,16 @@ const replycheck = require('../rimmer/replycheck');
 const sitechanges = require('./sitechanges');
 
 const TZ = 'Europe/London';
-const REPLY_FROM = 'website@thelenches.org.uk'; // never jon@: replies must not expose it
-const OWN_DOMAIN = 'thelenches.org.uk';
-const GUIDELINES_URL = 'https://thelenches.org.uk/contact/#submit';
+// This run's site (Harvington stage 4b): Holly writes from its website@ address and signs as its
+// assistant; every site's domain counts as our own.
+const SITE_LIB = require('../../lib/site');
+const SITE_CFG = SITE_LIB.siteConfig();
+const REPLY_FROM = String(SITE_CFG.email || 'website@thelenches.org.uk').toLowerCase(); // never jon@: replies must not expose it
+const OWN_DOMAINS = SITE_LIB.SITES.map((s) => String(SITE_LIB.siteConfigFor(s).domain || '').toLowerCase()).filter(Boolean);
+const ownDomain = (addr) => OWN_DOMAINS.some((d) => String(addr || '').toLowerCase().endsWith(`@${d}`));
+const GUIDELINES_URL = `${String(SITE_CFG.url || 'https://thelenches.org.uk').replace(/\/+$/, '')}/contact/#submit`;
+// Holly's role line under "Holly" in the signature: "Lenches website assistant" on the Lenches.
+const SIGN_ROLE = String(SITE_CFG.hollySignoff || 'Holly / Lenches website assistant').split(' / ').slice(1).join(' / ') || 'Lenches website assistant';
 const TEMPLATES_FILE = path.join(__dirname, '..', 'replies', 'templates.md');
 const VOICE_FILE = path.join(__dirname, '..', 'replies', 'voice.md');
 
@@ -314,6 +321,7 @@ function templates() {
 function fill(key, vars = {}) {
   const t = templates()[key];
   if (t === undefined) throw new Error(`Template "${key}" missing from templates.md`);
+  if (key === 'signature') return t.replace('Lenches website assistant', SIGN_ROLE);
   return t.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined ? String(vars[k]) : m));
 }
 
@@ -993,7 +1001,7 @@ function automatedReason(msg, to) {
   if (a.listUnsubscribe) return 'Mailing list (List-Unsubscribe)';
   for (const addr of [msg.fromAddress, to]) {
     if (!addr) return 'No reply address';
-    if (addr.endsWith(`@${OWN_DOMAIN}`)) return `Own domain (${addr})`;
+    if (ownDomain(addr)) return `Own domain (${addr})`;
   }
   return '';
 }
@@ -2034,7 +2042,7 @@ async function deliver(row, settings, { body: given, note: givenNote = '', decid
     return false;
   };
   if (!text) return fail('Empty body');
-  if (!row.to || row.to.endsWith(`@${OWN_DOMAIN}`)) return fail(`Bad recipient "${row.to}"`);
+  if (!row.to || ownDomain(row.to)) return fail(`Bad recipient "${row.to}"`);
   const exposed = exposesTeam(text);
   if (exposed) return fail(`Body contains "${exposed}": never sent (anonymity)`);
 

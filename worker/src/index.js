@@ -64,6 +64,7 @@ import { handleRecommend, listedEntry } from './recommend.js';
 import { handleSuggest, handleSuggestConfirm } from './listingsuggest.js';
 import { logVisitors } from './admin/sitestats.js';
 import { runAutoWindow } from './admin/autorun.js';
+import { SITES } from './sites.js';
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -468,9 +469,13 @@ async function runIngest(env, ms) {
     return;
   }
   if (!INGEST_HOURS.includes(uk.hour)) return;
-  const ok = await dispatch(env, 'ingest', { date: uk.date, hm: uk.hm }, 3);
-  console.log(`${uk.date} ${uk.hm} UK: ingest ${ok ? 'dispatched' : 'FAILED'}`);
-  if (!ok) await alertDispatchFailed(env, `Ingestion run at ${uk.hm} UK could not be sent to GitHub`);
+  // One run per site with a Sheet (Harvington stage 4b); the Lenches first, as before.
+  for (const site of Object.keys(SITES)) {
+    if (!String(SITES[site].sheetId || '').trim()) continue;
+    const ok = await dispatch(env, 'ingest', { date: uk.date, hm: uk.hm, site }, 3);
+    console.log(`${uk.date} ${uk.hm} UK: ${site} ingest ${ok ? 'dispatched' : 'FAILED'}`);
+    if (!ok) await alertDispatchFailed(env, `${site} ingestion run at ${uk.hm} UK could not be sent to GitHub`);
+  }
 }
 
 // Rimmer's listings check (Sundays) and whole-site check (the 1st of each month).
