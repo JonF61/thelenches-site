@@ -29,7 +29,8 @@
 //                       alerts via GitHub
 //   cron SCHEDULE_CRON  UK-time schedule: Wed 18:30 digest; Thu 06:30 newsletter build,
 //                       08:00 auto-send (does nothing unless holiday mode + live), 12:00
-//                       and 17:00 reminders. A failed dispatch raises a watchdog alert.
+//                       and 17:00 reminders; Wed 19:00 Rimmer's newsletter check.
+//                       A failed dispatch raises a watchdog alert.
 //   cron NIGHTLY_CRON   00:10 UK every night: fires repository_dispatch "rebuild" so
 //                       build.yml rebuilds the site and yesterday's events drop off.
 //                       Same cron: saves the day's visitor counts (runVisitorLog, sitestats.js).
@@ -82,10 +83,16 @@ const INGEST_MINUTE = '17';
 const DAILY_HM = '07:00';            // UK time, every day: daily approvals email
 const DIAG_HM = '05:17';             // UK time, every day: daily diagnostic (GitHub's cron ran ~7.5h late)
 const INGEST_HOURS = [6, 8, 10, 12, 14, 16, 18, 20, 22]; // UK hours, as ingest.yml's gate
+// Rimmer's listings and whole-site checks (UK times, HOURLY_CRON; his newsletter check is in
+// SLOTS). GitHub's own cron started them 3-6 hours late (Nov 2026), so the Worker fires them.
+const RIMMER_LISTINGS = { dow: 'Sun', hm: '19:17' };
+const RIMMER_SITE = { day: '01', hm: '20:17' };
 
 // UK times. payload(date) gets the UK date (YYYY-MM-DD) of the slot.
 const SLOTS = [
   { dow: 'Wed', hm: '18:30', event: 'digest', payload: () => ({}) },
+  // Rimmer's newsletter check, after the 6pm cutoff (rimmer.yml; was GitHub's cron, hours late).
+  { dow: 'Wed', hm: '19:00', event: 'rimmer', payload: () => ({ scope: 'newsletter' }) },
   { dow: 'Thu', hm: '06:30', event: 'newsletter', payload: (d) => ({ action: 'build', issue_date: d }) },
   { dow: 'Thu', hm: '08:00', event: 'newsletter', payload: (d) => ({ action: 'autosend', issue_date: d }) },
   { dow: 'Thu', hm: '12:00', event: 'newsletter', payload: (d) => ({ action: 'remind', issue_date: d }) },
@@ -466,6 +473,19 @@ async function runIngest(env, ms) {
   if (!ok) await alertDispatchFailed(env, `Ingestion run at ${uk.hm} UK could not be sent to GitHub`);
 }
 
+// Rimmer's listings check (Sundays) and whole-site check (the 1st of each month).
+async function runRimmer(env, ms) {
+  const uk = ukNow(ms);
+  const scopes = [];
+  if (uk.dow === RIMMER_LISTINGS.dow && uk.hm === RIMMER_LISTINGS.hm) scopes.push('listings');
+  if (uk.date.slice(8) === RIMMER_SITE.day && uk.hm === RIMMER_SITE.hm) scopes.push('site');
+  for (const scope of scopes) {
+    const ok = await dispatch(env, 'rimmer', { scope }, 3);
+    console.log(`${uk.date} ${uk.hm} UK: Rimmer ${scope} check ${ok ? 'dispatched' : 'FAILED'}`);
+    if (!ok) await alertDispatchFailed(env, `Rimmer's ${scope} check at ${uk.hm} UK could not be started on GitHub`);
+  }
+}
+
 /* ------------------------------------------------------------- watchdog -- */
 
 // Latest run of a workflow for one trigger event, or null.
@@ -648,6 +668,7 @@ export default {
       ctx.waitUntil(runIngest(env, event.scheduledTime));
       ctx.waitUntil(runDaily(env, event.scheduledTime));
       ctx.waitUntil(runDiagnostic(env, event.scheduledTime));
+      ctx.waitUntil(runRimmer(env, event.scheduledTime));
       // Veto window (autonomy stage 3): items whose window has ended publish through decide().
       ctx.waitUntil(runAutoWindow(env, event.scheduledTime).catch((e) => console.error(`Veto window run failed: ${e.message}`)));
     }

@@ -2,16 +2,14 @@ name: Rimmer
 
 # Rimmer (scripts/rimmer): a second Claude reads what readers will see and lists problems
 # on the admin panel (Rimmer tab). It changes nothing else and sends nothing.
-#   newsletter  Wednesdays 18:37 UTC (after the 6pm cutoff), and the draft bar's Check button
-#   listings    Sundays 19:17 UTC: the listings pages of the built site
-#   site        the 1st of each month 20:13 UTC: every page of the built site
-# The panel's buttons send repository_dispatch "rimmer" with client_payload.scope.
+#   newsletter  Wednesdays 19:00 UK (after the 6pm cutoff), and the draft bar's Check button
+#   listings    Sundays 19:17 UK: the listings pages of the built site
+#   site        the 1st of each month 20:17 UK: every page of the built site
+# The Cloudflare Worker's crons start the scheduled checks (worker/src/index.js SLOTS and
+# runRimmer; GitHub's own cron started them 3-6 hours late, Nov 2026), and the panel's
+# buttons do the same: repository_dispatch "rimmer" with client_payload.scope.
 # One group per scope: a newer check of the same scope replaces a waiting one (each reads it all).
 on:
-  schedule:
-    - cron: "37 18 * * 3"
-    - cron: "17 19 * * 0"
-    - cron: "13 20 1 * *"
   repository_dispatch:
     types: [rimmer]
   workflow_dispatch:
@@ -25,7 +23,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: rimmer-${{ github.event.client_payload.scope || inputs.scope || github.event.schedule }}
+  group: rimmer-${{ github.event.client_payload.scope || inputs.scope }}
   cancel-in-progress: false
 
 jobs:
@@ -36,15 +34,9 @@ jobs:
       - name: Choose the scope
         id: scope
         env:
-          SCHEDULE: ${{ github.event.schedule }}
           ASKED: ${{ github.event.client_payload.scope || inputs.scope }}
         run: |
-          case "$SCHEDULE" in
-            "37 18 * * 3") s=newsletter ;;
-            "17 19 * * 0") s=listings ;;
-            "13 20 1 * *") s=site ;;
-            *) s="$ASKED" ;;
-          esac
+          s="$ASKED"
           case "$s" in newsletter|listings|site) ;; *) echo "Unknown scope"; exit 1 ;; esac
           echo "scope=$s" >> "$GITHUB_OUTPUT"
           echo "Scope: $s"

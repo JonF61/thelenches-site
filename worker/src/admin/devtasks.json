@@ -66,8 +66,8 @@
       "added": "2026-11-14"
     },
     {
-      "task": "SDK 1.6 (new API version 2026-10-21): ingest and Holly runs are fine (15 Nov); check the next Rimmer run makes its Claude calls without errors. Rimmer's scheduled runs start hours late (Sunday's 19:17 run had not started by 21:15 UTC on 15 Nov; the 8 Nov one ran at 22:53)",
-      "added": "2026-11-14",
+      "task": "Rimmer's checks now started by the Worker (16 Nov): confirm Wednesday 18 Nov's newsletter check starts at 19:00 UK (Activity: Rimmer, repository_dispatch) and Sunday 22 Nov's listings check at 19:17, and that no GitHub-scheduled Rimmer run appears",
+      "added": "2026-11-16",
       "kryten": true
     },
     {
