@@ -29,7 +29,7 @@ async function main() {
   ok(h.SITE === 'harvington' && h.SITE_REL === 'sites/harvington', 'SITE=Harvington');
   const hc = h.siteConfig();
   ok(hc.email === 'website@harvingtonvillage.org.uk' && hc.gmailLabel === 'Harvington Website/2 Pipeline', 'Harvington address and label');
-  ok(hc.noindex === true && hc.skyline === 'spire' && hc.palette.vars.green === '#2D4A63', 'Harvington hidden, spire, river blue');
+  ok(!hc.noindex && hc.skyline === 'spire' && hc.palette.vars.green === '#2D4A63', 'Harvington launched (stage 7b), spire, river blue');
   ok(fs.existsSync(h.siteDir('items', 'events')) && fs.existsSync(h.siteDir('items', 'notices')), 'Harvington content folders');
   assert.throws(() => fresh('elsewhere'), /Unknown SITE/); checks += 1;
 
@@ -54,11 +54,15 @@ async function main() {
   const out = fs.mkdtempSync(path.join(require('os').tmpdir(), 'site-h-'));
   execFileSync(path.join(ROOT, 'node_modules', '.bin', 'eleventy'), ['--quiet', `--output=${out}`], { cwd: ROOT, env: { ...process.env, SITE: 'harvington' }, stdio: 'ignore' });
   ok(fs.existsSync(path.join(out, 'style.css')), 'Harvington build ran');
-  ok(/Disallow: \//.test(fs.readFileSync(path.join(out, 'robots.txt'), 'utf8')), 'Harvington robots.txt closed while noindex');
+  const robots = fs.readFileSync(path.join(out, 'robots.txt'), 'utf8');
+  ok(/Allow: \//.test(robots) && !/Disallow/.test(robots) && /Sitemap: https:\/\/harvingtonvillage\.org\.uk\/sitemap\.xml/.test(robots), 'Harvington robots.txt open, with its sitemap (launched, 7b)');
   const home = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
-  ok(/noindex, nofollow/.test(home) && /website@harvingtonvillage\.org\.uk/.test(home) && !/Lenches/.test(home), 'holding page: noindex, its address, no Lenches wording');
-  ok(/--green:#2D4A63/.test(home) && /M491,52 L503,16/.test(home), 'holding page: river blue and the spire');
-  ok(!fs.existsSync(path.join(out, 'sitemap.xml')), 'no sitemap before launch');
+  ok(!/noindex/.test(home) && /website@harvingtonvillage\.org\.uk/.test(home) && !/Lenches/.test(home), 'Home at /: indexed, its address, no Lenches wording (schema too)');
+  ok(/--green:#2D4A63/.test(home) && /M491,52 L503,16/.test(home), 'Home: river blue and the spire');
+  ok(/"name":"Harvington","alternateName":"The Harvington Website"/.test(home) && /"addressLocality":"Lenchwick"/.test(home), 'Home: its own site schema');
+  ok(!fs.existsSync(path.join(out, 'preview')), 'no /preview/ any more');
+  const sitemap = fs.readFileSync(path.join(out, 'sitemap.xml'), 'utf8');
+  ok(/<loc>https:\/\/harvingtonvillage\.org\.uk\/<\/loc>/.test(sitemap) && /\/living-here\/trades\//.test(sitemap) && !/404|thelenches/.test(sitemap), 'Harvington sitemap');
   fs.rmSync(out, { recursive: true, force: true });
 
   // Shared layout from site.json (stage 6a): the name, the line under it and the title suffix.

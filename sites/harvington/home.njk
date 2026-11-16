@@ -2,9 +2,7 @@
 layout: base.njk
 title: Home
 search: false
-permalink: /preview/
-noindex: true
-eleventyExcludeFromCollections: true
+permalink: /
 description: "Community website and free weekly newsletter for Harvington, Norton and Lenchwick near Evesham: events, news, regular activities and roadworks."
 seoTitle: "Harvington Village Website — events, news and roadworks near Evesham"
 cards:
@@ -13,8 +11,7 @@ cards:
   - { title: "Roads", url: "/living-here/roads/", icon: road, text: "Closures and roadworks, on now and on the way." }
   - { title: "Bins", url: "/bins/", icon: bins, text: "Your next collection and which bin takes what." }
 ---
-{#- Harvington's Home (wording approved by Jon 16 Nov 2026). Built at /preview/ until launch (stage 7), when it replaces the
-    holding page (index.njk) at "/". Live lines as on the Lenches Home, including the next bin collection. The Facebook card shows once
+{#- Harvington's Home (wording approved by Jon 16 Nov 2026). At "/" since launch (stage 7b, 16 Nov), replacing the holding page. Live lines as on the Lenches Home, including the next bin collection. The Facebook card shows once
     site.json has facebookGroup { name, url }. -#}
 {%- set nextEvent = (whatson.events | merge(pipeline.events) | upcoming) | first -%}
 {%- set allN = pipeline | allNotices(whatson) -%}

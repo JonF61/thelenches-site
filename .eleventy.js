@@ -255,7 +255,7 @@ module.exports = async function (eleventyConfig) {
       return e.title && !seen.has(id) && seen.add(id);
     }).map((e) => {
       const img = imageOf(e, photos);
-      return schema.eventSchema(e, { siteUrl: site.url, id: slugify("ev-" + e.date + "-" + e.title), image: (img && img.url) || site.ogImage });
+      return schema.eventSchema(e, { siteUrl: site.url, id: slugify("ev-" + e.date + "-" + e.title), image: (img && img.url) || site.ogImage, area: site.name });
     });
     return schema.ldJson({ "@context": "https://schema.org", "@graph": list });
   });
