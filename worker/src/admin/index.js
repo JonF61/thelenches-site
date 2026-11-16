@@ -172,8 +172,7 @@ import {
 import { photoPages, pagesFor, eventEnd } from './photopages.js';
 import { feedbackRows, planFeedback, planNote } from './feedback.js';
 import { SUGGEST_TAB as LISTING_TAB, panelRows as suggestionRows, planSuggestion } from './suggestions.mjs';
-import tradesData from '../../../sites/lenches/_data/trades.json' with { type: 'json' };
-import eatData from '../../../sites/lenches/_data/eat.json' with { type: 'json' };
+import { listingData } from '../listings.js';
 import { FEEDBACK_TAB } from '../feedback.js';
 import {
   CONTACTS_TAB, DELETED_TAB, DELETED_HEADERS, contactRows, planContact, planDelete, addressesOf, isIgnore,
@@ -303,7 +302,9 @@ const pick = (row, keys) => Object.fromEntries(keys.filter((k) => k in row).map(
 // The Feedback tab; none yet (made by the first submission) reads as empty.
 // The Local trades and Where to eat data as this Worker was deployed (deploy-worker.yml runs
 // when either file changes), for the suggestion cards' draft entry and "already listed?" check.
-const LISTING_DATA = { trades: tradesData, eat: eatData };
+// Per site since Harvington stage 7 (worker/src/listings.js): the cards draft against the
+// site the panel is showing.
+const listingDataFor = (env) => listingData(env.SITE);
 
 async function readFeedback(env) {
   try {
@@ -405,9 +406,9 @@ async function state(env, email) {
     feedback: feedbackRows(fb, ukToday()),
     // Confirmed Local trades / Where to eat suggestions waiting for Jon (suggestions.mjs):
     // never the suggester's address.
-    listingSuggestions: suggestionRows(listing, LISTING_DATA),
+    listingSuggestions: suggestionRows(listing, listingDataFor(env)),
     // The Edit form's choices: Local trades sections and Where to eat areas.
-    listingOptions: { trades: [...new Set(tradesData.trades.map((t) => t.trade))].sort(), eat: eatData.areas },
+    listingOptions: { trades: [...new Set(listingDataFor(env).trades.trades.map((t) => t.trade))].sort(), eat: listingDataFor(env).eat.areas },
     // Today in the UK, for the Past events filter.
     today: ukToday(),
     photosRoot: main ? String(env.PHOTOS_FOLDER_ID || '').trim() : '',
@@ -490,7 +491,7 @@ async function doAction(env, body) {
   } else if (kind === 'suggestion') {
     const { rows } = await readOptional(env, LISTING_TAB);
     const matches = rows.filter((r) => id && r.id === id);
-    plan = planSuggestion({ action, id, fields: body.fields, reason: body.reason }, matches.length === 1 ? matches[0] : null, LISTING_DATA);
+    plan = planSuggestion({ action, id, fields: body.fields, reason: body.reason }, matches.length === 1 ? matches[0] : null, listingDataFor(env));
   } else if (kind === 'feedback') {
     const { rows } = await readFeedback(env);
     const matches = rows.filter((r) => id && r.id === id);
@@ -695,7 +696,7 @@ async function doContactMail(env, body) {
 // Listings (Local trades, Where to eat; 5 Nov) get the same yearly check (listingEntries).
 const ORGS = [
   ...orgEntries({ contacts: contactsData, council: councilData, schools: schoolsData, health: healthData, transport: transportData }),
-  ...listingEntries({ trades: tradesData, eat: eatData }),
+  ...listingEntries(listingData('lenches')),
 ];
 // The organisations and listings come from the Lenches' bundled data files: another site has
 // none yet (its own come with 4c-2), so its Organisations view is empty.

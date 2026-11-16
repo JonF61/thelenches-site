@@ -20,7 +20,7 @@ function linksEnabled() {
 // An action, unsubscribe or click link made by another site's run names that site (s), so the
 // Worker sends the decision or unsubscribe to that site's run and counts the click for it
 // (Harvington stages 4c and 5a); Lenches links stay as they were.
-const SITE_ROUTES = ['/a', '/u', '/c'];
+const SITE_ROUTES = ['/a', '/u', '/c', '/s', '/r', '/sg'];
 function signToken(payload, route = '/a') {
   const site = siteName();
   if (SITE_ROUTES.includes(route) && site !== 'lenches' && payload.s === undefined) payload = { ...payload, s: site };

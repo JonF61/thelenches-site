@@ -65,7 +65,7 @@ import { handleSuggest, handleSuggestConfirm } from './listingsuggest.js';
 import { logVisitors } from './admin/sitestats.js';
 import { runAutoWindow } from './admin/autorun.js';
 import { readSettingsPairs } from './admin/sheet.js';
-import { SITES, siteEnv, siteIds, hasAnalytics, siteConfig } from './sites.js';
+import { SITES, siteEnv, siteIds, hasAnalytics, siteConfig, siteFromRequest, publicEnv, siteWords } from './sites.js';
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
@@ -307,20 +307,23 @@ async function handleUnsubscribe(request, env) {
 // scanner opening the link confirms nothing; the button's POST fires the subscribe run.
 async function handleSignupConfirm(request, env) {
   const url = new URL(request.url);
-  const site = esc(String(env.SITE_URL || 'https://thelenches.org.uk/'));
-  const expired = () => page('Link expired',
-    `<h1>Link expired</h1><p>This confirmation link has expired. You can sign up again using the form on <a href="${site}">the website</a>.</p>`, 410);
   let token = url.searchParams.get('t');
   if (request.method === 'POST' && !token) {
     try { token = (await request.formData()).get('t'); } catch { token = ''; }
   }
   const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
   if (!p || (!p.expired && p.a !== 'signup')) return invalidPage();
-  if (p.expired) return expired();
+  // A link made by another site's run names it (p.s): its newsletter, page and confirm run.
+  env = publicEnv(env, p.s);
+  const site = esc(String(env.SITE_URL || 'https://thelenches.org.uk/'));
+  if (p.expired) {
+    return page('Link expired',
+      `<h1>Link expired</h1><p>This confirmation link has expired. You can sign up again using the form on <a href="${site}">the website</a>.</p>`, 410);
+  }
 
   if (request.method === 'GET') {
     return page('Confirm your sign-up', `
-<h1>Join The Lenches Newsletter?</h1>
+<h1>Join ${esc(siteWords(env).newsletter)}?</h1>
 <p>It's free and comes out every Thursday morning.</p>
 <form method="post" action="/s?t=${esc(token)}">
   <button class="approve" type="submit">Yes, add me to the list</button>
@@ -342,14 +345,16 @@ async function handleSignupConfirm(request, env) {
 // a button, so a mail scanner opening the link counts nothing.
 async function handleRecommendConfirm(request, env) {
   const url = new URL(request.url);
-  const site = String(env.SITE_URL || 'https://thelenches.org.uk/').replace(/\/+$/, '');
   let token = url.searchParams.get('t');
   if (request.method === 'POST' && !token) {
     try { token = (await request.formData()).get('t'); } catch { token = ''; }
   }
   const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
   if (!p || (!p.expired && p.a !== 'rec')) return invalidPage();
-  const entry = listedEntry(p.k, p.n);
+  // A link made by another site's run names it (p.s): that site's entries, page and run.
+  env = publicEnv(env, p.s);
+  const site = String(env.SITE_URL || 'https://thelenches.org.uk/').replace(/\/+$/, '');
+  const entry = listedEntry(p.k, p.n, env.SITE);
   const pageUrl = esc(`${site}${entry ? entry.page : '/'}`);
   if (p.expired) {
     return page('Link expired',
@@ -362,7 +367,7 @@ async function handleRecommendConfirm(request, env) {
   if (request.method === 'GET') {
     return page('Confirm your recommendation', `
 <h1>Recommend ${esc(entry.name)}?</h1>
-<p>On the ${esc(entry.label)} page of thelenches.org.uk. We never show who recommended anyone.</p>
+<p>On the ${esc(entry.label)} page of ${esc(siteWords(env).domain)}. We never show who recommended anyone.</p>
 <form method="post" action="/r?t=${esc(token)}">
   <button class="approve" type="submit">Yes, count my recommendation</button>
 </form>`);
@@ -683,20 +688,22 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === '/a') return handleApproval(request, env);
     if (url.pathname === '/u') return handleUnsubscribe(request, env);
-    if (url.pathname === '/f') return handleFeedback(request, env);
+    // Public forms (Harvington stage 7): the site is the one the form was posted from
+    // (sites.js siteFromRequest); a signed link's own site comes from its token instead.
+    if (url.pathname === '/f') return handleFeedback(request, publicEnv(env, siteFromRequest(request)));
     // Anonymous newsletter counts (track.js): public, never behind Cloudflare Access.
     if (url.pathname === '/c') return handleClick(request, env);
     if (url.pathname === '/o') return handleOpen(request, env);
     if (url.pathname === '/s') {
-      return url.searchParams.has('t') ? handleSignupConfirm(request, env) : handleSignup(request, env);
+      return url.searchParams.has('t') ? handleSignupConfirm(request, env) : handleSignup(request, publicEnv(env, siteFromRequest(request)));
     }
     if (url.pathname === '/r') {
-      return url.searchParams.has('t') ? handleRecommendConfirm(request, env) : handleRecommend(request, env);
+      return url.searchParams.has('t') ? handleRecommendConfirm(request, env) : handleRecommend(request, publicEnv(env, siteFromRequest(request)));
     }
     if (url.pathname === '/sg') {
       return url.searchParams.has('t')
         ? handleSuggestConfirm(request, env, { verifyToken, page, esc, invalidPage, failedPage })
-        : handleSuggest(request, env);
+        : handleSuggest(request, publicEnv(env, siteFromRequest(request)));
     }
     if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) return handleAdmin(request, env);
     // Kryten's quick Sheet access (kryten.js): its own bearer secret, never behind Access.

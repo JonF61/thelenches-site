@@ -43,3 +43,33 @@ export function siteEnv(env, s) {
   if (site !== DEFAULT_SITE) over.SITE_URL = String(cfg.url || '');
   return Object.assign(Object.create(env), over);
 }
+
+// The public forms (/s sign-up, /f Suggest an update, /r Recommend, /sg Suggest a listing;
+// Harvington stage 7, 16 Nov): the site a form was posted from is the one whose address
+// matches the request's Origin (or, failing that, its Referer). Anything else is the default
+// site, whose own origin check then refuses a stranger as before.
+const originOf = (u) => { try { return new URL(String(u || '')).origin; } catch { return ''; } };
+export function siteFromRequest(request) {
+  const from = originOf(request.headers.get('origin')) || originOf(request.headers.get('referer'));
+  if (!from) return DEFAULT_SITE;
+  return siteIds().find((id) => originOf(SITES[id].url) === from) || DEFAULT_SITE;
+}
+
+// The env for a public form or its signed link: the default site keeps the real env exactly;
+// another site gets siteEnv (its Sheet, address and dispatch site).
+export const publicEnv = (env, s) => (knownSite(s) && s !== DEFAULT_SITE ? siteEnv(env, s) : env);
+
+// Wording a public page or message uses for the site env is serving: "the Lenches website",
+// its address, domain and newsletter name (from its site.json).
+export function siteWords(env) {
+  const c = siteConfig(env && env.SITE);
+  return {
+    website: `the ${String(c.name || '').replace(/^the\s+/i, '')} website`,
+    email: String(c.email || ''),
+    domain: String(c.domain || ''),
+    newsletter: String(c.newsletterName || ''),
+  };
+}
+
+// Every site's own email domain (sign-ups from them are refused).
+export const ownDomains = () => siteIds().map((id) => String(SITES[id].domain || '').toLowerCase()).filter(Boolean);

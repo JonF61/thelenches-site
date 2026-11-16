@@ -16,7 +16,7 @@
 // Env: GOOGLE_SA_KEY, SHEET_ID, GMAIL_USER, APPROVAL_SIGNING_KEY, WORKER_URL, ACTION, RECOMMEND_ID.
 'use strict';
 
-const { SITE_REL } = require('../../lib/site.js');
+const { SITE_REL, SITE, siteConfig, shortName } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -27,7 +27,10 @@ const { KINDS } = require('../../lib/listings');
 
 const TAB = 'Recommendations';
 const HEADERS = ['id', 'requested', 'kind', 'entry', 'email', 'key', 'status', 'sent_at', 'confirmed_at', 'result'];
-const FROM = 'website@thelenches.org.uk';
+// Each site's own address and domain (its site.json; Harvington stage 7).
+const CFG = siteConfig();
+const FROM = CFG.email || 'website@thelenches.org.uk';
+const DOMAIN = CFG.domain || 'thelenches.org.uk';
 const LINK_DAYS = 7;
 const KEEP_DAYS = 30;
 const DATA_DIR = path.join(__dirname, '..', '..', SITE_REL, '_data');
@@ -52,26 +55,26 @@ function entryFor(kind, id, dataDir = DATA_DIR) {
 function confirmEmail(entry, url) {
   const paras = [
     'Hello,',
-    `Someone, hopefully you, asked to recommend ${entry.name} on the ${entry.label} page of thelenches.org.uk.`,
+    `Someone, hopefully you, asked to recommend ${entry.name} on the ${entry.label} page of ${DOMAIN}.`,
     `This link works for ${LINK_DAYS} days. If you didn't ask, just ignore this email. We never show who recommended anyone.`,
   ];
   return {
-    subject: 'Please confirm your recommendation: The Lenches website',
+    subject: `Please confirm your recommendation: The ${shortName(SITE)} website`,
     html: emailHtml(paras.slice(0, 2), { text: 'Yes, count my recommendation', url }, paras.slice(2)),
-    text: `${paras[0]}\n\n${paras[1]}\n\nYes, count my recommendation:\n${url}\n\n${paras[2]}\n\nthelenches.org.uk\n`,
+    text: `${paras[0]}\n\n${paras[1]}\n\nYes, count my recommendation:\n${url}\n\n${paras[2]}\n\n${DOMAIN}\n`,
   };
 }
 
 function alreadyEmail(entry) {
   const paras = [
     'Hello,',
-    `Someone, hopefully you, asked to recommend ${entry.name} on the ${entry.label} page of thelenches.org.uk. You've already recommended this one, thank you, so there's nothing more to do.`,
+    `Someone, hopefully you, asked to recommend ${entry.name} on the ${entry.label} page of ${DOMAIN}. You've already recommended this one, thank you, so there's nothing more to do.`,
     'If you didn\'t ask, you can ignore this email.',
   ];
   return {
-    subject: 'Already counted: The Lenches website',
+    subject: `Already counted: The ${shortName(SITE)} website`,
     html: emailHtml(paras, null),
-    text: `${paras.join('\n\n')}\n\nthelenches.org.uk\n`,
+    text: `${paras.join('\n\n')}\n\n${DOMAIN}\n`,
   };
 }
 

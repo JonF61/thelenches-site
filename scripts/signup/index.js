@@ -17,14 +17,19 @@
 const g = require('../ingest/google');
 const { signToken, linksEnabled } = require('../ingest/links');
 const { applyListRequest } = require('../ingest/subscriptions');
+const { siteConfig, sheetId, shortName, SITE } = require('../../lib/site.js');
 
 const TAB = 'Sign-ups';
 const HEADERS = ['id', 'requested', 'email', 'status', 'sent_at', 'confirmed_at', 'result'];
-const FROM = 'website@thelenches.org.uk';
+// Each site's own address, domain and newsletter (its site.json; Harvington stage 7).
+const CFG = siteConfig();
+const FROM = CFG.email || 'website@thelenches.org.uk';
+const DOMAIN = CFG.domain || 'thelenches.org.uk';
+const NEWSLETTER = CFG.newsletterName || 'The Lenches Newsletter';
 const LINK_DAYS = 7;
 const KEEP_DAYS = 30;
 const TZ = 'Europe/London';
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1k-9oxqMVfWCb4wIY_RbSiSszarb2d029_UXnKIFdNRI/edit';
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${sheetId()}/edit`;
 
 const str = (v) => String(v ?? '').trim();
 const lc = (v) => str(v).toLowerCase();
@@ -58,33 +63,33 @@ function emailHtml(before, link, after = []) {
   return `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"></head>
 <body style="margin:0;padding:12px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#222222;">
 ${[...before.map((t) => p(esc(t))), linkHtml, ...after.map((t) => p(esc(t)))].filter(Boolean).join('\n')}
-${p('thelenches.org.uk')}
+${p(DOMAIN)}
 </body></html>`;
 }
 
 function confirmEmail(url) {
   const paras = [
     'Hello,',
-    'Someone, hopefully you, asked to get The Lenches Newsletter at this address. It\'s free and comes out every Thursday morning.',
+    `Someone, hopefully you, asked to get ${NEWSLETTER} at this address. It's free and comes out every Thursday morning.`,
     `This link works for ${LINK_DAYS} days. If you didn't ask, just ignore this email and you won't hear from us again.`,
   ];
   return {
-    subject: 'Please confirm: The Lenches Newsletter',
+    subject: `Please confirm: ${NEWSLETTER}`,
     html: emailHtml(paras.slice(0, 2), { text: 'Yes, add me to the list', url }, paras.slice(2)),
-    text: `${paras[0]}\n\n${paras[1]}\n\nYes, add me to the list:\n${url}\n\n${paras[2]}\n\nthelenches.org.uk\n`,
+    text: `${paras[0]}\n\n${paras[1]}\n\nYes, add me to the list:\n${url}\n\n${paras[2]}\n\n${DOMAIN}\n`,
   };
 }
 
 function alreadyEmail() {
   const paras = [
     'Hello,',
-    'Someone, hopefully you, asked to get The Lenches Newsletter at this address. Good news: you\'re already on the list, so it should be with you every Thursday morning.',
+    `Someone, hopefully you, asked to get ${NEWSLETTER} at this address. Good news: you\'re already on the list, so it should be with you every Thursday morning.`,
     'If it isn\'t turning up, it\'s worth a quick look in your spam folder. If you didn\'t ask, you can ignore this email.',
   ];
   return {
-    subject: 'You\'re already on the list: The Lenches Newsletter',
+    subject: `You're already on the list: ${NEWSLETTER}`,
     html: emailHtml(paras, null),
-    text: `${paras.join('\n\n')}\n\nthelenches.org.uk\n`,
+    text: `${paras.join('\n\n')}\n\n${DOMAIN}\n`,
   };
 }
 
@@ -96,7 +101,7 @@ function heldEmail(email, row, why) {
     + 'and add them to Subscribers by hand. To leave it, delete the Sign-ups row.\n\n'
     + `Sheet: ${SHEET_URL}\n`;
   return {
-    subject: 'Newsletter sign-up held for you (Lenches)',
+    subject: `Newsletter sign-up held for you (${shortName(SITE)})`,
     text,
     html: `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#2b2b2b;">${esc(text).replace(/\n/g, '<br>')}</div>`,
   };

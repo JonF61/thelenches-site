@@ -31,7 +31,7 @@
 // GITHUB_EVENT_PATH (body, reason), SUGGEST_STATE (a file approve -> approved passes the new id in).
 'use strict';
 
-const { SITE_REL } = require('../../lib/site.js');
+const { SITE_REL, SITE: SITE_ID, siteConfig, shortName } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
@@ -41,8 +41,12 @@ const { emailHtml, stamp, ageDays } = require('../signup');
 const { listingId, anchorFor } = require('../../lib/listings');
 const rec = require('../recommend');
 
-const FROM = 'website@thelenches.org.uk';
-const SITE = 'https://thelenches.org.uk';
+// Each site's own address, page address and Holly's sign-off (its site.json; Harvington stage 7).
+const CFG = siteConfig();
+const FROM = CFG.email || 'website@thelenches.org.uk';
+const SITE = String(CFG.url || 'https://thelenches.org.uk').replace(/\/+$/, '');
+const DOMAIN = CFG.domain || 'thelenches.org.uk';
+const SIGN_ROLE = String(CFG.hollySignoff || 'Holly / Lenches website assistant').split('/').slice(1).join('/').trim();
 const LINK_DAYS = 7;
 const KEEP_DAYS = 30;
 const DATA_DIR = path.join(__dirname, '..', '..', SITE_REL, '_data');
@@ -67,13 +71,13 @@ function readData(dataDir, R) {
 function confirmEmail(name, label, url) {
   const paras = [
     'Hello,',
-    `Someone, hopefully you, suggested ${name} for the ${label} page of thelenches.org.uk.`,
+    `Someone, hopefully you, suggested ${name} for the ${label} page of ${DOMAIN}.`,
     `This link works for ${LINK_DAYS} days. Once you confirm, we'll take a look before adding it. If you didn't ask, just ignore this email.`,
   ];
   return {
-    subject: 'Please confirm your suggestion: The Lenches website',
+    subject: `Please confirm your suggestion: The ${shortName(SITE_ID)} website`,
     html: emailHtml(paras.slice(0, 2), { text: 'Yes, send my suggestion', url }, paras.slice(2)),
-    text: `${paras[0]}\n\n${paras[1]}\n\nYes, send my suggestion:\n${url}\n\n${paras[2]}\n\nthelenches.org.uk\n`,
+    text: `${paras[0]}\n\n${paras[1]}\n\nYes, send my suggestion:\n${url}\n\n${paras[2]}\n\n${DOMAIN}\n`,
   };
 }
 
@@ -90,11 +94,11 @@ function thanksEmail({ kind, name, section, page, anchor }) {
   const after = [
     'We\'ve counted your suggestion as a recommendation, so you\'ll see "★ Recommended by 1 person" just under their name.',
   ];
-  const sign = ['Best wishes,', 'Holly', 'Lenches website assistant'];
+  const sign = ['Best wishes,', 'Holly', SIGN_ROLE];
   return {
     subject: `Thanks — ${name} is now on the website`,
     html: emailHtml(paras, { text: 'See it on the website', url }, [...after, sign.join('\n')])
-      .replace(/Best wishes,\nHolly\nLenches website assistant/, 'Best wishes,<br>Holly<br>Lenches website assistant'),
+      .replace(`Best wishes,\nHolly\n${SIGN_ROLE}`, `Best wishes,<br>Holly<br>${SIGN_ROLE}`),
     text: `${paras[0]}\n\n${paras[1]} ${url}\n\n${after[0]}\n\n${sign.join('\n')}\n`,
   };
 }

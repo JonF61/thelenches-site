@@ -10,6 +10,7 @@
 // Every accepted request gets the same answer. Never logs the address, name or why: the
 // dispatch carries the row id only.
 
+import { siteWords, publicEnv } from './sites.js';
 import { getValues, appendValues, sheetGids, addTab, writeCells } from './admin/google.js';
 import { tableFrom } from './admin/sheet.js';
 import { dispatch, ACTIONS } from './core.js';
@@ -112,7 +113,7 @@ export async function handleSuggest(request, env, { fetchImpl = fetch, now = Dat
 
   const back = String(env.SITE_URL || '');
   const sentOrigin = request.headers.get('origin');
-  if (sentOrigin && sentOrigin !== origin) return reply(env, false, { ok: false, status: 403, message: 'This form only works on the Lenches website.', back });
+  if (sentOrigin && sentOrigin !== origin) return reply(env, false, { ok: false, status: 403, message: `This form only works on ${siteWords(env).website}.`, back });
   if (Number(request.headers.get('content-length') || 0) > MAX_POST) {
     return reply(env, false, { ok: false, status: 413, message: 'That was too long to send.', back });
   }
@@ -164,13 +165,15 @@ export async function handleSuggest(request, env, { fetchImpl = fetch, now = Dat
 // page, esc, invalidPage and failedPage come from index.js (its page shell).
 export async function handleSuggestConfirm(request, env, { verifyToken, page, esc, invalidPage, failedPage }) {
   const url = new URL(request.url);
-  const site = String(env.SITE_URL || 'https://thelenches.org.uk/').replace(/\/+$/, '');
   let token = url.searchParams.get('t');
   if (request.method === 'POST' && !token) {
     try { token = (await request.formData()).get('t'); } catch { token = ''; }
   }
   const p = await verifyToken(token, env.APPROVAL_SIGNING_KEY);
   if (!p || (!p.expired && p.a !== 'sug')) return invalidPage();
+  // A link made by another site's run names it (p.s): its page, wording and confirm run.
+  env = publicEnv(env, p.s);
+  const site = String(env.SITE_URL || 'https://thelenches.org.uk/').replace(/\/+$/, '');
   const kind = Object.prototype.hasOwnProperty.call(KINDS, p.k) ? KINDS[p.k] : KINDS.trades;
   const pageUrl = esc(`${site}${kind.page}`);
   if (p.expired) {
@@ -180,7 +183,7 @@ export async function handleSuggestConfirm(request, env, { verifyToken, page, es
   if (request.method === 'GET') {
     return page(ACTIONS.sug[0], `
 <h1>Send your suggestion?</h1>
-<p>For the ${esc(kind.label)} page of thelenches.org.uk.</p>
+<p>For the ${esc(kind.label)} page of ${esc(siteWords(env).domain)}.</p>
 <form method="post" action="/sg?t=${esc(token)}">
   <button class="approve" type="submit">Yes, send my suggestion</button>
 </form>`);
