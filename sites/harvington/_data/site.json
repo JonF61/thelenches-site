@@ -5,6 +5,9 @@
   "url": "https://harvingtonvillage.org.uk",
   "domain": "harvingtonvillage.org.uk",
   "name": "Harvington",
+  "brand": "The Harvington",
+  "brandLine": "including Norton and Lenchwick",
+  "titleName": "Harvington",
   "region": "Worcestershire",
   "email": "website@harvingtonvillage.org.uk",
   "description": "News, events and village information for Harvington, near Evesham in Worcestershire.",
@@ -31,6 +34,118 @@
       "accent-text": "#9A5312"
     }
   },
-  "footer": [],
-  "nav": []
+  "footer": [
+    {
+      "title": "Around the village",
+      "links": [
+        {
+          "title": "Home",
+          "url": "/"
+        },
+        {
+          "title": "Events",
+          "url": "/events/"
+        },
+        {
+          "title": "Regulars",
+          "url": "/regulars/"
+        },
+        {
+          "title": "News",
+          "url": "/notices/"
+        },
+        {
+          "title": "Roads",
+          "url": "/living-here/roads/"
+        },
+        {
+          "title": "Bins",
+          "url": "/bins/"
+        }
+      ]
+    },
+    {
+      "title": "Living here",
+      "links": [
+        {
+          "title": "Churches",
+          "url": "/churches/"
+        },
+        {
+          "title": "Council & planning",
+          "url": "/living-here/council/"
+        },
+        {
+          "title": "Schools",
+          "url": "/living-here/schools/"
+        },
+        {
+          "title": "Where to eat",
+          "url": "/living-here/eat/"
+        },
+        {
+          "title": "Local trades",
+          "url": "/living-here/trades/"
+        }
+      ]
+    },
+    {
+      "title": "About",
+      "links": [
+        {
+          "title": "Newsletter",
+          "url": "/newsletter/"
+        },
+        {
+          "title": "Contact & About",
+          "url": "/contact/"
+        },
+        {
+          "title": "Privacy",
+          "url": "/privacy/"
+        }
+      ]
+    }
+  ],
+  "nav": [
+    {
+      "title": "Home",
+      "url": "/"
+    },
+    {
+      "title": "Events",
+      "url": "/events/"
+    },
+    {
+      "title": "Regulars",
+      "url": "/regulars/"
+    },
+    {
+      "title": "News",
+      "url": "/notices/",
+      "match": [
+        "notices"
+      ]
+    },
+    {
+      "title": "Living here",
+      "url": "/living-here/",
+      "match": [
+        "living-here",
+        "churches"
+      ]
+    },
+    {
+      "title": "Bins",
+      "url": "/bins/"
+    },
+    {
+      "title": "Contact",
+      "url": "/contact/"
+    },
+    {
+      "title": "Search",
+      "url": "/search/"
+    }
+  ]
 }
