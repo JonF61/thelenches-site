@@ -38,7 +38,7 @@ test('the framed page: no scripts, site images only, panel framing only, links i
   const r = draftPage(html);
   const csp = r.headers.get('content-security-policy');
   assert.match(csp, /default-src 'none'/);
-  assert.match(csp, /img-src https:\/\/thelenches\.org\.uk data:/);
+  assert.match(csp, /img-src https:\/\/thelenches\.org\.uk https:\/\/harvingtonvillage\.org\.uk data:/);
   assert.match(csp, /frame-ancestors 'self'/);
   assert.match(csp, /sandbox/);
   // allow-same-origin (3 Nov) lets the panel read the frame's height; never allow-scripts, so

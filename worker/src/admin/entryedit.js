@@ -23,7 +23,7 @@ import { siteRel } from '../sites.js';
 import { decide, github } from '../core.js';
 import { readSource, showsText, validPagePath } from './pageedit.js';
 import { readTable } from './sheet.js';
-import { draftHtml } from './draft.js';
+import { draftHtml, DRAFT_IMG_SRC } from './draft.js';
 import SPEC from '../../../lib/entryfields.json' with { type: 'json' };
 
 export { SPEC };
@@ -272,7 +272,7 @@ const jsonForHtml = (v) => JSON.stringify(v).replace(/</g, '\\u003c').replace(/>
 
 export function draftEditCsp(origin) {
   return [
-    "default-src 'none'", `script-src ${origin}`, `style-src ${origin} 'unsafe-inline'`, 'img-src https://thelenches.org.uk data:',
+    "default-src 'none'", `script-src ${origin}`, `style-src ${origin} 'unsafe-inline'`, DRAFT_IMG_SRC,
     `connect-src ${origin}`, "base-uri 'none'", "form-action 'none'", "frame-ancestors 'self'",
   ].join('; ');
 }
