@@ -60,7 +60,7 @@ async function main() {
   ok(!/noindex/.test(home) && /website@harvingtonvillage\.org\.uk/.test(home) && !/Lenches/.test(home.replace(/<section class="home-welcome">[\s\S]*?<\/section>/, '')), 'Home at /: indexed, its address, no Lenches wording outside the welcome note (schema too)');
   ok(/href="https:\/\/approvals\.lenches\.workers\.dev\/admin\?site=harvington"[^>]*>Team</.test(home) && /admin\/page\?p=%2F&amp;site=harvington"[^>]*>Edit page</.test(home), 'Home: Team and Edit page open the panel on Harvington');
   ok(/class="feedback"/.test(home), 'Home: Suggest an update form');
-  ok(/home-welcome[\s\S]*thelenches\.org\.uk/.test(home), 'Home: welcome note (17 Nov)');
+  ok(/class="home-welcome"/.test(home), 'Home: welcome note (17 Nov; its Lenches link removed by Jon in the editor)');
   ok(/--green:#2D4A63/.test(home) && /M491,52 L503,16/.test(home), 'Home: river blue and the spire');
   ok(/"name":"Harvington","alternateName":"The Harvington Website"/.test(home) && /"addressLocality":"Lenchwick"/.test(home), 'Home: its own site schema');
   ok(!fs.existsSync(path.join(out, 'preview')), 'no /preview/ any more');
