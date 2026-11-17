@@ -30,11 +30,17 @@ ok(H.events.every((e) => siteOf(e) === 'lenches' && !entryKeyOf(e)), 'other-site
 eq(H.regularsPage.length, L.regularsPage.length, 'Harvington shows the Lenches regular activities');
 ok(H.regularsPage.every((r) => siteOf(r) === 'lenches' && !entryKeyOf(r)), 'other-site regulars marked');
 
-// Single-site notices stay on their site.
-const limited = L.notices.filter((n) => n.sites).map((n) => n.title);
-ok(limited.some((t) => /South Lenches Parish Council/.test(t)), 'parish council notices are Lenches-only');
-eq(H.notices.length, L.notices.length - limited.length, 'Harvington leaves out the Lenches-only notices');
-ok(!H.notices.some((n) => n.sites && !sitesFor(n, 'x').includes('harvington')), 'none for the Lenches alone on Harvington');
+// Single-site notices stay on their site (every notice file in the Lenches folder, any site).
+const fs = require('fs');
+const path = require('path');
+const dir = path.join(__dirname, '..', 'sites', 'lenches', 'items', 'notices');
+const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json')).map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')));
+const lenchesOnly = files.filter((n) => !sitesFor(n, 'x').includes('harvington')).map((n) => n.title);
+const harvOnly = files.filter((n) => !sitesFor(n, 'x').includes('lenches')).map((n) => n.title);
+ok(lenchesOnly.some((t) => /South Lenches Parish Council/.test(t)), 'parish council notices are Lenches-only');
+ok(!H.notices.some((n) => lenchesOnly.includes(n.title)), 'Harvington leaves out the Lenches-only notices');
+ok(!L.notices.some((n) => harvOnly.includes(n.title)), 'the Lenches leaves out the Harvington-only notices');
+eq(H.notices.length, files.length - lenchesOnly.length, 'Harvington shows every other Lenches notice');
 
 // Pictures: a shared item's image is found in its own site's folder.
 const pic = H.events.concat(H.notices).find((x) => x.image && /^\/images\/items\//.test(x.image.url));
