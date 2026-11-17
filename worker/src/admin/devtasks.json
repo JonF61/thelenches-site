@@ -18,18 +18,14 @@
       "added": "2026-11-16"
     },
     {
-      "task": "Harvington launched (stage 7b, 16 Nov; first web sign-up confirmed 16 Nov, its email passed SPF, DKIM and DMARC; DMARC raised to p=quarantine 17 Nov): check the first Harvington DMARC reports (to its website@ address) land under 4 DMARC, not the Harvington Pipeline label; check Site visitors shows Harvington counts; Jon to add the site in Google Search Console and submit https://harvingtonvillage.org.uk/sitemap.xml, check his ICO registration covers it, and say when to move Harvington's replies_mode and newsletter_mode from shadow",
+      "task": "Harvington launched (stage 7b, 16 Nov; email passes SPF, DKIM and DMARC, DMARC p=quarantine since 17 Nov; Search Console added and sitemap submitted 17 Nov; replies_mode and newsletter_mode live since 17 Nov): check the first Harvington DMARC reports (to its website@ address) land under 4 DMARC, not the Harvington Pipeline label; check Site visitors shows Harvington counts; check the first live Harvington reply sends from website@harvingtonvillage.org.uk",
       "added": "2026-11-16",
       "kryten": true
     },
     {
-      "task": "Harvington stage 5a (newsletter per site, 16 Nov): on Thursday 19 Nov check the Lenches issue builds at 06:30 and looks as before (subject, heading, villages line, links), the Worker log shows no Harvington newsletter dispatch (its newsletter is off), the send log's Last 24h line names both websites, and Newsletter stats still shows the Lenches' opens and clicks; and Harvington's shadow run: built at 06:30, Rimmer's check on Wednesday 19:00, the 08:00 autosend a dry run with 0 recipients (nothing emailed)",
+      "task": "Harvington stage 5a (newsletter per site, 16 Nov): on Thursday 19 Nov check the Lenches issue builds at 06:30 and looks as before (subject, heading, villages line, links), the send log's Last 24h line names both websites, and Newsletter stats still shows the Lenches' opens and clicks; and Harvington's first live issue (newsletter_mode live since 17 Nov, Jon): built at 06:30, Rimmer's check on Wednesday 19:00, reminders sent, nothing sent until Jon taps Send to all, then opens tagged to Harvington in Newsletter stats. The draft refreshes for Harvington only from the panel's Refresh (newsletter-draft.yml's schedule is the Lenches')",
       "added": "2026-11-16",
       "kryten": true
-    },
-    {
-      "task": "Harvington newsletter (5b done 16 Nov: Send-as confirmed, test and preview addresses set, newsletter_mode shadow, first Test send arrived from website@harvingtonvillage.org.uk). Still to do: subscribers (the sign-up form comes with launch, stage 7), then newsletter_mode shadow → live with Jon. The draft refreshes for Harvington only from the panel's Refresh (newsletter-draft.yml's schedule is the Lenches')",
-      "added": "2026-11-16"
     },
     {
       "task": "Harvington stage 4c (panel site switcher, 16 Nov): after the Deploy Worker run, open the panel, check The Lenches looks unchanged, switch to Harvington (river blue), check Submissions shows the Harvington Sheet's items, Newsletter draft and Site visitors show their not-yet notes, Summary's Claude spend shows both sites, and that a Harvington approval's Apply approval run has SITE harvington",
@@ -57,6 +53,11 @@
     {
       "task": "Sponsor plan (Jon, 15 Nov): £50 introductory price now on the sponsor page and terms. Still to build: Stripe pay button (Jon to open a Stripe account; Kryten to give steps), Holly sending the approach (filling {price} from sponsors.json) and one chaser without a tap, replies waiting in the panel",
       "added": "2026-11-15"
+    },
+    {
+      "task": "ICO data protection fee (Jon, 17 Nov: not registered; pay only once sponsorship is agreed): before the first sponsor pays, Jon runs the ICO self-assessment (ico.org.uk data protection fee self-assessment) as an individual running both websites with sponsorship income, and registers if it says so (one registration covers both sites)",
+      "waiting": "first sponsor agreed",
+      "added": "2026-11-17"
     },
     {
       "task": "Veto window (autonomy stage 3, built 15 Nov; emailed events switched on, starting by itself at 20 decisions in a row as written; 10 so far): when it starts, check the first item gets its time and heads-up email, publishes through Apply approval at the end of its window, shows under Audit on the Autonomy screen, and that Hold and an edit stop one",
