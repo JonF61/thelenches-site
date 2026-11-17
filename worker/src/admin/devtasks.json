@@ -28,7 +28,7 @@
       "kryten": true
     },
     {
-      "task": "Harvington stage 4c (panel site switcher, 16 Nov): after the Deploy Worker run, open the panel, check The Lenches looks unchanged, switch to Harvington (river blue), check Submissions shows the Harvington Sheet's items, Newsletter draft and Site visitors show their not-yet notes, Summary's Claude spend shows both sites, and that a Harvington approval's Apply approval run has SITE harvington",
+      "task": "Harvington stage 4c (panel site switcher, 16 Nov; 17 Nov: Harvington's panel shows light blue, its Submissions read the Harvington Sheet, Diagnostic chip green from the Lenches Health tab): still to check Summary's Claude spend shows both sites, and that the first Harvington approval's Apply approval run has SITE harvington",
       "added": "2026-11-16",
       "kryten": true
     },
@@ -42,7 +42,7 @@
       "added": "2026-11-16"
     },
     {
-      "task": "Lenches files moved from src/ to sites/lenches/ (16 Nov): after the merge, check the next Build, Publish, Apply approval and Entry edit runs succeed and commit to sites/lenches/, the Edit page still saves page text, and the Deploy Worker run succeeds",
+      "task": "Lenches files moved from src/ to sites/lenches/ (16 Nov; Build, Publish, both site builds and Deploy Worker runs all succeeded by 17 Nov): still to see an Apply approval and an Entry edit run commit to sites/lenches/, and the Edit page save page text",
       "added": "2026-11-16",
       "kryten": true
     },
@@ -70,7 +70,7 @@
       "kryten": true
     },
     {
-      "task": "Autonomy plan step 3 (built 15 Nov: Holly and Rimmer see the sender's recent items and recent site changes; Already listed capped when titles differ): on the next few replies, check nothing already done is chased, and that the next Already listed matches are real repeats. No Ingest run had happened since the merge when checked 15 Nov 21:10 UTC: also confirm the Ingest checkout step (full history, blob:none) succeeds and the run is no slower than the usual 20 to 40 seconds",
+      "task": "Autonomy plan step 3 (built 15 Nov: Holly and Rimmer see the sender's recent items and recent site changes; Already listed capped when titles differ; Ingest's full-history checkout confirmed fine 17 Nov, runs 20 to 50 seconds): on the next few replies, check nothing already done is chased, and that the next Already listed matches are real repeats",
       "added": "2026-11-15",
       "kryten": true
     },
