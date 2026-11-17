@@ -1,5 +1,5 @@
 {
-  "_help": "Harvington's bin collections (stage 6c-1, 16 Nov 2026). Checked on Wychavon's Bin Hub for WR11 8NQ (Harvington) and WR11 4TL (Norton): Monday, recycling next on 23 Nov, the same dates as the Lenches' Yellow round, so the dates are copied from sites/lenches/_data/bins.json. Lenchwick assumed the same; to be checked. No brown garden-waste collection in Harvington or Norton (checked 17 Nov), so brown is left out.",
+  "_help": "Harvington's bin collections (stage 6c-1, 16 Nov 2026). Checked on Wychavon's Bin Hub for WR11 8NQ (Harvington) and WR11 4TL (Norton): Monday, recycling next on 23 Nov, the same dates as the Lenches' Yellow round, so the dates are copied from sites/lenches/_data/bins.json. Lenchwick is on the same Yellow round (Wychavon 2026 Yellow calendar, checked 17 Nov; it gives weeks, not the day, so Monday is assumed). No brown garden-waste collection in Harvington or Norton (checked 17 Nov), so brown is left out.",
   "area": "Harvington (WR11 8NQ) and Norton (WR11 4TL)",
   "collectionDay": "Monday",
   "putOutBy": "7am",
