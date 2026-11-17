@@ -24,8 +24,13 @@ eq(L.events.map(entryKeyOf), own.events.map(entryKeyOf), 'Lenches events unchang
 eq(L.notices.map(entryKeyOf), own.notices.map(entryKeyOf), 'Lenches notices unchanged');
 eq(L.regularsPage.map(entryKeyOf), own.regularsPage.map(entryKeyOf), 'Lenches regulars unchanged');
 
-// Harvington gets every Lenches event and regular, marked as the Lenches', with no edit key.
-eq(H.events.length, L.events.length, 'Harvington shows the Lenches events');
+// Harvington gets every Lenches event (plus those in the Lenches folder set to Harvington only)
+// and every regular, marked as the Lenches', with no edit key.
+const evDir = require('path').join(__dirname, '..', 'sites', 'lenches', 'items', 'events');
+const evFiles = require('fs').readdirSync(evDir).filter((f) => f.endsWith('.json')).map((f) => JSON.parse(require('fs').readFileSync(require('path').join(evDir, f), 'utf8')));
+const harvOnlyEvents = evFiles.filter((e) => !sitesFor(e, 'x').includes('lenches')).map((e) => e.title);
+ok(!L.events.some((e) => harvOnlyEvents.includes(e.title)), 'the Lenches leaves out the Harvington-only events');
+eq(H.events.length, L.events.length + H.events.filter((e) => harvOnlyEvents.includes(e.title)).length, 'Harvington shows the Lenches events');
 ok(H.events.every((e) => siteOf(e) === 'lenches' && !entryKeyOf(e)), 'other-site events: _site set, no _entry');
 eq(H.regularsPage.length, L.regularsPage.length, 'Harvington shows the Lenches regular activities');
 ok(H.regularsPage.every((r) => siteOf(r) === 'lenches' && !entryKeyOf(r)), 'other-site regulars marked');
