@@ -61,6 +61,8 @@
 .hub-welcome h2,.hub-welcome h3{margin:0 0 .4rem;font-size:1.08rem}
 .hub-card.hub-welcome p{margin:0 0 .6rem;color:inherit;font-size:.92rem}.hub-card.hub-welcome p:last-child{margin:0}
 @media (max-width:520px){.hub-welcome{grid-column:auto}}
+@media (min-width:940px){.hub-welcome{grid-column:2 / -1}}
+.hub-grid .hub-signup{align-self:start}
 </style>
   <div class="card hub-card hub-welcome">{{ welcomeCard | safe }}</div>
   {%- endif %}

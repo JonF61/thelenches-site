@@ -57,7 +57,8 @@ async function main() {
   const robots = fs.readFileSync(path.join(out, 'robots.txt'), 'utf8');
   ok(/Allow: \//.test(robots) && !/Disallow/.test(robots) && /Sitemap: https:\/\/harvingtonvillage\.org\.uk\/sitemap\.xml/.test(robots), 'Harvington robots.txt open, with its sitemap (launched, 7b)');
   const home = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
-  ok(!/noindex/.test(home) && /website@harvingtonvillage\.org\.uk/.test(home) && !/Lenches/.test(home), 'Home at /: indexed, its address, no Lenches wording (schema too)');
+  ok(!/noindex/.test(home) && /website@harvingtonvillage\.org\.uk/.test(home) && !/Lenches/.test(home.replace(/<div class="card hub-card hub-welcome">[\s\S]*?<\/div>/, '')), 'Home at /: indexed, its address, no Lenches wording outside the welcome note (schema too)');
+  ok(/hub-welcome[\s\S]*thelenches\.org\.uk/.test(home), 'Home: welcome note (17 Nov)');
   ok(/--green:#2D4A63/.test(home) && /M491,52 L503,16/.test(home), 'Home: river blue and the spire');
   ok(/"name":"Harvington","alternateName":"The Harvington Website"/.test(home) && /"addressLocality":"Lenchwick"/.test(home), 'Home: its own site schema');
   ok(!fs.existsSync(path.join(out, 'preview')), 'no /preview/ any more');
