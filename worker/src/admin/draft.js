@@ -5,8 +5,10 @@
 // from Refresh, which only asks GitHub to run newsletter-draft.yml (it sends nothing).
 //   draftMeta(rows)   { as_of, issue_date, mode, status, subject, items, ... } from the tab
 //   draftHtml(rows)   the issue's html (the html_N cells joined, base64, inflated)
-//   draftPage(html)   the Response for /admin/draft: no scripts, images from the site only,
+//   draftPage(html)   the Response for /admin/draft: no scripts, images from our sites only,
 //                     links open in a new tab, framed by the panel only
+
+import { SITES } from '../sites.js';
 
 export const DRAFT_TAB = 'Newsletter draft';
 export const DRAFT_RANGE = `'${DRAFT_TAB}'!A1:B60`;
@@ -36,8 +38,12 @@ export async function draftHtml(rows) {
   return new Response(stream).text();
 }
 
+// Pictures from every site's own address (17 Nov: Harvington's issue links its pictures at
+// harvingtonvillage.org.uk, which a Lenches-only rule hid in the panel's draft).
+export const DRAFT_IMG_SRC = `img-src ${[...new Set(Object.values(SITES).map((c) => { try { return new URL(String(c.url || '')).origin; } catch { return ''; } }).filter(Boolean))].join(' ')} data:`;
+
 const DRAFT_CSP = [
-  "default-src 'none'", 'img-src https://thelenches.org.uk data:', "style-src 'unsafe-inline'",
+  "default-src 'none'", DRAFT_IMG_SRC, "style-src 'unsafe-inline'",
   "form-action 'none'", "frame-ancestors 'self'", 'sandbox allow-same-origin allow-popups allow-popups-to-escape-sandbox',
 ].join('; ');
 
