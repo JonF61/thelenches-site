@@ -11,6 +11,9 @@ on:
     branches: [main]
     paths:
       - "sites/harvington/**"
+      # The Lenches' hand-written items and their pictures show on Harvington too (17 Nov 2026).
+      - "sites/lenches/items/**"
+      - "sites/lenches/images/items/**"
       - "src/**"
       - "lib/**"
       - ".eleventy.js"

@@ -136,7 +136,8 @@ async function loadInputs(g) {
   const readJson = (rel) => (fs.existsSync(path.join(ROOT, rel)) ? JSON.parse(fs.readFileSync(path.join(ROOT, rel), 'utf8')) : null);
   const jpegFor = (webpUrl) => {
     const rel = webpUrl.replace(/\.webp$/, '.jpg');
-    return fs.existsSync(path.join(ROOT, SITE_REL, rel)) ? `${SITE}${rel}` : '';
+    // This site's copy, or a shared item's picture from another site (copied into this build).
+    return require('../../lib/whatson').imageFile(rel) ? `${SITE}${rel}` : '';
   };
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(Date.now());
   const [{ sources, settings }, pending, issues, subscribers, dns] = await Promise.all([

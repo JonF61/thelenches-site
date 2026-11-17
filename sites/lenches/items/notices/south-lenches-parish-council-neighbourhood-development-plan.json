@@ -6,5 +6,6 @@
     "url": "https://www.wychavon.gov.uk/planning/planning-policy/neighbourhood-planning/south-lenches-neighbourhood-plan"
   },
   "official": true,
-  "order": 10
+  "order": 10,
+  "sites": "lenches"
 }
