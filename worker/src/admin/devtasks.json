@@ -2,11 +2,6 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
-      "task": "Harvington email delivery: the first web sign-up's confirmation (16 Nov 22:53) was sent from website@harvingtonvillage.org.uk but never reached Jon's outside test address (not in junk, no bounce). Likely missing SPF, DKIM or DMARC for harvingtonvillage.org.uk (the Build history records them only for thelenches.org.uk). Jon to check the TXT records at 123-reg; then set up DKIM in Google Admin and add the missing records, and retry the sign-up. Holly's replies and the newsletter for Harvington must wait for this",
-      "added": "2026-11-16",
-      "kryten": true
-    },
-    {
       "task": "Harvington listing checks: the yearly Organisations check for Harvington's trades and eateries needs per-site templates (templates.md listing_check / listing_chase name thelenches.org.uk) and orgoutreach.mjs page links from the site's url; skip entries the Lenches already checks (same id, e.g. shared pubs)",
       "added": "2026-11-16"
     },
@@ -19,11 +14,11 @@
       "added": "2026-11-16"
     },
     {
-      "task": "Harvington before launch: add one line to the Lenches privacy page saying items may also appear on the Harvington website (wording for Jon to approve); Harvington's Contact page gets a village contacts table once its schools data exist (stage 6c-2); Harvington regular activities need entries (sites/harvington/items/regulars.json)",
+      "task": "Harvington after launch: its Contact page gets a village contacts table once its schools data exist (stage 6c-2); Harvington regular activities need entries (sites/harvington/items/regulars.json)",
       "added": "2026-11-16"
     },
     {
-      "task": "Harvington launched (stage 7b, 16 Nov): check a real Harvington sign-up lands in the Harvington Sheet's Sign-ups tab and its confirmation email comes from website@harvingtonvillage.org.uk; check Site visitors shows Harvington counts the next day; Jon to add the site in Google Search Console and submit https://harvingtonvillage.org.uk/sitemap.xml, check his ICO registration covers it, and say when to move Harvington's replies_mode and newsletter_mode from shadow",
+      "task": "Harvington launched (stage 7b, 16 Nov; first web sign-up confirmed 16 Nov, its email passed SPF, DKIM and DMARC; DMARC raised to p=quarantine 17 Nov): check the first Harvington DMARC reports (to its website@ address) land under 4 DMARC, not the Harvington Pipeline label; check Site visitors shows Harvington counts; Jon to add the site in Google Search Console and submit https://harvingtonvillage.org.uk/sitemap.xml, check his ICO registration covers it, and say when to move Harvington's replies_mode and newsletter_mode from shadow",
       "added": "2026-11-16",
       "kryten": true
     },
