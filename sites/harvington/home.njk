@@ -36,6 +36,13 @@ cards:
     <p class="muted">We gather it from village groups, the parish council and neighbours, and check it as carefully as we can.</p>
   </section>
   <section class="home-cards">
+    {#- Welcome note (wording approved by Jon 17 Nov 2026), beside the newsletter card; stays until Jon asks for it to go. -#}
+    {%- set welcomeCard -%}
+    <h2>Welcome to the new Harvington website</h2>
+    <p>This is a brand-new community website for Harvington, Norton and Lenchwick. It works the same way as the one we run for the Lenches villages nearby (<a href="https://thelenches.org.uk">thelenches.org.uk</a>).</p>
+    <p>Please help it grow. <a href="{{ '/newsletter/' | url }}">Join the free Thursday newsletter</a>, tell friends and neighbours about it, and use the <strong>Suggest an update</strong> button at the bottom of most pages to tell us what's wrong or missing.</p>
+    <p>Got an event, some news or a message for the village? Email it to <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+    {%- endset %}
     {% set signupCard = true %}{% include "hub-cards.njk" %}{% set signupCard = false %}
   </section>
   {% if site.facebookGroup %}<section class="home-section home-fb">
