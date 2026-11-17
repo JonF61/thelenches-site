@@ -163,6 +163,22 @@
   ],
   "notices": [
     {
+      "id": "1a1e7b272466541d-1",
+      "title": "Openreach works — Alcester Road, Radford",
+      "body": "Openreach is carrying out works on Alcester Road, Radford, on Saturday 21 and Sunday 22 November. They won't take up any of the road, so delays are unlikely.",
+      "date": "2026-11-21",
+      "village": "Radford",
+      "start": "2026-11-21",
+      "end": "2026-11-22",
+      "road": "Alcester Road",
+      "expires": "2026-12-08",
+      "added": "2026-11-17",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB153381814"
+      }
+    },
+    {
       "id": "rss-8d20b44ee05df9cf-1",
       "title": "Emergency closure of Hughes Lane — Harvington",
       "body": "Hughes Lane in Harvington is shut to vehicles between Village Street and Ragley Road so that a burst water main can be repaired. The closure began on Tuesday 10 November and is expected to last about two days, though the order allows up to 21 days. Drivers should use Village Street and Ragley Road instead. People on foot can still reach homes and premises on the lane.",
