@@ -13,4 +13,6 @@ assert.strictEqual(placeLabel({ title: 'From tees to trees: Harvington Wood', bo
 assert.strictEqual(placeLabel({ title: 'Survey', body: 'Lenchwick and Harvington readers' }, H), 'Lenchwick', 'first named in the body');
 assert.strictEqual(placeLabel({ title: 'Church Lench fayre', body: 'At All Saints\'.' }, H), '', 'nothing of ours named');
 assert.strictEqual(placeLabel({ title: 'Abbots Morton lights', body: '' }, H), '', 'Morton is not Norton');
+assert.strictEqual(placeLabel({ place: 'Harvington', title: 'Survey', body: 'Norton' }, H), 'Harvington', 'place wins');
+assert.strictEqual(placeLabel({ place: 'Harvington', village: 'Ab Lench', title: 'x' }), 'Ab Lench', 'the Lenches ignores place');
 console.log('placelabel tests passed');
