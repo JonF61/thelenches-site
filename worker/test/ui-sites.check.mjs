@@ -79,6 +79,8 @@ try {
     assert.ok(seen.length && seen.every((s) => s.site === 'lenches'), JSON.stringify(seen));
     const menu = async () => page.locator('nav.side button').allInnerTexts();
     if (name === 'desktop') assert.ok((await menu()).some((t) => /^Photos/.test(t)));
+    const bodyBg = async () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    assert.equal(await bodyBg(), 'rgb(246, 241, 228)', 'the Lenches keeps its cream background');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `sites-lenches-${name}.png`) });
 
     // Switch: the panel reopens for Harvington, in its colour, and every call says so.
@@ -90,6 +92,7 @@ try {
     assert.ok(seen.length && seen.every((s) => s.site === 'harvington'), JSON.stringify(seen));
     const border = await page.locator('header.top').evaluate((el) => getComputedStyle(el).borderTopColor);
     assert.equal(border, 'rgb(45, 74, 99)', 'Harvington river blue');
+    assert.equal(await bodyBg(), 'rgb(228, 238, 247)', "Harvington's panel has a light blue background");
     if (name === 'desktop') {
       const items = await menu();
       assert.ok(!items.some((t) => t.startsWith('Photos')), 'Photos is the Lenches\' alone');
