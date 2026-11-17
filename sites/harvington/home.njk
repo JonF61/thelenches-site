@@ -62,6 +62,9 @@ cards:
     <p class="muted">{{ livinghere.intro }}</p>
     {% set cards = livinghere.cards %}{% set cardHeading = "h3" %}{% include "hub-cards.njk" %}
   </section>
+
+  {#- Feedback form near the foot of the page, as on the Lenches Home (base.njk leaves it off "/"). -#}
+  <div class="home-feedback" data-pagefind-ignore>{% include "feedback.njk" %}</div>
 </main>
 
 {% include "home-bins-script.njk" %}

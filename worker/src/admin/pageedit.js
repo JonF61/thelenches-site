@@ -286,7 +286,7 @@ export async function editorPage(env, { page, origin, csrf, version, fetcher = f
   return {
     status: 200,
     html: editorHtml(html, { origin, site, page: p, version, data: {
-      mode: 'page', page: p, path, sha, csrf, blocks, live: new URL(p, site).href, site, api: `${origin}/admin/api/page-save`, statusApi: `${origin}/admin/api/build-status`,
+      mode: 'page', page: p, path, sha, csrf, panelSite: env.SITE || 'lenches', blocks, live: new URL(p, site).href, site, api: `${origin}/admin/api/page-save`, statusApi: `${origin}/admin/api/build-status`,
       // Listing entries on the page (data-entry; entryedit.js): their own edit box and save path.
       entryApi: `${origin}/admin/api/entry`, entrySaveApi: `${origin}/admin/api/entry-save`, entryStatusApi: `${origin}/admin/api/entry-status`,
     } }),

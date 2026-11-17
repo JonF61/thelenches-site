@@ -95,9 +95,14 @@ export function statusFrom(runs, sha, at, nowMs = Date.now()) {
   return { state: 'failed' };
 }
 
+// The workflow that builds and publishes a site (Harvington's own since stage 3).
+export function buildWorkflow(site) {
+  return site && site !== 'lenches' ? `build-${site}.yml` : 'build.yml';
+}
+
 export async function buildStatus(env, sha, at) {
   if (!/^[0-9a-f]{40}$/.test(String(sha || ''))) return { ok: false, status: 400, error: 'Bad commit' };
-  const r = await github(env, `/repos/${env.REPO}/actions/workflows/build.yml/runs?per_page=10`);
+  const r = await github(env, `/repos/${env.REPO}/actions/workflows/${buildWorkflow(env.SITE)}/runs?per_page=10`);
   if (!r.ok) return { ok: false, status: 502, error: `GitHub runs: HTTP ${r.status}` };
   const j = await r.json();
   return { ok: true, ...statusFrom(j.workflow_runs || [], sha, at) };
