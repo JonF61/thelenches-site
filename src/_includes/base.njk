@@ -94,7 +94,7 @@
             {% for item in group.links %}<li><a href="{{ item.url | url }}"{% if page.url == item.url %} aria-current="page"{% endif %}>{{ item.title }}</a></li>{% endfor %}
             {#- Team-only tools (Google sign-in required); hidden until site.json has teamUrl. -#}
             {#- Another site's links open the panel on that site (?site=; the Lenches' stay as before). -#}
-            {% if loop.last and site.teamUrl %}{% set siteQ = "" if (not site.site or site.site == "lenches") else "site=" + site.site %}<li><a href="{{ site.teamUrl }}{% if siteQ %}?{{ siteQ }}{% endif %}" rel="nofollow">Team</a></li><li><a href="{{ site.teamUrl }}/page?p={{ page.url | urlencode }}{% if siteQ %}&amp;{{ siteQ }}{% endif %}" rel="nofollow">Edit page</a></li>{% endif %}
+            {% if loop.last and site.teamUrl %}{% set siteQ = "" if (not site.site or site.site == "lenches") else "site=" + site.site %}<li><a href="{{ site.teamUrl }}{% if siteQ %}?{{ siteQ }}{% endif %}" target="_blank" rel="nofollow noopener">Team</a></li><li><a href="{{ site.teamUrl }}/page?p={{ page.url | urlencode }}{% if siteQ %}&amp;{{ siteQ }}{% endif %}" target="_blank" rel="nofollow noopener">Edit page</a></li>{% endif %}
           </ul>
         </div>
         {% endfor %}
