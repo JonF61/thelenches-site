@@ -29,6 +29,7 @@ const { loadWhatson } = require('../../lib/whatson');
 const { render, wrapPreview } = require('./render');
 const { personalise, forPreview } = require('./unsub');
 const { buttons } = require('./actions');
+const { sharedPending } = require('./shared');
 
 const TZ = 'Europe/London';
 const ROOT = path.join(__dirname, '..', '..');
@@ -121,7 +122,7 @@ async function main() {
   }
 
   const model = select({
-    issueDate, pending, issues, settings, sources, jpegFor, cutoff,
+    issueDate, pending: await sharedPending(g, pending), issues, settings, sources, jpegFor, cutoff,
     whatson: loadWhatson(),
     bins: readJson(`${SITE_REL}/_data/bins.json`),
     siteupdates: readJson(`${SITE_REL}/_data/siteupdates.json`),

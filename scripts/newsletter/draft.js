@@ -50,7 +50,7 @@ function snapshotModel(row) {
   return model;
 }
 
-// inputs: { today, pending, issues, settings, sources, whatson, bins, siteupdates, onthisday, photos, jpegFor,
+// inputs: { today, pending, shared? (sharedPending: this site's and other sites' live rows for it), issues, settings, sources, whatson, bins, siteupdates, onthisday, photos, jpegFor,
 //           subscribers?, dns? (Subscribers / Do Not Send rows; counts only, never printed) }
 // -> { meta, html }
 function buildDraft(inputs) {
@@ -66,7 +66,7 @@ function buildDraft(inputs) {
   const mode = model ? 'frozen' : 'live';
   if (!model) {
     model = select({
-      issueDate, pending: inputs.pending, issues, settings: inputs.settings, sources: inputs.sources, jpegFor: inputs.jpegFor,
+      issueDate, pending: inputs.shared || inputs.pending, issues, settings: inputs.settings, sources: inputs.sources, jpegFor: inputs.jpegFor,
       cutoff: deadlineFor(issueDate), whatson: inputs.whatson, bins: inputs.bins, siteupdates: inputs.siteupdates, onthisday: inputs.onthisday, cartoons: inputs.cartoons, wherelenches: inputs.wherelenches, photos: inputs.photos,
     });
   }
@@ -102,11 +102,13 @@ function editTags(model, inputs) {
   const entries = {};
   const w = inputs.whatson || {};
   const official = new Set((inputs.pending || []).filter((r) => truthy(r.official)).map((r) => `p:${str(r.id)}`));
+  // Another site's items (inputs.shared) are edited on their own site, like its hand-written ones.
+  const own = new Set((inputs.pending || []).map((r) => `p:${str(r.id)}`));
   for (const ev of w.events || []) if (entryKeyOf(ev) && !truthy(ev.official)) entries[whatsonKey('events', ev)] = entryKeyOf(ev);
   for (const n of w.notices || []) if (entryKeyOf(n) && !truthy(n.official)) entries[whatsonKey('notices', n)] = entryKeyOf(n);
   for (const it of [...(model.events || []), ...(model.notices || []), ...(model.roads || [])]) {
     const k = str(it && it.key);
-    if (/^p:/.test(k) && !official.has(k)) entries[k] = k;
+    if (/^p:/.test(k) && own.has(k) && !official.has(k)) entries[k] = k;
   }
   const regKey = (r) => [r.day, r.what, r.time, r.where].map(str).join('|');
   const regs = new Map((w.regulars || []).filter((r) => entryKeyOf(r)).map((r) => [regKey(r), entryKeyOf(r)]));
@@ -143,8 +145,9 @@ async function loadInputs(g) {
   const [{ sources, settings }, pending, issues, subscribers, dns] = await Promise.all([
     g.readSettings(), g.readTable('Pending'), g.readTable('Issues'), g.readTable('Subscribers'), g.readTable('Do Not Send'),
   ]);
+  const shared = await require('./shared').sharedPending(g, pending);
   return {
-    today, pending, issues, settings, sources, jpegFor, whatson: loadWhatson(), subscribers, dns,
+    today, pending, shared, issues, settings, sources, jpegFor, whatson: loadWhatson(), subscribers, dns,
     bins: readJson(`${SITE_REL}/_data/bins.json`), siteupdates: readJson(`${SITE_REL}/_data/siteupdates.json`), onthisday: readJson(`${SITE_REL}/_data/onthisday.json`), cartoons: readJson(`${SITE_REL}/_data/cartoons.json`), wherelenches: readJson(`${SITE_REL}/_data/wherelenches.json`),
     photos: readJson(`${SITE_REL}/_data/photos.json`),
   };
