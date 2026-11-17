@@ -17,6 +17,9 @@ export const CLIENT_CSS = String.raw`
   --accent:#9cc28a;--accent-ink:#13200d;--bad:#ee8f80;--bad-bg:#3b211d;--warn:#f0c46a;--warn-bg:#352a12;
   --ok:#93d39b;--ok-bg:#1d3320;--info-bg:#1c2738;--info:#a8c2ee;--focus:#f0c46a;
 }}
+/* Harvington's panel has a light blue background so Jon can tell at a glance which site he is on (17 Nov). */
+html[data-site="harvington"]{--bg:#E4EEF7;--panel2:#F1F6FB;--line:#cfdcea}
+@media (prefers-color-scheme: dark){html[data-site="harvington"]{--bg:#121a24;--panel2:#1e2834;--line:#2f3b4a}}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
 a{color:var(--accent)}

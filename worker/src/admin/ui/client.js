@@ -54,6 +54,7 @@ export const CLIENT_JS = String.raw`
     try { if (q !== s) history.replaceState(null, '', location.pathname + '?site=' + encodeURIComponent(s) + location.hash); } catch (e) { /* fine */ }
     return s;
   })();
+  try { document.documentElement.setAttribute('data-site', SITE); } catch (e) { /* fine */ }
   var mainSite = function () { return SITE === MAIN_SITE; };
   // Screens for the Lenches alone: the Photos library (Lenches Photos in Drive).
   var LENCHES_ONLY = { photos: 1 };
