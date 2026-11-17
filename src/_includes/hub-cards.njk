@@ -1,8 +1,7 @@
 {#- Grid of hub cards, shared by hub.njk and the home page. Needs cards (title, url, icon, text)
     and, optionally, live: { url: "line" or ["line", ...] } for computed lines under a card's text (home page),
     and cardHeading ("h2" by default; "h3" for cards under a section heading).
-    signupCard: true adds the newsletter sign-up card as the last card (home page top row).
-    welcomeCard (HTML, set by a home page with {% set welcomeCard %}…{% endset %}) follows it as a wider card (Harvington's welcome note, 17 Nov). -#}
+    signupCard: true adds the newsletter sign-up card as the last card (home page top row). -#}
 {%- set hTag = cardHeading or "h2" -%}
 {%- set icons = {
   users: '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.8.3 5 2.6 5 5.8"/>',
@@ -54,16 +53,5 @@
     <a class="btn" href="{{ '/newsletter/' | url }}">Sign up</a>
     <p class="hub-small">Unsubscribe any time &middot; <a href="{{ '/privacy/' | url }}">Privacy</a></p>
   </div>
-  {%- endif %}
-  {%- if signupCard and welcomeCard %}
-  <style>
-.hub-welcome{grid-column:span 2;box-shadow:0 0 0 2px var(--accent)}
-.hub-welcome h2,.hub-welcome h3{margin:0 0 .4rem;font-size:1.08rem}
-.hub-card.hub-welcome p{margin:0 0 .6rem;color:inherit;font-size:.92rem}.hub-card.hub-welcome p:last-child{margin:0}
-@media (max-width:520px){.hub-welcome{grid-column:auto}}
-@media (min-width:940px){.hub-welcome{grid-column:2 / -1}}
-.hub-grid .hub-signup{align-self:start}
-</style>
-  <div class="card hub-card hub-welcome">{{ welcomeCard | safe }}</div>
   {%- endif %}
 </div>
