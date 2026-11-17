@@ -1028,6 +1028,15 @@ test('Site switcher: x-site harvington reads the Harvington Sheet and its decisi
   assert.deepEqual(c2.dispatches, [{ event_type: 'ingest', client_payload: { by: 'panel', site: 'harvington' } }]);
 });
 
+test('Site switcher: every panel reads Health (the daily diagnostic) from the Lenches Sheet', async () => {
+  const calls = fakeWorld(tablesFor());
+  const r = await worker.fetch(await reqWith('/admin/api/state', { site: 'harvington' }), env());
+  assert.equal(r.status, 200);
+  const s = await r.json();
+  assert.equal(s.health.length, 1, JSON.stringify(s.health));
+  assert.ok(calls.sheetIds.includes('sheet123') && calls.sheetIds.includes(HARV_SHEET), String(calls.sheetIds));
+});
+
 test('Site switcher: an unknown site is refused, never taken as the Lenches', async () => {
   const calls = fakeWorld(tablesFor());
   const r = await postSite('/admin/api/action', { kind: 'pending', id: 'm1-1', action: 'approve' }, 'evesham');
@@ -1049,7 +1058,8 @@ test('Site switcher: session lists both sites; state says which site it is for',
   assert.equal(st.site, 'harvington');
   assert.equal(st.sheetId, HARV_SHEET);
   assert.equal(st.photosRoot, '', 'the Photos library is the Lenches\' alone');
-  assert.ok(!calls.sheetIds.includes('sheet123'), 'nothing read from the Lenches Sheet');
+  // Only the Health tab (the daily diagnostic, written to the Lenches Sheet alone) comes from there (17 Nov).
+  assert.equal(calls.sheetIds.filter((id) => id === 'sheet123').length, 1, 'one read from the Lenches Sheet: Health');
 });
 
 test('Site switcher: Holly lessons are one list, always the Lenches Sheet', async () => {

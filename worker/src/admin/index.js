@@ -330,12 +330,14 @@ async function readDraft(env, range) {
 const isMain = (env) => !env.SITE || env.SITE === DEFAULT_SITE;
 const EMPTY = { headers: [], rows: [] };
 
-async function state(env, email) {
+// The daily diagnostic checks every site but writes its Health rows to the Lenches Sheet only, so
+// every panel reads Health from there (lenv; 17 Nov, Jon: Harvington's chip said "no runs").
+async function state(env, email, lenv = env) {
   const main = isMain(env);
   const photosRead = main ? readTable(env, 'Photos') : Promise.resolve(EMPTY);
   const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite, bin, sugg, fb, draftRows, listing] = await settled([
     readTable(env, 'Pending'), readTable(env, 'Replies'), photosRead,
-    readSettingsPairs(env), readTable(env, 'Health'), readTable(env, 'Issues'), sheetGids(env),
+    readSettingsPairs(env), readTable(lenv, 'Health'), readTable(env, 'Issues'), sheetGids(env),
     readSources(env), main ? readTable(env, 'Image fetch') : EMPTY, watchdog(env), main ? folderList(env) : [],
     main ? photoPages(env) : { error: 'The Lenches only' },
     main ? binList(env, photosRead) : [], main ? readTable(env, SUGGEST_TAB) : EMPTY, readFeedback(env), readDraft(env, DRAFT_META_RANGE),
@@ -1112,7 +1114,7 @@ export async function handleAdmin(request, rawEnv) {
       if (path === '/admin/api/session') {
         return json({ email: auth.email, csrf: await makeCsrf(env, auth.email), site: env.SITE, siteName: String(siteConfig(env.SITE).name || env.SITE), sites: siteList() });
       }
-      if (path === '/admin/api/state') return json(await state(env, auth.email));
+      if (path === '/admin/api/state') return json(await state(env, auth.email, lenv));
       if (path === '/admin/api/contacts') return json(contactRows(await readTable(env, CONTACTS_TAB)));
       if (path === '/admin/api/contact-messages') return await contactMessages(env, url);
       if (path === '/admin/api/outreach') return json(await outreach(env));
@@ -1160,7 +1162,7 @@ export async function handleAdmin(request, rawEnv) {
       }
       const body = await readJson(request);
       if (!body) return json({ ok: false, error: 'Bad request' }, 400);
-      if (path === '/admin/api/edit') return await doEdit(env, body);
+      if (path === '/admin/api/edit') return await doEdit(String(body.tab || '') === 'Health' ? lenv : env, body);
       if (path === '/admin/api/action') return await doAction(env, body);
       if (path === '/admin/api/suggest') return await doSuggest(env, body);
       if (path === '/admin/api/feedback-note') return await doNote(env, body);
