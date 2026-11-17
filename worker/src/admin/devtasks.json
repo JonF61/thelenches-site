@@ -51,10 +51,6 @@
       "added": "2026-11-16"
     },
     {
-      "task": "Harvington website: stages 1 (email and domain) and 2 (multi-site foundation: sites/lenches and sites/harvington, SITE setting, river blue palette and spire) done 16 Nov. Stage 3 hosting done 16 Nov (build-harvington.yml publishes to JonF61/harvington-site; holding page live at harvingtonvillage.org.uk once Enforce HTTPS is ticked). Next: 4 Sheet and pipeline with the panel's site switcher, 5 newsletter, 6 content (including the shared header and footer, which still say The Lenches), 7 launch",
-      "added": "2026-11-16"
-    },
-    {
       "task": "Lenches files moved from src/ to sites/lenches/ (16 Nov): after the merge, check the next Build, Publish, Apply approval and Entry edit runs succeed and commit to sites/lenches/, the Edit page still saves page text, and the Deploy Worker run succeeds",
       "added": "2026-11-16",
       "kryten": true
