@@ -22,7 +22,7 @@ Anything in by **6pm on Wednesday** goes in that Thursday's newsletter. Later it
 A few lines saying:
 
 - **What** it is
-- **Where** it's happening (the village and the venue)
+- **Where** it's happening (which village, and the venue)
 - **When** (the date and the time)
 - **How much** it costs, or that it's free
 - **Who to ask** (a name, email address or phone number)
