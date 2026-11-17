@@ -8,7 +8,6 @@ seoTitle: "Harvington Village Website — events, news and roadworks near Evesha
 cards:
   - { title: "Events", url: "/events/", icon: calendar, text: "Coming up in the village and close by." }
   - { title: "News", url: "/notices/", icon: notice, text: "Parish council notices and news from around Harvington." }
-  - { title: "Roads", url: "/living-here/roads/", icon: road, text: "Closures and roadworks, on now and on the way." }
   - { title: "Bins", url: "/bins/", icon: bins, text: "Your next collection and which bin takes what." }
 ---
 {#- Harvington's Home (wording approved by Jon 16 Nov 2026). At "/" since launch (stage 7b, 16 Nov), replacing the holding page. Live lines as on the Lenches Home, including the next bin collection. The Facebook card shows once
@@ -34,6 +33,16 @@ cards:
     <p class="intro-head">What's happening in Harvington, Norton and Lenchwick</p>
     <p class="intro-news">Get it all by email, free, every Thursday morning: <a href="{{ '/newsletter/' | url }}">join the newsletter</a>.</p>
     <p class="muted">We gather it from village groups, the parish council and neighbours, and check it as carefully as we can.</p>
+  </section>
+  {#- Welcome note (wording approved by Jon 17 Nov 2026), full width above the cards; stays until Jon asks for it to go. -#}
+  <style>.home-welcome{margin:0 0 .75rem}.home-welcome .card{margin:0;box-shadow:0 0 0 2px var(--accent)}.home-welcome h2{margin:0 0 .4rem;font-size:1.15rem}.home-welcome p{margin:0 0 .6rem;font-size:.95rem}.home-welcome p:last-child{margin:0}</style>
+  <section class="home-welcome">
+    <div class="card">
+      <h2>Welcome to the new Harvington website</h2>
+      <p>This is a brand-new community website for Harvington, Norton and Lenchwick. It works the same way as the one we run for the Lenches villages nearby (<a href="https://thelenches.org.uk">thelenches.org.uk</a>).</p>
+      <p>Please help it grow. <a href="{{ '/newsletter/' | url }}">Join the free Thursday newsletter</a>, tell friends and neighbours about it, and use the <strong>Suggest an update</strong> button at the bottom of most pages to tell us what's wrong or missing.</p>
+      <p>Got an event, some news or a message for the village? Email it to <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+    </div>
   </section>
   <section class="home-cards">
     {% set signupCard = true %}{% include "hub-cards.njk" %}{% set signupCard = false %}
