@@ -4,7 +4,13 @@
 // Run: node --test worker/test/
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { runRow, statusFrom } from '../src/admin/runs.js';
+import { runRow, statusFrom, buildWorkflow } from '../src/admin/runs.js';
+
+test('buildWorkflow: each site its own build', () => {
+  assert.equal(buildWorkflow('lenches'), 'build.yml');
+  assert.equal(buildWorkflow(undefined), 'build.yml');
+  assert.equal(buildWorkflow('harvington'), 'build-harvington.yml');
+});
 
 const SHA = 'a'.repeat(40);
 const OTHER = 'b'.repeat(40);
