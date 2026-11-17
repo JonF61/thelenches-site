@@ -281,6 +281,8 @@ module.exports = async function (eleventyConfig) {
   // True for items in the five Lenches ("Lenches" badge on Events; lib/lenches.js)
   const { inLenches } = require("./lib/lenches.js");
   eleventyConfig.addFilter("inLenches", inLenches);
+  const { placeLabel } = require("./lib/placelabel.js");
+  eleventyConfig.addFilter("placeLabel", placeLabel);
   // Prefilled Google Calendar page for an event (Events page, beside the .ics download; 5 Nov 2026).
   eleventyConfig.addFilter("googleCal", (e, siteUrl) => {
     const { googleCalendarUrl } = require("./lib/ics.js");
