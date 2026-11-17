@@ -6,34 +6,42 @@ name: Newsletter draft
 # the panel's Refresh button (repository_dispatch newsletter-draft). Not after approvals or
 # publishing (2 Nov, Jon: too many runs): an approval leads to Publish, and a Publish that
 # changes anything starts a site build, so the build's run covers both.
-# One shared group, cancel-in-progress: only the newest run matters (each rebuilds it all).
+# One group per site, cancel-in-progress: only the newest run matters (each rebuilds it all).
+# Both sites (17 Nov 2026): schedules and workflow_run don't say which site, so they refresh
+# every site's draft (a Harvington Rebuild left its draft showing the old empty issue); the
+# panel's Refresh and a Run workflow refresh the one site they name.
 on:
   workflow_run:
-    workflows: ["Build and deploy to GitHub Pages", "Newsletter build and send"]
+    workflows: ["Build and deploy to GitHub Pages", "Build Harvington site", "Newsletter build and send"]
     types: [completed]
   schedule:
     - cron: "23 */3 * * *"
   repository_dispatch:
     types: [newsletter-draft]
   workflow_dispatch:
+    inputs:
+      site:
+        description: "Site (lenches or harvington)"
+        default: lenches
 
 permissions:
   contents: read
-
-concurrency:
-  group: newsletter-draft-${{ github.event.client_payload.site || github.event.inputs.site || 'lenches' }}
-  cancel-in-progress: true
-
-env:
-  # Which site this run is for (lib/site.js): the dispatch payload's or Run workflow's `site`,
-  # else the Lenches (schedules, workflow_run). The Sheet is that site's site.json sheetId
-  # (Harvington stage 4, 16 Nov 2026).
-  SITE: ${{ github.event.client_payload.site || github.event.inputs.site || 'lenches' }}
 
 jobs:
   draft:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        # Which site(s) this run is for (lib/site.js; the Sheet is that site's site.json sheetId):
+        # the dispatch payload's or Run workflow's `site`, else every site.
+        site: ${{ fromJSON((github.event.client_payload.site || github.event.inputs.site) && format('["{0}"]', github.event.client_payload.site || github.event.inputs.site) || '["lenches","harvington"]') }}
+    concurrency:
+      group: newsletter-draft-${{ matrix.site }}
+      cancel-in-progress: true
+    env:
+      SITE: ${{ matrix.site }}
     steps:
       - uses: actions/checkout@v7
         with:

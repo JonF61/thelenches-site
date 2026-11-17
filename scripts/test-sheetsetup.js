@@ -64,6 +64,8 @@ const EXPR = "SITE: ${{ github.event.client_payload.site || github.event.inputs.
 for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.yml'))) {
   const y = fs.readFileSync(require('path').join(dir, f), 'utf8');
   ok(!/SHEET_ID:/.test(y), `${f}: no hard-coded SHEET_ID`);
-  if (/GOOGLE_SA_KEY/.test(y) && !['sheet-setup.yml', 'build.yml', 'publish.yml'].includes(f)) ok(y.includes(EXPR), `${f}: SITE from the run`);
+  if (/GOOGLE_SA_KEY/.test(y) && !['sheet-setup.yml', 'build.yml', 'publish.yml', 'newsletter-draft.yml'].includes(f)) ok(y.includes(EXPR), `${f}: SITE from the run`);
+  // newsletter-draft.yml (17 Nov): a matrix of sites, the named one or every site.
+  if (f === 'newsletter-draft.yml') ok(y.includes('SITE: ${{ matrix.site }}') && y.includes("github.event.client_payload.site || github.event.inputs.site") && y.includes('["lenches","harvington"]'), `${f}: SITE per matrix site`);
 }
 console.log(`sheetsetup + workflows: ${n} checks passed`);
