@@ -72,7 +72,8 @@ function dispatchPayload() {
 // (the item then goes out text only).
 function jpegFor(webpUrl) {
   const rel = webpUrl.replace(/\.webp$/, '.jpg');
-  return fs.existsSync(path.join(ROOT, SITE_REL, rel)) ? `${SITE}${rel}` : '';
+  // This site's copy, or a shared item's picture from another site (copied into this build).
+  return require('../../lib/whatson').imageFile(rel) ? `${SITE}${rel}` : '';
 }
 
 function recipient(value, allowed, name) {

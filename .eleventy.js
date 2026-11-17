@@ -15,6 +15,24 @@ module.exports = async function (eleventyConfig) {
 
   eleventyConfig.addPassthroughCopy({ "src/style.css": "style.css" });
   eleventyConfig.addPassthroughCopy({ [`${SITE_REL}/images`]: "images" });
+  // Shared hand-written items (17 Nov 2026): another site's event, notice or regular activity shown
+  // here brings its picture (and the newsletter's JPEG copy) from that site's images, unless this
+  // site has a file of that name already.
+  {
+    const { loadWhatson, siteOf } = require("./lib/whatson.js");
+    const w = loadWhatson({ all: true });
+    const copies = {};
+    for (const it of [...w.events, ...w.notices, ...w.regularsPage]) {
+      const from = siteOf(it);
+      const url = String((it.image && it.image.url) || "");
+      if (!from || !/^\/images\/[\w./-]+$/.test(url) || url.includes("..")) continue;
+      for (const rel of new Set([url, url.replace(/\.webp$/, ".jpg")])) {
+        const src = `sites/${from}${rel}`;
+        if (fs.existsSync(path.join(__dirname, src)) && !fs.existsSync(path.join(__dirname, SITE_REL, rel))) copies[src] = rel.slice(1);
+      }
+    }
+    if (Object.keys(copies).length) eleventyConfig.addPassthroughCopy(copies);
+  }
   // Hand-written items (sites/<site>/items/, read by src/_data/whatson.js): rebuild on change when serving
   eleventyConfig.addWatchTarget(`${SITE_REL}/items/`);
   // A site's own submission guidelines (sites/<site>/guidelines.md) are rendered inside its Contact page, never as a page of their own.

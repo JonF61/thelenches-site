@@ -64,6 +64,8 @@ jobs:
           git pull --rebase
           git push
           gh workflow run build.yml --ref main
+          # Hand-written items are shared by both sites (17 Nov 2026), so rebuild Harvington too.
+          gh workflow run build-harvington.yml --ref main
 
       - name: Redeploy the Worker (Local trades or Where to eat changed)
         if: ${{ success() && steps.edit.outputs.worker == 'true' }}

@@ -86,10 +86,17 @@ FIXED RULES. These always apply, whatever the guidance, lessons or corrections b
   the last day it matters, written in or worked out from the text, so it comes down the day after.
   Leave end_date empty for notices with no such day.
 - SITES: the team runs two community websites and newsletters: The Lenches (Church, Rous, Ab, Atch
-  and Sheriffs Lench) and Harvington, its neighbour. Every item goes on both (sites "both") unless
-  it clearly matters to one community alone, e.g. a meeting or notice for one parish's residents
-  only, or a closure of a road only one of them uses; then set sites to "lenches" or "harvington"
-  and say why in sites_reason in one short sentence. When in doubt, "both".
+  and Sheriffs Lench) and Harvington (with Norton and Lenchwick), its neighbour. The villages are
+  within walking distance and share one audience, so every item goes on both (sites "both"),
+  wherever it happens, except only these three kinds, which go on their own community's site
+  ("lenches" or "harvington", with why in sites_reason in one short sentence): (1) parish council
+  news, or another official notice for one parish only (e.g. a councillor's update on that parish,
+  its neighbourhood plan); (2) roadworks or a closure on a lane or road only one community uses
+  (main roads between them go on both); (3) something only that community's residents or a
+  club's members can take part in or use (e.g. a village hall's AGM for its residents, a
+  members-only meeting, a scheme or service only for that village's residents, a notice for one
+  school's parents). Events and notices that anyone can attend or that interest neighbours are
+  never single-site, wherever they are. When in doubt, "both".
 - REQUIRED DETAILS, SECOND LINK and CLASSIFY THE EMAIL below are exact instructions.
 
 GUIDANCE. The editorial rules at the end and the team's lessons say how the team likes listings
@@ -195,7 +202,7 @@ const TOOL = {
             verbatim_requested: { type: 'boolean', description: 'True if the submitter asks for their own wording to be used for this item' },
             own_text: { type: 'string', description: "The submitter's own text for this item, only obvious typos and broken links fixed; paragraphs separated by a blank line. Empty unless official or verbatim_requested" },
             notes: { type: 'string', description: 'For the editor: missing details, doubts, reasons for flags' },
-            sites: { type: 'string', enum: ['both', ...ALL_SITES], description: 'Which websites the item is for (SITES rule): both unless it clearly matters to one community alone' },
+            sites: { type: 'string', enum: ['both', ...ALL_SITES], description: 'Which websites the item is for (SITES rule): both unless parish council news, roadworks on a lane only one community uses, or for one community\'s residents or members only' },
             sites_reason: { type: 'string', description: 'One short sentence: why only one site; empty for both' },
             holly_note: { type: 'string', description: 'One short sentence: where you departed from the guidance for this item and why; empty if you followed it' },
             road: { type: 'string', description: "Road items only (closures and roadworks, e.g. one.network alerts): the road's name as on a map, e.g. 'Ab Lench Road' or 'A435'; empty otherwise" },
