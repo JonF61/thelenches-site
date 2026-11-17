@@ -71,7 +71,7 @@
     {%- set ek = n | entryKey %}
     <article class="np-notice np-card{% if n.image %} has-img{% endif %}" id="{{ ('notice-' + n.title) | slugify }}"{% if ek %} data-entry="{{ ek }}" data-label="Notice: {{ n.title | escape }}"{% endif %}>
       {% if n.image %}<a class="np-thumb" href="{{ n.image.url | url }}" data-viewer data-caption="{{ ((n.image.alt or n.title) + (' — ' + n.image.credit if n.image.credit else '')) | escape }}"><img src="{{ n.image.url | url }}" alt="{{ (n.image.alt or '') | escape }}" loading="lazy"></a>{% endif %}
-      {% if n.village or n.source or isNew %}<p class="np-meta" data-pagefind-ignore>{% if n.village %}<span class="np-label">{{ n.village | escape }}</span>{% elif n.source %}<span class="np-label">{{ n.source | escape }}</span>{% endif %}{% if isNew %}<span class="np-new">New</span>{% endif %}</p>{% endif %}
+      {% set place = n | placeLabel(localPlaces) %}{% if place or n.source or isNew %}<p class="np-meta" data-pagefind-ignore>{% if place %}<span class="np-label">{{ place | escape }}</span>{% elif n.source %}<span class="np-label">{{ n.source | escape }}</span>{% endif %}{% if isNew %}<span class="np-new">New</span>{% endif %}</p>{% endif %}
       <h3 id="{{ ('notice-' + n.title) | slugify }}-t">{{ n.title | escape }}</h3>
       <p data-field="body">{{ ps[0] | escape }}</p>
       {% if ps.length > 1 %}<details>
