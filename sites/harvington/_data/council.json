@@ -23,14 +23,14 @@
       "url": "#parish"
     }
   ],
-  "meetingsNote": "See sites/lenches/_data/council.json. No rule yet: the meeting pattern isn't published (meetings seen on second Wednesdays).",
+  "meetingsNote": "See sites/lenches/_data/council.json. Harvington PC: second Wednesday except August (its 2026-27 dates in the April 2026 minutes; 18 Nov 2026). Norton and Lenchwick: no rule yet.",
   "parishes": [
     {
       "key": "harvington",
       "name": "Harvington Parish Council",
       "covers": "Harvington",
-      "meets": "Meets on Wednesday evenings at 7.45pm in Harvington Village Hall. Members of the public are welcome to attend.",
-      "rule": null,
+      "meets": "Meets on the second Wednesday of every month except August, at 7.45pm in Harvington Village Hall. Members of the public are welcome to attend.",
+      "rule": { "weekday": 3, "nth": 2, "months": [1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12] },
       "override": "",
       "clerk": "Mrs J White",
       "email": "clerk@harvington-pc.gov.uk",

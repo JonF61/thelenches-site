@@ -12,7 +12,7 @@
       "kryten": true
     },
     {
-      "task": "Harvington facts to confirm (6c-1): Lenchwick's bin day (assumed Monday, as Harvington and Norton); Harvington Parish Council's meeting months (add a rule to its council.json for a Next date); Norton and Lenchwick Parish Council's clerk and meetings; Craig Reeves' own Wychavon profile link; Harvington Baptist Church's address and service time. Also: Holly's site facts (scripts/ingest/sitefacts.js) read services.json only from the site's own folder, so Harvington runs have no church services yet",
+      "task": "Harvington facts to confirm (6c-1): Norton and Lenchwick Parish Council's clerk and meetings (its website isn't reachable from cloud sessions; search found no pattern); Craig Reeves' own Wychavon profile link; Harvington Baptist Church's address and service time. Also: Holly's site facts (scripts/ingest/sitefacts.js) read services.json only from the site's own folder, so Harvington runs have no church services yet",
       "added": "2026-11-16"
     },
     {
