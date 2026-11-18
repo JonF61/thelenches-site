@@ -2,6 +2,11 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Website updates for the 26 Nov issues (Jon, 18 Nov: next week): draft for Jon a Harvington siteupdates.json (its first WEBSITE UPDATE, e.g. the new site) and a Lenches entry saying the Harvington site has launched; show the wording before committing",
+      "added": "2026-11-18",
+      "kryten": true
+    },
+    {
       "task": "Sites in step (18 Nov): after Wednesday's 19:00 Rimmer newsletter checks, confirm each run's log counts one more page (the other site's issue) and its findings make sense; after the next Daily diagnostic, confirm no \"Sites not in step\" problem",
       "added": "2026-11-18",
       "kryten": true
