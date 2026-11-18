@@ -31,8 +31,11 @@ const base = { pending: [], whatson: { events: [], notices: [{ title: 'Hall car 
 const first = select({ ...base, issueDate: '2026-11-12' });
 ok(first.where && first.where.puzzle && !first.where.answer, '12 Nov: puzzle only');
 const next = select({ ...base, issueDate: '2026-11-19' });
-ok(next.where && next.where.answer && !next.where.puzzle && /St Peter's Church, Rous Lench/.test(next.where.answer.text), '19 Nov: answer only');
-ok(select({ ...base, issueDate: '2026-12-03' }).where === null, 'answer not shown after 14 days');
+ok(next.where && next.where.answer && next.where.puzzle && /St Peter's Church, Rous Lench/.test(next.where.answer.text), '19 Nov: new puzzle and last week\'s answer');
+const only12 = { ...data, entries: { '2026-11-12': data.entries['2026-11-12'] } };
+const answerOnly = select({ ...base, wherelenches: only12, issueDate: '2026-11-19' });
+ok(answerOnly.where && answerOnly.where.answer && !answerOnly.where.puzzle, 'no puzzle that week: answer only');
+ok(select({ ...base, wherelenches: only12, issueDate: '2026-12-03' }).where === null, 'answer not shown after 14 days');
 ok(select({ ...base, issueDate: '2026-11-12', wherelenches: undefined }).where === null, 'no file = null');
 ok(select({ ...base, issueDate: '2026-11-12', jpegFor: () => '' }).where === null, 'missing image = null');
 
