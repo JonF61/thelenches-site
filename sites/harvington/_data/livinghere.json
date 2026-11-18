@@ -1,6 +1,6 @@
 {
   "_help": "Harvington's Living here cards (home page and /living-here/; hub-cards.njk). More cards are added as their pages are built.",
-  "intro": "The practical side of village life: health and emergencies, schools, places to eat, local trades, bins, groups and clubs, village halls, churches, the parish councils, regular activities, getting around and the roads.",
+  "intro": "The practical side of village life: health and emergencies, what to do if something goes wrong, schools, places to eat, local trades, bins, groups and clubs, village halls, churches, the parish councils, regular activities, getting around and the roads.",
   "cards": [
     {
       "title": "Regular activities",
@@ -25,6 +25,12 @@
       "url": "/living-here/health/",
       "icon": "health",
       "text": "Emergency numbers, defibrillators, GPs and pharmacies."
+    },
+    {
+      "title": "What to do if…",
+      "url": "/living-here/what-to-do/",
+      "icon": "alert",
+      "text": "Power cuts, flooding, lost pets and more: who to call."
     },
     {
       "title": "Churches",
