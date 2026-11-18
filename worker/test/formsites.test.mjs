@@ -118,8 +118,8 @@ test('each site\'s own wording', () => {
 });
 
 test('Recommend accepts only the posting site\'s entries', () => {
-  assert.equal(listedEntry('trades', 'burgoine-and-weston-construction', 'harvington').name, 'Burgoine and Weston Construction');
-  assert.equal(listedEntry('trades', 'burgoine-and-weston-construction'), null);
+  assert.equal(listedEntry('trades', 'will-begg-carpentry-services', 'harvington').name, 'Will Begg Carpentry Services');
+  assert.equal(listedEntry('trades', 'will-begg-carpentry-services'), null);
   assert.equal(listedEntry('trades', 'cannins', 'harvington'), null);
   assert.equal(listedEntry('trades', 'b-tomes-son').name, 'B Tomes & Son');
 });
@@ -145,7 +145,7 @@ test('a Harvington sign-up goes to its Sheet and its run; a Lenches one is uncha
 
 test('Recommend from Harvington: its entry is saved in its Sheet; a Lenches entry is refused', async () => {
   const calls = fakeWorld();
-  let res = await worker.fetch(post('/r', { email: 'r@example.org', kind: 'trades', entry: 'burgoine-and-weston-construction' }, HARV), env());
+  let res = await worker.fetch(post('/r', { email: 'r@example.org', kind: 'trades', entry: 'will-begg-carpentry-services' }, HARV), env());
   assert.equal(res.status, 200);
   assert.equal(calls.appends[0].sheet, harvington.sheetId);
   assert.equal(calls.dispatches[0].client_payload.site, 'harvington');
@@ -180,10 +180,10 @@ test('signed links carry their site: Harvington wording, page and run', async ()
   assert.match(await res.text(), new RegExp(HARV));
   assert.deepEqual(calls.dispatches[0], { event_type: 'signup', client_payload: { action: 'confirm', id: 'su-1', site: 'harvington' } });
 
-  const r = sign({ a: 'rec', i: 'rc-1', k: 'trades', n: 'burgoine-and-weston-construction', e: soon(), s: 'harvington' });
+  const r = sign({ a: 'rec', i: 'rc-1', k: 'trades', n: 'will-begg-carpentry-services', e: soon(), s: 'harvington' });
   res = await worker.fetch(new Request(`https://w.example/r?t=${r}`), env());
   const html = await res.text();
-  assert.match(html, /Recommend Burgoine and Weston Construction\?/);
+  assert.match(html, /Recommend Will Begg Carpentry Services\?/);
   assert.match(html, /harvingtonvillage\.org\.uk/);
 
   const g = sign({ a: 'sug', i: 'sg-1', k: 'eat', e: soon(), s: 'harvington' });
