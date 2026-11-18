@@ -1,0 +1,220 @@
+{
+  "checked": "November 2026",
+  "numbers": [
+    {
+      "label": "Emergency",
+      "number": "999",
+      "urgent": true
+    },
+    {
+      "label": "NHS, urgent not emergency",
+      "number": "111"
+    },
+    {
+      "label": "Police, non-emergency",
+      "number": "101"
+    },
+    {
+      "label": "Power cut",
+      "number": "105"
+    },
+    {
+      "label": "Smell gas",
+      "number": "0800 111 999"
+    },
+    {
+      "label": "Water leak (Severn Trent)",
+      "number": "0800 783 4444"
+    }
+  ],
+  "locate": [
+    {
+      "pre": "Out in the fields? Give 999 your ",
+      "text": "what3words",
+      "url": "https://what3words.com/",
+      "post": "."
+    },
+    {
+      "pre": "Can't speak? ",
+      "text": "emergencySMS",
+      "url": "https://www.emergencysms.net/",
+      "post": "."
+    }
+  ],
+  "defibs": {
+    "barText": "Someone collapsed? Nearest defibrillators and how to use one ↓",
+    "howto": {
+      "title": "If someone collapses and isn't breathing normally",
+      "steps": [
+        {
+          "lead": "Call 999",
+          "text": "on speaker. They'll tell you where the nearest defibrillator is and give you the cabinet code."
+        },
+        {
+          "lead": "Start CPR.",
+          "text": "Push hard and fast in the centre of the chest, about twice a second. Send someone else for the defibrillator; if you're alone, don't stop CPR to fetch it."
+        },
+        {
+          "lead": "Switch it on,",
+          "text": "usually a green button, and do what it tells you."
+        },
+        {
+          "lead": "Bare the chest",
+          "text": "and stick the pads on as the picture shows. There are scissors in the pack."
+        },
+        {
+          "lead": "Stand clear",
+          "text": "while it checks the heart. It decides whether a shock is needed; press the button if told, or it does it for you."
+        },
+        {
+          "lead": "Keep going",
+          "text": "with CPR until it tells you to stop, the person starts breathing normally, or the ambulance crew takes over."
+        }
+      ],
+      "footer": "Anyone can use one; no training needed. It won't shock someone who doesn't need it.",
+      "guideText": "British Heart Foundation guide and video",
+      "guideUrl": "https://www.bhf.org.uk/how-you-can-help/how-to-save-a-life/defibrillators/how-to-use-a-defibrillator"
+    },
+    "intro": "All available 24/7. Call 999 first and the call handler will direct you to the nearest one.",
+    "findUrl": "https://www.defibfinder.uk/",
+    "fieldsNote": "Copied from the Lenches health.json 18 Nov (pins from DefibFinder 20 Oct). Optional per site: spot, w3w.",
+    "villages": [
+      {
+        "name": "Harvington",
+        "sites": [
+          {
+            "name": "Golden Cross Inn",
+            "address": "97 Village St, WR11 8PQ",
+            "lat": 52.143,
+            "lng": -1.924989
+          },
+          {
+            "name": "Grass verge opposite Leysfield Rd",
+            "address": "2 Leys Rd, WR11 8NA",
+            "lat": 52.14421,
+            "lng": -1.930198
+          }
+        ]
+      },
+      {
+        "name": "Norton and Lenchwick",
+        "sites": [],
+        "note": "None registered. Nearest: Harvington."
+      },
+      {
+        "name": "Salford Priors",
+        "sites": [
+          {
+            "name": "Rushford Cottages",
+            "address": "7 Salford Rd, WR11 8SL",
+            "lat": 52.163778,
+            "lng": -1.919593
+          },
+          {
+            "name": "Jutexpo",
+            "address": "Lauriston Business Park, WR11 8SN",
+            "lat": 52.16337,
+            "lng": -1.924399
+          }
+        ]
+      }
+    ]
+  },
+  "injuries": [
+    {
+      "name": "Evesham Minor Injury Unit",
+      "address": "Evesham Community Hospital, Waterside, WR11 1JT",
+      "hours": "9am to 9pm every day, including bank holidays (last patient 8.30pm)",
+      "note": "Cuts, sprains, minor burns. Not illnesses.",
+      "url": "https://www.hacw.nhs.uk/miu"
+    },
+    {
+      "name": "Worcestershire Royal A&E",
+      "address": "Charles Hastings Way, Worcester WR5 1DD",
+      "hours": "24 hours",
+      "url": "https://www.worcsacute.nhs.uk/our-hospitals/worcestershire-royal-hospital/"
+    },
+    {
+      "name": "Alexandra Hospital A&E",
+      "address": "Woodrow Drive, Redditch B98 7UB",
+      "hours": "24 hours",
+      "url": "https://www.worcsacute.nhs.uk/our-hospitals/alexandra-hospital-redditch/"
+    }
+  ],
+  "gps": {
+    "intro": "Which surgery you can join depends on your postcode.",
+    "findUrl": "https://www.nhs.uk/service-search/find-a-gp",
+    "linkNote": "url = the NHS profile (current hours, link to the practice's own site); swap for the practice site if preferred.",
+    "items": [
+      {
+        "name": "Demontfort Medical Centre",
+        "address": "Burford Rd, Evesham WR11 3HD",
+        "phone": "01386 443333",
+        "url": "https://www.nhs.uk/services/gp-surgery/demontfort-medical-centre/M81627",
+        "urlText": "Hours and details"
+      },
+      {
+        "name": "Merstow Green Medical Practice",
+        "address": "Evesham Medical Centre, Abbey Lane WR11 4BS",
+        "phone": "01386 765600",
+        "url": "https://www.nhs.uk/services/gp-surgery/merstow-green-medical-practice/M81058",
+        "urlText": "Hours and details"
+      },
+      {
+        "name": "Abbey Medical Practice",
+        "address": "Evesham Medical Centre, Abbey Lane WR11 4BS",
+        "phone": "01386 761111",
+        "url": "https://www.nhs.uk/services/gp-surgery/abbey-medical-practice/M81094",
+        "urlText": "Hours and details"
+      },
+      {
+        "name": "Bidford Health Centre",
+        "address": "Stratford Rd, Bidford-on-Avon B50 4LX",
+        "phone": "01789 773372",
+        "url": "https://www.nhs.uk/services/gp-surgery/bidford-health-centre/M84018",
+        "urlText": "Hours and details"
+      }
+    ]
+  },
+  "pharmacies": {
+    "intro": "Opening hours change, especially on bank holidays.",
+    "findUrl": "https://www.nhs.uk/service-search/pharmacy/find-a-pharmacy",
+    "items": [
+      {
+        "name": "Boots",
+        "address": "Evesham Retail Park, Worcester Rd, WR11 4AB",
+        "phone": "01386 48665",
+        "url": "https://www.nhs.uk/services/pharmacy/boots/FA227",
+        "urlText": "Hours and details"
+      },
+      {
+        "name": "Boots",
+        "address": "19-21 Bridge St, Evesham WR11 4SQ",
+        "phone": "01386 765252",
+        "url": "https://www.nhs.uk/services/pharmacy/boots/FLE44",
+        "urlText": "Hours and details"
+      },
+      {
+        "name": "Evesham Pharmacy",
+        "address": "30-36 High St, Evesham WR11 4HJ",
+        "phone": "01386 48899",
+        "url": "https://www.nhs.uk/services/pharmacy/evesham-pharmacy/FQR64",
+        "urlText": "Hours and details"
+      },
+      {
+        "name": "Vale Pharmacy",
+        "address": "Evesham Medical Centre, Abbey Lane WR11 4BS",
+        "phone": "01386 47613",
+        "url": "https://www.nhs.uk/services/pharmacy/vale-pharmacy/FLK28",
+        "urlText": "Hours and details"
+      },
+      {
+        "name": "Colin Harris Chemists",
+        "address": "17 High St, Bidford-on-Avon B50 4BQ",
+        "phone": "01789 772433",
+        "url": "https://www.nhs.uk/services/pharmacy/colin-harris-chemists/FND20",
+        "urlText": "Hours and details"
+      }
+    ]
+  }
+}

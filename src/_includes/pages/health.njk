@@ -1,0 +1,113 @@
+{#- Shared Health & emergencies page: each site's sites/<site>/living-here/health.njk keeps its front matter, may set footLead (words before "Last checked"), then includes this; the facts are in its _data/health.json. -#}
+{%- set h = health -%}
+{%- macro place(p) -%}
+<span class="he-loc"><a href="https://www.google.com/maps/search/?api=1&query={% if p.lat and p.lng %}{{ p.lat }},{{ p.lng }}{% else %}{{ (p.name + ', ' + p.address) | urlencode }}{% endif %}" target="_blank" rel="noopener">Map</a>{% if p.url %} &middot; <a href="{{ p.url }}" target="_blank" rel="noopener">{{ p.urlText or 'Website' }}</a>{% endif %}{% if p.w3w %} &middot; <a href="https://what3words.com/{{ p.w3w }}" target="_blank" rel="noopener">///{{ p.w3w }}</a>{% endif %}</span>
+{%- endmacro -%}
+<style>
+.he-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:.75rem}
+.he-grid .card{margin:0}
+.he-grid h3{margin:0 0 .25rem}
+.he-nums{display:grid;grid-template-columns:1fr;background:#fff;border:1px solid #e5e0d8;border-radius:10px;overflow:hidden}
+@media (min-width:560px){.he-nums{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:860px){.he-nums{grid-template-columns:repeat(3,1fr)}}
+.he-nums a{display:flex;justify-content:space-between;align-items:baseline;gap:.5rem;padding:.45rem .8rem;border-bottom:1px solid #e5e0d8;color:inherit;text-decoration:none}
+.he-nums a b{color:#b5471b;white-space:nowrap}
+.he-nums a.he-urgent{background:#fcebeb;color:#791f1f}
+.he-nums a.he-urgent b{color:#791f1f}
+.he-bar{display:block;margin:.75rem 0 .5rem;padding:.7rem 1rem;border-radius:10px;background:#a32d2d;color:#fff;font-weight:700;text-decoration:none}
+.he-bar:hover,.he-bar:focus{background:#791f1f;color:#fff}
+.he-muted{color:#666;font-size:.92rem}
+.he-loc{display:block;font-size:.92rem;margin-top:.15rem}
+.he-list{margin:0;padding:0;list-style:none}
+.he-list li+li{margin-top:.5rem}
+.he-howto{margin:.75rem 0}
+.he-howto h3{margin:0 0 .35rem}
+.he-howto ol{margin:0;padding-left:1.3rem}
+.he-howto li+li{margin-top:.3rem}
+#defibrillators{scroll-margin-top:1rem}
+</style>
+<main class="container">
+
+  <section>
+    <h1>Health &amp; emergencies</h1>
+    <div class="he-nums">
+      {%- for n in h.numbers %}
+      <a{% if n.urgent %} class="he-urgent"{% endif %} href="tel:{{ n.number | replace(' ', '') }}"><span>{{ n.label }}</span><b>{{ n.number }}</b></a>
+      {%- endfor %}
+    </div>
+    <a class="he-bar" href="#defibrillators">{{ h.defibs.barText }}</a>
+    <p class="he-muted mt0">{% for l in h.locate %}{{ l.pre }}<a href="{{ l.url }}" target="_blank" rel="noopener">{{ l.text }}</a>{{ l.post }} {% endfor %}</p>
+  </section>
+
+  <section id="injuries">
+    <h2>Injuries and A&amp;E</h2>
+    <div class="he-grid">
+      {%- for u in h.injuries %}
+      <div class="card">
+        <h3>{{ u.name }}</h3>
+        <p class="mt0">{{ u.address }}<br>{{ u.hours }}{{ place(u) }}</p>
+        {%- if u.note %}<p class="he-muted">{{ u.note }}</p>{% endif %}
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="gp">
+    <h2>GP surgeries</h2>
+    <p>{{ h.gps.intro }} <a href="{{ h.gps.findUrl }}" target="_blank" rel="noopener">Check with NHS Find a GP</a>.</p>
+    <div class="he-grid">
+      {%- for g in h.gps.items %}
+      <div class="card">
+        <h3>{{ g.name }}</h3>
+        <p class="mt0">{{ g.address }}<br><a href="tel:{{ g.phone | replace(' ', '') }}">{{ g.phone }}</a>{{ place(g) }}</p>
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="pharmacies">
+    <h2>Pharmacies</h2>
+    <p>{{ h.pharmacies.intro }} <a href="{{ h.pharmacies.findUrl }}" target="_blank" rel="noopener">Find a pharmacy open now</a>.</p>
+    <div class="he-grid">
+      {%- for p in h.pharmacies.items %}
+      <div class="card">
+        <h3>{{ p.name }}</h3>
+        <p class="mt0">{{ p.address }}<br><a href="tel:{{ p.phone | replace(' ', '') }}">{{ p.phone }}</a>{{ place(p) }}</p>
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <section id="defibrillators">
+    <h2>Defibrillators</h2>
+    {%- set ht = h.defibs.howto %}
+    <div class="card he-howto" id="how-to-use">
+      <h3>{{ ht.title }}</h3>
+      <ol>
+        {%- for s in ht.steps %}
+        <li><strong>{{ s.lead }}</strong> {{ s.text }}</li>
+        {%- endfor %}
+      </ol>
+      <p class="he-muted">{{ ht.footer }} <a href="{{ ht.guideUrl }}" target="_blank" rel="noopener">{{ ht.guideText }}</a></p>
+    </div>
+    <p>{{ h.defibs.intro }} <a href="{{ h.defibs.findUrl }}" target="_blank" rel="noopener">Find others on a map</a>.</p>
+    <div class="he-grid">
+      {%- for v in h.defibs.villages %}
+      <div class="card">
+        <h3>{{ v.name }}</h3>
+        {%- if v.sites.length %}
+        <ul class="he-list">
+          {%- for s in v.sites %}
+          <li>{{ s.name }}<br><span class="he-muted">{{ s.address }}{% if s.spot %} &middot; {{ s.spot }}{% endif %}</span>{{ place(s) }}</li>
+          {%- endfor %}
+        </ul>
+        {%- endif %}
+        {%- if v.note %}<p class="he-muted mt0">{{ v.note }}</p>{% endif %}
+      </div>
+      {%- endfor %}
+    </div>
+  </section>
+
+  <p class="he-muted">{{ footLead | safe }}Last checked {{ h.checked }}. Spotted something out of date? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+
+</main>

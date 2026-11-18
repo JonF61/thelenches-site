@@ -1,6 +1,6 @@
 {
   "_help": "Harvington's Living here cards (home page and /living-here/; hub-cards.njk). More cards are added as their pages are built.",
-  "intro": "The practical side of village life: schools, places to eat, local trades, bins, groups and clubs, village halls, churches, the parish councils, regular activities and the roads.",
+  "intro": "The practical side of village life: health and emergencies, schools, places to eat, local trades, bins, groups and clubs, village halls, churches, the parish councils, regular activities and the roads.",
   "cards": [
     {
       "title": "Regular activities",
@@ -19,6 +19,12 @@
       "url": "/halls/",
       "icon": "hall",
       "text": "Harvington and Norton halls: regular users and bookings."
+    },
+    {
+      "title": "Health & emergencies",
+      "url": "/living-here/health/",
+      "icon": "health",
+      "text": "Emergency numbers, defibrillators, GPs and pharmacies."
     },
     {
       "title": "Churches",
