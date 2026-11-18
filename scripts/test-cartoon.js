@@ -33,21 +33,21 @@ const base = {
   issues: [], settings: {}, sources: [], onthisday: { entries: {} }, cartoons: data, jpegFor,
 };
 
-const withToon = select({ ...base, issueDate: '2026-11-12' });
-ok(withToon.cartoon && withToon.cartoon.src === `${SITE}/images/cartoons/2026-11-12-evesham-road-fountain-signed.jpg`, 'cartoon on 12 Nov');
-ok(/Severn Trent/.test(withToon.cartoon.caption), 'caption carried');
+const withToon = select({ ...base, issueDate: '2026-11-19' });
+ok(withToon.cartoon && withToon.cartoon.src === `${SITE}/images/cartoons/2026-11-19-bric-a-brac-cat-signed.jpg`, 'cartoon on 19 Nov');
+ok(/three years running/.test(withToon.cartoon.caption), 'caption carried');
 ok(select({ ...base, issueDate: '2026-11-05' }).cartoon === null, 'no entry = null');
-ok(select({ ...base, cartoons: undefined, issueDate: '2026-11-12' }).cartoon === null, 'no file = null');
-ok(select({ ...base, jpegFor: () => '', issueDate: '2026-11-12' }).cartoon === null, 'missing image = null');
-ok(select({ ...base, cartoons: { entries: { '2026-11-12': { image: '/images/cartoons/x.jpg', caption: ' ' } } }, issueDate: '2026-11-12' }).cartoon === null, 'blank caption = null');
-ok(select({ ...base, cartoons: { entries: { '2026-11-12': { image: 'https://evil.example/x.jpg', caption: 'Hi' } } }, issueDate: '2026-11-12' }).cartoon === null, 'outside image refused');
+ok(select({ ...base, cartoons: undefined, issueDate: '2026-11-19' }).cartoon === null, 'no file = null');
+ok(select({ ...base, jpegFor: () => '', issueDate: '2026-11-19' }).cartoon === null, 'missing image = null');
+ok(select({ ...base, cartoons: { entries: { '2026-11-19': { image: '/images/cartoons/x.jpg', caption: ' ' } } }, issueDate: '2026-11-19' }).cartoon === null, 'blank caption = null');
+ok(select({ ...base, cartoons: { entries: { '2026-11-19': { image: 'https://evil.example/x.jpg', caption: 'Hi' } } }, issueDate: '2026-11-19' }).cartoon === null, 'outside image refused');
 
 const a = render(withToon);
 const b = render(select({ ...base, issueDate: '2026-11-05' }));
-const imgAt = a.html.indexOf('2026-11-12-evesham-road-fountain-signed.jpg');
+const imgAt = a.html.indexOf('2026-11-19-bric-a-brac-cat-signed.jpg');
 const noticesAt = a.html.indexOf('>Notices<');
 ok(imgAt > 0 && noticesAt > imgAt, 'cartoon sits just before Notices');
-ok(a.html.slice(imgAt, noticesAt).includes('Neighbourhood Plan'), 'caption under the picture');
+ok(a.html.slice(imgAt, noticesAt).includes('bought it back'), 'caption under the picture');
 ok(!/>Cartoon</i.test(a.html), 'no heading');
 ok(a.text.includes("This week's cartoon:") && a.text.indexOf("This week's cartoon:") < a.text.indexOf('NOTICES'), 'text version before Notices');
 ok(!b.html.includes('/images/cartoons/') && !b.text.includes("cartoon"), 'none when no entry');
