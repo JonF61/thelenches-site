@@ -7,14 +7,6 @@
       "kryten": true
     },
     {
-      "task": "Shared items gaps: on a Harvington run the Already listed check (scripts/ingest/duplicates.js) and Rimmer's Fix… (scripts/rimmer/fix.js) look only at Harvington's own hand-written files, so an email about a Lenches hand-written event can be listed again on Harvington, and Rimmer can't fix a shared Lenches entry from a Harvington check. Needs site-qualified keys (e.g. h:lenches/events/<file>) through approve mergeItem/replaceItem, entryedit and fix.js",
-      "added": "2026-11-17"
-    },
-    {
-      "task": "Harvington listing checks: the yearly Organisations check for Harvington's trades and eateries needs per-site templates (templates.md listing_check / listing_chase name thelenches.org.uk) and orgoutreach.mjs page links from the site's url; skip entries the Lenches already checks (same id, e.g. shared pubs)",
-      "added": "2026-11-16"
-    },
-    {
       "task": "Harvington facts to confirm (6c-1): Lenchwick's bin day (assumed Monday, as Harvington and Norton); Harvington Parish Council's meeting months (add a rule to its council.json for a Next date); Norton and Lenchwick Parish Council's clerk and meetings; Craig Reeves' own Wychavon profile link; Harvington Baptist Church's address and service time. Also: Holly's site facts (scripts/ingest/sitefacts.js) read services.json only from the site's own folder, so Harvington runs have no church services yet",
       "added": "2026-11-16"
     },

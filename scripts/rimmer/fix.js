@@ -17,7 +17,8 @@
 // Logs print the source kind and counts only (logs are public).
 'use strict';
 
-const { SITE_REL } = require('../../lib/site.js');
+const { SITE_REL, SITE, SITES } = require('../../lib/site.js');
+const { sitesFor, handKey } = require('../../lib/whatson');
 const fs = require('fs');
 const path = require('path');
 const { callTool } = require('../ingest/toolcall');
@@ -74,23 +75,36 @@ function typeOf(field) {
 // official, where (file or row) }.
 function sources({ root = ROOT, pending = [] } = {}) {
   const out = [];
-  for (const kind of ['events', 'notices']) {
-    const dir = path.join(root, FILES[kind]);
-    if (!fs.existsSync(dir)) continue;
-    for (const file of fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort()) {
-      let o;
-      try { o = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8')); } catch { continue; }
-      out.push({
-        key: `h:${kind}/${file}`, kind, label: `${kind === 'events' ? 'Event' : 'Notice'}: ${str(o.title)}`, fields: pick(o, ITEM_FIELDS),
-        dates: Object.fromEntries(DATE_FIELDS[kind].map((f) => [f, ymdOr(o[f])])),
-        links: { link: linkOf(o.link), link2: linkOf(o.link2) },
-        removable: true, entry: o, official: truthy(o.official), file: `${FILES[kind]}/${file}`,
-      });
-    }
-  }
   const tryRead = (rel) => { try { return readJson(rel, root); } catch { return null; } };
-  const regs = tryRead(FILES.regulars);
-  ((regs && regs.regulars) || []).forEach((r, i) => out.push({ key: `r:${i}`, kind: 'regulars', label: `Regular activity: ${str(r.what)}${r.day ? ` (${r.day})` : ''}`, fields: pick(r, REGULAR_FIELDS, true), removable: true, entry: r, file: FILES.regulars, path: ['regulars', i] }));
+  // This site's hand-written items, then every other site's shared with it (18 Nov 2026: keys
+  // h:<site>/<kind>/<file> and r:<site>:<i>; the file is written in that site's folder).
+  for (const site of [SITE, ...SITES.filter((x) => x !== SITE)]) {
+    const own = site === SITE;
+    const shared = (o) => own || (() => { try { return sitesFor(o, site).includes(SITE); } catch { return false; } })();
+    const from = own ? '' : ` (from the ${site} website)`;
+    for (const kind of ['events', 'notices']) {
+      const rel = `sites/${site}/items/${kind}`;
+      const dir = path.join(root, rel);
+      if (!fs.existsSync(dir)) continue;
+      for (const file of fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort()) {
+        let o;
+        try { o = JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8')); } catch { continue; }
+        if (!shared(o)) continue;
+        out.push({
+          key: handKey(kind, file, site), kind, label: `${kind === 'events' ? 'Event' : 'Notice'}: ${str(o.title)}${from}`, fields: pick(o, ITEM_FIELDS),
+          dates: Object.fromEntries(DATE_FIELDS[kind].map((f) => [f, ymdOr(o[f])])),
+          links: { link: linkOf(o.link), link2: linkOf(o.link2) },
+          removable: true, entry: o, official: truthy(o.official), file: `${rel}/${file}`,
+        });
+      }
+    }
+    const regFile = `sites/${site}/items/regulars.json`;
+    const regs = tryRead(regFile);
+    ((regs && regs.regulars) || []).forEach((r, i) => {
+      if (!r || !shared(r)) return;
+      out.push({ key: own ? `r:${i}` : `r:${site}:${i}`, kind: 'regulars', label: `Regular activity: ${str(r.what)}${r.day ? ` (${r.day})` : ''}${from}`, fields: pick(r, REGULAR_FIELDS, true), removable: true, entry: r, file: regFile, path: ['regulars', i] });
+    });
+  }
   const eat = tryRead(FILES.eat);
   ((eat && eat.places) || []).forEach((p, i) => out.push({ key: `e:${str(p.id) || i}`, kind: 'eat', label: `Where to eat: ${str(p.name)}`, fields: pick(p, EAT_FIELDS, true), removable: true, entry: p, file: FILES.eat, path: ['places', i] }));
   const trades = tryRead(FILES.trades);

@@ -64,7 +64,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           SUBJECT: ${{ github.event.client_payload.action == 'replace' && 'Remove a listed item replaced by its organiser''s version (admin panel)' || 'Add details to a listed item (admin panel)' }}
         run: |
-          git add -A sites/$SITE/items
+          # Every site's items (Add details / Replace may change a shared item on another site, 18 Nov)
+          # and this site's item pictures (a replaced item's picture copied from another site).
+          for d in sites/*/items sites/*/images/items; do if [ -d "$d" ]; then git add -A "$d"; fi; done
           if git diff --cached --quiet; then echo "No item files changed."; exit 0; fi
           git config user.name "Lenches Pipeline"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

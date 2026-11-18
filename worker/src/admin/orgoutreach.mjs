@@ -36,7 +36,9 @@ export const CYCLE_DAYS = 365;
 export const DAY_CAP = 25; // Jon, 5 Nov (was 10)
 export const REGULAR_DAYS = 91;
 export const SUBJECT = 'Your entry on thelenches.org.uk';
-export const LISTING_SUBJECT = 'Your listing on thelenches.org.uk';
+// A listing check's subject names the site it is for (Harvington's listings, 18 Nov).
+export const listingSubject = (domain = 'thelenches.org.uk') => `Your listing on ${domain}`;
+export const LISTING_SUBJECT = listingSubject();
 export const SITE = 'https://thelenches.org.uk';
 export const PAGE_NAMES = {
   '/groups/': 'Groups & Clubs',
@@ -126,16 +128,19 @@ export function orgEntries(data) {
 // "eat-<id>" (lib/listings.js anchorFor, so the link goes to the card itself). The address is
 // the entry's own public email, else the Org outreach tab's `email` cell (found on their
 // website by scripts/listingcontacts, or typed by Jon in the panel; private).
-// data: { trades, eat } (src/_data trades.json, eat.json).
-export function listingEntries(data) {
+// data: { trades, eat } (sites/<site>/_data trades.json, eat.json).
+// Another site (18 Nov): { url, domain } give its page links and subject, and `skip` (a Set of
+// ids) leaves out entries the Lenches already checks (the same place listed on both, same id).
+export function listingEntries(data, { url = SITE, domain = 'thelenches.org.uk', skip = null } = {}) {
   const { trades = {}, eat = {} } = data || {};
   const out = [];
+  const subject = listingSubject(domain);
   const web = (w) => str(w && w.url);
   for (const t of trades.trades || []) {
     if (!t || !t.id) continue;
     out.push({
       id: `trade-${t.id}`, listing: 'trades', name: str(t.name), email: low(t.email), greet: firstWord(t.contact),
-      page: '/living-here/trades/', pageName: PAGE_NAMES['/living-here/trades/'], pageUrl: `${SITE}/living-here/trades/#trade-${t.id}`,
+      page: '/living-here/trades/', pageName: PAGE_NAMES['/living-here/trades/'], pageUrl: `${url}/living-here/trades/#trade-${t.id}`, subject,
       website: web(t.website),
       shown: [
         str(t.trade), str(t.what), t.covers ? `Covers: ${str(t.covers)}` : '', t.base ? `Based: ${str(t.base)}` : '',
@@ -149,12 +154,12 @@ export function listingEntries(data) {
     const tags = [p.garden ? 'Garden' : '', p.children ? 'Children welcome' : '', p.dogs ? 'Dogs welcome' : ''].filter(Boolean).join(', ');
     out.push({
       id: `eat-${p.id}`, listing: 'eat', name: str(p.name), email: low(p.email), greet: '',
-      page: '/living-here/eat/', pageName: PAGE_NAMES['/living-here/eat/'], pageUrl: `${SITE}/living-here/eat/#eat-${p.id}`,
+      page: '/living-here/eat/', pageName: PAGE_NAMES['/living-here/eat/'], pageUrl: `${url}/living-here/eat/#eat-${p.id}`, subject,
       website: web(p.website),
       shown: [str(p.where), str(p.type), str(p.food), str(p.note), tags, str(p.phone), web(p.website)].filter(Boolean),
     });
   }
-  return out;
+  return skip ? out.filter((e) => !skip.has(e.id)) : out;
 }
 
 // The address Holly writes to: the entry's own, else the Org outreach tab's email cell
