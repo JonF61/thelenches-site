@@ -130,3 +130,21 @@ test('/k: site names another Sheet; an unknown site is refused', async () => {
   const r = await k.handleKryten(req({ op: 'read', tab: 'Pending', site: 'evesham' }, TOKEN), { KRYTEN_TOKEN: TOKEN });
   assert.equal(r.status, 400);
 });
+
+// op "draft" (18 Nov): asks Holly for a draft through the same checks and decide() as the
+// panel (admin/index.js krytenDraft); only contactmail and nudge, never a send.
+test('/k draft: token, kinds and sites', async () => {
+  const env = { KRYTEN_TOKEN: TOKEN };
+  const call = (body, auth = `Bearer ${TOKEN}`) => k.handleKryten(new Request('https://x/k', {
+    method: 'POST', headers: { authorization: auth, 'content-type': 'application/json' }, body: JSON.stringify(body),
+  }), env);
+  assert.equal((await call({ op: 'draft', kind: 'contactmail' }, 'Bearer nope')).status, 401);
+  for (const kind of ['', 'send', 'approve', 'nlsend', 'orgcheck']) {
+    const r = await call({ op: 'draft', kind, email: 'a@b.c', brief: 'x' });
+    assert.equal(r.status, 400, kind);
+    assert.match((await r.json()).error, /kind must be contactmail or nudge/);
+  }
+  assert.equal((await call({ op: 'draft', kind: 'contactmail', site: 'nowhere' })).status, 400);
+  const bad = await call({ op: 'nope' });
+  assert.match((await bad.json()).error, /read, set, append, undo or draft/);
+});
