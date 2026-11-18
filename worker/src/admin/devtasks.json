@@ -2,6 +2,11 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Plan doc Build history: add an entry for the 4-week shelf life on news items (PRs 413 and 414, 18 Nov): publish SHELF_DAYS caps emailed notices at received + 27 days (roadworks aside), lib/whatson.js noticeHides hides hand-written notices from added + 28 days, every notice now has added; check the next publish run capped the Christmas hamper bingo card",
+      "added": "2026-11-18",
+      "kryten": true
+    },
+    {
       "task": "Harvington facts to confirm (6c-1): Lenchwick's bin day (assumed Monday, as Harvington and Norton); Harvington Parish Council's meeting months (add a rule to its council.json for a Next date); Norton and Lenchwick Parish Council's clerk and meetings; Craig Reeves' own Wychavon profile link; Harvington Baptist Church's address and service time. Also: Holly's site facts (scripts/ingest/sitefacts.js) read services.json only from the site's own folder, so Harvington runs have no church services yet",
       "added": "2026-11-16"
     },
@@ -230,11 +235,6 @@
       "task": "Newsletter cartoon: each week Kryten writes 2–3 gags from that week's items plus an image prompt; Jon makes the picture with an image tool and attaches it; Kryten adds it to src/_data/cartoons.json. Consider automating with an image API if the feature sticks",
       "waiting": "Jon",
       "added": "2026-11-11"
-    },
-    {
-      "task": "Harvington listing checks and shared-item keys (18 Nov): after merge, open Harvington's panel > Contacts > Organisations > Commercial Listings and check its 11 listings show with harvingtonvillage.org.uk links; add a Build history entry",
-      "added": "2026-11-18",
-      "kryten": true
     }
   ]
 }
