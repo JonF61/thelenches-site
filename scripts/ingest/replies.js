@@ -325,6 +325,13 @@ function fill(key, vars = {}) {
   return t.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined ? String(vars[k]) : m));
 }
 
+// A site's own version of a template (<key>_<site>, e.g. listing_check_harvington; 18 Nov), else
+// the shared one.
+function fillSite(key, vars = {}) {
+  const own = `${key}_${SITE_LIB.SITE}`;
+  return fill(templates()[own] !== undefined ? own : key, vars);
+}
+
 // "Hi <first name>," from a From header's display name, or '' when it doesn't clearly give
 // one (organisations, titles, role addresses, the bare address).
 const NOT_A_NAME = new Set(['info', 'admin', 'office', 'hello', 'contact', 'enquiries', 'enquiry', 'team', 'the',
@@ -2522,6 +2529,7 @@ module.exports = {
   AWAIT_HOURS,
   // For reader feedback replies (scripts/readerfeedback): same voice, sign-off and checks.
   fill,
+  fillSite,
   greeting,
   nameFor,
   signOffName,

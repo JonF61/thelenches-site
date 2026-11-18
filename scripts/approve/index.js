@@ -74,6 +74,10 @@ const lessons = require('../lessons');
 const dupes = require('../ingest/duplicates');
 const fs = require('fs');
 const path = require('path');
+const whatson = require('../../lib/whatson');
+const { SITE } = require('../../lib/site.js');
+
+const ROOT_DIR = path.join(__dirname, '..', '..');
 
 const TZ = 'Europe/London';
 const WORDING = { approve_own: 'own', approve_rewrite: 'rewrite' };
@@ -161,14 +165,33 @@ function mergeFields(json) {
   return out;
 }
 
-const HAND_KEY = /^h:(events|notices)\/([a-z0-9][a-z0-9-]*\.json)$/;
+const HAND_KEY = whatson.HAND_KEY;
+// A hand-written item's file: this site's in itemsDir; another site's shared item (h:<site>/…,
+// 18 Nov) in its own sites/<site>/items. approval.yml commits every site's items.
+function handFile(key, itemsDir) {
+  const h = whatson.parseHandKey(key);
+  if (!h) return null;
+  return { ...h, path: h.own ? path.join(itemsDir, h.folder, h.file) : path.join(itemsDir, '..', '..', h.site, 'items', h.folder, h.file) };
+}
+// Another site's picture (/images/…) copied into this site's images (and its .jpg / .webp
+// sibling), so this site's build has it; this site's own copy is never overwritten.
+function copyImageFrom(site, url, root = ROOT_DIR) {
+  const m = /^\/images\/([\w/-]+)\.(webp|jpe?g|png)$/i.exec(String(url || ''));
+  if (!m || site === SITE) return;
+  for (const ext of new Set([m[2], 'webp', 'jpg'])) {
+    const rel = path.join('images', `${m[1]}.${ext}`);
+    const src = path.join(root, 'sites', site, rel);
+    const dest = path.join(root, 'sites', SITE, rel);
+    if (fs.existsSync(src) && !fs.existsSync(dest)) { fs.mkdirSync(path.dirname(dest), { recursive: true }); fs.copyFileSync(src, dest); }
+  }
+}
 
 // Writes the details into the existing entry. Returns a short description of what changed.
 async function applyDetails(dup, fields, pending, itemsDir = dupes.ITEMS) {
-  const hand = HAND_KEY.exec(dup.key);
+  const hand = handFile(dup.key, itemsDir);
   if (hand) {
-    const file = path.join(itemsDir, hand[1], hand[2]);
-    if (!fs.existsSync(file)) throw new Error(`The listed item ${hand[1]}/${hand[2]} no longer exists`);
+    const file = hand.path;
+    if (!fs.existsSync(file)) throw new Error(`The listed item ${hand.rel} no longer exists`);
     const item = JSON.parse(fs.readFileSync(file, 'utf8'));
     const changed = [];
     if (fields.body && !item.official && fields.body !== item.body) { item.body = fields.body; changed.push('text'); }
@@ -228,17 +251,19 @@ async function replaceItem(id, itemsDir = dupes.ITEMS) {
   // Keep the listed entry's picture only when this item has none of its own.
   const noImage = !has(row.image_part_id) && !has(row.image_choice) && !has(row.image_url);
   const carry = {};
-  const hand = HAND_KEY.exec(dup.key);
+  let imageSite = '';
+  const hand = handFile(dup.key, itemsDir);
   let file = '';
   let target = null;
   if (hand) {
-    file = path.join(itemsDir, hand[1], hand[2]);
+    file = hand.path;
     if (fs.existsSync(file)) {
       const item = JSON.parse(fs.readFileSync(file, 'utf8'));
       if (item.official) throw new Error('The listed item is official: it is never replaced');
       const img = item.image || {};
       if (noImage && /^(\/|https:\/\/)/i.test(String(img.url || ''))) {
         Object.assign(carry, { image_url: img.url, alt_text: img.alt || '', image_credit: img.credit || '', image_credit_url: img.creditUrl || '' });
+        imageSite = hand.site;
       }
     } else {
       file = ''; // already gone: just publish this one
@@ -258,6 +283,8 @@ async function replaceItem(id, itemsDir = dupes.ITEMS) {
     carry.flyer_count = Math.max(Number(row.flyer_count) || 0, Number(target.flyer_count) || 0);
   }
   const decidedAt = londonDateTime(Date.now());
+  // Another site's picture is copied in before anything is removed.
+  if (imageSite) copyImageFrom(imageSite, carry.image_url, path.join(itemsDir, '..', '..', '..'));
   // The listed entry goes first: if that fails, nothing has been published twice.
   if (file) fs.unlinkSync(file);
   if (target && ['pending', 'approved', 'auto'].includes(String(target.status))) {
@@ -365,7 +392,7 @@ async function main() {
 }
 
 if (require.main !== module) {
-  module.exports = { mergeFields, applyDetails, mergeItem, replaceItem, decideItem, HAND_KEY };
+  module.exports = { mergeFields, applyDetails, mergeItem, replaceItem, decideItem, HAND_KEY, handFile, copyImageFrom };
 } else main().catch((err) => {
   console.error('Fatal:', err && err.stack ? err.stack : err);
   process.exit(1);

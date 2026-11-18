@@ -14,7 +14,7 @@
 // Logs print the slug only, never an address.
 'use strict';
 
-const { SITE_REL } = require('../../lib/site.js');
+const { SITE_REL, SITE, ROOT, siteConfig } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const { pathToFileURL } = require('url');
@@ -38,15 +38,24 @@ async function rules() {
   return rulesCache;
 }
 
-const readData = (name) => JSON.parse(fs.readFileSync(path.join(DATA, `${name}.json`), 'utf8'));
+// A data file a site doesn't have (Harvington has no health.json or transport.json) reads as {}.
+const readData = (name, dir = DATA) => {
+  const file = path.join(dir, `${name}.json`);
+  return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : {};
+};
 function siteData() {
   return Object.fromEntries(['contacts', 'council', 'schools', 'health', 'transport', 'trades', 'eat'].map((n) => [n, readData(n)]));
 }
 
-// Every organisation and listing (Local trades, Where to eat) the yearly check covers.
-async function allEntries(data = siteData()) {
+// Every organisation and listing (Local trades, Where to eat) the yearly check covers. Another
+// site's listings (18 Nov) link to its own pages and name its domain, leaving out any the Lenches
+// already checks (the same place on both sites keeps one id; worker admin/index.js orgsFor too).
+async function allEntries(data = siteData(), { site = SITE, cfg = siteConfig() } = {}) {
   const R = await rules();
-  return [...R.orgEntries(data), ...R.listingEntries(data)];
+  if (site === 'lenches') return [...R.orgEntries(data), ...R.listingEntries(data)];
+  const lenchesDir = path.join(ROOT, 'sites', 'lenches', '_data');
+  const skip = new Set(R.listingEntries({ trades: readData('trades', lenchesDir), eat: readData('eat', lenchesDir) }).map((e) => e.id));
+  return [...R.orgEntries(data), ...R.listingEntries(data, { url: cfg.url, domain: cfg.domain, skip })];
 }
 
 // A missing Org outreach tab is the same as an empty one.
@@ -64,8 +73,10 @@ function orgEmail(org, kind, R) {
   if (org.listing) {
     // Listings (5 Nov, wording approved by Jon): no opt-out line; the check says how to come off.
     const vars = { name: org.name, page: org.pageName, page_url: org.pageUrl, entry: [org.name, ...org.shown].join('\n') };
-    const parts = [replies.greeting(org.greet), replies.fill(kind === 'chase' ? 'listing_chase' : 'listing_check', vars), replies.fill('signature')];
-    return { subject: kind === 'chase' ? `Re: ${R.LISTING_SUBJECT}` : R.LISTING_SUBJECT, body: parts.join('\n\n') };
+    // A site's own wording where templates.md has one (listing_check_harvington, 18 Nov).
+    const parts = [replies.greeting(org.greet), replies.fillSite(kind === 'chase' ? 'listing_chase' : 'listing_check', vars), replies.fill('signature')];
+    const subject = org.subject || R.LISTING_SUBJECT;
+    return { subject: kind === 'chase' ? `Re: ${subject}` : subject, body: parts.join('\n\n') };
   }
   const vars = { organisation: org.name, page: org.pageName, page_url: org.pageUrl, entry: [org.name, ...org.shown].join('\n') };
   const parts = [replies.greeting(org.greet), replies.fill(kind === 'chase' ? 'org_chase' : 'org_check', vars)];

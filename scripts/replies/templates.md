@@ -140,6 +140,15 @@ Could you check it's right? If you'd like anything changed or added, such as wha
 ## listing_chase
 Just following up on my note about {name}'s free listing on our {page} page. If everything's correct, there's no need to reply. If anything has changed, a quick reply is all we need.
 
+## listing_check_harvington
+I help look after harvingtonvillage.org.uk, the community website and weekly newsletter for Harvington, Norton and Lenchwick. {name} is listed free of charge on our {page} page:
+{page_url}
+
+This is what it shows at the moment:
+{entry}
+
+Could you check it's right? If you'd like anything changed or added, such as what you do, the areas you cover or your website, just reply to this email. If you'd rather not be listed, let me know and we'll take it off.
+
 ## signature
 Best wishes,
 Holly

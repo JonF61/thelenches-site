@@ -700,9 +700,16 @@ const ORGS = [
   ...orgEntries({ contacts: contactsData, council: councilData, schools: schoolsData, health: healthData, transport: transportData }),
   ...listingEntries(listingData('lenches')),
 ];
-// The organisations and listings come from the Lenches' bundled data files: another site has
-// none yet (its own come with 4c-2), so its Organisations view is empty.
-const orgsFor = (env) => (isMain(env) ? ORGS : []);
+// Organisations come from the Lenches' bundled data files only. Another site's Commercial
+// Listings (18 Nov) are its own trades and eateries (worker/src/listings.js), with its own page
+// links and subject, leaving out any the Lenches already checks (same id; scripts/outreach/orgs.js
+// allEntries does the same).
+const LENCHES_LISTING_IDS = new Set(listingEntries(listingData('lenches')).map((e) => e.id));
+const SITE_ORGS = Object.fromEntries(siteIds().filter((id) => id !== DEFAULT_SITE).map((id) => {
+  const cfg = siteConfig(id) || {};
+  return [id, listingEntries(listingData(id), { url: cfg.url, domain: cfg.domain, skip: LENCHES_LISTING_IDS })];
+}));
+const orgsFor = (env) => (isMain(env) ? ORGS : (SITE_ORGS[env.SITE] || []));
 
 // The Org outreach tab, or { headers: [], rows: [], missing: true } if it doesn't exist yet.
 async function readOrgTab(env) {

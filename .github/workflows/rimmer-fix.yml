@@ -59,7 +59,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git add -A "sites/$SITE" src
+          # Every site: a Fix… may change another site's shared hand-written item (18 Nov).
+          git add -A sites src
           if git diff --cached --quiet; then echo "No files changed."; exit 0; fi
           git config user.name "Lenches Pipeline"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

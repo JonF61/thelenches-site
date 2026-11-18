@@ -3,7 +3,7 @@
 // another sender, a feed or a hand-written item) is flagged, never published as a new item.
 //   1. Code finds candidates: listed events on the same day (or within a multi-day event), or
 //      items whose titles share enough words. Sources: hand-written items (sites/<site>/items/, still
-//      shown), published pipeline items (sites/<site>/_data/pipeline.json) and Pending rows waiting or
+//      shown; every site's items shared with this one, 18 Nov), published pipeline items (sites/<site>/_data/pipeline.json) and Pending rows waiting or
 //      approved but not yet published (the run's own new rows included).
 //   2. Holly (Opus, INBOUND_MODEL) decides whether one of them is the same thing, lists any
 //      facts the new email adds, and proposes the existing entry's text and links with those
@@ -14,17 +14,18 @@
 //   4. Holly's acknowledgement (replies.js buildBody) says it's already on the website, with a
 //      link, when she is sure (confidence >= SURE) and the existing entry is live.
 // duplicate JSON: { key, title, url, source, confidence, sure, details, official, changes }
-//   key      h:events/<file>.json | h:notices/<file>.json | p:<Pending id>
+//   key      h:events/<file>.json | h:notices/<file>.json | p:<Pending id>; another site's shared
+//            hand-written item h:<site>/events/<file>.json (18 Nov; lib/whatson.js parseHandKey)
 //   url      the entry's place on the site ('' while it isn't published yet)
 //   changes  { body?, link_text?, link_url?, link2_text?, link2_url? } (only what changes)
 // Logs print counts and ids only.
 'use strict';
 
-const { SITE_REL } = require('../../lib/site.js');
+const { SITE_REL, SITE, SITES } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const { anchorUrl } = require('../../lib/anchors');
-const { ukToday } = require('../../lib/whatson');
+const { ukToday, sitesFor, handKey } = require('../../lib/whatson');
 const { callTool } = require('./toolcall');
 
 const ROOT = path.join(__dirname, '..', '..');
@@ -53,19 +54,28 @@ function readJson(file) {
 // link2, official, url, source }].
 function listings(existing = [], { root = ROOT, today = ukToday() } = {}) {
   const out = [];
-  const items = path.join(root, SITE_REL, 'items');
-  for (const folder of ['events', 'notices']) {
-    const dir = path.join(items, folder);
-    if (!fs.existsSync(dir)) continue;
-    for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.json')).sort()) {
-      const it = readJson(path.join(dir, f));
-      if (!it || !str(it.title)) continue;
-      const kind = folder === 'events' ? 'event' : 'notice';
-      if (kind === 'event' && (day(it.endDate) || day(it.date)) < today) continue;
-      if (kind === 'notice' && day(it.expires) && day(it.expires) <= today) continue;
-      out.push({ key: `h:${folder}/${f}`, kind, title: str(it.title), date: day(it.date), endDate: day(it.endDate),
-        body: str(it.body), link: it.link || null, link2: it.link2 || null, official: truthy(it.official),
-        url: anchorUrl(kind, it), source: 'hand-written' });
+  // This site's items first, then every other site's shared with it (lib/whatson.js sitesFor):
+  // the same item in both is listed once, this site's copy winning (as on the site).
+  const seen = new Set();
+  for (const site of [SITE, ...SITES.filter((x) => x !== SITE)]) {
+    const items = path.join(root, 'sites', site, 'items');
+    for (const folder of ['events', 'notices']) {
+      const dir = path.join(items, folder);
+      if (!fs.existsSync(dir)) continue;
+      for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.json')).sort()) {
+        const it = readJson(path.join(dir, f));
+        if (!it || !str(it.title)) continue;
+        if (site !== SITE) { try { if (!sitesFor(it, f).includes(SITE)) continue; } catch { continue; } }
+        const kind = folder === 'events' ? 'event' : 'notice';
+        if (kind === 'event' && (day(it.endDate) || day(it.date)) < today) continue;
+        if (kind === 'notice' && day(it.expires) && day(it.expires) <= today) continue;
+        const same = `${folder}|${kind === 'event' ? day(it.date) : ''}|${str(it.title).toLowerCase()}`;
+        if (seen.has(same)) continue;
+        seen.add(same);
+        out.push({ key: handKey(folder, f, site), kind, title: str(it.title), date: day(it.date), endDate: day(it.endDate),
+          body: str(it.body), link: it.link || null, link2: it.link2 || null, official: truthy(it.official),
+          url: anchorUrl(kind, it), source: 'hand-written' });
+      }
     }
   }
   const pipe = readJson(path.join(root, SITE_REL, '_data', 'pipeline.json')) || {};
