@@ -10,7 +10,7 @@
 // Outside links (NHS, bus and council sites) are left out: a reply links to our page.
 'use strict';
 
-const { SITE_REL } = require('../../lib/site.js');
+const { SITE_REL, siteConfig, siteDir } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const { loadWhatson, ukToday } = require('../../lib/whatson');
@@ -18,7 +18,9 @@ const { anchorUrl } = require('../../lib/anchors');
 const meetings = require('../../src/_data/meetings');
 const termdates = require('../../src/_data/termdates');
 
-const SITE = 'https://thelenches.org.uk';
+// The site this run is for (18 Nov 2026: Harvington runs had the Lenches' address and pages).
+const CFG = siteConfig();
+const SITE = String(CFG.url || 'https://thelenches.org.uk').replace(/\/$/, '');
 const DATA = path.join(__dirname, '..', '..', SITE_REL, '_data');
 const EVENT_DAYS = 60;   // events this far ahead
 const MAX_EVENTS = 40;
@@ -26,8 +28,9 @@ const MAX_NOTICES = 30;
 const MAX_TEXT = 220;    // chars of each item's text
 
 // Every page a reply may point to (titles and blurbs as on the hub cards).
-const PAGES = [
-  ['Home', '/', 'Front page, plus how to join the Thursday newsletter (email website@thelenches.org.uk and ask to be added).'],
+// Only pages this site has are offered (pageExists); a site may reword a blurb (ABOUT).
+const ALL_PAGES = [
+  ['Home', '/', `Front page, plus how to join the Thursday newsletter (email ${CFG.email || 'website@thelenches.org.uk'} and ask to be added).`],
   ['Events', '/events/', "What's on across the villages, week by week."],
   ['Notices', '/notices/', 'Parish council notices and news from around the villages.'],
   ['Roads', '/living-here/roads/', 'Road closures and roadworks, on now and coming up.'],
@@ -44,7 +47,23 @@ const PAGES = [
   ['Walks & footpaths', '/living-here/walks/', 'Circular walks, maps and the Countryside Code.'],
   ['Contact', '/contact/', 'How to send in events and news (submission guidelines), and how to get in touch.'],
   ['Privacy policy', '/privacy/', 'What we keep about subscribers and contributors.'],
+  ['Where to eat', '/living-here/eat/', 'Pubs, cafés and restaurants nearby.'],
+  ['Local trades', '/living-here/trades/', 'Local tradespeople and services.'],
 ];
+const ABOUT = {
+  harvington: {
+    '/living-here/': 'Regular activities, churches, council and planning, schools, bins, roads, where to eat and local trades.',
+    '/notices/': 'Parish council notices and news from around Harvington, Norton and Lenchwick.',
+  },
+};
+// The page's source in sites/<site>/: /x/ is x.njk or x/index.njk; / is home.njk or index.njk.
+function pageExists(u, dir = siteDir()) {
+  const rel = u.replace(/^\/|\/$/g, '');
+  const tries = rel ? [`${rel}.njk`, `${rel}/index.njk`] : ['home.njk', 'index.njk'];
+  return tries.some((f) => fs.existsSync(path.join(dir, f)));
+}
+const PAGES = ALL_PAGES.filter(([, u]) => pageExists(u))
+  .map(([t, u, about]) => [t, u, (ABOUT[CFG.site] || {})[u] || about]);
 
 const str = (v) => (v === undefined || v === null ? '' : String(v).replace(/\s+/g, ' ').trim());
 const clip = (s) => (str(s).length > MAX_TEXT ? `${str(s).slice(0, MAX_TEXT)}…` : str(s));
@@ -55,6 +74,14 @@ function readJson(file, dflt) {
   } catch {
     return dflt;
   }
+}
+
+// Church services: the site's services.json, else its services.js (Harvington's reads the
+// Lenches' file: one ARCH rota for both sites).
+function siteServices() {
+  const json = readJson('services.json', null);
+  if (json) return json;
+  try { return require(path.join(DATA, 'services.js')); } catch { return {}; }
 }
 
 function addDays(ymd, n) {
@@ -95,7 +122,7 @@ function siteFacts(opts = {}) {
     url: `${SITE}/bins/`,
   };
 
-  const s = opts.services || readJson('services.json', {});
+  const s = opts.services || siteServices();
   const services = {
     sundays: (s.dates || []).filter((d) => String(d.date) >= today).slice(0, 2)
       .map((d) => ({ date: d.date, services: (d.services || []).map((x) => `${x.time} ${x.village}: ${x.service}`) })),
@@ -182,7 +209,9 @@ function livingHere(opts) {
     url: `${SITE}/living-here/walks/`,
   };
 
-  return { council, schools, health, transport, walks };
+  // Only the sections whose page this site has (Harvington has no health, transport or walks pages).
+  const all = { council, schools, health, transport, walks };
+  return Object.fromEntries(Object.entries(all).filter(([, v]) => pageExists(v.url.slice(SITE.length))));
 }
 
-module.exports = { siteFacts, SITE };
+module.exports = { siteFacts, SITE, PAGES, pageExists };
