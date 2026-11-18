@@ -694,6 +694,21 @@ async function doContactMail(env, body) {
   return json({ ok: true, message: 'Draft requested. It appears under Replies in a minute or two.' });
 }
 
+// Kryten asks Holly for a draft (18 Nov, Jon: "in case I don't want to use the panel"): POST /k
+// op "draft" (kryten.js, its own bearer secret) runs the same planning and the same decide()
+// as the panel's Draft email / Draft nudge buttons, for the given site. It only starts a
+// draft: the draft waits in Replies for Jon's Approve, like any other.
+export const KRYTEN_DRAFT_KINDS = ['contactmail', 'nudge'];
+export async function krytenDraft(rawEnv, body) {
+  const site = String((body && body.site) || DEFAULT_SITE);
+  if (!knownSite(site)) return json({ ok: false, error: `Unknown site "${site.slice(0, 40)}"` }, 400);
+  const env = siteEnv(rawEnv, site);
+  const kind = String((body && body.kind) || '');
+  if (kind === 'contactmail') return doContactMail(env, body);
+  if (kind === 'nudge') return doNudge(env, body);
+  return json({ ok: false, error: `kind must be ${KRYTEN_DRAFT_KINDS.join(' or ')}` }, 400);
+}
+
 // Organisation outreach.
 // Listings (Local trades, Where to eat; 5 Nov) get the same yearly check (listingEntries).
 const ORGS = [

@@ -11,6 +11,10 @@
 //   set / append / undo   as Write Sheet cells: stale-checked, RAW, never row 1, no formulas,
 //           at most 50 cells, never the Kryten log, and every write first adds a Kryten log
 //           row (run = "kryten endpoint") so it can be undone
+//   draft   (18 Nov, Jon) ask Holly for a draft without the panel: { kind: "contactmail",
+//           email, brief } or { kind: "nudge", email }, with optional site. The same checks
+//           and decide() as the panel's Draft email / Draft nudge (admin/index.js
+//           krytenDraft); the draft waits in Replies for Jon's Approve. Nothing is sent.
 // Auth: header "authorization: Bearer <KRYTEN_TOKEN>" (Worker secret, added by hand in the
 // Cloudflare dashboard; the same value is in Kryten's cloud environment). Without the secret
 // (or with one under 32 characters) /k answers 404 as if it did not exist. Outside /admin,
@@ -19,6 +23,7 @@
 
 import { accessToken, SCOPES } from './admin/google.js';
 import { knownSite, siteEnv } from './sites.js';
+import { krytenDraft } from './admin/index.js';
 
 const SHEETS = 'https://sheets.googleapis.com/v4/spreadsheets';
 
@@ -252,7 +257,11 @@ export async function handleKryten(request, env, client = null) {
       console.log(`Kryten ${op}: ${out.tab}`);
       return json({ ok: true, ...out });
     }
-    return json({ error: 'op must be read, set, append or undo' }, 400);
+    if (op === 'draft') {
+      console.log(`Kryten draft: ${String(body.kind || '').slice(0, 20)}`);
+      return await krytenDraft(env, body);
+    }
+    return json({ error: 'op must be read, set, append, undo or draft' }, 400);
   } catch (e) {
     return json({ error: e.message }, 400);
   }
