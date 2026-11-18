@@ -2,6 +2,11 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Plan doc Build history: add an entry for the 4-week shelf life on news items (PRs 413 and 414, 18 Nov): publish SHELF_DAYS caps emailed notices at received + 27 days (roadworks aside), lib/whatson.js noticeHides hides hand-written notices from added + 28 days, every notice now has added; check the next publish run capped the Christmas hamper bingo card",
+      "added": "2026-11-18",
+      "kryten": true
+    },
+    {
       "task": "Shared items gaps: on a Harvington run the Already listed check (scripts/ingest/duplicates.js) and Rimmer's Fix… (scripts/rimmer/fix.js) look only at Harvington's own hand-written files, so an email about a Lenches hand-written event can be listed again on Harvington, and Rimmer can't fix a shared Lenches entry from a Harvington check. Needs site-qualified keys (e.g. h:lenches/events/<file>) through approve mergeItem/replaceItem, entryedit and fix.js",
       "added": "2026-11-17"
     },
