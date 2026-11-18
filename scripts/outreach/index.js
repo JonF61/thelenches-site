@@ -17,6 +17,8 @@
 'use strict';
 
 const path = require('path');
+// The site's name (18 Nov: a Harvington draft called itself the Lenches website).
+const SITE_NAME = require('../../lib/site').siteConfig().name || 'The Lenches';
 const { pathToFileURL } = require('url');
 const g = require('../ingest/google');
 const replies = require('../ingest/replies');
@@ -43,7 +45,7 @@ async function rules() {
 }
 
 const SYSTEM = `You write a short, friendly email from a volunteer team running a village
-community website and weekly newsletter (The Lenches, Worcestershire) to someone who has
+community website and weekly newsletter (${SITE_NAME}, Worcestershire) to someone who has
 sent us news or events before, or offered to. It is our own first email, not a reply. The
 input is JSON: reason (seasonal: they sent something around this time last year; quiet:
 they used to send things but haven't for a while; lead: they offered or seemed likely to
@@ -100,7 +102,7 @@ async function draftFor(row, due) {
   }
   const text = replies.sanitiseAnswer(out.draft, new Set([SUBMIT_URL]), { max: MAX_CHARS });
   if (!text) throw new Error('Outreach draft failed the checks (length, links or email address); nothing written');
-  const subject = cleanSubject(out.subject) || 'Anything coming up for the Lenches newsletter?';
+  const subject = cleanSubject(out.subject) || `Anything coming up for the ${SITE_NAME.replace(/^The /, "")} newsletter?`;
   const warnings = replies.RISKY.filter(([re]) => re.test(text)).map(([, why]) => `Check: draft ${why}`);
   return { subject, text, warnings };
 }
