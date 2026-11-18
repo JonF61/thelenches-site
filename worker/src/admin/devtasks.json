@@ -12,10 +12,6 @@
       "kryten": true
     },
     {
-      "task": "Harvington: Holly's site facts (scripts/ingest/sitefacts.js) read services.json only from the site's own folder, so Harvington runs have no church services yet",
-      "added": "2026-11-16"
-    },
-    {
       "task": "Harvington bins: its bins.json copies the Lenches' collection dates (ending 14 Dec); extend both together when the 2027 Wychavon calendar is out",
       "added": "2026-11-16"
     },
