@@ -2,14 +2,6 @@
   "intro": "Tradespeople based in and around Harvington. We list them for information only and can't vouch for anyone's work, so get quotes and check references as you would with anyone. If you're listed and would rather not be, let us know and we'll take you off.",
   "trades": [
     {
-      "id": "burgoine-and-weston-construction",
-      "name": "Burgoine and Weston Construction",
-      "trade": "Builders",
-      "what": "Building contractors",
-      "base": "Harvington",
-      "phone": "07789 325879"
-    },
-    {
       "id": "will-begg-carpentry-services",
       "name": "Will Begg Carpentry Services",
       "trade": "Carpenters",
