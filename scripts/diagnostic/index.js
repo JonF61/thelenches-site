@@ -576,6 +576,13 @@ function writeSummary(row, newProblems) {
   if (file) fs.appendFileSync(file, md);
 }
 
+// The two websites in step (18 Nov 2026, Jon): bins, school terms, cartoons, data files, pages and
+// shared pages' wording (lib/parity.js; offline, from the repo). Each difference is one problem.
+async function checkParity() {
+  const { parityProblems } = require('../../lib/parity');
+  for (const p of parityProblems()) problem(`Sites not in step: ${clip(p, 160)}`);
+}
+
 async function main() {
   const ctx = {};
   await checkSheets(ctx);
@@ -600,6 +607,7 @@ async function main() {
     safe('HTTPS', checkHttps),
     safe('DNS', checkDns),
     safe('DISPATCH_TOKEN', checkDispatchAndKeepAlive),
+    safe('Sites in step', checkParity),
   ]);
   if (ctx.sheetsOk) {
     await safe('Log requeue', () => checkLog(pastFixes));
