@@ -114,6 +114,10 @@
         {
           "title": "Local trades",
           "url": "/living-here/trades/"
+        },
+        {
+          "title": "Getting around",
+          "url": "/living-here/getting-around/"
         }
       ]
     },
