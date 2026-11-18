@@ -213,12 +213,14 @@ const TOOL = {
 function buildRequest({ scope, docs, today, dismissed, issueDate }) {
   const what = scope === 'newsletter'
     ? `The next newsletter issue (${issueDate}), as subscribers will receive it. It is sent on the morning of ${issueDate}; judge "coming up" and dates from that day.`
-      + (docs.length > 1 ? `\nAlso given: the website pages the newsletter's sections come from (events, notices, roads, regular activities), as they stand now. Check the newsletter against them: an item in both should give the same title, date, time, place, price, contact details and links; report any difference, saying which wording looks right. Also report an item in the newsletter that is missing from the website or shows there as past or withdrawn. The newsletter shows only some of the website's items (events in the next two weeks, notices new since the last issue), so never report website items that are not in the newsletter, and do not check the website pages for other problems: only how they agree with the newsletter. Give the page as "newsletter" when the newsletter wording is wrong, or the website page's path when the website is wrong.` : '')
+      + (docs.some((d) => d.page !== 'newsletter' && !d.other) ? `\nAlso given: the website pages the newsletter's sections come from (events, notices, roads, regular activities), as they stand now. Check the newsletter against them: an item in both should give the same title, date, time, place, price, contact details and links; report any difference, saying which wording looks right. Also report an item in the newsletter that is missing from the website or shows there as past or withdrawn. The newsletter shows only some of the website's items (events in the next two weeks, notices new since the last issue), so never report website items that are not in the newsletter, and do not check the website pages for other problems: only how they agree with the newsletter. Give the page as "newsletter" when the newsletter wording is wrong, or the website page's path when the website is wrong.` : '')
     : scope === 'listings'
       ? 'The website\'s listings pages (events, notices, roads, regular activities, places to eat, local trades). Check each page and across pages.'
       : 'Every page of the website. Check each page and across pages (the same facts on two pages should agree).';
+  const others = docs.filter((d) => d.other).map((d) => d.page);
+  const mirror = scope === 'newsletter' && others.length ? `\nAlso given: the same day's issue of the newsletter for the neighbouring village's website (${others.join(', ')}), run by the same person; it may be a few hours older than this one. The two communities are within walking distance, so nearly every event, notice and regular activity should be in both issues. The only items meant for one issue alone are: parish council news or other official notices for one parish; roadworks on a lane only one community uses (main roads go in both); and things only one community's residents or a club's members can use. Report, as "check": a shared item in one issue but not the other (unless it is plainly one of those three); the same item with a different title, date, time, place, price, contact details or link in the two issues (saying which looks right); and a cartoon in one issue but not the other. Expected differences, never to report: the newsletter's name, colours, header line, subject wording, contributions address and sign-off; "[Lenches badge]" (the Lenches' issue alone); Where in the Lenches?, On this day, sponsors and WEBSITE UPDATE (one site's alone); Regular activities intro and the count on its button; the order of items. Do not check the other issue for any other problems. Give the page as "newsletter" when this issue is wrong, or the other issue's name (e.g. ${others[0]}) when that one is.` : '';
   const body = docs.map((d) => `=== ${d.page} ===\n${d.text}`).join('\n\n');
-  const user = `${what}\n\nCalendar:\n${calendar(today)}\n\ndismissed:\n${dismissed.length ? dismissed.map((d) => `- ${d}`).join('\n') : '(none)'}\n\n${body}`;
+  const user = `${what}${mirror}\n\nCalendar:\n${calendar(today)}\n\ndismissed:\n${dismissed.length ? dismissed.map((d) => `- ${d}`).join('\n') : '(none)'}\n\n${body}`;
   return {
     model: MODEL(),
     // Opus thinks before answering: 4000 cut off the first listings run (3 Nov) with no findings.
@@ -244,6 +246,32 @@ function cleanFindings(input, scope, docs) {
 
 /* ------------------------------------------------------------- run -- */
 
+// The other sites' next issues, from their own Sheets' "Newsletter draft" tab (draft.js writes
+// it every 3 hours and after builds; read-only), when built for the same issue day. A missing or
+// unreadable tab is skipped: the check then covers this site alone, as before.
+const OTHER_PREFIX = 'newsletter:';
+function draftHtml(rows) {
+  const kv = Object.fromEntries(rows.map((r) => [str(r.key), String(r.value ?? '')]));
+  const chunks = Object.keys(kv).filter((k) => /^html_\d+$/.test(k)).sort((a, b) => Number(a.slice(5)) - Number(b.slice(5)));
+  if (!chunks.length) return null;
+  const html = require('zlib').inflateSync(Buffer.from(chunks.map((k) => kv[k]).join(''), 'base64')).toString('utf8');
+  return { kv, html };
+}
+async function otherIssues(g, issueDate) {
+  if (!g || typeof g.readOtherTable !== 'function') return [];
+  const { otherSites } = require('../../lib/site');
+  const { TAB: DRAFT_TAB } = require('../newsletter/draft');
+  const out = [];
+  for (const site of otherSites()) {
+    try {
+      const d = draftHtml(await g.readOtherTable(site, DRAFT_TAB));
+      if (!d || str(d.kv.issue_date) !== str(issueDate)) continue;
+      out.push({ page: `${OTHER_PREFIX}${site}`, other: true, text: `As of: ${str(d.kv.as_of)}\nSubject: ${str(d.kv.subject)}\n\n${htmlToText(d.html)}` });
+    } catch { /* unreadable: left out */ }
+  }
+  return out;
+}
+
 async function docsFor(scope, g) {
   if (scope === 'newsletter') {
     const { buildDraft, loadInputs } = require('../newsletter/draft');
@@ -251,6 +279,8 @@ async function docsFor(scope, g) {
     const docs = [{ page: 'newsletter', text: `Subject: ${meta.subject}\n\n${htmlToText(html)}` }];
     // The website pages, when the site is built (rimmer.yml builds it), for the consistency check.
     if (fs.existsSync(path.join(SITE_DIR, 'index.html'))) docs.push(...readPages(NEWSLETTER_SITE_PAGES));
+    // The other sites' issues for the same day, so shared items can be checked as mirrored (18 Nov).
+    docs.push(...await otherIssues(g, meta.issue_date));
     return { target: meta.issue_date, issueDate: meta.issue_date, docs };
   }
   if (!fs.existsSync(path.join(SITE_DIR, 'index.html'))) throw new Error('No built site in _site: run Eleventy first');
@@ -347,7 +377,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { NEWSLETTER_SITE_PAGES,
+module.exports = { NEWSLETTER_SITE_PAGES, otherIssues, draftHtml,
   run, htmlToText, pageContent, sitePages, readPages, calendar, buildRequest, cleanFindings, dismissedFor, newRows,
   TAB, HEADERS, SCOPES, LISTING_PAGES, SYSTEM, TOOL, BUSY_FIX, ukStamp, str, clip, draftFixes,
 };

@@ -143,3 +143,30 @@ assert.equal(c.htmlToText('<table><tr><td>The Club</td><td></td><td>Lenches</td>
   assert.deepEqual(c.NEWSLETTER_SITE_PAGES, ['/events/', '/notices/', '/living-here/roads/', '/regulars/']);
   console.log('rimmer newsletter-vs-site: ok');
 }
+
+// The other site's issue (18 Nov): read from its Newsletter draft tab when it is for the same day,
+// and the request then asks for shared items to be mirrored.
+(async () => {
+  const zlib = require('zlib');
+  const { draftRows } = require('./newsletter/draft');
+  const rowsFor = (date) => draftRows({ issue_date: date, subject: 'The Harvington Newsletter – 19 Nov' }, '<h2>Events</h2><p>Quiz — Harvington Village Hall</p>', '2026-11-18T18:00:00Z')
+    .slice(1).map(([key, value]) => ({ key, value }));
+  assert.equal(c.draftHtml(rowsFor('2026-11-19')).html, '<h2>Events</h2><p>Quiz — Harvington Village Hall</p>');
+  assert.ok(zlib);
+  const g = { readOtherTable: async (site, tab) => { assert.equal(site, 'harvington'); assert.equal(tab, 'Newsletter draft'); return rowsFor('2026-11-19'); } };
+  const got = await c.otherIssues(g, '2026-11-19');
+  assert.equal(got.length, 1);
+  assert.equal(got[0].page, 'newsletter:harvington');
+  assert.match(got[0].text, /^As of: 2026-11-18T18:00:00Z\nSubject: The Harvington Newsletter – 19 Nov\n\n## Events\nQuiz — Harvington Village Hall$/);
+  assert.deepEqual(await c.otherIssues(g, '2026-11-26'), [], 'another week is left out');
+  assert.deepEqual(await c.otherIssues({ readOtherTable: async () => { throw new Error('no access'); } }, '2026-11-19'), []);
+  assert.deepEqual(await c.otherIssues({}, '2026-11-19'), []);
+  const docs2 = [{ page: 'newsletter', text: 'N' }, ...got];
+  const r2 = c.buildRequest({ scope: 'newsletter', docs: docs2, today: '2026-11-18', dismissed: [], issueDate: '2026-11-19' });
+  assert.match(r2.messages[0].content, /neighbouring village's website \(newsletter:harvington\)[\s\S]*=== newsletter:harvington ===/);
+  assert.doesNotMatch(r2.messages[0].content, /the website pages the newsletter's sections come from/, 'no website pages given');
+  assert.equal(c.cleanFindings({ findings: [{ page: 'newsletter:harvington', problem: 'p' }] }, 'newsletter', docs2)[0].page, 'newsletter:harvington');
+  const r1 = c.buildRequest({ scope: 'newsletter', docs: [{ page: 'newsletter', text: 'N' }], today: '2026-11-18', dismissed: [], issueDate: '2026-11-19' });
+  assert.doesNotMatch(r1.messages[0].content, /neighbouring village/);
+  console.log('rimmer other site issue: ok');
+})().catch((e) => { console.error(e); process.exit(1); });
