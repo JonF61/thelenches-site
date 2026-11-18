@@ -4,6 +4,7 @@
     "harvington-pc",
     "norton-lenchwick-pc",
     "village-hall",
+    "norton-hall",
     "st-james",
     "baptist",
     "first-school",
@@ -27,6 +28,10 @@
       "name": "Harvington Village Hall",
       "email": "harvingtonvillagehall@gmail.com",
       "phone": "07436 118644"
+    },
+    "norton-hall": {
+      "name": "Norton and Lenchwick Parish Hall",
+      "phone": "01386 462884"
     },
     "st-james": {
       "name": "St James' Church (ARCH benefice)",
