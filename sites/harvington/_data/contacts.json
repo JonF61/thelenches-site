@@ -3,8 +3,14 @@
   "table": [
     "harvington-pc",
     "norton-lenchwick-pc",
+    "village-hall",
+    "st-james",
+    "baptist",
     "first-school",
     "harvey-bears",
+    "youth-project",
+    "cricket",
+    "support-group",
     "website"
   ],
   "outreach": [],
@@ -17,6 +23,21 @@
       "name": "Norton and Lenchwick Parish Council",
       "url": "https://nortonlenchwick-pc.gov.uk/"
     },
+    "village-hall": {
+      "name": "Harvington Village Hall",
+      "email": "harvingtonvillagehall@gmail.com",
+      "phone": "07436 118644"
+    },
+    "st-james": {
+      "name": "St James' Church (ARCH benefice)",
+      "email": "rector@archbenefice.org.uk",
+      "phone": "01386 870527",
+      "url": "https://archbenefice.org.uk/"
+    },
+    "baptist": {
+      "name": "Harvington Baptist Church",
+      "email": "info@harvingtonbaptistchurch.org.uk"
+    },
     "first-school": {
       "name": "Harvington CofE First School",
       "school": "Harvington CofE First School"
@@ -24,6 +45,22 @@
     "harvey-bears": {
       "name": "Harvey Bears Nursery and Pre-School",
       "school": "Harvey Bears Nursery and Pre-School"
+    },
+    "youth-project": {
+      "name": "Harvington Youth Project",
+      "email": "harvingtonyouth@gmail.com",
+      "phone": "07407 469492",
+      "url": "https://www.harvington-youth.org.uk/"
+    },
+    "cricket": {
+      "name": "Harvington Cricket Club",
+      "email": "harvingtoncc@ymail.com",
+      "phone": "07920 421487",
+      "url": "https://harvingtoncc.play-cricket.com/home"
+    },
+    "support-group": {
+      "name": "Harvington Community Support Group",
+      "phone": "07591 377367"
     },
     "website": {
       "name": "This website and newsletter",
