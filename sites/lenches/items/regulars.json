@@ -249,6 +249,36 @@
       "booking": "Contact Lesley",
       "checked": "2026-11",
       "added": "2026-11-08"
+    },
+    {
+      "day": "Wednesday",
+      "time": "2pm",
+      "what": "St Egwin's Craft Group",
+      "where": "Norton and Lenchwick Parish Hall",
+      "frequency": "1st Wednesday of the month",
+      "about": "Coffee, a chat and making things to sell at St Egwin's Christmas Fair. All welcome.",
+      "added": "2026-11-18"
+    },
+    {
+      "day": "Wednesday",
+      "time": "10am-noon",
+      "what": "Coffee morning",
+      "where": "Norton and Lenchwick Parish Hall",
+      "frequency": "Every other Wednesday",
+      "about": "Coffee, cake and a chat. All welcome.",
+      "added": "2026-11-18"
+    },
+    {
+      "day": "Thursday",
+      "time": "Morning and afternoon",
+      "what": "Short mat bowls (u3a)",
+      "where": "Norton and Lenchwick Parish Hall",
+      "forWho": "Members of Evesham and District u3a",
+      "website": {
+        "text": "Evesham and District u3a groups",
+        "url": "https://evesham.u3asite.uk/groups/"
+      },
+      "added": "2026-11-18"
     }
   ]
 }
