@@ -1,0 +1,45 @@
+---
+layout: base.njk
+title: Groups & Clubs
+description: "Clubs and groups in Harvington, Norton and Lenchwick: the community support group, youth project, cricket club and more, with how to get in touch."
+seoTitle: "Clubs and groups in Harvington, Norton and Lenchwick"
+---
+<main class="container">
+
+  <div class="page-head">
+    <h1>Groups &amp; Clubs</h1>
+    <p class="page-intro">Clubs and groups in Harvington, Norton and Lenchwick. Some have their own websites, which we link to; for others we give their details here.</p>
+  </div>
+
+  <section>
+    <div class="stack">
+
+    <div class="card" id="support-group">
+      <h2 class="mt0">Harvington Community Support Group</h2>
+      <p>Volunteers who help Harvington villagers with transport to appointments, admin, occasional shopping and minor DIY jobs. Call {{ contacts.orgs['support-group'].phone }}; if no one answers, leave a message, as the phone is checked regularly.</p>
+    </div>
+
+    <div class="card" id="youth-project">
+      <h2 class="mt0">Harvington Youth Project</h2>
+      <p>Youth groups for young people in the village, based at Harvington Baptist Chapel and meeting weekly in term time. Email <a href="mailto:{{ contacts.orgs['youth-project'].email }}">{{ contacts.orgs['youth-project'].email }}</a> or call {{ contacts.orgs['youth-project'].phone }}.</p>
+      <p><a href="{{ contacts.orgs['youth-project'].url }}" target="_blank" rel="noopener">Visit their website &rarr;</a></p>
+    </div>
+
+    <div class="card" id="cricket">
+      <h2 class="mt0">Harvington Cricket Club</h2>
+      <p>The village cricket club. Email <a href="mailto:{{ contacts.orgs.cricket.email }}">{{ contacts.orgs.cricket.email }}</a> or call {{ contacts.orgs.cricket.phone }}.</p>
+      <p><a href="{{ contacts.orgs.cricket.url }}" target="_blank" rel="noopener">Visit the club's website &rarr;</a></p>
+    </div>
+
+    <div class="card" id="u3a">
+      <h2 class="mt0">Evesham and District u3a</h2>
+      <p>Short mat bowls groups meet on Thursdays at Norton and Lenchwick Parish Hall, for u3a members.</p>
+      <p><a href="https://evesham.u3asite.uk/groups/" target="_blank" rel="noopener">See the u3a's groups &rarr;</a></p>
+    </div>
+
+    </div>
+  </section>
+
+  <p>Other groups use the village halls: see <a href="{{ '/halls/' | url }}">Village Halls</a> and <a href="{{ '/regulars/' | url }}">Regular activities</a>. Run a group we haven't listed? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+
+</main>
