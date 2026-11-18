@@ -31,6 +31,18 @@ module.exports = async function (eleventyConfig) {
         if (fs.existsSync(path.join(__dirname, src)) && !fs.existsSync(path.join(__dirname, SITE_REL, rel))) copies[src] = rel.slice(1);
       }
     }
+    // Every other site's item pictures too (18 Nov 2026): a built newsletter is frozen, so an
+    // issue can still show a shared item after its file is deleted; its picture must stay served.
+    const { SITES } = require("./lib/site.js");
+    const ownItems = path.join(__dirname, SITE_REL, "images/items");
+    for (const other of SITES.filter((s) => `sites/${s}` !== SITE_REL)) {
+      const dir = path.join(__dirname, "sites", other, "images/items");
+      if (!fs.existsSync(dir)) continue;
+      for (const name of fs.readdirSync(dir)) {
+        if (!/^[\w.-]+\.(webp|jpe?g|png)$/i.test(name) || fs.existsSync(path.join(ownItems, name))) continue;
+        copies[`sites/${other}/images/items/${name}`] = `images/items/${name}`;
+      }
+    }
     if (Object.keys(copies).length) eleventyConfig.addPassthroughCopy(copies);
   }
   // Hand-written items (sites/<site>/items/, read by src/_data/whatson.js): rebuild on change when serving
