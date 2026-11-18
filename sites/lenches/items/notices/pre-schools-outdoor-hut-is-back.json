@@ -5,5 +5,7 @@
     "url": "/images/items/preschool-hut.webp",
     "alt": "The Lenches Pre-school's restored eight-sided wooden hut among autumn trees, with nature charts on its back wall"
   },
-  "order": 20
+  "order": 20,
+  "expires": "2026-11-25",
+  "sites": "lenches"
 }
