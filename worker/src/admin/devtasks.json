@@ -238,7 +238,7 @@
       "added": "2026-11-11"
     },
     {
-      "task": "Village halls (18 Nov): when Harvington Village Hall replies to Holly's email (Harvington Replies) with its regular groups and booking details, add the groups to sites/lenches/items/regulars.json (ask Jon: new activity or newly listed) and mock up a Village halls page for Harvington (Harvington and Norton and Lenchwick halls) for Jon's approval",
+      "task": "Village halls (18 Nov): when Harvington Village Hall replies to Holly's email (Harvington Replies) with its regular groups and booking details, add the groups to sites/lenches/items/regulars.json (ask Jon: new activity or newly listed) and update Harvington's Village Halls page (sites/harvington/halls.njk) with anything new, for Jon's approval",
       "waiting": "Harvington Village Hall's reply",
       "added": "2026-11-18",
       "kryten": true

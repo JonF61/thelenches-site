@@ -1,0 +1,28 @@
+---
+layout: base.njk
+title: Village Halls
+description: "Hire a village hall in Harvington or Norton: Harvington Village Hall and Norton and Lenchwick Parish Hall, their regular users and how to book."
+seoTitle: "Village halls in Harvington and Norton — hall hire and bookings"
+---
+<main class="container">
+
+  <div class="page-head">
+    <h1>Village Halls</h1>
+    <p class="page-intro">Harvington and Norton each have a village hall, available for regular groups and one-off events.</p>
+  </div>
+
+  <section id="harvington">
+    <h2>Harvington Village Hall</h2>
+    <p>On Village Street, Harvington. Regular users include Harvey Bears Nursery and Pre-School, exercise classes, Girlguiding groups and village clubs. See <a href="{{ '/regulars/' | url }}">Regular activities</a> for days and times.</p>
+    <h3>Hire the hall</h3>
+    <p>Email <a href="mailto:{{ contacts.orgs['village-hall'].email }}">{{ contacts.orgs['village-hall'].email }}</a> or call the Booking Secretary on {{ contacts.orgs['village-hall'].phone }}. Hire rates are on the noticeboard outside the hall.</p>
+  </section>
+
+  <section id="norton">
+    <h2>Norton and Lenchwick Parish Hall</h2>
+    <p>At 2 Byrd Row, Norton, the hall for Norton and Lenchwick. Regular users include St Egwin's Craft Group, a fortnightly coffee morning and the u3a's short mat bowls, and it has table tennis equipment for anyone wanting to start a group. See <a href="{{ '/regulars/' | url }}">Regular activities</a> for days and times.</p>
+    <h3>Hire the hall</h3>
+    <p>Call the Bookings Administrator on {{ contacts.orgs['norton-hall'].phone }}.</p>
+  </section>
+
+</main>
