@@ -1,12 +1,18 @@
 {
   "_help": "Harvington's Living here cards (home page and /living-here/; hub-cards.njk). More cards are added as their pages are built.",
-  "intro": "The practical side of village life: schools, places to eat, local trades, bins, village halls, churches, the parish councils, regular activities and the roads.",
+  "intro": "The practical side of village life: schools, places to eat, local trades, bins, groups and clubs, village halls, churches, the parish councils, regular activities and the roads.",
   "cards": [
     {
       "title": "Regular activities",
       "url": "/regulars/",
       "icon": "users",
       "text": "Clubs, classes and groups that meet week by week."
+    },
+    {
+      "title": "Groups & Clubs",
+      "url": "/groups/",
+      "icon": "users",
+      "text": "Clubs and groups in Harvington, Norton and Lenchwick."
     },
     {
       "title": "Village Halls",
