@@ -11,6 +11,7 @@
 import { itemChanges } from './autonomy.js';
 
 export const NOTICE_DAYS = 21;    // as scripts/publish NOTICE_DAYS
+export const SHELF_DAYS = 28;     // as scripts/publish SHELF_DAYS
 const LIVE = new Set(['approved', 'auto']);
 const str = (v) => (v === undefined || v === null ? '' : String(v)).trim();
 const ymd = (v) => (str(v).match(/^\d{4}-\d{2}-\d{2}/) || [''])[0];
@@ -50,6 +51,11 @@ export function siteWindow(r) {
   if (end) until = later(until, end);
   // as scripts/publish: a notice's end_date is the last day it matters (8 Nov)
   if (!roads && page === 'Notices' && ymd(r.end_date)) until = ymd(r.end_date);
+  // as scripts/publish: at most 4 weeks from when it was received (18 Nov)
+  if (!roads && page === 'Notices') {
+    const cap = addDays(ymd(r.received) || from, SHELF_DAYS - 1);
+    if (until > cap) until = cap;
+  }
   if (roads) page = 'Roads';
   return { page, from, until };
 }

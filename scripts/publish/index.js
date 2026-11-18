@@ -54,7 +54,8 @@ const PHOTO_DIR = path.join(ROOT, SITE_REL, 'images', 'photos');
 const SUGGESTIONS = 'Image suggestions';
 const IMAGE_URL = '/images/items';
 const IMAGE_EDGE = 1200;  // longest side, px
-const NOTICE_DAYS = 21;   // notices show until their date, and for at least this long
+const NOTICE_DAYS = 21;
+const SHELF_DAYS = 28;    // 18 Nov, Jon: no notice (roadworks aside) shows more than 4 weeks from when it was received   // notices show until their date, and for at least this long
 const LIVE = new Set(['approved', 'auto']);
 
 const londonDate = (ms) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(ms);
@@ -210,7 +211,8 @@ async function imageFor(row, failures, suggestions) {
 // Where a published row goes and its last day shown (expires). Events: their date. Notices:
 // at least NOTICE_DAYS from the decision (or their date if later); one.network roadworks to
 // their end_date if later; any other notice with an end_date (8 Nov, Jon: notices about
-// Saturday's fireworks stayed up 21 days) to that day, the last day it matters.
+// Saturday's fireworks stayed up 21 days) to that day, the last day it matters. Every notice but
+// roadworks then comes down at the latest SHELF_DAYS after it was received (18 Nov, Jon).
 // worker/src/admin/history.js siteWindow mirrors this.
 function windowFor(row, today) {
   const date = ymd(row.event_date);
@@ -232,6 +234,10 @@ function windowFor(row, today) {
   if (end) expires = later(expires, end);
   const until = !road && list === 'notices' ? ymd(row.end_date) : '';
   if (until) expires = until;
+  if (!road && list === 'notices') {
+    const cap = addDays(ymd(row.received) || start, SHELF_DAYS - 1);
+    if (expires > cap) expires = cap;
+  }
   return { date, start, list, expires, end, url, road };
 }
 
