@@ -33,20 +33,10 @@
     },
     {
       "day": "Wednesday",
-      "time": "5.30-6.30pm and 7-8pm",
+      "time": "5.30-6.30pm",
       "what": "Tai chi",
-      "where": "Lenches Lakes (5.30pm) and Rous Lench Village Hall (7pm)",
-      "sessions": [
-        {
-          "time": "5.30-6.30pm",
-          "where": "Lenches Lakes"
-        },
-        {
-          "time": "7-8pm",
-          "where": "Rous Lench Village Hall"
-        }
-      ],
-      "note": "final session at both venues 9 Dec",
+      "where": "Lenches Lakes",
+      "note": "final session 9 Dec",
       "until": "2026-12-09",
       "about": "Suitable for complete beginners and adults of all ages and abilities. Tai chi is a mind-body movement programme that aims to increase flexibility, resilience, balance and strength.",
       "runBy": "Theresa (Mind the Qi)",
@@ -58,7 +48,7 @@
         "url": "/images/items/tai-chi-mind-the-qi-2026.webp",
         "alt": "Mind the Qi: tai chi, Wednesday evenings, beginners welcome"
       },
-      "checked": "2026-10"
+      "checked": "2026-11"
     },
     {
       "day": "Thursday",
