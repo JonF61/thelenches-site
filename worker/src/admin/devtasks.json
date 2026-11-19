@@ -2,7 +2,7 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
-      "task": "Christmas last posting days for the 10 Dec issues (Jon, 19 Nov; UK dates only): in the week of 30 Nov, check the dates on royalmail.com/christmas (press: 2nd Class Fri 18 Dec, Tracked 48 Sat 19 Dec, 1st Class Mon 21 Dec, Special Delivery Wed 23 Dec), show Jon the wording, then add a pinned notice in sites/lenches/items/notices/ (both sites; added = that day, expires 2026-12-24) before the 9 Dec cutoff",
+      "task": "Christmas last posting days for the 10 Dec issues (Jon, 19 Nov; UK dates only): after the 3 Dec issue has gone (so it is not in that one), check the dates on royalmail.com/christmas (press: 2nd Class Fri 18 Dec, Tracked 48 Sat 19 Dec, 1st Class Mon 21 Dec, Special Delivery Wed 23 Dec), show Jon the wording, then add a pinned notice in sites/lenches/items/notices/ (both sites; added = that day, expires 2026-12-24) before the 9 Dec cutoff",
       "added": "2026-11-19",
       "kryten": true
     },
