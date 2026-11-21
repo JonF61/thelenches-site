@@ -65,6 +65,18 @@
       }
     },
     {
+      "id": "1a1fe24eefebb56b-2",
+      "title": "Children's Christmas Party — Norton Village Hall",
+      "body": "Children's Christmas party at Norton Village Hall on Sunday 6 December, 4pm to 6pm.",
+      "date": "2026-12-06",
+      "village": "Harvington",
+      "expires": "2026-12-06",
+      "link": {
+        "text": "Email Caroline",
+        "url": "mailto:cj.norton@ymail.com"
+      }
+    },
+    {
       "id": "1a17d10d5d56383f-5",
       "title": "Festive Wreath Making Workshop — The Vale Golf & Country Club",
       "body": "A third Christmas wreath-making workshop at The Vale Golf and Country Club, Bishampton. Sunday 6 December, 2pm-5pm, £50 per person. Booking via the club's website.",
@@ -78,6 +90,18 @@
       "image": {
         "url": "/images/items/1a17d10d5d56383f-5.webp",
         "alt": "Hands arranging a festive wreath of fir, berries and pine cones on a wooden table"
+      }
+    },
+    {
+      "id": "1a1fe24eefebb56b-4",
+      "title": "Christmas Bingo — Norton Village Hall",
+      "body": "Christmas bingo at Norton Village Hall on Friday 11 December, 7.30 for 8pm.",
+      "date": "2026-12-11",
+      "village": "Harvington",
+      "expires": "2026-12-11",
+      "link": {
+        "text": "Email Caroline",
+        "url": "mailto:cj.norton@ymail.com"
       }
     },
     {
