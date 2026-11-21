@@ -93,6 +93,18 @@
       }
     },
     {
+      "id": "1a1fe24eefebb56b-3",
+      "title": "Coffee Morning — Norton Village Hall",
+      "body": "Coffee morning at Norton Village Hall on Wednesday 9 December, 10am to 12 noon.",
+      "date": "2026-12-09",
+      "village": "Harvington",
+      "expires": "2026-12-09",
+      "link": {
+        "text": "Email Caroline",
+        "url": "mailto:cj.norton@ymail.com"
+      }
+    },
+    {
       "id": "1a1fe24eefebb56b-4",
       "title": "Christmas Bingo — Norton Village Hall",
       "body": "Christmas bingo at Norton Village Hall on Friday 11 December, 7.30 for 8pm.",
@@ -118,6 +130,18 @@
       "image": {
         "url": "/images/items/1a1c605c25d4b905-7.webp",
         "alt": "Poster for the Amulet Blooms Christmas wreath workshop showing a wreath of fir, pine cones and dried flowers"
+      }
+    },
+    {
+      "id": "1a1fe24eefebb56b-5",
+      "title": "Carol Service — St Egwin's Church, Norton",
+      "body": "Carol service at St Egwin's Church, Norton, on Sunday 13 December at 3pm, with the Vale Connection choir.",
+      "date": "2026-12-13",
+      "village": "Harvington",
+      "expires": "2026-12-13",
+      "link": {
+        "text": "Email Caroline",
+        "url": "mailto:cj.norton@ymail.com"
       }
     },
     {
