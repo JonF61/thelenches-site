@@ -190,6 +190,18 @@ module.exports = async function (eleventyConfig) {
     return (items || []).filter((i) => i.added && i.added >= from && i.added <= today()).length;
   });
 
+  // News page, for a site that sets newFirst: notices new this week (as newThisWeek) first, newest
+  // added first, then the rest in their usual order (Harvington, Jon 22 Nov 2026).
+  eleventyConfig.addFilter("newFirst", (items) => {
+    const d = new Date(today() + "T12:00:00Z");
+    d.setUTCDate(d.getUTCDate() - 6);
+    const from = d.toISOString().slice(0, 10);
+    const isNew = (i) => i.added && i.added >= from && i.added <= today();
+    const list = items || [];
+    const fresh = list.filter(isNew).sort((a, b) => (a.added < b.added ? 1 : a.added > b.added ? -1 : 0));
+    return fresh.concat(list.filter((i) => !isNew(i)));
+  });
+
   // Home page: next collection for the first area in bins.json, or null when the calendar
   // has run out. { area, date, bins: ["green", "brown"] }
   // Next bin collection for each collection day (areas grouped by offset, in bins.json order):
