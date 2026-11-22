@@ -15,6 +15,8 @@ seoTitle: "News and notices from the Lenches — Church Lench, Rous Lench and ne
     (28 Oct): title, a small thumbnail if it has an image, the opening (leadSplit: the first
     paragraph cut after ~140 characters at a sentence end) and the rest behind "More"; sourced items (Evesham Journal signposts) among them, labelled with the source ("Worth knowing" until 30 Oct).
     The script at the end opens the <details> of a notice a URL hash points at. -#}
+{#- New notices first in Around the villages, after pinned ones (Jon, 22 Nov 2026). -#}
+{%- set newFirst = true -%}
 {%- set aroundHeading -%}Around the villages{%- endset -%}
 {%- set emptyNote -%}No news at the moment.{%- endset -%}
 {%- set roadsNote -%}Road closures and roadworks are on the <a href="{{ '/living-here/roads/' | url }}">Roads page</a>.{%- endset -%}
