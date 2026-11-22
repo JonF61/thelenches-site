@@ -9,5 +9,10 @@ description: Regular activities, groups and clubs, village halls, churches and p
     <h1>Living here</h1>
     <p class="page-intro">{{ livinghere.intro }}</p>
   </div>
+  <div class="gallery">
+    <figure><img src="{{ '/images/photos/rous-lench-rous-lench-village-green.webp' | url }}" alt="Rous Lench village green with autumn trees and the thatched shelter" width="1400" height="1050" loading="lazy"><figcaption class="small muted">Rous Lench village green</figcaption></figure>
+    <figure><img src="{{ '/images/photos/church-lench-sports-lenches-sports-club-pavilion-terraces.webp' | url }}" alt="Grass terraces and the pavilion at the Lenches Sports Club" width="1400" height="1050" loading="lazy"><figcaption class="small muted">The Lenches Sports Club</figcaption></figure>
+    <figure><img src="{{ '/images/photos/church-lench-church-lench-playground.webp' | url }}" alt="Church Lench playground with wooden swings and climbing frames" width="1400" height="1050" loading="lazy"><figcaption class="small muted">Church Lench playground</figcaption></figure>
+  </div>
   {% set cards = livinghere.cards %}{% set cardHeading = "h2" %}{% include "hub-cards.njk" %}
 </main>
