@@ -1310,7 +1310,9 @@
     "credit": "",
     "village": "Norton & Lenchwick",
     "subject": "",
-    "targets": [],
+    "targets": [
+      "churches"
+    ],
     "taken": "2026-11-21"
   },
   {
@@ -1452,9 +1454,7 @@
     "credit": "",
     "village": "Rous Lench",
     "subject": "",
-    "targets": [
-      "churches"
-    ],
+    "targets": [],
     "taken": "2014-07-07"
   },
   {
