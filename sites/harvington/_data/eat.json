@@ -18,7 +18,11 @@
         "text": "coachandhorsesharvington.co.uk",
         "url": "https://coachandhorsesharvington.co.uk/"
       },
-      "garden": true
+      "garden": true,
+      "image": {
+        "url": "/images/photos/harvington-coach-and-horses-harvington.webp",
+        "alt": "The Coach and Horses, a cream-painted pub on Station Road, Harvington"
+      }
     },
     {
       "id": "ellenden-farm-shop-cafe",

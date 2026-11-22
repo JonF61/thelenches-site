@@ -30,6 +30,7 @@
     <div class="ea-grid">
     {% for p in eat.places %}{% if p.area == a %}
       <div class="card"{% if p.id %} id="eat-{{ p.id }}" data-entry="e:{{ p.id }}" data-label="Where to eat: {{ p.name | escape }}"{% endif %}>
+        {% if p.image %}<img class="thumb" src="{{ p.image.url | url }}" alt="{{ p.image.alt | escape }}" loading="lazy">{% endif %}
         <h3>{{ p.name }}</h3>
         {% set n = recommends.eat[p.id] %}{% if n %}<p class="rec-count">&#9733; Recommended by {{ n }} {{ "person" if n == 1 else "people" }}</p>{% endif %}
         <p class="ea-where" data-field="type where">{{ p.type }} &middot; {{ p.where }}</p>

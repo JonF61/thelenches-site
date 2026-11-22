@@ -20,7 +20,9 @@
           "url": "https://reports.ofsted.gov.uk/provider/16/205490"
         }
       ],
-      "map": "Harvington Village Hall, Village Street, Harvington, WR11 8NQ"
+      "map": "Harvington Village Hall, Village Street, Harvington, WR11 8NQ",
+      "image": "/images/photos/harvington-harvington-village-hall-entrance-2.webp",
+      "alt": "The entrance to Harvington Village Hall, where Harvey Bears meets"
     },
     {
       "name": "Harvington CofE First School",
@@ -37,7 +39,9 @@
           "url": "https://reports.ofsted.gov.uk/provider/21/116819"
         }
       ],
-      "map": "Harvington CofE First School, Village Street, Harvington, WR11 8NQ"
+      "map": "Harvington CofE First School, Village Street, Harvington, WR11 8NQ",
+      "image": "/images/photos/harvington-harvington-cofe-first-school.webp",
+      "alt": "Harvington CofE First School, a Victorian red-brick building on Village Street"
     }
   ],
   "catchmentText": "Harvington, Norton and Lenchwick are in the county's Evesham area. Harvington First's linked middle school is St Egwin's, which in turn links to Prince Henry's High, but your catchment schools depend on your address.",
