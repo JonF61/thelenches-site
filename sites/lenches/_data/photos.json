@@ -67,7 +67,9 @@
     "credit": "",
     "village": "Church Lench",
     "subject": "All Saints",
-    "targets": [],
+    "targets": [
+      "churches"
+    ],
     "taken": "2026-11-21"
   },
   {
@@ -1556,7 +1558,9 @@
     "credit": "",
     "village": "Rous Lench",
     "subject": "",
-    "targets": [],
+    "targets": [
+      "churches"
+    ],
     "taken": "2026-11-21"
   },
   {
