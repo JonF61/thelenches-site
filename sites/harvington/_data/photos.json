@@ -1,0 +1,47 @@
+[
+  {
+    "slug": "harvington-harvington-church-and-churchyard-3",
+    "src": "/images/photos/harvington-harvington-church-and-churchyard-3.webp",
+    "jpg": "/images/photos/harvington-harvington-church-and-churchyard-3.jpg",
+    "width": 1400,
+    "height": 1054,
+    "alt": "Stone church in Harvington with spire and clock tower, seen across a churchyard with gravestones and trees",
+    "credit": "",
+    "village": "Harvington",
+    "subject": "",
+    "targets": [
+      "churches"
+    ],
+    "taken": ""
+  },
+  {
+    "slug": "harvington-screen-shot-2021-06-11-at-15-13-14",
+    "src": "/images/photos/harvington-screen-shot-2021-06-11-at-15-13-14.webp",
+    "jpg": "/images/photos/harvington-screen-shot-2021-06-11-at-15-13-14.jpg",
+    "width": 1052,
+    "height": 1400,
+    "alt": "Stone church with green spire and clock, pink rose bushes in foreground, Harvington",
+    "credit": "",
+    "village": "Harvington",
+    "subject": "",
+    "targets": [
+      "churches"
+    ],
+    "taken": ""
+  },
+  {
+    "slug": "norton-and-lenchwick-st-egwin-s-church-norton",
+    "src": "/images/photos/norton-and-lenchwick-st-egwin-s-church-norton.webp",
+    "jpg": "/images/photos/norton-and-lenchwick-st-egwin-s-church-norton.jpg",
+    "width": 1400,
+    "height": 1050,
+    "alt": "Stone parish church with gabled transept, arched window and crenellated tower, surrounded by trees and gravestones",
+    "credit": "",
+    "village": "Norton",
+    "subject": "",
+    "targets": [
+      "churches"
+    ],
+    "taken": "2026-11-21"
+  }
+]
