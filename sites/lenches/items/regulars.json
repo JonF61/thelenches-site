@@ -269,6 +269,78 @@
         "url": "https://evesham.u3asite.uk/groups/"
       },
       "added": "2026-11-18"
+    },
+    {
+      "day": "Monday",
+      "time": "5.30-6.30pm",
+      "what": "Rainbows",
+      "where": "Harvington Village Hall",
+      "frequency": "Term time",
+      "forWho": "Girls aged 4 to 7",
+      "about": "Volunteer-led Girlguiding fun, friendships and confidence-building activities.",
+      "runBy": "Harvington Guides (Girlguiding)",
+      "email": "hello@harvingtonguides.org.uk",
+      "website": {
+        "text": "Sign up with Girlguiding",
+        "url": "https://www.girlguiding.org.uk/"
+      },
+      "booking": "Sign up through the Girlguiding website, or email",
+      "checked": "2026-11",
+      "added": "2026-11-22"
+    },
+    {
+      "day": "Wednesday",
+      "time": "5.30-6.30pm",
+      "what": "Brownies",
+      "where": "Harvington Village Hall",
+      "frequency": "Term time",
+      "forWho": "Girls aged 7 to 10",
+      "about": "Volunteer-led Girlguiding activities, skills, trips and friendships.",
+      "runBy": "Harvington Guides (Girlguiding)",
+      "email": "hello@harvingtonguides.org.uk",
+      "website": {
+        "text": "Sign up with Girlguiding",
+        "url": "https://www.girlguiding.org.uk/"
+      },
+      "booking": "Sign up through the Girlguiding website, or email",
+      "checked": "2026-11",
+      "added": "2026-11-22"
+    },
+    {
+      "day": "Wednesday",
+      "time": "6.25-7.30pm",
+      "what": "Guides",
+      "where": "Harvington Village Hall",
+      "frequency": "Term time",
+      "forWho": "Girls aged 10 to 14",
+      "about": "Volunteer-led skills, camps, trips and adventures.",
+      "runBy": "Harvington Guides (Girlguiding)",
+      "email": "hello@harvingtonguides.org.uk",
+      "website": {
+        "text": "Harvington Guides",
+        "url": "http://harvingtonguides.org.uk/"
+      },
+      "booking": "Sign up through the Girlguiding website, or email",
+      "checked": "2026-11",
+      "added": "2026-11-22"
+    },
+    {
+      "day": "Wednesday",
+      "time": "7.30-9pm",
+      "what": "Rangers",
+      "where": "Harvington Village Hall",
+      "frequency": "Term time",
+      "forWho": "Young women aged 14 to 18",
+      "about": "Volunteer-led Girlguiding activities, trips and adventures.",
+      "runBy": "Harvington Guides (Girlguiding)",
+      "email": "hello@harvingtonguides.org.uk",
+      "website": {
+        "text": "Harvington Guides",
+        "url": "http://harvingtonguides.org.uk/"
+      },
+      "booking": "Sign up through the Girlguiding website, or email",
+      "checked": "2026-11",
+      "added": "2026-11-22"
     }
   ]
 }
