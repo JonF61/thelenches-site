@@ -1,62 +1,6 @@
 {
   "events": [
     {
-      "id": "1a203cbdb8e9daae-1",
-      "title": "Rainbows (girls 4–7) — Harvington Village Hall",
-      "body": "Harvington Rainbows meets every Monday in term time, 5.30pm to 6.30pm, at Harvington Village Hall, for girls aged 4 to 7. Volunteer-led Girlguiding fun, friendships and confidence-building activities. Sign up through the Girlguiding website, or email hello@harvingtonguides.org.uk.",
-      "date": "2026-11-23",
-      "village": "Harvington",
-      "expires": "2026-11-23",
-      "link": {
-        "text": "Sign up with Girlguiding",
-        "url": "http://www.girlguiding.org.uk/"
-      }
-    },
-    {
-      "id": "1a203cbdb8e9daae-2",
-      "title": "Brownies (girls 7–10) — Harvington Village Hall",
-      "body": "Harvington Brownies meets every Wednesday in term time, 5.30pm to 6.30pm, at Harvington Village Hall, for girls aged 7 to 10. Volunteer-led Girlguiding activities, skills, trips and friendships. Sign up through the Girlguiding website, or email hello@harvingtonguides.org.uk.",
-      "date": "2026-11-25",
-      "village": "Harvington",
-      "expires": "2026-11-25",
-      "link": {
-        "text": "Sign up with Girlguiding",
-        "url": "http://www.girlguiding.org.uk/"
-      }
-    },
-    {
-      "id": "1a203cbdb8e9daae-3",
-      "title": "Guides (girls 10–14) — Harvington Village Hall",
-      "body": "Harvington Guides meets every Wednesday in term time, 6.25pm to 7.30pm, at Harvington Village Hall, for girls aged 10 to 14. Volunteer-led skills, camps, trips and adventures. More on the group's website; sign up through Girlguiding, or email hello@harvingtonguides.org.uk.",
-      "date": "2026-11-25",
-      "village": "Harvington",
-      "expires": "2026-11-25",
-      "link": {
-        "text": "Harvington Guides",
-        "url": "http://harvingtonguides.org.uk/"
-      },
-      "link2": {
-        "text": "Sign up with Girlguiding",
-        "url": "http://www.girlguiding.org.uk/"
-      }
-    },
-    {
-      "id": "1a203cbdb8e9daae-4",
-      "title": "Rangers (ages 14–18) — Harvington Village Hall",
-      "body": "Harvington Rangers meets every Wednesday in term time, 7.30pm to 9pm, at Harvington Village Hall, for young women aged 14 to 18. Volunteer-led Girlguiding activities, trips and adventures. More on the group's website; sign up through Girlguiding, or email hello@harvingtonguides.org.uk.",
-      "date": "2026-11-25",
-      "village": "Harvington",
-      "expires": "2026-11-25",
-      "link": {
-        "text": "Harvington Guides",
-        "url": "http://harvingtonguides.org.uk/"
-      },
-      "link2": {
-        "text": "Sign up with Girlguiding",
-        "url": "http://www.girlguiding.org.uk/"
-      }
-    },
-    {
       "id": "1a17d10d5d56383f-1",
       "title": "Festive Paint and Pud — The Vale Golf & Country Club",
       "body": "An evening of painting and pudding at The Vale Golf and Country Club, Bishampton. Thursday 26 November, 6.30pm, £45 per person. Booking via the club's website.",
