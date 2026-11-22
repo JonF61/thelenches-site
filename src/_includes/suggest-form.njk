@@ -86,7 +86,7 @@
       ['name', 'trade', 'contact', 'area', 'why'].forEach(function (k) { form.elements[k].value = ''; });
       say(res.message);
     }).catch(function (err) {
-      say(err && err.message && !/fetch|network/i.test(err.message) ? err.message : 'Sorry, that couldn\'t be sent. Please check your connection and try again.', true);
+      say(err && err.message && !/fetch|network|load failed/i.test(err.message) ? err.message : 'Sorry, that couldn\'t be sent. Please check your connection and try again.', true);
     }).then(function () {
       button.disabled = false;
       token = '';

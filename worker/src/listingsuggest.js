@@ -14,7 +14,7 @@ import { siteWords, publicEnv } from './sites.js';
 import { getValues, appendValues, sheetGids, addTab, writeCells } from './admin/google.js';
 import { tableFrom } from './admin/sheet.js';
 import { dispatch, ACTIONS } from './core.js';
-import { londonStamp, verifyTurnstile, allowed, reply, plainPage, siteOrigin } from './feedback.js';
+import { londonStamp, verifyTurnstile, allowed, reply, plainPage, siteOrigin, formEnv } from './feedback.js';
 import { validateSignup } from './signup.js';
 import { emailKey } from './recommend.js';
 import { SUGGEST_TAB, SUGGEST_HEADERS, KINDS, LIMITS } from './admin/suggestions.mjs';
@@ -97,6 +97,7 @@ export async function saveSuggestion(env, value, ms = Date.now()) {
 }
 
 export async function handleSuggest(request, env, { fetchImpl = fetch, now = Date.now } = {}) {
+  env = formEnv(env, request);
   const origin = siteOrigin(env);
   if (request.method === 'OPTIONS') {
     return new Response(null, {

@@ -194,3 +194,19 @@ test('signed links carry their site: Harvington wording, page and run', async ()
   res = await worker.fetch(new Request(`https://w.example/s?t=${old}`), env());
   assert.match(await res.text(), /Join The Lenches Newsletter\?/, 'a Lenches link (no s) is unchanged');
 });
+
+test('a form posted from a site\'s www address works (Safari showed "Load failed", 22 Nov)', async () => {
+  const req = (h) => new Request('https://w.example/s', { method: 'POST', headers: h });
+  assert.equal(siteFromRequest(req({ origin: 'https://www.harvingtonvillage.org.uk' })), 'harvington');
+  const calls = fakeWorld();
+  for (const [origin, sheet] of [['https://www.harvingtonvillage.org.uk', harvington.sheetId], ['https://www.thelenches.org.uk', 'lenches-sheet']]) {
+    const pre = await worker.fetch(new Request('https://w.example/s', { method: 'OPTIONS', headers: { origin } }), env());
+    assert.equal(pre.headers.get('access-control-allow-origin'), origin);
+    const res = await worker.fetch(post('/s', { email: `www${calls.appends.length}@example.org` }, origin), env());
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get('access-control-allow-origin'), origin);
+    assert.equal(calls.appends.at(-1).sheet, sheet);
+  }
+  const res = await worker.fetch(post('/s', { email: 'x@example.org' }, 'https://www.evil.example'), env());
+  assert.equal(res.status, 403);
+});
