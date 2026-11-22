@@ -83,7 +83,7 @@
       form.reset();
       say(res.message || 'Thank you, we\'ve got your message.');
     }).catch(function (err) {
-      say(err && err.message && !/fetch|network/i.test(err.message) ? err.message : 'Sorry, your message couldn\'t be sent. Please check your connection and try again.', true);
+      say(err && err.message && !/fetch|network|load failed/i.test(err.message) ? err.message : 'Sorry, your message couldn\'t be sent. Please check your connection and try again.', true);
     }).then(function () {
       button.disabled = false;
       token = '';

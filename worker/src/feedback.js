@@ -43,7 +43,22 @@ const multiLine = (v) => String(v ?? '').replace(/\r\n?/g, '\n').replace(/[\u000
   .replace(/\n{3,}/g, '\n\n').trim();
 
 export function siteOrigin(env) {
+  if (env.FORM_ORIGIN) return env.FORM_ORIGIN;
   try { return new URL(String(env.SITE_URL || '')).origin; } catch { return ''; }
+}
+
+// A form posted from the site's own www address (e.g. https://www.harvingtonvillage.org.uk)
+// is the same site (22 Nov 2026: a Harvington sign-up failed with Safari's "Load failed"
+// because the reply allowed only the address without www). The env then answers that
+// origin for CORS and the origin check; anything else is unchanged.
+export function formEnv(env, request) {
+  const site = siteOrigin(env);
+  const sent = request && request.headers.get('origin');
+  if (!site || !sent || sent === site) return env;
+  const u = new URL(site);
+  if (u.hostname.startsWith('www.')) return env;
+  u.hostname = `www.${u.hostname}`;
+  return sent === u.origin ? Object.assign(Object.create(env), { FORM_ORIGIN: sent }) : env;
 }
 
 export function londonStamp(ms) {
@@ -199,6 +214,7 @@ export function reply(env, js, { ok, status = 200, title, message, back }) {
 }
 
 export async function handleFeedback(request, env, { fetchImpl = fetch, now = Date.now } = {}) {
+  env = formEnv(env, request);
   const origin = siteOrigin(env);
   if (request.method === 'OPTIONS') {
     return new Response(null, {

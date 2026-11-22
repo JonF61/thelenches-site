@@ -15,7 +15,7 @@
 import { getValues, appendValues, sheetGids, addTab, writeCells } from './admin/google.js';
 import { tableFrom } from './admin/sheet.js';
 import { dispatch } from './core.js';
-import { londonStamp, verifyTurnstile, allowed, reply, plainPage, siteOrigin } from './feedback.js';
+import { londonStamp, verifyTurnstile, allowed, reply, plainPage, siteOrigin, formEnv } from './feedback.js';
 import { validateSignup } from './signup.js';
 import { listingData } from './listings.js';
 import { siteWords } from './sites.js';
@@ -102,6 +102,7 @@ export async function saveRecommendation(env, { kind, entry, email }, ms = Date.
 }
 
 export async function handleRecommend(request, env, { fetchImpl = fetch, now = Date.now } = {}) {
+  env = formEnv(env, request);
   const origin = siteOrigin(env);
   if (request.method === 'OPTIONS') {
     return new Response(null, {

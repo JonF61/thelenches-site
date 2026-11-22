@@ -15,7 +15,7 @@ import { getValues, appendValues, sheetGids, addTab, writeCells } from './admin/
 import { tableFrom } from './admin/sheet.js';
 import { dispatch } from './core.js';
 import {
-  EMAIL_RE, siteOrigin, londonStamp, verifyTurnstile, allowed, plainPage, reply,
+  EMAIL_RE, siteOrigin, formEnv, londonStamp, verifyTurnstile, allowed, plainPage, reply,
 } from './feedback.js';
 
 export const SIGNUP_TAB = 'Sign-ups';
@@ -88,6 +88,7 @@ export async function saveSignup(env, email, ms = Date.now()) {
 }
 
 export async function handleSignup(request, env, { fetchImpl = fetch, now = Date.now } = {}) {
+  env = formEnv(env, request);
   const origin = siteOrigin(env);
   if (request.method === 'OPTIONS') {
     return new Response(null, {

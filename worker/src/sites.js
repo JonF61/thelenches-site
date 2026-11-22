@@ -48,7 +48,8 @@ export function siteEnv(env, s) {
 // Harvington stage 7, 16 Nov): the site a form was posted from is the one whose address
 // matches the request's Origin (or, failing that, its Referer). Anything else is the default
 // site, whose own origin check then refuses a stranger as before.
-const originOf = (u) => { try { return new URL(String(u || '')).origin; } catch { return ''; } };
+// A site's www address counts as the site (22 Nov 2026).
+const originOf = (u) => { try { const x = new URL(String(u || '')); x.hostname = x.hostname.replace(/^www\./, ''); return x.origin; } catch { return ''; } };
 export function siteFromRequest(request) {
   const from = originOf(request.headers.get('origin')) || originOf(request.headers.get('referer'));
   if (!from) return DEFAULT_SITE;
