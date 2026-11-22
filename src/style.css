@@ -184,7 +184,9 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 .feature-img{width:100%;aspect-ratio:16/9;height:auto;max-height:360px;object-fit:cover;border-radius:var(--radius);margin:1.2rem 0}
 .gallery{display:grid;gap:.8rem;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));margin:1rem 0}
 .gallery img{width:100%;aspect-ratio:3/2;height:auto;object-fit:cover;border-radius:8px}
-.gallery-one{grid-template-columns:1fr;max-width:520px}.gallery-one figure{margin:0}
+.gallery figure{margin:0}
+.gallery-one{grid-template-columns:1fr;max-width:520px}
+@media(min-width:700px){.gallery-strip{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}}
 .card .thumb{width:100%;aspect-ratio:3/2;height:auto;object-fit:cover;border-radius:8px;margin-bottom:.8rem}
 
 /* Footer */
