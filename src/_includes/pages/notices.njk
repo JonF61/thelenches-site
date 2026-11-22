@@ -41,6 +41,8 @@
   {% set officials = notices | selectattr("official") %}
   {#- "Worth knowing" (Evesham Journal signposts, "source" set) folded into Around the villages 30 Oct: same cards, labelled with the source. -#}
   {% set around = notices | rejectattr("official") %}
+  {#- newFirst (a site's wording block): this week's new notices go to the top of Around the villages. -#}
+  {% if newFirst %}{% set around = around | newFirst %}{% endif %}
 
   {% if officials.length %}
   <section class="np-section">

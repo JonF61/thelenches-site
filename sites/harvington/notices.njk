@@ -7,6 +7,8 @@ seoTitle: "News and notices from Harvington, near Evesham"
 {#- Harvington's wording (approved by Jon 16 Nov 2026) for the shared News page, src/_includes/pages/notices.njk. -#}
 {#- Only Harvington's own places get a label on a card (Jon, 17 Nov 2026): lib/placelabel.js. -#}
 {%- set localPlaces = ["Harvington", "Norton", "Lenchwick"] -%}
+{#- New notices first in Around the villages (Jon, 22 Nov 2026). -#}
+{%- set newFirst = true -%}
 {%- set aroundHeading -%}Around the villages{%- endset -%}
 {%- set emptyNote -%}No news just now.{%- endset -%}
 {%- set roadsNote -%}Closures and roadworks have their own page: <a href="{{ '/living-here/roads/' | url }}">Roads</a>.{%- endset -%}
