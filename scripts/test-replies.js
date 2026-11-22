@@ -157,6 +157,7 @@ async function testClassify() {
     'Sam Smith <sam@example.com>': 'Sam', '"SMITH, ANNE" <a@example.com>': 'Anne', 'jo <jo@example.com>': '',
     'Church Lench Parish Council <clerk@example.com>': '', 'Mrs Jones <j@example.com>': '', 'info <info@example.com>': '',
     'sam@example.com': '', 'Friends of the Hall <f@example.com>': '', 'mary-jane <mj@example.com>': '', 'Lee <lee@example.com>': 'Lee', 'Mary-Jane Hill <mj@example.com>': 'Mary-Jane',
+    'Harvington Guides <hello@example.org>': '', 'Norton Players <np@example.org>': '', 'Evesham Rainbows <r@example.org>': '', 'Harvey Smith <h@example.com>': 'Harvey',
   };
   for (const [from, want] of Object.entries(names)) ok(replies.firstName(from) === want, `firstName(${from}) = "${want}"`);
 
