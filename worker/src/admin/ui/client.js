@@ -141,6 +141,7 @@ export const CLIENT_JS = String.raw`
       ['Publishes itself / Hold', 'the item is in its veto window (see Autonomy): it publishes at the time shown unless you tap Hold, Edit, Reject or Done already. Approve publishes it now. Held items wait for you as usual.'],
       ['Already listed', 'the site has this already; Add details puts any new facts into the existing entry.'],
       ['Replace with the organiser\'s version', 'for an Already listed item sent by the organiser, when the listed entry came from elsewhere (a feed, Facebook, typed in by hand, someone else): this item is published and the listed entry is taken off, keeping its picture if this one has none. Not offered for official entries.'],
+      ['Regular activity', 'a class, club or group that meets on a repeating pattern: it belongs on the Regular activities page, not Events. There is no Approve button: ask Kryten to add it, then tap Done already. "Publish as a one-off event…" asks first.'],
       ['Different sender', 'an Already listed update not from whoever sent the entry in (hand-written entries always show it): check it is genuine before adding details.'],
       ['Possible repeat', 'it may be something already sent in: check before approving.'],
       ['Official, own words', 'from a council or other official body: only typos may be corrected.'],
@@ -817,6 +818,7 @@ export const CLIENT_JS = String.raw`
     else if (/^held/.test(str(r.auto_at))) b.push(h('span', { class: 'badge' }, 'Held'));
     else if (/^publishing/.test(str(r.auto_at))) b.push(h('span', { class: 'badge info' }, 'Publishing itself…'));
     if (listedOf(r)) b.push(h('span', { class: 'badge warn' }, 'Already listed'));
+    if (regularOf(r)) b.push(h('span', { class: 'badge warn' }, 'Regular activity'));
     if (listedOf(r) && listedOf(r).same_sender === false) b.push(h('span', { class: 'badge bad' }, 'Different sender'));
     else if (truthy(r.possible_repeat)) b.push(h('span', { class: 'badge warn' }, 'Possible repeat'));
     if (str(r.missing)) b.push(h('span', { class: 'badge warn' }, 'Missing: ' + str(r.missing).replace(/,/g, ', ')));
@@ -1069,6 +1071,11 @@ export const CLIENT_JS = String.raw`
       h('div', { class: 'actions' }, h('button', { class: 'btn danger', type: 'submit' }, 'Reject')));
   }
 
+  // Regular activity (extract.js holdRegular, 8 Nov): Holly held it because the pipeline has no
+  // regulars category. 22 Nov (Jon, after the Harvington Guides groups were approved as
+  // one-off events): no Approve button; Kryten adds it to Regular activities, then Done already.
+  function regularOf(r) { return /Regular activity: add it to the Regular activities page/.test(str(r.notes)); }
+
   function itemActions(r, inDetail) {
     var blocked = needsTick(r);
     var why = blocked ? 'Tick "People OK" first' : null;
@@ -1091,18 +1098,20 @@ export const CLIENT_JS = String.raw`
         } }, "Replace with the organiser's version"));
       }
     }
+    var regular = !listed && regularOf(r);
     // Already listed (4 Nov, Jon): no Approve button; publishing as new is a small link below.
-    if (!listed) {
+    // Regular activity (22 Nov, Jon): the same, with Done already once Kryten has added it.
+    if (!listed && !regular) {
       if (r._offers) { a.push(approve('approve_own', 'Approve their wording', true)); a.push(approve('approve_rewrite', 'Approve rewrite', false)); }
       else a.push(approve('approve', 'Approve', true));
     }
     if (!inDetail) a.push(h('button', { class: 'btn', onclick: function () { overlay('Edit item', itemForm(r)); } }, 'Edit'));
     a.push(h('button', { class: 'btn danger', onclick: function () { overlay('Reject item', itemRejectForm(r)); } }, 'Reject'));
     // Done already (1 Nov): dealt with another way; nothing publishes, no sorry note.
-    a.push(h('button', { class: 'btn', title: 'Already on the site or dealt with another way: nothing is published and no note is sent', onclick: function () {
+    a.push(h('button', { class: 'btn' + (regular ? ' primary' : ''), title: 'Already on the site or dealt with another way: nothing is published and no note is sent', onclick: function () {
       if (window.confirm('Mark "' + str(r.title) + '" as done already?\n\nNothing is published and no note goes to the sender. Their Contributions list shows it as done.')) act('pending', r.id, 'done', null, 'Done already');
     } }, 'Done already'));
-    if (r._trust && !listed) {
+    if (r._trust && !listed && !regular) {
       a.push(h('button', { class: 'btn', disabled: blocked, title: why, onclick: function () {
         if (window.confirm('Trust ' + r._trust + ' and approve this item?\n\nFuture items from it publish without asking, except anything with people in images, political or commercial content, official notices, anonymous or out-of-scope mail, classified ads or low confidence. Its other waiting items are not approved. To undo, delete its row in the Trusted tab.')) {
           act('pending', r.id, 'trust', null, 'Trusted');
@@ -1111,6 +1120,13 @@ export const CLIENT_JS = String.raw`
     }
     if (str(r.gmail_link)) a.push(h('a', { class: 'btn link', href: str(r.gmail_link), target: '_blank', rel: 'noopener' }, itemOrigin(r) === 'feed' ? 'Open source page' : 'Open in Gmail'));
     a.push(sheetLink('Pending', r._row));
+    if (regular) {
+      var oneOff = h('p', { class: 'anyway' }, 'A regular activity: ask Kryten to add it to the Regular activities page, then tap Done already. Really a one-off? ',
+        h('button', { class: 'btn link', type: 'button', disabled: blocked, title: why, onclick: function () {
+          if (window.confirm('Holly thinks "' + str(r.title) + '" is a regular activity, which belongs on the Regular activities page.\n\nPublish it as a one-off event anyway?')) act('pending', r.id, r._offers ? 'approve_own' : 'approve', null, 'Approved');
+        } }, 'Publish as a one-off event…'));
+      return h('div', null, h('div', { class: 'actions' }, a), oneOff);
+    }
     if (!listed) return h('div', { class: 'actions' }, a);
     var action = r._offers ? 'approve_own' : 'approve';
     var anyway = h('p', { class: 'anyway' }, 'Not the same thing? ',

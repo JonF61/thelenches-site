@@ -337,7 +337,10 @@ function fillSite(key, vars = {}) {
 const NOT_A_NAME = new Set(['info', 'admin', 'office', 'hello', 'contact', 'enquiries', 'enquiry', 'team', 'the',
   'secretary', 'clerk', 'chair', 'chairman', 'treasurer', 'bookings', 'booking', 'events', 'news', 'mr', 'mrs', 'ms',
   'miss', 'dr', 'rev', 'revd', 'sir', 'lady', 'lord', 'no', 'noreply', 'website', 'mail', 'support', 'sales']);
-const ORG_WORDS = /\b(council|club|society|association|church|school|hall|group|team|village|parish|office|ltd|limited|plc|trust|committee|newsletter|news|services?|ministry|benefice|surgery|practice|wi|pta|friends of|network|uk|co)\b/i;
+const ORG_WORDS = /\b(council|club|society|association|church|school|hall|group|team|village|parish|office|ltd|limited|plc|trust|committee|newsletter|news|services?|ministry|benefice|surgery|practice|wi|pta|friends of|network|uk|co|guides|girlguiding|guiding|scouts|scouting|brownies|rainbows|cubs|beavers|rangers|explorers|choir|singers|players|u3a|centre|center|project|nursery|pre-?school|academy|charity|youth|fc|band)\b/i;
+// A display name that starts with a place ("Harvington Guides", "Norton Players") is a group,
+// not a person (22 Nov 2026: Holly wrote "Hi Harvington,").
+const { placeName } = require('../../lib/places');
 
 function firstName(fromHeader) {
   const raw = String(fromHeader || '');
@@ -347,6 +350,7 @@ function firstName(fromHeader) {
   if (!display || display.includes('@') || ORG_WORDS.test(display)) return '';
   const parts = display.includes(',') ? display.split(',').map((x) => x.trim()).reverse().join(' ').split(' ') : display.split(' ');
   const word = parts[0];
+  if (parts.length > 1 && placeName(word)) return '';
   if (!/^[A-Za-z][A-Za-z'’-]{1,19}$/.test(word) || NOT_A_NAME.has(word.toLowerCase())) return '';
   if (parts.length === 1 && word === word.toLowerCase()) return ''; // e.g. "jo" taken from the address
   return word.charAt(0).toUpperCase() + (word === word.toUpperCase() || word === word.toLowerCase() ? word.slice(1).toLowerCase() : word.slice(1));
