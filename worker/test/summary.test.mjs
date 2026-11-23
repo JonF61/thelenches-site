@@ -5,7 +5,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  issueDateFor, lastSentDate, nextIssue, failingRuns, subscriberChanges, comingWeek, ukInstant, minuteKey, devTasks, claudeSpend,
+  issueDateFor, lastSentDate, nextIssue, failingRuns, subscriberChanges, subscriberCount, comingWeek, ukInstant, minuteKey, devTasks, claudeSpend,
 } from '../src/admin/summary.js';
 
 test('issueDateFor: this Thursday, or next week once it has gone out', () => {
@@ -108,4 +108,13 @@ test('claudeSpend: this month by job, last month, cache share', () => {
   assert.equal(s.cacheShare, 40); // 800 of 2000 tokens read
   assert.equal(s.since, '2026-10-31');
   assert.equal(claudeSpend([], '2026-01-10').lastMonth, '2025-12');
+});
+
+test('subscriberCount: unique active addresses not on Do Not Send', () => {
+  const subs = [
+    { email: 'a@x.org', status: 'active' }, { email: 'A@x.org ', status: '' }, { email: 'b@x.org', status: 'unsubscribed' },
+    { email: 'c@x.org', status: 'active' }, { email: '', status: 'active' }, { email: 'd@x.org' },
+  ];
+  assert.equal(subscriberCount(subs, [{ email: 'C@x.org' }]), 2);
+  assert.equal(subscriberCount([], []), 0);
 });

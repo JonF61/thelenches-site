@@ -141,6 +141,18 @@ export function subscriberChanges(subs, dns, since) {
   return { since, joined, left, total };
 }
 
+// The top bar's Subscribers count (23 Nov, Jon): unique active addresses not on Do Not Send,
+// i.e. who a send now would reach. Counts only; never an address.
+export function subscriberCount(subs, dns) {
+  const blocked = new Set((dns || []).map((r) => low(r.email)).filter(Boolean));
+  const on = new Set();
+  for (const r of subs || []) {
+    const e = low(r.email);
+    if (e && (!str(r.status) || low(r.status) === 'active') && !blocked.has(e)) on.add(e);
+  }
+  return on.size;
+}
+
 // Events and road works on any of the 7 days from today.
 export function comingWeek(coming, today) {
   if (!coming || coming.error) return coming || { error: 'no list' };

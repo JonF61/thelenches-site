@@ -101,6 +101,7 @@ export const CLIENT_JS = String.raw`
   var HELP = {
     summary: [
       'Each box is one screen in short. Tap its heading to open that screen.',
+      ['Subscribers (top bar)', 'how many people this website\'s newsletter would go to if it were sent now: active subscribers, each address once, leaving out anyone on Do Not Send. Updates each time the panel loads or you tap Reload.'],
       ['Website buttons (top bar)', 'which website the panel is showing: its name and colour. Everything you see and every tap is for that website alone (its own Sheet, submissions, replies and contacts); Holly lessons are shared. The panel remembers your choice; each browser tab keeps the website it opened with.'],
       ['No action needed on…', 'the screens with nothing waiting for you.'],
       ['Red numbers and badges', 'something needs you, e.g. a failed job or an urgent item.'],
@@ -534,6 +535,8 @@ export const CLIENT_JS = String.raw`
       h('div', { class: 'strip' },
         h('div', { class: 'chip' }, h('b', null, 'Holiday mode'), holSwitch, hol.error ? 'not readable' : (hol.on ? 'ON' : 'off')),
         nlChip,
+        h('div', { class: 'chip', title: 'Active subscribers not on Do Not Send: who a newsletter sent now would reach' }, h('b', null, 'Subscribers'),
+          d.subscribers && !d.subscribers.error ? Number(d.subscribers.count).toLocaleString('en-GB') : 'not readable'),
         h('div', { class: 'chip' }, h('span', { class: 'dot ' + (hs === 'OK' || hs === 'CLEARED' ? 'ok' : hs === 'FIXED' ? 'warn' : 'bad') }),
           h('button', { class: 'btn link chip-link', title: 'Open the Health page', onclick: go('health') }, h('b', null, 'Diagnostic')), hl ? hs + ' · ' + when(hl.date) : 'no runs',
           hl && hs !== 'OK' && hs !== 'CLEARED' ? h('button', { class: 'btn link', title: 'Mark this run\'s problems as dealt with', onclick: clearDiagnostic }, 'Clear') : null),
