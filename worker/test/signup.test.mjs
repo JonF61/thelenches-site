@@ -12,6 +12,7 @@ import { createHmac } from 'node:crypto';
 
 import { handleSignup, validateSignup, SIGNUP_HEADERS, SIGNUP_THANKS } from '../src/signup.js';
 import { resetMemoryLimit } from '../src/feedback.js';
+import { FAIL_TAB, FAIL_HEADERS, browserOf } from '../src/formfail.js';
 import { resetTokenCache } from '../src/admin/google.js';
 import worker from '../src/index.js';
 
@@ -158,7 +159,7 @@ test('a failed dispatch marks the row failed, and a retry the same day is allowe
   assert.equal(calls.dispatches.length, 1);
 });
 
-test('honeypot, bad Turnstile, other origin and rate limit write nothing', async () => {
+test('honeypot, bad Turnstile, other origin and rate limit write no sign-up (failures are recorded)', async () => {
   const tabs = {};
   const calls = fakeWorld(tabs);
   const hp = await handleSignup(post(good({ website: 'spam' })), env());
@@ -169,7 +170,9 @@ test('honeypot, bad Turnstile, other origin and rate limit write nothing', async
   assert.equal(other.status, 403);
   const noJs = await handleSignup(post(good({ js: '', 'cf-turnstile-response': '' })), env());
   assert.match(await noJs.text(), /JavaScript/);
-  assert.equal(calls.appends.length, 0);
+  assert.equal(calls.appends.filter((a) => a.tab !== FAIL_TAB).length, 0);
+  assert.deepEqual(tabs[FAIL_TAB].slice(1).map((r) => r[4]), ['robot', 'origin', 'nojs']);
+  assert.ok(!JSON.stringify(tabs[FAIL_TAB]).includes('@'), 'no address recorded');
   assert.equal(calls.dispatches.length, 0);
   resetMemoryLimit();
   for (let n = 0; n < 5; n += 1) await handleSignup(post(good({ email: `p${n}@example.org` }), { ip: '192.0.2.7' }), env());
@@ -224,4 +227,54 @@ test('/a refuses a sign-up token', async () => {
 test('GET /s without a token is a plain page', async () => {
   const res = await worker.fetch(new Request('https://w.example/s'), env());
   assert.equal(res.status, 405);
+});
+
+const FB_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [FBAN/FBIOS;FBAV/500.0]';
+
+test('browserOf names the browser family only', () => {
+  assert.equal(browserOf(FB_UA), 'Facebook app (iPhone)');
+  assert.equal(browserOf('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15'), 'Safari (Mac)');
+  assert.equal(browserOf('Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36'), 'Chrome (Android)');
+  assert.equal(browserOf(''), 'other');
+});
+
+test('a robot-check failure is recorded with site, stage, reason and browser, never the address', async () => {
+  const tabs = {};
+  fakeWorld(tabs);
+  const req = post(good({ 'cf-turnstile-response': 'bad' }));
+  req.headers.set('user-agent', FB_UA);
+  const res = await handleSignup(req, env({ SITE: 'harvington' }));
+  assert.equal(res.status, 403);
+  assert.deepEqual(tabs[FAIL_TAB][0], FAIL_HEADERS);
+  const [at, site, form, stage, reason, browser] = tabs[FAIL_TAB][1];
+  assert.match(at, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
+  assert.deepEqual([site, form, stage, reason, browser], ['harvington', 'signup', 'server', 'robot', 'Facebook app (iPhone)']);
+  assert.ok(!JSON.stringify(tabs).includes('reader@'), 'no address anywhere');
+});
+
+test('a page report (fail=1) adds one row, sends nothing and never uses up real tries', async () => {
+  const tabs = {};
+  const calls = fakeWorld(tabs);
+  const limiter = { n: 0, limit: async () => { limiter.n += 1; return { success: true }; } };
+  const res = await handleSignup(post({ fail: '1', stage: 'page', reason: 'widget-600010', email: 'x@example.org' }), env({ SIGNUP_LIMITER: limiter }));
+  assert.equal(res.status, 200);
+  assert.equal(limiter.n, 0, 'the sign-up limiter is not touched');
+  assert.equal(calls.dispatches.length, 0);
+  assert.equal(tabs['Sign-ups'], undefined);
+  assert.deepEqual(tabs[FAIL_TAB][1].slice(1, 5), ['lenches', 'signup', 'page', 'widget-600010']);
+  const odd = await handleSignup(post({ fail: '1', stage: 'page', reason: '<b>a@b.c</b>' }), env());
+  assert.equal(odd.status, 200);
+  assert.equal(tabs[FAIL_TAB][2][4], 'babcb', 'reason cut to safe characters');
+  for (let n = 0; n < 10; n += 1) await handleSignup(post({ fail: '1', reason: 'flood' }, { ip: '192.0.2.50' }), env());
+  assert.ok(tabs[FAIL_TAB].length < 13, 'reports from one address are limited');
+});
+
+test('a Sheet error while recording never changes the reader\'s answer', async () => {
+  fakeWorld({});
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => (String(input).includes(encodeURIComponent(FAIL_TAB)) || String(input).includes(FAIL_TAB) ? new Response('boom', { status: 500 }) : realFetch(input, init));
+  const res = await handleSignup(post(good({ 'cf-turnstile-response': 'bad' })), env());
+  assert.equal(res.status, 403);
+  assert.match((await res.json()).message, /robot/);
+  globalThis.fetch = realFetch;
 });
