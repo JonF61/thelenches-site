@@ -4,7 +4,10 @@
     has signup.yml email a confirmation link (double opt-in). Turnstile loads only when
     someone clicks into the form; without JavaScript the Worker answers with a page
     offering the email address instead. Shown only when site.json has signupUrl and
-    turnstileSiteKey (the callers fall back to "Email to join"). -#}
+    turnstileSiteKey (the callers fall back to "Email to join"). A failure that never reaches
+    the Worker (robot check not loading or not answering, network error) is reported with a
+    small POST carrying fail=1, a stage and a reason code only (never the address); the Worker
+    adds it to the Form failures tab (worker/src/formfail.js; 23 Nov). -#}
 <form class="su-form" method="post" action="{{ site.signupUrl }}" data-sitekey="{{ site.turnstileSiteKey }}">
   <label class="sr-only" for="su-email">Your email address</label>
   <div class="su-row">
@@ -22,7 +25,15 @@
   var form = document.querySelector('.su-form');
   if (!form || !window.fetch || !window.FormData) return;
   var status = form.querySelector('.su-status'), box = form.querySelector('.su-ts'), button = form.querySelector('.su-join');
-  var widget = null, token = '', waiting = [];
+  var widget = null, token = '', waiting = [], widgetError = '';
+  function report(stage, reason) {
+    try {
+      var d = new FormData();
+      d.set('fail', '1'); d.set('stage', stage); d.set('reason', String(reason || '').slice(0, 40));
+      if (navigator.sendBeacon) navigator.sendBeacon(form.action, d);
+      else fetch(form.action, { method: 'POST', body: d, mode: 'no-cors', keepalive: true });
+    } catch (e) {}
+  }
   form.elements.js.value = '1';
   function say(text, bad) { status.textContent = text; status.className = 'su-status' + (bad ? ' bad' : text ? ' ok' : ''); }
   function got(t) { token = t || ''; var w = waiting; waiting = []; w.forEach(function (f) { f(token); }); }
@@ -31,12 +42,12 @@
     widget = window.turnstile.render(box, {
       sitekey: form.getAttribute('data-sitekey'), appearance: 'interaction-only', theme: 'light',
       callback: got, 'expired-callback': function () { token = ''; },
-      'error-callback': function () { got(''); }
+      'error-callback': function (code) { widgetError = 'widget-' + (code || 'error'); got(''); }
     });
   }
   // Turnstile loads only when someone starts using the form.
   form.addEventListener('focusin', function () {
-    window.lenchesTurnstile(render, function () { say('The robot check could not load. Please email {{ site.email }} and ask to be added.', true); });
+    window.lenchesTurnstile(render, function () { report('page', 'script-load'); say('The robot check could not load. Please email {{ site.email }} and ask to be added.', true); });
   });
   function tokenSoon() {
     if (token) return Promise.resolve(token);
@@ -52,12 +63,15 @@
     say('Sending…');
     window.lenchesTurnstile(render);
     tokenSoon().then(function (t) {
-      if (!t) throw new Error('We couldn\'t confirm you\'re not a robot. Please try again in a moment.');
+      if (!t) {
+        report('page', widgetError || (window.turnstile ? 'no-token' : 'no-script'));
+        throw new Error('We couldn\'t confirm you\'re not a robot. Please try again in a moment.');
+      }
       var data = new FormData(form);
       data.set('cf-turnstile-response', t);
       return fetch(form.action, { method: 'POST', body: data }).then(function (r) {
-        return r.json().catch(function () { return { ok: false, message: 'Sorry, something went wrong. Please try again later.' }; });
-      });
+        return r.json().catch(function () { report('page', 'bad-reply-' + r.status); return { ok: false, message: 'Sorry, something went wrong. Please try again later.' }; });
+      }, function (err) { report('page', 'network'); throw err; });
     }).then(function (res) {
       if (!res.ok) throw new Error(res.message || 'Sorry, something went wrong. Please try again later.');
       form.reset();

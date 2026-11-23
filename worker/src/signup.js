@@ -14,6 +14,7 @@ import { siteWords, ownDomains } from './sites.js';
 import { getValues, appendValues, sheetGids, addTab, writeCells } from './admin/google.js';
 import { tableFrom } from './admin/sheet.js';
 import { dispatch } from './core.js';
+import { recordFailure, code } from './formfail.js';
 import {
   EMAIL_RE, siteOrigin, formEnv, londonStamp, verifyTurnstile, allowed, plainPage, reply,
 } from './feedback.js';
@@ -105,7 +106,12 @@ export async function handleSignup(request, env, { fetchImpl = fetch, now = Date
 
   const back = String(env.SITE_URL || '');
   const sentOrigin = request.headers.get('origin');
-  if (sentOrigin && sentOrigin !== origin) return reply(env, false, { ok: false, status: 403, message: `This form only works on ${siteWords(env).website}.`, back });
+  const ua = request.headers.get('user-agent') || '';
+  const record = (reason) => recordFailure(env, { stage: 'server', reason, ua, ms: now() });
+  if (sentOrigin && sentOrigin !== origin) {
+    await record('origin');
+    return reply(env, false, { ok: false, status: 403, message: `This form only works on ${siteWords(env).website}.`, back });
+  }
   if (Number(request.headers.get('content-length') || 0) > MAX_POST) {
     return reply(env, false, { ok: false, status: 413, message: 'That was too long to send.', back });
   }
@@ -114,40 +120,52 @@ export async function handleSignup(request, env, { fetchImpl = fetch, now = Date
   try {
     const form = await request.formData();
     fields = {};
-    for (const k of ['email', 'website', 'js', 'cf-turnstile-response']) {
+    for (const k of ['email', 'website', 'js', 'cf-turnstile-response', 'fail', 'stage', 'reason']) {
       const v = form.get(k);
       fields[k] = typeof v === 'string' ? v : '';
     }
   } catch {
+    await record('empty');
     return reply(env, false, { ok: false, status: 400, message: 'Nothing was received. Please try again.', back });
+  }
+  const ip = request.headers.get('cf-connecting-ip') || '';
+  // The page reporting a failure that never reached us (fail=1, stage, reason; no address).
+  // Its own memory-only limit, so a report never uses up the reader's real tries.
+  if (fields.fail === '1') {
+    if (await allowed(env, `fail|${ip}`, now(), 'FORMFAIL_LIMITER')) {
+      await recordFailure(env, { stage: code(fields.stage) || 'page', reason: fields.reason, ua, ms: now() });
+    }
+    return reply(env, true, { ok: true, status: 200, message: '' });
   }
   const js = fields.js === '1';
   const done = () => reply(env, js, { ok: true, title: 'Check your inbox', message: SIGNUP_THANKS, back });
-  const fail = (status, message) => reply(env, js, { ok: false, status, title: 'Not sent', message, back });
+  const fail = async (status, message, reason) => {
+    await record(reason);
+    return reply(env, js, { ok: false, status, title: 'Not sent', message, back });
+  };
 
-  const ip = request.headers.get('cf-connecting-ip') || '';
-  if (!(await allowed(env, ip, now(), 'SIGNUP_LIMITER'))) return fail(429, 'You\'ve tried several times in a short time. Please wait ten minutes and try again.');
+  if (!(await allowed(env, ip, now(), 'SIGNUP_LIMITER'))) return fail(429, 'You\'ve tried several times in a short time. Please wait ten minutes and try again.', 'rate');
 
   // Honeypot: people never see this field; a bot that fills it is told it worked.
   if (fields.website.trim()) return done();
 
   const v = validateSignup(fields);
-  if (!v.ok) return fail(400, v.error);
+  if (!v.ok) return fail(400, v.error, 'invalid');
 
   if (!(await verifyTurnstile(env, fields['cf-turnstile-response'], ip, fetchImpl))) {
     return fail(403, js
       ? `We couldn't confirm you're not a robot. Please try again, or email ${siteWords(env).email} and ask to be added.`
-      : `This form needs JavaScript turned on to check you're not a robot. Please email ${siteWords(env).email} and ask to be added instead.`);
+      : `This form needs JavaScript turned on to check you're not a robot. Please email ${siteWords(env).email} and ask to be added instead.`, js ? 'robot' : 'nojs');
   }
 
   try {
     const saved = await saveSignup(env, v.email, now());
-    if (saved.full) return fail(503, `We're receiving a lot of sign-ups today. Please try again tomorrow, or email ${siteWords(env).email}.`);
-    if (saved.failed) return fail(502, `Sorry, something went wrong. Please try again in a few minutes, or email ${siteWords(env).email}.`);
+    if (saved.full) return fail(503, `We're receiving a lot of sign-ups today. Please try again tomorrow, or email ${siteWords(env).email}.`, 'cap');
+    if (saved.failed) return fail(502, `Sorry, something went wrong. Please try again in a few minutes, or email ${siteWords(env).email}.`, 'dispatch');
     console.log(saved.repeat ? 'Sign-up repeated today: no second email.' : `Sign-up ${saved.id} saved; confirmation dispatched.`);
   } catch (e) {
     console.error(`Sign-up not saved: ${e.message}`);
-    return fail(502, `Sorry, something went wrong. Please try again later, or email ${siteWords(env).email}.`);
+    return fail(502, `Sorry, something went wrong. Please try again later, or email ${siteWords(env).email}.`, 'save');
   }
   return done();
 }
