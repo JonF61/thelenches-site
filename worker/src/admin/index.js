@@ -202,7 +202,7 @@ import { editorPage, savePage, showsText } from './pageedit.js';
 import { entryInfo, saveEntry, entryStatus, draftEditPage } from './entryedit.js';
 import { recentRuns, buildStatus } from './runs.js';
 import {
-  nextIssue, failingRuns, subscriberChanges, lastSentDate, comingWeek, comingUpFile, devTasks, claudeSpend,
+  nextIssue, failingRuns, subscriberChanges, subscriberCount, lastSentDate, comingWeek, comingUpFile, devTasks, claudeSpend,
 } from './summary.js';
 import { visitors } from './visitors.js';
 import { visitorHistory } from './sitestats.js';
@@ -335,13 +335,14 @@ const EMPTY = { headers: [], rows: [] };
 async function state(env, email, lenv = env) {
   const main = isMain(env);
   const photosRead = main ? readTable(env, 'Photos') : Promise.resolve(EMPTY);
-  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite, bin, sugg, fb, draftRows, listing] = await settled([
+  const [pending, replies, photos, settings, health, issues, gids, sources, web, dog, folders, onSite, bin, sugg, fb, draftRows, listing, subs, dns] = await settled([
     readTable(env, 'Pending'), readTable(env, 'Replies'), photosRead,
     readSettingsPairs(env), readTable(lenv, 'Health'), readTable(env, 'Issues'), sheetGids(env),
     readSources(env), main ? readTable(env, 'Image fetch') : EMPTY, watchdog(env), main ? folderList(env) : [],
     main ? photoPages(env) : { error: 'The Lenches only' },
     main ? binList(env, photosRead) : [], main ? readTable(env, SUGGEST_TAB) : EMPTY, readFeedback(env), readDraft(env, DRAFT_META_RANGE),
     readOptional(env, LISTING_TAB),
+    readTable(env, 'Subscribers'), readTable(env, 'Do Not Send'),
   ]);
   const suggested = suggestionsByItem(sugg);
   const holiday = settings.error ? settings : (settings.find((p) => p.key === 'holiday_mode') || { value: '' });
@@ -380,6 +381,8 @@ async function state(env, email, lenv = env) {
     // Settings newsletter_mode (4c-2): "off" = this site has no newsletter yet (Harvington until stage 5).
     newsletterMode: settings.error ? '' : String((settings.find((p) => p.key === 'newsletter_mode') || {}).value || '').trim().toLowerCase(),
     newsletter,
+    // The top bar's Subscribers chip: who a send now would reach (a count only).
+    subscribers: subs.error || dns.error ? { error: (subs.error || dns.error) } : { count: subscriberCount(subs.rows, dns.rows) },
     // The Newsletter draft's meta (null until its first run).
     draft: draftRows.error ? draftRows : draftMeta(draftRows),
     health: health.error ? health : filled(health).slice(-7).reverse(),

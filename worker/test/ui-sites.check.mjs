@@ -33,6 +33,7 @@ const stateData = (site) => ({
   replies: { headers: [], rows: [] }, owed: [], photos: { headers: [], rows: [] },
   photoFolders: [], photosRoot: site === 'lenches' ? 'r' : '', today: '2026-11-16', toDelete: [], feedback: { headers: [], rows: [] }, sent: [],
   newsletterMode: site === 'lenches' ? 'live' : 'off',
+  subscribers: { count: site === 'lenches' ? 1456 : 34 },
 });
 
 const seen = [];
@@ -76,6 +77,7 @@ try {
     const sw = page.locator('.site-switch');
     assert.deepEqual(await sw.locator('button').allInnerTexts(), ['The Lenches', 'Harvington']);
     assert.equal(await sw.locator('button.on').innerText(), 'The Lenches');
+    assert.match(await page.locator('header.top .chip', { hasText: 'Subscribers' }).innerText(), /Subscribers\s*1,456/, 'the Lenches subscriber count');
     assert.ok(seen.length && seen.every((s) => s.site === 'lenches'), JSON.stringify(seen));
     const menu = async () => page.locator('nav.side button').allInnerTexts();
     if (name === 'desktop') assert.ok((await menu()).some((t) => /^Photos/.test(t)));
@@ -93,6 +95,7 @@ try {
     const border = await page.locator('header.top').evaluate((el) => getComputedStyle(el).borderTopColor);
     assert.equal(border, 'rgb(45, 74, 99)', 'Harvington river blue');
     assert.equal(await bodyBg(), 'rgb(228, 238, 247)', "Harvington's panel has a light blue background");
+    assert.match(await page.locator('header.top .chip', { hasText: 'Subscribers' }).innerText(), /Subscribers\s*34\b/, "Harvington's own subscriber count");
     if (name === 'desktop') {
       const items = await menu();
       assert.ok(!items.some((t) => t.startsWith('Photos')), 'Photos is the Lenches\' alone');
