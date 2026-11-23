@@ -124,11 +124,6 @@
       "added": "2026-11-14"
     },
     {
-      "task": "Rimmer's checks now started by the Worker (16 Nov): confirm Wednesday 18 Nov's newsletter check starts at 19:00 UK (Activity: Rimmer, repository_dispatch) and Sunday 22 Nov's listings check at 19:17, and that no GitHub-scheduled Rimmer run appears",
-      "added": "2026-11-16",
-      "kryten": true
-    },
-    {
       "task": "Panel 429 retry: check that approving several items quickly now just goes slower instead of failing; if 429s still get through, cut the Sheet reads per Approve",
       "added": "2026-11-10"
     },
