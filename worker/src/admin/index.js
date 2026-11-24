@@ -189,7 +189,7 @@ import schoolsData from '../../../sites/lenches/_data/schools.json' with { type:
 import healthData from '../../../sites/lenches/_data/health.json' with { type: 'json' };
 import transportData from '../../../sites/lenches/_data/transport.json' with { type: 'json' };
 import {
-  LESSONS_TAB, LESSON_HEADERS, lessonRows, cleanLesson, newLessonRow, planLessonDecision,
+  LESSONS_TAB, LESSON_HEADERS, lessonRows, lessonNeedsYou, cleanLesson, newLessonRow, planLessonDecision,
 } from './lessons.js';
 import { ITEM_TAB, REPLY_TAB, autonomyStats, planIgnore } from './autonomy.js';
 import { SETTING as WINDOW_SETTING, EMAIL_SETTING as WINDOW_EMAILS, COLUMN as WINDOW_COLUMN, windowStatus, planAudit, isWindowTime } from './autowindow.mjs';
@@ -652,6 +652,7 @@ async function summary(env, lenv = env) {
     outreach: outreachDue,
     orgs: orgsDue,
     lessons: lessons.error ? fail(lessons) : lessonRows(lessons).rows.filter((r) => r.status.toLowerCase() === 'proposed').map((r) => ({ id: r.id, lesson: r.lesson })),
+    lessonsNeedYou: lessons.error ? null : lessonRows(lessons).rows.filter(lessonNeedsYou).length,
     devTasks: devTasks(),
     // Items that published themselves after a veto window and await Jon's audit (a count).
     autoAudit: feedbackTab.error ? 0 : feedbackTab.rows.filter((r) => String(r.outcome || '').trim() === 'window').length,

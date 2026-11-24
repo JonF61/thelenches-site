@@ -26,6 +26,14 @@ export function lessonRows(table) {
   return { headers: table.headers, rows };
 }
 
+// Lessons needing Jon (24 Nov, Jon: a count beside Holly lessons in the menu): a suggestion
+// waiting (proposed), or a lesson in use or suggested whose notes carry a Monday "Check: …" clash.
+export function lessonNeedsYou(r) {
+  const st = str(r && r.status).toLowerCase();
+  if (st === 'proposed') return true;
+  return st === 'approved' && /(^|\s)Check:/.test(str(r && r.notes));
+}
+
 // A lesson's text as typed: one line, MIN_LESSON..MAX_LESSON characters, no email address or
 // link (lessons are general rules). { value } or { error, status }.
 export function cleanLesson(v) {
