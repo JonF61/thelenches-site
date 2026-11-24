@@ -10,8 +10,9 @@
 // The draft is a Replies row of type "outreach", policy code "contact_email", status
 // "awaiting" ("shadow" in shadow mode), with no message_id: it goes only on Jon's Approve or
 // Edit, never by itself, even in holiday mode, and Redraft works as for any outreach row.
-// Body: greeting, Claude's paragraphs, the opt-out line (templates.md outreach_optout), then
-// Holly's signature. Claude sees the brief and the contact's name, organisation, village,
+// Body: greeting, Claude's paragraphs, Holly's signature, then the opt-out line (templates.md
+// outreach_optout; after the signature and in italics in the email since 24 Nov, Jon).
+// Claude sees the brief and the contact's name, organisation, village,
 // role and profile (with the usual CONTACT_RULES); never Jon's notes.
 'use strict';
 
@@ -172,7 +173,7 @@ async function draftContactEmail(id, brief) {
     hold_reason: '',
     policy_codes: R.CONTACT_EMAIL_CODE,
     subject,
-    body: [replies.greeting(name), text, replies.fill('outreach_optout'), replies.fill('signature')].join('\n\n'),
+    body: [replies.greeting(name), text, replies.fill('signature'), replies.fill('outreach_optout')].join('\n\n'),
     status: mode === 'shadow' ? 'shadow' : 'awaiting',
     created_at: londonDateTime(now),
     notes: [`Email you asked for in the panel: ${want}`, ...warnings].join(' | '),

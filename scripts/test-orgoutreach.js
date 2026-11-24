@@ -83,7 +83,7 @@ async function main() {
   ok(row.body.startsWith('Hi there,\n\nI help look after thelenches.org.uk,'), 'greeting');
   ok(row.body.includes('The Lenches Club is listed on our Groups & Clubs page, and we\'d like to make sure the details are right:\nhttps://thelenches.org.uk/groups/'), 'page and link');
   ok(row.body.includes('This is what it shows at the moment:\nThe Lenches Club\nlenchesclubmail@gmail.com\n01386 870221\nhttps://thelenchesclub.co.uk/\n\nCould you'), 'their entry as the site shows it');
-  ok(row.body.endsWith("If you'd rather we didn't get in touch like this, just say and we won't.\n\nBest wishes,\nHolly\nLenches website assistant"), 'opt-out and Holly sign-off');
+  ok(row.body.endsWith("Best wishes,\nHolly\nLenches website assistant\n\nIf you'd rather we didn't get in touch like this, just say and we won't."), 'Holly sign-off, then the opt-out line');
   ok(claudeCalls === 0, 'fixed template: no Claude');
   ok(tables['Reply feedback'].some((r) => r.reply_id === row.reply_id), 'logged in Reply feedback');
   console.log('--- sample check email ---\n' + row.body + '\n---');

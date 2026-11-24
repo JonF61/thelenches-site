@@ -80,8 +80,8 @@ function orgEmail(org, kind, R) {
   }
   const vars = { organisation: org.name, page: org.pageName, page_url: org.pageUrl, entry: [org.name, ...org.shown].join('\n') };
   const parts = [replies.greeting(org.greet), replies.fill(kind === 'chase' ? 'org_chase' : 'org_check', vars)];
-  if (kind !== 'chase') parts.push(replies.fill('outreach_optout'));
   parts.push(replies.fill('signature'));
+  if (kind !== 'chase') parts.push(replies.fill('outreach_optout')); // after the signature, in italics (24 Nov)
   return { subject: kind === 'chase' ? `Re: ${R.SUBJECT}` : R.SUBJECT, body: parts.join('\n\n') };
 }
 

@@ -27,4 +27,10 @@ assert.strictEqual(r.sanitiseAnswer('Where they stand:\n- Cash Bingo is in this 
   'Where they stand:\n- Cash Bingo is in this issue.\n- Carols on 10 December.\n\nSee\nhttps://thelenches.org.uk/events/\nfor more.');
 assert.strictEqual(r.sanitiseAnswer('One line\nwrapped here, nothing else to see.', urls), 'One line wrapped here, nothing else to see.');
 
+// The opt-out line after the sign-off: in italics in the email; a redraft leaves it out (24 Nov).
+const opt = r.fill('outreach_optout');
+const body = ['Hi Rhona,', 'Some news.', r.fill('signature'), opt].join('\n\n');
+assert.strictEqual(r.innerBody(body), 'Some news.');
+assert.ok(r.textToHtml(body).includes(`<em>${opt.replace(/'/g, '&#39;')}</em>`), 'opt-out in italics');
+
 console.log('test-redraft-parse: all passed');

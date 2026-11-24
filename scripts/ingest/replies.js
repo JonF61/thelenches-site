@@ -71,8 +71,8 @@
 // scripts/outreach when Jon taps Draft nudge in the panel. No message_id or thread_id (it
 // starts a new thread, without the Auto-Submitted header); "awaiting" until Jon's Approve,
 // Edit or Redraft, and never sent by sendDueReplies (not a FALLBACK_TYPE), even in holiday
-// mode. Its last paragraph before the sign-off is the opt-out line (templates.md
-// outreach_optout), kept through a redraft.
+// mode. Its last paragraph, after the sign-off and shown in italics, is the opt-out line
+// (templates.md outreach_optout; Jon, 24 Nov: was above the sign-off), kept through a redraft.
 // Organisation checks (27 Oct) are outreach rows too (scripts/outreach/orgs.js, policy codes
 // org_check_<id> / org_chase_<id>); a chaser goes on the check's thread (chaseThread).
 // Your own threads (type "own", 26 Oct): a message on a thread where website@ (or the team's
@@ -496,7 +496,10 @@ function textToHtml(text) {
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => (
     { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
   ));
+  const optout = templates().outreach_optout !== undefined ? fill('outreach_optout') : '';
   const paras = String(text || '').split(/\n{2,}/).map((p) => {
+    // The opt-out line, after the sign-off, in italics (Jon, 24 Nov).
+    if (optout && p.trim() === optout) return `<p style="margin:0 0 14px 0;"><em>${esc(optout)}</em></p>`;
     const inner = esc(p)
       .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#3F5233;">$1</a>')
       .replace(/\n/g, '<br>');
@@ -2336,7 +2339,8 @@ const isGreeting = (p) => /^Hi [^\n]{1,40},$/.test(p.trim());
 
 // A reply body without its greeting and sign-off: what Claude rewrites.
 function innerBody(body) {
-  const paras = String(body || '').trim().split(/\n{2,}/);
+  const optout = templates().outreach_optout !== undefined ? fill('outreach_optout') : '';
+  const paras = String(body || '').trim().split(/\n{2,}/).filter((p) => !optout || p.trim() !== optout);
   if (paras.length && isGreeting(paras[0])) paras.shift();
   const sig = fill('signature');
   const out = paras.join('\n\n');
@@ -2477,7 +2481,7 @@ async function redraftReply(replyId, instruction) {
     hold_reason: row.hold_reason,
     policy_codes: unique([...splitCodes(row.policy_codes), 'redraft']).join(','),
     subject: row.subject,
-    body: [hello, text, optout, fill('signature')].filter(Boolean).join('\n\n'),
+    body: [hello, text, fill('signature'), optout].filter(Boolean).join('\n\n'),
     status: mode === 'shadow' ? 'shadow' : 'awaiting',
     created_at: now,
     notes: [`Redraft of ${replyId}, as you asked: "${want}"`, theyWroteNote(said), contact ? PERSONAL_NOTE : '', rimmer, ...warnings].filter(Boolean).join(' | '),
