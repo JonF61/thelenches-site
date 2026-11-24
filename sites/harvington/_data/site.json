@@ -19,6 +19,13 @@
   "gmailLabel": "Harvington Website/2 Pipeline",
   "fromName": "The Harvington Website and Newsletter Team",
   "hollySignoff": "Holly / Harvington website assistant",
+  "forwardBand": {
+    "_help": "Newsletter band above Coming up asking readers to forward the issue (Jon, 24 Nov 2026). Remove to drop it.",
+    "heading": "Help us reach more of the village",
+    "body": "Every Thursday this newsletter brings local events, news and notices to your inbox, free. The more people read it, the more useful it becomes for everyone, from clubs filling their halls to neighbours keeping up with roadworks. Please forward this email to anyone nearby who might like it. Signing up takes seconds.",
+    "button": "Sign up for the newsletter",
+    "url": "/newsletter/"
+  },
   "newsletterName": "The Harvington Newsletter",
   "areaName": "Harvington",
   "skyline": "spire",

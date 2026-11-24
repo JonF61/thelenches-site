@@ -139,6 +139,20 @@ function regularsBand(m) {
     + `${esc(REGULARS_INTRO)}${btn}${fresh}</td></tr>`;
 }
 
+// "Forward this" band above Coming up (24 Nov, Jon; Harvington's site.json forwardBand): a heading,
+// a paragraph and a bulletproof button to the sign-up page. Only when the model has it.
+function forwardBand(f) {
+  const url = f.url ? siteUrl(f.url) : '';
+  const btn = url && f.button ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:10px 0 2px;"><tr>`
+    + `<td bgcolor="${C.green}" style="background:${C.green};border-radius:4px;padding:10px 18px;">`
+    + `<a href="${esc(url)}" style="color:#ffffff;font-family:${SANS};font-size:15px;font-weight:bold;text-decoration:none;">${esc(f.button)} &rarr;</a>`
+    + `</td></tr></table>` : '';
+  return `<tr><td class="px" style="padding:16px 24px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>`
+    + `<td style="background:${C.cream};border:1px solid ${C.line};border-radius:4px;padding:12px 16px;font-family:${SANS};font-size:14px;line-height:1.5;color:${C.ink};">`
+    + `<div style="font-family:${SERIF};font-size:17px;font-weight:bold;color:${C.green};margin:0 0 4px;">${esc(f.heading)}</div>`
+    + `${esc(f.body)}${btn}</td></tr></table></td></tr>`;
+}
+
 const a = (url, text, color) => `<a href="${esc(url)}" style="color:${color};text-decoration:underline;">${esc(text)}</a>`;
 
 // sub (HTML, optional): a short line under the title, above the rule (Regular activities, Jon 30 Oct).
@@ -294,6 +308,7 @@ function renderHtml(m, subject) {
   }
   rows.push(`<tr><td class="px" style="padding:16px 24px 0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${C.ink};">${esc(summaryLine(m))}</td></tr>`);
 
+  if (m.forward) rows.push(forwardBand(m.forward));
   const oldRegulars = typeof m.regulars === 'string' ? m.regulars : '';
   if (m.events.length || oldRegulars) {
     rows.push(sectionHead('Coming up'));
@@ -412,6 +427,7 @@ function renderText(m) {
   if (m.onThisDay) out.push(`On this day: ${m.onThisDay.text}`, '');
   if ((m.siteUpdates || []).length) out.push('Website and newsletter update:', ...siteTexts(m.siteUpdates).flatMap((t) => [t, '']), `Have a look at ${LINKS.site}`, '');
   out.push(summaryLine(m));
+  if (m.forward) out.push('', m.forward.heading.toUpperCase(), m.forward.body, ...(m.forward.url && m.forward.button ? [`${m.forward.button}: ${siteUrl(m.forward.url)}`] : []));
   const oldRegs = typeof m.regulars === 'string' ? m.regulars : '';
   if (m.events.length || oldRegs) {
     head('Coming up');

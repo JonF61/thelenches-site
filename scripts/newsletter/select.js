@@ -47,7 +47,7 @@
 
 const crypto = require('crypto');
 const { inLenches: inLenchesArea } = require('../../lib/lenches');
-const { SITE: THIS_SITE } = require('../../lib/site');
+const { SITE: THIS_SITE, siteConfig } = require('../../lib/site');
 // The "Lenches" badge marks Lenches events in the Lenches' issue only (every event in another
 // site's issue is its own; Harvington stage 5a).
 const inLenches = (x) => THIS_SITE === 'lenches' && inLenchesArea(x);
@@ -68,6 +68,11 @@ const LIVE = new Set(['approved', 'auto']);
 const WYCHAVON_LOOKUP = 'https://selfservice.wychavon.gov.uk/wdcroundlookup/';
 
 const str = (v) => String(v ?? '').trim();
+function forwardBandFor(cfg) {
+  const f = cfg && cfg.forwardBand;
+  if (!f || !str(f.heading) || !str(f.body)) return null;
+  return { heading: str(f.heading), body: str(f.body), button: str(f.button), url: str(f.url) };
+}
 const truthy = (v) => /^(true|yes|y|1)$/i.test(str(v));
 const num = (v) => Number(str(v)) || 0;
 const normTitle = (s) => str(s).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
@@ -436,6 +441,9 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, car
     cartoon: cartoonFor(cartoons, issueDate, jpegFor),
     where: whereFor(wherelenches, issueDate, jpegFor),
     lastIssue,
+    // "Forward this" band above Coming up (24 Nov, Jon: Harvington only), from site.json
+    // forwardBand; absent for a site without it and in older snapshots, which render as before.
+    ...(forwardBandFor(siteConfig()) ? { forward: forwardBandFor(siteConfig()) } : {}),
     cutoff: deadline,
     held,
     events: events.map(strip),
@@ -462,4 +470,4 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, car
   };
 }
 
-module.exports = { shortName, select, whatsonKey, ymd, addDays, minuteKey, deadlineFor };
+module.exports = { forwardBandFor, shortName, select, whatsonKey, ymd, addDays, minuteKey, deadlineFor };
