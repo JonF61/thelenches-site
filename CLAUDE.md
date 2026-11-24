@@ -146,6 +146,8 @@ Minimal notice (`sites/lenches/items/notices/hall-car-park-resurfacing.json`):
 - When you make a significant visible site change, propose an entry for `sites/lenches/_data/siteupdates.json` (Jon decides; never reuse a key). The newsletter shows the due entries under WEBSITE UPDATE, each as its own short paragraph (render.js; Jon 28 Oct, separate paragraphs 3 Nov), so write each text as plain sentences: no "New on the website:", no "Have a look" (one site link is added after the last). Before adding one, read the other entries still due for the same issue and show Jon the whole block, so no entry repeats another.
 
 ## Finishing a job
+Follow the `finish-job` skill (`.claude/skills/finish-job/SKILL.md`: pre-push checks, commit, PR, merge, Build history, CLAUDE.md, devtasks.json, reply); the rules it carries out are below.
+
 **PR description**: the record of the work. What changed (files and behaviour), anything Jon must do by hand (Sheet cells, settings, workflow pastes), how it was tested, and what to check on the next live/shadow run. Keep it factual and complete.
 
 **Workflow files**: commit `.github/workflows/` changes yourself in the PR, like any other file (Jon agreed 25 Oct; first done in PR 60), and dispatch manual workflows yourself with the GitHub MCP actions tools. Name every workflow file changed in the PR description. Running a workflow that sends email, publishes or writes to the Sheet still needs Jon's go-ahead unless the job asked for it.
