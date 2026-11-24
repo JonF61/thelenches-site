@@ -2,6 +2,11 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Where in Harvington? puzzle for the Harvington newsletter (Jon, 24 Nov: maybe from the 3 Dec issue): its own sites/harvington/_data data file and images/where/ close-ups from the Harvington photos (never a church, no giveaway signs), the newsletter heading per site, and lib/parity.js KNOWN updated; ask Jon before starting.",
+      "added": "2026-11-24",
+      "kryten": true
+    },
+    {
       "task": "Read the Form failures tab on both Sheets (/k, tab \"Form failures\", add site harvington) a few days after PR for sign-up failure records: what stage, reason and browser the Harvington sign-up failures show (e.g. Turnstile failing in the Facebook app), then propose a fix to Jon.",
       "added": "2026-11-23",
       "kryten": true
