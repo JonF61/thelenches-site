@@ -72,7 +72,8 @@
 // starts a new thread, without the Auto-Submitted header); "awaiting" until Jon's Approve,
 // Edit or Redraft, and never sent by sendDueReplies (not a FALLBACK_TYPE), even in holiday
 // mode. Its last paragraph, after the sign-off and shown in italics, is the opt-out line
-// (templates.md outreach_optout; Jon, 24 Nov: was above the sign-off), kept through a redraft.
+// (templates.md outreach_optout; Jon, 24 Nov: was above the sign-off), only on a first email
+// to that address (optoutFor), and decided afresh on a redraft.
 // Organisation checks (27 Oct) are outreach rows too (scripts/outreach/orgs.js, policy codes
 // org_check_<id> / org_chase_<id>); a chaser goes on the check's thread (chaseThread).
 // Your own threads (type "own", 26 Oct): a message on a thread where website@ (or the team's
@@ -295,6 +296,14 @@ function posInt(v, dflt) {
 const splitCodes = (s) => String(s || '').split(',').map((x) => x.trim()).filter(Boolean);
 const unique = (a) => [...new Set(a)];
 const sameAddress = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+
+// The outreach opt-out line only on a first email to someone (Jon, 24 Nov): '' once any
+// Replies row to that address has been sent.
+const emailedBefore = (rows, to) => (rows || []).some((r) => sameAddress(r.to, to)
+  && (String(r.status || '').trim() === 'sent' || String(r.sent_at || '').trim()));
+function optoutFor(rows, to) {
+  return emailedBefore(rows, to) || templates().outreach_optout === undefined ? '' : fill('outreach_optout');
+}
 
 /* ------------------------------------------------------------ templates -- */
 
@@ -2391,9 +2400,8 @@ async function redraftReply(replyId, instruction) {
     const m = String(row.notes || '').match(/They wrote: "([^"]*)"/);
     said = m ? m[1] : '';
   }
-  const optout = row.type === 'outreach' ? fill('outreach_optout') : '';
-  let previous = innerBody(row.body);
-  if (optout && previous.endsWith(optout)) previous = previous.slice(0, -optout.length).trim();
+  const optout = row.type === 'outreach' ? optoutFor(rows, row.to) : '';
+  const previous = innerBody(row.body);
   const facts = siteFacts();
   const urls = new Set([...facts.urls, ...(previous.match(/https?:\/\/[^\s<>"]+/g) || [])]);
   const emails = want.match(/[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[a-z]{2,}/gi) || [];
@@ -2626,6 +2634,8 @@ module.exports = {
   voiceGuide,
   textToHtml,
   sanitiseAnswer,
+  optoutFor,
+  emailedBefore,
   parseJsonLoose,
   textOf,
   RISKY,

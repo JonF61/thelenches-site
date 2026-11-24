@@ -33,4 +33,10 @@ const body = ['Hi Rhona,', 'Some news.', r.fill('signature'), opt].join('\n\n');
 assert.strictEqual(r.innerBody(body), 'Some news.');
 assert.ok(r.textToHtml(body).includes(`<em>${opt.replace(/'/g, '&#39;')}</em>`), 'opt-out in italics');
 
+// Only a first email to someone carries the opt-out line (24 Nov).
+const sentRows = [{ to: 'Rhona@Example.org', status: 'sent', sent_at: '2026-11-24 13:42' }, { to: 'new@example.org', status: 'awaiting' }];
+assert.strictEqual(r.optoutFor(sentRows, 'rhona@example.org'), '');
+assert.strictEqual(r.optoutFor(sentRows, 'new@example.org'), opt);
+assert.strictEqual(r.emailedBefore(sentRows, 'nobody@example.org'), false);
+
 console.log('test-redraft-parse: all passed');

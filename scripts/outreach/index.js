@@ -149,7 +149,7 @@ async function draftNudge(id) {
     hold_reason: '',
     policy_codes: `outreach_${due.kind}`,
     subject,
-    body: [replies.greeting(name), text, replies.fill('signature'), replies.fill('outreach_optout')].join('\n\n'),
+    body: [replies.greeting(name), text, replies.fill('signature'), replies.optoutFor(rows, row.email)].filter(Boolean).join('\n\n'),
     status: mode === 'shadow' ? 'shadow' : 'awaiting',
     created_at: londonDateTime(now),
     notes: [`Outreach (${due.kind}), as you asked in the panel: ${due.why}`, ...warnings].join(' | '),
