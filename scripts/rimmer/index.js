@@ -257,7 +257,10 @@ function draftHtml(rows) {
   const html = require('zlib').inflateSync(Buffer.from(chunks.map((k) => kv[k]).join(''), 'base64')).toString('utf8');
   return { kv, html };
 }
-async function otherIssues(g, issueDate) {
+// Only the Lenches run compares the issues (24 Nov, Jon): the Harvington run would report the
+// same differences again in its own Sheet.
+async function otherIssues(g, issueDate, site = require('../../lib/site').SITE) {
+  if (site !== 'lenches') return [];
   if (!g || typeof g.readOtherTable !== 'function') return [];
   const { otherSites } = require('../../lib/site');
   const { TAB: DRAFT_TAB } = require('../newsletter/draft');
@@ -279,7 +282,8 @@ async function docsFor(scope, g) {
     const docs = [{ page: 'newsletter', text: `Subject: ${meta.subject}\n\n${htmlToText(html)}` }];
     // The website pages, when the site is built (rimmer.yml builds it), for the consistency check.
     if (fs.existsSync(path.join(SITE_DIR, 'index.html'))) docs.push(...readPages(NEWSLETTER_SITE_PAGES));
-    // The other sites' issues for the same day, so shared items can be checked as mirrored (18 Nov).
+    // The other sites' issues for the same day, so shared items can be checked as mirrored (18 Nov);
+    // the Lenches run only (24 Nov).
     docs.push(...await otherIssues(g, meta.issue_date));
     return { target: meta.issue_date, issueDate: meta.issue_date, docs };
   }

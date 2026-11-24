@@ -161,6 +161,7 @@ assert.equal(c.htmlToText('<table><tr><td>The Club</td><td></td><td>Lenches</td>
   assert.deepEqual(await c.otherIssues(g, '2026-11-26'), [], 'another week is left out');
   assert.deepEqual(await c.otherIssues({ readOtherTable: async () => { throw new Error('no access'); } }, '2026-11-19'), []);
   assert.deepEqual(await c.otherIssues({}, '2026-11-19'), []);
+  assert.deepEqual(await c.otherIssues(g, '2026-11-19', 'harvington'), [], 'only the Lenches run compares the issues');
   const docs2 = [{ page: 'newsletter', text: 'N' }, ...got];
   const r2 = c.buildRequest({ scope: 'newsletter', docs: docs2, today: '2026-11-18', dismissed: [], issueDate: '2026-11-19' });
   assert.match(r2.messages[0].content, /neighbouring village's website \(newsletter:harvington\)[\s\S]*=== newsletter:harvington ===/);
