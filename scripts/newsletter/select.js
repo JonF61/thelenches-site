@@ -71,7 +71,8 @@ const str = (v) => String(v ?? '').trim();
 function forwardBandFor(cfg) {
   const f = cfg && cfg.forwardBand;
   if (!f || !str(f.heading) || !str(f.body)) return null;
-  return { heading: str(f.heading), body: str(f.body), button: str(f.button), url: str(f.url) };
+  return { heading: str(f.heading), body: str(f.body), ...(str(f.button) ? { button: str(f.button) } : {}),
+    ...(str(f.line) ? { line: str(f.line) } : {}), url: str(f.url) };
 }
 const truthy = (v) => /^(true|yes|y|1)$/i.test(str(v));
 const num = (v) => Number(str(v)) || 0;
