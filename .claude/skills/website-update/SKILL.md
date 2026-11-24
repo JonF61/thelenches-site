@@ -11,12 +11,11 @@ Jon decides every entry. Propose, show the wording, and only commit after he app
 
 ## 1. Work out the issue
 - Find the issue date (a Thursday). The cutoff is 6pm the Wednesday before, but an entry can still go in until the issue is built (06:30 Thursday). After a Rebuild it is in.
-- Read the entries already due for that issue on that site: `from` ≤ issue date, `until` blank or ≥ issue date, and **not already in a sent issue** (old entries without `until` stay in the file after they've gone out). This lists them, reading sent keys from the Issues tab (`item_keys`, column M) with /k. Set `S` and `I`, and add `,"site":"harvington"` to the /k call for Harvington:
+- Read the entries already due for that issue on that site: `from` ≤ issue date, `until` blank or ≥ issue date, and **not already in a sent issue** (old entries without `until` stay in the file after they've gone out). This lists them, reading sent keys from the Issues tab (`item_keys`) with the `sheet-access` helper. Set `S` (site) and `I` (issue date):
   ```
-  S=lenches I=2026-11-26; curl -sS https://approvals.lenches.workers.dev/k -H "authorization: Bearer $KRYTEN_TOKEN" -H 'content-type: application/json' -d '{"op":"read","tab":"Issues","range":"A1:M500","max_rows":500}' | S=$S I=$I python3 -c "
-  import json,sys,csv,io,os
-  r=list(csv.reader(io.StringIO(json.load(sys.stdin)['csv'])))[1:]; h=r[0]; ix=h.index
-  sent={k for x in r[1:] if x[ix('status')]=='sent' and x[ix('issue_date')][:10]<os.environ['I'] for k in x[ix('item_keys')].split()}
+  S=lenches I=2026-11-26; python3 .claude/skills/sheet-access/k.py read Issues --site $S --where status=sent --json | S=$S I=$I python3 -c "
+  import json,sys,os
+  sent={k for r in json.load(sys.stdin) if r['issue_date'][:10]<os.environ['I'] for k in r['item_keys'].split()}
   for e in json.load(open('sites/%s/_data/siteupdates.json'%os.environ['S']))['entries']:
     if e['from']<=os.environ['I'] and (not e.get('until') or e['until']>=os.environ['I']) and 's:'+e['key'] not in sent: print(e['key'],'|',e['text'])"
   ```
