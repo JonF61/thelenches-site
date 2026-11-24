@@ -1,11 +1,11 @@
 ---
 name: finish-job
-description: Kryten's end-of-job routine for thelenches-site: pre-push checks, commit, PR description, merge, Plan doc Build history entry, Project Plan edits, CLAUDE.md and devtasks.json updates, and the reply to Jon. Use whenever a piece of work on this repo is ready to push, or Jon says "finish up", "wrap up", "merge it".
+description: Kryten's end-of-job routine for thelenches-site: pre-push checks, commit, PR description, merge, Plan doc Build history entry, Project Plan edits, CLAUDE.md and devtasks.json updates, and the reply to Jon. Use whenever work on this repo is about to be committed, pushed or opened as a PR, even a one-line data change, or when Jon says "finish up", "wrap up", "merge it", "ship it" or "that's it".
 ---
 
 # Finishing a job
 
-Work through these in order. Don't skip a step because the change is small: say "not needed" for it instead.
+Work through these in order. Small jobs are where steps get forgotten (a Build history entry or a devtasks to-do slips and has to be carried over), so don't skip one because the change is small: say "not needed" for it instead.
 
 ## 1. Pre-push checks
 - Branch from a fresh `origin/main` (the panel's Edit page commits straight to main): `git fetch origin main && git rebase origin/main` if the branch is old.

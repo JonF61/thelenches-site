@@ -1,6 +1,6 @@
 ---
 name: website-update
-description: Write a WEBSITE UPDATE entry for the newsletter in sites/<site>/_data/siteupdates.json (the Lenches or Harvington). Use after a significant visible site change, when a devtasks to-do asks for website updates for an issue, or when Jon asks for a "website update" or "site update" line in the newsletter.
+description: Write a WEBSITE UPDATE entry for the newsletter in sites/<site>/_data/siteupdates.json (the Lenches or Harvington), checking what else is due for that issue and showing Jon the whole band. Use after any significant visible change to either site (a new page, feature or form), when a devtasks to-do asks for website updates for an issue, or when Jon wants to tell readers about something new on the website, even if he doesn't say "website update".
 ---
 
 # Website update entries
@@ -33,7 +33,7 @@ Jon decides every entry. Propose, show the wording, and only commit after he app
   "link": "https://harvingtonvillage.org.uk/"
 }
 ```
-- `key`: unique, letters, numbers and hyphens, ending with the year and month. **Never reuse a key**, even one that has expired (grep the file first).
+- `key`: unique, letters, numbers and hyphens, ending with the year and month. **Never reuse a key**, even one that has expired (grep the file first): a key that was in a sent issue counts as done for good, so a reused key would silently never appear.
 - `from`: the first issue it can appear in. `until`: the last date it can appear (usually the following Wednesday), so it doesn't sneak into a later issue if that one is skipped.
 - `link`: required (an entry without a valid one is dropped), but kept for the record only and not shown.
 - `text`: one or two plain sentences, British English. No "New on the website:" and no "Have a look" (the link line is added after the last entry). Don't name Jon. Each site's wording uses its own name (thelenches.org.uk / harvingtonvillage.org.uk).
