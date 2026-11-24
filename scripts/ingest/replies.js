@@ -1527,6 +1527,14 @@ function fixLinks(text) {
   }).join('\n');
 }
 
+// A paragraph's line breaks become spaces, except before a list line ("- ", "• ", "1. "),
+// so a bulleted list Jon asks for stays one item per line (24 Nov).
+const LIST_LINE = /^(?:[-•*]|\d{1,2}[.)])\s+\S/;
+function keepListLines(p) {
+  const lines = String(p).split('\n').map((l) => l.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  return lines.reduce((out, l) => (!out ? l : `${out}${LIST_LINE.test(l) ? '\n' : ' '}${l}`), '');
+}
+
 // Draft text checked: links only from the allowed urls, each on its own line (fixLinks),
 // no email addresses (except opts.emails, given by Jon in a Redraft). '' if unusable.
 // Claude's {"draft": …} answer as an object, or null. Tolerates text around the object and
@@ -1554,7 +1562,7 @@ function parseJsonLoose(raw) {
 
 function sanitiseAnswer(text, urls, { emails = [], max = MAX_ANSWER_CHARS } = {}) {
   const t = fixLinks(String(text || '').split(/\n{2,}/)
-    .map((p) => p.replace(/\s+/g, ' ').trim()).filter(Boolean).join('\n\n'));
+    .map(keepListLines).filter(Boolean).join('\n\n'));
   if (t.length < 20 || t.length > max) return '';
   let rest = t.replace(/https?:\/\/\S+/g, '');
   for (const e of emails) rest = rest.split(e).join('');

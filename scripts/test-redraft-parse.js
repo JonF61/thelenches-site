@@ -21,4 +21,10 @@ assert.strictEqual(r.normaliseDates('on Sat. 12th Nov. 2026', '2026-11-24'), 'on
 assert.strictEqual(r.normaliseDates('Monday, 9th of November, at noon', '2026-11-01'), 'Monday 9 November, at noon');
 assert.strictEqual(r.normaliseDates('until Sunday 13 December.'), 'until Sunday 13 December.');
 
+// A bulleted list keeps one item per line; ordinary wrapped lines still join (24 Nov).
+const urls = new Set(['https://thelenches.org.uk/events/']);
+assert.strictEqual(r.sanitiseAnswer('Where they stand:\n- Cash Bingo is in this issue.\n- Carols on 10\nDecember.\n\nSee https://thelenches.org.uk/events/ for more.', urls),
+  'Where they stand:\n- Cash Bingo is in this issue.\n- Carols on 10 December.\n\nSee\nhttps://thelenches.org.uk/events/\nfor more.');
+assert.strictEqual(r.sanitiseAnswer('One line\nwrapped here, nothing else to see.', urls), 'One line wrapped here, nothing else to see.');
+
 console.log('test-redraft-parse: all passed');
