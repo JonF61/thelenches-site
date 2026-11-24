@@ -12,7 +12,7 @@ K=.claude/skills/sheet-access/k.py
 python3 $K headers Pending                                  # column letters and names
 python3 $K read Rimmer --where status=kryten                # matching rows, values cut to 120 chars
 python3 $K read Rimmer --site harvington --count status     # counts instead of rows
-python3 $K read "Reply feedback" --since decided_at=2026-11-02 --cols type,outcome,reason
+python3 $K read "Reply feedback" --since decided_at=2026-11-02 --not outcome=approved,ignored* --cols type,outcome,reason
 python3 $K read Pending --has duplicate --last 5 --json     # full values, as JSON
 python3 $K get Pending 212                                  # one row, every field in full
 python3 $K set Pending 212 status done --expect pending     # stale-checked; prints the undo id
@@ -26,7 +26,7 @@ python3 $K undo w20261124101657408e
 
 ## Writes
 - **Ask Jon first** for any write he hasn't asked for, then say what you changed and give its **undo id** (k.py prints it).
-- `set` needs `--expect` with the value you just read (or `--blank`). /k refuses if the cell changed since, so a stale write never lands; re-read and ask, never force it. Each write adds a **Kryten log** row with the old and new values. RAW only (no formulas), never row 1, at most 50 cells. /k never writes the Kryten log tab itself.
+- `set` needs `--expect` with the value you just read (or `--blank`). /k refuses if the cell changed since, so a stale write never lands; re-read and ask, never force it. Take the expect value from `get` (or `--width 0`): `read` cuts long values with "…", and /k compares the cell as the Sheet displays it. `set` writes one cell; for a block, use the raw /k call in CLAUDE.md (at most 50 cells). Each write adds a **Kryten log** row with the old and new values. RAW only (no formulas), never row 1, at most 50 cells. /k never writes the Kryten log tab itself.
 - One write at a time, and check each message before the next.
 - The Sheet stays editable by Jon and the panel, and code reads columns **by header name**. So never rename, move or insert columns; a new column goes at the **end** (Jon unhides and types the header).
 - A change to a Pending row (status, category, text, image cells) reaches the site only on the next publish. Dispatch `publish.yml` straight after (GitHub MCP actions tools); the newsletter draft follows the site build.
