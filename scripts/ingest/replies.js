@@ -228,9 +228,11 @@ function longDate(ymd) {
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
   'September', 'October', 'November', 'December'];
-const WD_RE = '(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tues?|Wed|Thu(?:rs?)?|Fri|Sat|Sun)\\.?';
+const WD_RE = '(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|(?:Mon|Tues?|Wed|Thu(?:rs?)?|Fri|Sat|Sun)\\.?)';
+// The optional full stop belongs to an abbreviation only ("Nov."): after a full name it ends
+// the sentence and must stay (24 Nov: "out on 26 November. The Wreath…" lost its full stop).
 const MON_RE = '(January|February|March|April|May|June|July|August|September|October|November|December'
-  + '|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept?|Oct|Nov|Dec)\\.?';
+  + '|(?:Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sept?|Oct|Nov|Dec)\\.?)';
 // [weekday[,] [the]] 9[th] [of] November[,] [2026]
 const DAY_FIRST = new RegExp(`(?<![\\w£$.:/])(?:${WD_RE},?\\s+(?:the\\s+)?)?(\\d{1,2})(?:st|nd|rd|th)?(?:\\s+of)?\\s+${MON_RE}(?:,?\\s+(\\d{4}))?(?![\\w/])`, 'g');
 // [weekday[,]] November 9[th][,] [2026] (full month names; "May" only with a weekday or year)
@@ -965,7 +967,7 @@ async function draftAckLine({ contact, items, said, review = null }) {
       }],
     });
     const raw = textOf(res);
-    const out = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
+    const out = parseJsonLoose(raw);
     return sanitiseAckLine(out.line, contact);
   } catch (err) {
     console.warn(`Personal line failed, plain acknowledgement: ${(err && err.message) || err}`);
@@ -1527,6 +1529,29 @@ function fixLinks(text) {
 
 // Draft text checked: links only from the allowed urls, each on its own line (fixLinks),
 // no email addresses (except opts.emails, given by Jon in a Redraft). '' if unusable.
+// Claude's {"draft": …} answer as an object, or null. Tolerates text around the object and
+// raw line breaks or tabs inside its strings (24 Nov: a Redraft failed with "no usable answer"
+// and Jon's changes were lost).
+function parseJsonLoose(raw) {
+  const t = String(raw || '');
+  const body = t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1);
+  if (!body) return null;
+  try { return JSON.parse(body); } catch { /* try mending it */ }
+  let out = '';
+  let inStr = false;
+  let esc = false;
+  for (const ch of body) {
+    if (inStr && !esc && ch === '\n') out += '\\n';
+    else if (inStr && !esc && ch === '\r') out += '\\r';
+    else if (inStr && !esc && ch === '\t') out += '\\t';
+    else out += ch;
+    if (esc) esc = false;
+    else if (ch === '\\') esc = inStr;
+    else if (ch === '"') inStr = !inStr;
+  }
+  try { return JSON.parse(out); } catch { return null; }
+}
+
 function sanitiseAnswer(text, urls, { emails = [], max = MAX_ANSWER_CHARS } = {}) {
   const t = fixLinks(String(text || '').split(/\n{2,}/)
     .map((p) => p.replace(/\s+/g, ' ').trim()).filter(Boolean).join('\n\n'));
@@ -1572,7 +1597,7 @@ async function draftAnswer({ emailClass, result, msg, said, hold, contact = null
       }],
     });
     const raw = textOf(res);
-    const out = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
+    const out = parseJsonLoose(raw);
     const text = sanitiseAnswer(out.draft, facts.urls);
     if (!text) return fallback('Claude draft failed the checks (length, links or email address)');
     const warnings = RISKY.filter(([re]) => re.test(text)).map(([, why]) => `Check: draft ${why}`);
@@ -1893,7 +1918,7 @@ async function triageFollowup(input, contact = null, review = null) {
       messages: [{ role: 'user', content: JSON.stringify({ ...input, known_contact: promptContact(contact), ...reviewInput(review) }) }],
     });
     const raw = textOf(res);
-    const out = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
+    const out = parseJsonLoose(raw);
     if (typeof out.needs_human !== 'boolean') return fail('Automatic check gave no decision');
     const reason = String(out.reason || '').replace(/\s+/g, ' ').trim().slice(0, 150);
     if (!out.needs_human) return { needsHuman: false, reason: reason || 'nothing to answer' };
@@ -2371,7 +2396,7 @@ async function redraftReply(replyId, instruction) {
   const ask = async (review = null) => {
     const res = await claude().messages.create({
       model: MODEL(),
-      max_tokens: 900,
+      max_tokens: 1500,
       system: cachedSystem(withVoice(review
         ? `${siteSystem(REDRAFT_SYSTEM, site)}\n\nreviewer_findings, when the input has it: an independent second reader found these problems in first_redraft, your rewrite. Write it again with each one put right, still following the instruction, which wins. Every rule above still applies in full.`
         : siteSystem(REDRAFT_SYSTEM, site), contact)),
@@ -2395,13 +2420,18 @@ async function redraftReply(replyId, instruction) {
     const raw = textOf(res);
     let out;
     try {
-      out = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
+      out = parseJsonLoose(raw);
     } catch {
+      return null;
+    }
+    if (!out || typeof out.draft !== 'string') {
+      console.warn(`Redraft for ${replyId}: unreadable answer (${raw.length} characters, stop ${res.stop_reason || '?'})`);
       return null;
     }
     return sanitiseAnswer(out.draft, urls, { emails, max: MAX_REDRAFT_CHARS });
   };
   let text = await ask();
+  if (text === null) text = await ask(); // once more: an unreadable answer is usually a one-off
   if (text === null) throw new Error(`Redraft for ${replyId}: Claude gave no usable answer; the old draft is unchanged`);
   if (!text) throw new Error(`Redraft for ${replyId} failed the checks (length, links or email address); the old draft is unchanged`);
 
@@ -2584,6 +2614,7 @@ module.exports = {
   voiceGuide,
   textToHtml,
   sanitiseAnswer,
+  parseJsonLoose,
   textOf,
   RISKY,
   withVoice,
