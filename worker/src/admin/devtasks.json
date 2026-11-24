@@ -17,11 +17,6 @@
       "kryten": true
     },
     {
-      "task": "Sites in step (18 Nov): after Wednesday's 19:00 Rimmer newsletter checks, confirm each run's log counts one more page (the other site's issue) and its findings make sense; after the next Daily diagnostic, confirm no \"Sites not in step\" problem",
-      "added": "2026-11-18",
-      "kryten": true
-    },
-    {
       "task": "Plan doc Build history: add an entry for the 4-week shelf life on news items (PRs 413 and 414, 18 Nov): publish SHELF_DAYS caps emailed notices at received + 27 days (roadworks aside), lib/whatson.js noticeHides hides hand-written notices from added + 28 days, every notice now has added; check the next publish run capped the Christmas hamper bingo card",
       "added": "2026-11-18",
       "kryten": true
