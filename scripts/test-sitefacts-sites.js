@@ -18,9 +18,9 @@ const probe = (site) => JSON.parse(execFileSync(process.execPath, ['-e', `
 const h = probe('harvington');
 assert.strictEqual(h.site, 'https://harvingtonvillage.org.uk');
 assert.ok(h.urls.filter((u) => u.startsWith('https://thelenches.org.uk')).length === 0, 'every link is on harvingtonvillage.org.uk');
-for (const u of ['/', '/events/', '/churches/', '/living-here/council/', '/living-here/eat/']) assert.ok(h.pages.includes(u), `has ${u}`);
-for (const u of ['/groups/', '/halls/', '/living-here/health/', '/living-here/walks/']) assert.ok(!h.pages.includes(u), `no ${u}`);
-assert.ok(!h.keys.includes('health') && !h.keys.includes('walks') && h.keys.includes('council'), 'only its own sections');
+for (const u of ['/', '/events/', '/churches/', '/living-here/council/', '/living-here/eat/', '/groups/', '/halls/', '/living-here/health/']) assert.ok(h.pages.includes(u), `has ${u}`);
+for (const u of ['/living-here/walks/']) assert.ok(!h.pages.includes(u), `no ${u}`);
+assert.ok(!h.keys.includes('walks') && h.keys.includes('council'), 'only its own sections');
 assert.ok(h.services.url === 'https://harvingtonvillage.org.uk/churches/');
 assert.ok(Array.isArray(h.services.sundays) && h.services.midweek !== undefined, 'church services read');
 assert.ok(/website@harvingtonvillage\.org\.uk/.test(h.home), 'Home blurb names its own address');
