@@ -206,6 +206,11 @@ function entryAttrs(it, label) {
 const fieldAttr = (name) => (TAGS ? ` data-field="${name}"` : '');
 const fieldLink = (html, name) => (TAGS ? html.replace(/^<a /, `<a data-field="${name}" `) : html);
 
+// "Read more on the website" under a shortened body (select.js shortened; 24 Nov).
+function moreLine(it) {
+  return it && it.more ? `<div style="margin-top:4px;font-family:${SANS};font-size:13px;">${a(it.more, 'Read more on the website', C.accentText)}</div>` : '';
+}
+
 function linkLine(link, link2) {
   const parts = [link, link2].map((l, i) => (l ? fieldLink(a(l.url, l.text, C.accentText), i ? 'link2' : 'link') : '')).filter(Boolean);
   return parts.length ? `<div style="margin-top:6px;font-family:${SANS};font-size:13px;">${parts.join(' &nbsp;&middot;&nbsp; ')}</div>` : '';
@@ -244,7 +249,7 @@ function eventCard(ev) {
     + `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.card};"${entryAttrs(ev, 'Event')}>`
     + `<tr><td width="62" valign="top" style="padding:12px 0 12px 12px;">${tile}</td>`
     + `<td valign="top" style="padding:12px;font-family:${SERIF};font-size:14px;line-height:1.5;color:${C.ink};">`
-    + `${title}${meta}${body}${eventLinks(ev)}</td></tr>${img}</table></td></tr>`;
+    + `${title}${meta}${body}${moreLine(ev)}${eventLinks(ev)}</td></tr>${img}</table></td></tr>`;
 }
 
 function storyBlock(it, titleSize, kind) {
@@ -253,7 +258,7 @@ function storyBlock(it, titleSize, kind) {
   return `<tr><td class="px" style="padding:12px 24px 0;font-family:${SERIF};font-size:14px;line-height:1.55;color:${C.ink};"${entryAttrs(it, kind === 'news' ? 'News' : 'Notice')}>`
     + `<div style="font-weight:bold;font-size:${titleSize}px;">${esc(it.title)}</div>${meta}`
     + (it.body ? `<div style="margin-top:4px;"${fieldAttr('body')}>${para(it.body)}</div>` : '')
-    + `${linkLine(it.link, it.link2)}${img}</td></tr>`;
+    + `${moreLine(it)}${linkLine(it.link, it.link2)}${img}</td></tr>`;
 }
 
 // Bins first, in a box of their own (Jon, 28 Oct): one line per collection day, date in bold.
@@ -419,10 +424,11 @@ function renderText(m) {
   const p = dateParts(m.issueDate);
   const out = [];
   const head = (t) => { out.push('', t.toUpperCase(), '-'.repeat(t.length), ''); };
-  const item = (title, meta, body, link, link2) => {
+  const item = (title, meta, body, link, link2, more) => {
     out.push(title);
     if (meta) out.push(meta);
     if (body) out.push(paras(body).join('\n\n'));
+    if (more) out.push(`Read more on the website: ${more}`);
     if (link) out.push(`${link.text}: ${link.url.replace(/^mailto:/i, '')}`);
     if (link2) out.push(`${link2.text}: ${link2.url.replace(/^mailto:/i, '')}`);
     out.push('');
@@ -439,7 +445,7 @@ function renderText(m) {
   if (m.events.length || oldRegs) {
     head('Coming up');
     for (const ev of m.events) {
-      item(`${dateParts(ev.date).short} · ${ev.title}${ev.lenches ? ' [Lenches]' : ''}`, ev.meta, ev.body, ev.link, ev.link2);
+      item(`${dateParts(ev.date).short} · ${ev.title}${ev.lenches ? ' [Lenches]' : ''}`, ev.meta, ev.body, ev.link, ev.link2, ev.more);
       const cal = calendarUrl(ev);
       if (cal) out.splice(out.length - 1, 0, `Add to calendar: ${cal}`);
     }
@@ -475,7 +481,7 @@ function renderText(m) {
   if (m.cartoon) out.push('', `This week's cartoon: ${m.cartoon.caption}`, `See it here: ${m.cartoon.src}`, '');
   if (m.notices.length) {
     head('Notices');
-    for (const it of m.notices) item(it.title, it.meta, it.body, it.link, it.link2);
+    for (const it of m.notices) item(it.title, it.meta, it.body, it.link, it.link2, it.more);
   }
   if (m.where) {
     head('Where in the Lenches?');
