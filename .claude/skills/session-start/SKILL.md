@@ -23,8 +23,7 @@ Run these quickly and cheaply, then give Jon **one short summary** (what was fou
 - Read the Plan doc's **Kryten and Holly** tab (https://claude.ai/artifact/Qo9N1MsFpUonnnQcb6ZX6S) with the Claude Docs connector: outline first, then only that tab. To keep it cheap, search the tab's body (node `be3e8150-7f47`) for "Chrome job" and view only the matching rows, rather than reading the whole tab. Look for Chrome job rows that Jon has answered (an answer in the row, Status not Done); act on them and set their Status to Done. If the connector isn't available, tell Jon.
 
 ## 4. Failed runs
-- List recent runs with the GitHub MCP actions tools (`actions_list`, method `list_workflow_runs`, repo JonF61/thelenches-site). There is no failure filter and 100 runs is too big to read inline: the tool saves the result to a file, so filter that with python (keep runs whose `conclusion` is not success, skipped or cancelled, created in the last ~26 hours). The daily routine "Kryten: daily failed-runs check" (05:53 UK) usually covers these, so check only those since its last report or that it couldn't fix.
-- Read a failed job's log (`get_job_logs`), fix code or workflow causes in a PR and merge it, re-run only read-only workflows, and give Jon click-by-click steps for anything only he can do.
+- Follow the `failed-runs` skill for the last ~26 hours. The daily routine "Kryten: daily failed-runs check" (05:53 UK) usually covers these, so check only those since its last report or that it couldn't fix.
 
 ## Cost
 Each /k read is cheap; reading the Plan doc and job logs is the expensive part, so read only the tab or job you need. If the checks are turning token-heavy, tell Jon and offer to defer.
