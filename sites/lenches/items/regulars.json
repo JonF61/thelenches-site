@@ -342,6 +342,28 @@
       "booking": "Sign up through the Girlguiding website, or email",
       "checked": "2026-11",
       "added": "2026-11-22"
+    },
+    {
+      "day": "Friday",
+      "time": "10am",
+      "what": "Nurture in Nature (parent and baby sling walk)",
+      "where": "Lenches Lakes, Hill Barn Orchard, Evesham Road, WR11 4UB",
+      "note": "starts 27 Nov",
+      "about": "A gentle sling walk of about an hour, then coffee, cake and chat from 11am, with an optional wellbeing activity.",
+      "runBy": "Holistic Birth Worcestershire",
+      "phone": "07810 837395",
+      "email": "holisticbirthworcestershire@gmail.com",
+      "forWho": "Parents and babies",
+      "cost": "Free",
+      "booking": "No need to book; just turn up",
+      "bring": "Slings available to borrow",
+      "image": {
+        "url": "/images/items/nurture-in-nature-2026.webp",
+        "alt": "Nurture in Nature: new free weekly sling walk at Lenches Lakes, Fridays from 27 November, 10am"
+      },
+      "checked": "2026-11",
+      "added": "2026-11-24",
+      "newActivity": true
     }
   ]
 }
