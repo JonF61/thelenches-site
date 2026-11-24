@@ -68,6 +68,36 @@ const LIVE = new Set(['approved', 'auto']);
 const WYCHAVON_LOOKUP = 'https://selfservice.wychavon.gov.uk/wdcroundlookup/';
 
 const str = (v) => String(v ?? '').trim();
+// Long items (24 Nov, Jon, after a vicar's letter filled the issue): a body over LONG_BODY characters
+// is cut at the end of a sentence near SHORT_BODY, ends "…", and gets `more` = its place on the
+// website (lib/anchors.js anchorUrl), shown as "Read more on the website". Older snapshots have no
+// `more` and render as before. The website keeps the whole text.
+const LONG_BODY = 700;
+const SHORT_BODY = 500;
+function shortenBody(body) {
+  const text = String(body || '');
+  if (text.length <= LONG_BODY) return null;
+  const head = text.slice(0, SHORT_BODY + 150);
+  let cut = -1;
+  const re = /[.!?]["'”’)]?(?=\s)|\n\n/g;
+  let mm;
+  while ((mm = re.exec(head))) {
+    const end = mm.index + mm[0].length;
+    if (end > SHORT_BODY + 150) break;
+    if (end >= 200) { cut = end; if (end >= SHORT_BODY) break; }
+  }
+  if (cut < 0) {
+    const sp = text.lastIndexOf(' ', SHORT_BODY);
+    cut = sp > 200 ? sp : SHORT_BODY;
+  }
+  return `${text.slice(0, cut).trim().replace(/[.,;:]$/, '')}…`;
+}
+function shortened(item, kind) {
+  const body = shortenBody(item.body);
+  const more = body && anchors.anchorUrl(kind, item);
+  return more ? { ...item, body, more } : item;
+}
+
 function forwardBandFor(cfg) {
   const f = cfg && cfg.forwardBand;
   if (!f || !str(f.heading) || !str(f.body)) return null;
@@ -447,7 +477,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, car
     ...(forwardBandFor(siteConfig()) ? { forward: forwardBandFor(siteConfig()) } : {}),
     cutoff: deadline,
     held,
-    events: events.map(strip),
+    events: events.map(strip).map((x) => shortened(x, 'event')),
     // Regular activities (11 Nov, Jon: the full list each week was repetitive): the newsletter shows
     // a button to /regulars/ with the page's count, plus the entries listed in the last 14 days
     // (added), each marked new activity (newActivity) or newly listed. Only the one-line fields go in
@@ -461,7 +491,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, car
         ...(anchors.regularHasDetails(r) ? { more: anchors.regularUrl(r) } : {}) };
     }),
     news: [],
-    notices: notices.map(strip),
+    notices: notices.map(strip).map((x) => shortened(x, 'notice')),
     roads: roads.map(strip),
     bins: binsFor(bins, issueDate),
     elsewhere,
@@ -471,4 +501,4 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, car
   };
 }
 
-module.exports = { forwardBandFor, shortName, select, whatsonKey, ymd, addDays, minuteKey, deadlineFor };
+module.exports = { forwardBandFor, shortenBody, LONG_BODY, shortName, select, whatsonKey, ymd, addDays, minuteKey, deadlineFor };
