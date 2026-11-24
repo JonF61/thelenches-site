@@ -1,6 +1,6 @@
 ---
 name: regular-activity
-description: Add, update, pause or remove a regular activity (weekly class, club or group) in sites/lenches/items/regulars.json, shown on both sites' Regular activities pages and in the newsletter. Use when Holly's note says "Regular activity: add it to the Regular activities page by hand", when a village hall, club or Facebook post lists ongoing groups, or when Jon asks to add or change a regular.
+description: Add, update, pause or remove a regular activity (weekly class, club or group) in sites/lenches/items/regulars.json, shown on both sites' Regular activities pages and in the newsletter. Use whenever something meets on a repeating pattern (every Tuesday, monthly, term time): a Holly note saying "Regular activity: add it…by hand", a village hall or club listing its groups, a Facebook post or email about a weekly class, or Jon asking to add, change, pause or remove a regular, club, class or group, on either site.
 ---
 
 # Regular activities
@@ -9,7 +9,7 @@ All regulars live in one file, `sites/lenches/items/regulars.json` (`regulars` a
 
 ## 1. Before writing: check, then ask Jon
 - Check it isn't already listed: `grep -i "<what or venue>" sites/lenches/items/regulars.json sites/harvington/items -r`. If it is, offer to update that entry instead.
-- Show Jon the proposed entry (fields below) on screen, and **always ask** (Jon, 11 Nov), however it reached us:
+- Show Jon the proposed entry (fields below) on screen, and **always ask** (Jon, 11 Nov), however it reached us, because only he knows the history and the newsletter labels the two differently:
   - **New activity** (the activity itself has just started) → `"newActivity": true`, shown first as "New activity:" in the newsletter; or
   - **Newly listed** (it has run for a while, it's just new to our list) → no flag, shown as "Newly listed:".
 - Organisers' names and contact details are published only with that organiser's consent (Jon, 30 Oct). If you're not sure there's consent, leave them out and ask.

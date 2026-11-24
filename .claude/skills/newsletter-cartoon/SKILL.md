@@ -1,6 +1,6 @@
 ---
 name: newsletter-cartoon
-description: Weekly newsletter cartoon for both sites (the Lenches and Harvington). Use when Jon asks for cartoon or gag ideas, an image prompt for this week's cartoon, attaches a cartoon picture to add, or when the Wednesday cartoon check runs.
+description: Weekly "Dave" pocket cartoon for both sites' newsletters (the Lenches and Harvington): gag ideas, the image prompt for ChatGPT or Gemini, then signing and adding the picture to both cartoons.json files. Use whenever Jon mentions the cartoon, a gag, a joke for the newsletter or Dave, attaches a cartoon-style picture, asks for an image prompt, or when the Wednesday cartoon check runs.
 ---
 
 # Newsletter cartoon
@@ -18,11 +18,11 @@ One single-panel pocket cartoon per Thursday issue, signed "Dave", in **both** s
 
 ## 3. Write the image prompt
 - Use the template in `scripts/cartoon/prompt.md`: fill in **Scene**, the joke paragraph, the people paragraph and the `{setting}` / `{main feature}` / `{supporting details}` slots; keep the opening line, **Art style**, **Overall mood** and **Strict requirements** paragraphs word for word.
-- Never name or imitate a real cartoonist. The caption is **never** in the picture. The only words allowed are a sign's exact text ("CLEARLY READING" in the scene); with no sign, the last line ends "no lettering or other words anywhere in the image."
+- Never name or imitate a real cartoonist (their style is their own). The caption is **never** in the picture: image generators misspell lettering, and the newsletter prints the caption underneath. The only words allowed are a sign's exact text ("CLEARLY READING" in the scene); with no sign, the last line ends "no lettering or other words anywhere in the image."
 - Show the prompt in a code block, ready to paste. Jon makes the picture and attaches it to the session.
 
 ## 4. Add the picture (both sites)
-- File name: `<issue date>-<short-slug>-signed.jpg` (a new name every time; never reuse one).
+- File name: `<issue date>-<short-slug>-signed.jpg`, a new name every time: sent and frozen issues keep linking to the old file, so reusing a name would change pictures in past newsletters.
 - Sign and resize (920px, Outlook-safe JPEG, "Dave" bottom right):
   `node scripts/cartoon/sign.js <attached picture> sites/lenches/images/cartoons/<name>.jpg`
   then copy the same file to `sites/harvington/images/cartoons/<name>.jpg`.
@@ -39,4 +39,4 @@ One single-panel pocket cartoon per Thursday issue, signed "Dave", in **both** s
 
 ## 5. Check, commit, merge
 - `SITE=lenches node scripts/test-cartoon.js` and `SITE=harvington node scripts/test-cartoon.js`; `node lib/parity.js` should show no cartoon difference.
-- Commit subject like "Add 26 Nov newsletter cartoon: <short gag>"; branch, PR, merge (per CLAUDE.md). If that issue is already built (status built/tested), tell Jon to tap **Rebuild** then **Test send** on the Newsletter draft screen so the cartoon is in it.
+- Commit subject like "Add 26 Nov newsletter cartoon: <short gag>"; branch, PR, merge (the `finish-job` skill). If that issue is already built (status built/tested), tell Jon to tap **Rebuild** then **Test send** on the Newsletter draft screen so the cartoon is in it.

@@ -1,11 +1,11 @@
 ---
 name: arch-rota
-description: Type the ARCH Benefice Messenger's church service rota and readings into sites/lenches/_data/services.json (read by both sites' Churches pages and Holly's site facts). Use when Jon attaches or mentions a new ARCH Messenger, or asks to update church service times or readings.
+description: Type the ARCH Benefice Messenger's church service rota and Bible readings into sites/lenches/_data/services.json (read by both sites' Churches pages and Holly's site facts). Use whenever Jon attaches or mentions the ARCH Messenger or a benefice magazine or newsletter, asks to update church services, service times, Sunday readings or the rota, or says a church service on either site is wrong or missing.
 ---
 
 # ARCH Messenger rota
 
-The ARCH Benefice Messenger (monthly) lists each Sunday's and feast day's services across the benefice and the readings. Kryten types it into **one file**, `sites/lenches/_data/services.json`; Harvington reads the same file (`sites/harvington/_data/services.js`), so never copy it there.
+The ARCH Benefice Messenger (monthly) lists each Sunday's and feast day's services across the benefice and the readings. Kryten types it into **one file**, `sites/lenches/_data/services.json`; Harvington reads the same file (`sites/harvington/_data/services.js`), so don't copy it there: two copies would drift apart.
 
 ## 1. Get the Messenger
 Jon attaches it (PDF or screenshots). If he says it came by email, find it with the Gmail connector (search recent days only). Ask if any page is unreadable rather than guessing a time or village.
@@ -41,7 +41,7 @@ Jon attaches it (PDF or screenshots). If he says it came by email, find it with 
 - `midweek`: update only if the Messenger changes it.
 
 ## 3. Rules
-- **Never** list baptisms, funerals or weddings.
+- **Never** list baptisms, funerals or weddings: they are private family occasions, not public services, even when the Messenger prints them.
 - Readings as "Book ch:v-v" (full book name, as in the file). Where the Messenger says "-end", keep that in `ref` and add `q` with the real last verse (check the chapter's last verse) so the Bible Gateway link works.
 - Dates in order. Remove dates that have passed (they no longer show), add the new month's, and keep any later dates already typed unless the new Messenger changes them. Update `source`.
 - Copy times and villages exactly; if the Messenger contradicts itself, ask Jon.
@@ -49,4 +49,4 @@ Jon attaches it (PDF or screenshots). If he says it came by email, find it with 
 ## 4. Check, commit, merge
 - `python3 -c "import json;json.load(open('sites/lenches/_data/services.json'))"`, then build both sites (`npx @11ty/eleventy` and `SITE=harvington npx @11ty/eleventy --output=<dir>`) and look at each built `churches/index.html` for the new dates; `node scripts/test-sitefacts-sites.js`.
 - Show Jon a short on-screen summary (date, name, services) before committing if anything was unclear.
-- Commit subject like "Church services: ARCH Messenger December 2026 rota"; branch, PR, merge (per CLAUDE.md).
+- Commit subject like "Church services: ARCH Messenger December 2026 rota"; branch, PR, merge (the `finish-job` skill).

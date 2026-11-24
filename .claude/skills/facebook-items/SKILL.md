@@ -1,6 +1,6 @@
 ---
 name: facebook-items
-description: Weekly Facebook group round-up for thelenches.org.uk. Use when Jon attaches screenshots of the Lenches Facebook group's recent posts (or says "Facebook items", "this week's Facebook posts") to turn them into hand-written event and notice files in sites/lenches/items/.
+description: Weekly Facebook group round-up for thelenches.org.uk: turns screenshots of the Lenches Facebook group's posts into hand-written event and notice files in sites/lenches/items/, with Jon's approval first. Use whenever Jon attaches Facebook screenshots, even with no words or just "this week's", or says "Facebook items", "from the group", "anything on Facebook", or wants a post from the group put on the website.
 ---
 
 # Weekly Facebook items
@@ -11,7 +11,7 @@ Jon attaches screenshots of the last 7 days' posts from the Lenches Facebook gro
 - Read every screenshot. Pick out events (a date) and notices (news, appeals, closures, lost/found, roadworks).
 - Before listing, check what is already on the site so nothing is doubled: `ls sites/lenches/items/events sites/lenches/items/notices`, `sites/lenches/items/regulars.json`, and grep titles/venues in `sites/lenches/items/` and `sites/harvington/items/`. Say "already listed" against any match, and note when the Facebook post adds details to an existing file (offer to update that file instead).
 - Show a short numbered table: type, proposed title, date(s)/expiry, one-line body summary, and any question. Leave out: private sales and personal ads, anything political, other organisations' sponsorship lines, posts naming private people in a way they wouldn't expect published.
-- A regular, ongoing class/club/group goes in `regulars.json`, not events: ask Jon whether it is a **new activity** (`newActivity: true`) or just **newly listed** (no flag); give it `added` (today). A one-off taster is an event.
+- A regular, ongoing class/club/group goes in `regulars.json`, not events: follow the `regular-activity` skill for it (it asks Jon "new activity or newly listed?"). A one-off taster is an event.
 - An item for one community only (one parish's council news, a lane only one village uses, members/residents only) gets `"sites": "lenches"` (or `harvington`); everything else is shared with Harvington automatically. Flag these in the table.
 - Ask about anything unclear (year, time, venue). Then **wait for Jon to approve** (he may approve some, edit wording, or drop items).
 
@@ -38,7 +38,7 @@ Jon attaches screenshots of the last 7 days' posts from the Lenches Facebook gro
   "expires": "2026-12-01"
 }
 ```
-- `added` = today: **required** (the New badge, and hides it 28 days later; the test fails without it).
+- `added` = today: required, because it drives the New badge and hides the notice 28 days later (so stale news never lingers); the test fails without it.
 - `expires` = the first day it should be hidden (e.g. the day after a closure ends). Optional `order`, `pinned`, `link`, `link2`, `image`, `official`, `sites`. Roadworks: `roads: true` plus optional `start`, `end`, `road`, `village`.
 
 ## Wording rules
@@ -47,7 +47,7 @@ Jon attaches screenshots of the last 7 days' posts from the Lenches Facebook gro
 - Don't invent facts, prices, times or links not in the post. A Facebook post link is fine as the link if the post is public.
 
 ## Images
-Only when Jon says so. News-column images display at 3:2 (lead 4:3, object-fit cover): crop to that ratio first (sharp). Put them in `sites/lenches/images/items/` with a **new file name** each time (never reuse a name). Image field: `{"url": "/images/items/<file>.jpg", "alt": "...", "credit": "..."}`. An image showing people needs Jon's OK.
+Only when Jon says so. News-column images display at 3:2 (lead 4:3, object-fit cover): crop to that ratio first (sharp). Put them in `sites/lenches/images/items/` with a **new file name** each time: frozen newsletters and browser caches keep pointing at the old name, so a reused name shows the wrong picture. Image field: `{"url": "/images/items/<file>.jpg", "alt": "...", "credit": "..."}`. An image showing people needs Jon's OK.
 
 ## Editing and removing
 - Editing an item's `title` or `date` makes it a new item (new anchor; may reappear in the newsletter); say so if Jon asks for it.
@@ -56,4 +56,4 @@ Only when Jon says so. News-column images display at 3:2 (lead 4:3, object-fit c
 ## 3. Check, commit, merge
 - `node scripts/test-notice-until.js` and an Eleventy build (`npx @11ty/eleventy --output=/tmp/...` or the usual build); both sites pick up Lenches items.
 - Commit with a plain subject naming the items ("Add Facebook items: carols on the green, hall car park closure"); Holly reads commit subjects as evidence of site changes.
-- Branch, PR, merge (per CLAUDE.md), then tell Jon in a line what went up. No siteupdates.json entry for routine items.
+- Branch, PR, merge (the `finish-job` skill), then tell Jon in a line what went up. No siteupdates.json entry for routine items.
