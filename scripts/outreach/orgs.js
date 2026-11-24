@@ -69,7 +69,7 @@ async function orgRows(R) {
 }
 
 // { subject, body } for one organisation (kind: check | chase).
-function orgEmail(org, kind, R) {
+function orgEmail(org, kind, R, optout = true) {
   if (org.listing) {
     // Listings (5 Nov, wording approved by Jon): no opt-out line; the check says how to come off.
     const vars = { name: org.name, page: org.pageName, page_url: org.pageUrl, entry: [org.name, ...org.shown].join('\n') };
@@ -81,7 +81,8 @@ function orgEmail(org, kind, R) {
   const vars = { organisation: org.name, page: org.pageName, page_url: org.pageUrl, entry: [org.name, ...org.shown].join('\n') };
   const parts = [replies.greeting(org.greet), replies.fill(kind === 'chase' ? 'org_chase' : 'org_check', vars)];
   parts.push(replies.fill('signature'));
-  if (kind !== 'chase') parts.push(replies.fill('outreach_optout')); // after the signature, in italics (24 Nov)
+  // After the signature, in italics, and only on a first email to them (Jon, 24 Nov).
+  if (kind !== 'chase' && optout) parts.push(replies.fill('outreach_optout'));
   return { subject: kind === 'chase' ? `Re: ${R.SUBJECT}` : R.SUBJECT, body: parts.join('\n\n') };
 }
 
@@ -111,7 +112,7 @@ async function draftOrgCheck(id) {
     console.log(`Organisation ${id}: ${plan.error.replace(/^Not drafted: /, '')}; nothing drafted.`);
     return null;
   }
-  const { subject, body } = orgEmail(org, plan.kind, R);
+  const { subject, body } = orgEmail(org, plan.kind, R, !replies.emailedBefore(rows, R.emailOf(org, ctx.orgRow)));
   const now = Date.now();
   const fresh = {
     reply_id: `org-${id}-${plan.kind}-${londonDateTime(now).replace(/\D/g, '')}`,

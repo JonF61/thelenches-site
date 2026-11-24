@@ -173,7 +173,7 @@ async function draftContactEmail(id, brief) {
     hold_reason: '',
     policy_codes: R.CONTACT_EMAIL_CODE,
     subject,
-    body: [replies.greeting(name), text, replies.fill('signature'), replies.fill('outreach_optout')].join('\n\n'),
+    body: [replies.greeting(name), text, replies.fill('signature'), replies.optoutFor(rows, row.email)].filter(Boolean).join('\n\n'),
     status: mode === 'shadow' ? 'shadow' : 'awaiting',
     created_at: londonDateTime(now),
     notes: [`Email you asked for in the panel: ${want}`, ...warnings].join(' | '),
