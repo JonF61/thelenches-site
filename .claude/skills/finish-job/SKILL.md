@@ -13,6 +13,7 @@ Work through these in order. Small jobs are where steps get forgotten (a Build h
 - Run the offline tests for whatever changed (`scripts/test-*.js`, `worker/test/*.test.mjs`), mocking the Claude API and Google calls. Browser checks (`worker/test/ui-*.check.mjs`) after a build when panel or page markup changed.
 - Moved or reorganised files: build before into a scratch folder, build after, then `scripts/compare-build.sh <before> _site`.
 - Data shared between the sites (bins, term dates, cartoons, a new `_data` file or page): `node lib/parity.js`; add any intended difference to `KNOWN` with the reason.
+- Admin panel, both-sites or newsletter changes: work through the `panel-change`, `both-sites` or `newsletter-change` checklist too.
 - Visual or email changes: show Jon a preview (a screenshot or a sample render) before merging.
 - Public-facing wording: Jon approves it before it is committed.
 
