@@ -254,6 +254,11 @@
       "waiting": "OpenAI identity review",
       "added": "2026-11-24",
       "kryten": true
+    },
+    {
+      "task": "After the next Already listed acknowledgement, check its Replies row has the new newsletter line (templates.md listed_nl_*) and the issues are right.",
+      "added": "2026-11-24",
+      "kryten": true
     }
   ]
 }
