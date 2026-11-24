@@ -147,10 +147,15 @@ function forwardBand(f) {
     + `<td bgcolor="${C.green}" style="background:${C.green};border-radius:4px;padding:10px 18px;">`
     + `<a href="${esc(url)}" style="color:#ffffff;font-family:${SANS};font-size:15px;font-weight:bold;text-decoration:none;">${esc(f.button)} &rarr;</a>`
     + `</td></tr></table>` : '';
+  // line (24 Nov, Jon): its own paragraph; the words in [square brackets] link to url, bold and underlined.
+  const lm = f.line && url ? /^(.*?)\[([^\]]+)\](.*)$/.exec(f.line) : null;
+  const line = f.line ? `<div style="margin:8px 0 2px;">${lm
+    ? `${esc(lm[1])}<a href="${esc(url)}" style="color:${C.green};font-weight:bold;text-decoration:underline;">${esc(lm[2])}</a>${esc(lm[3])}`
+    : esc(f.line.replace(/[\[\]]/g, ''))}</div>` : '';
   return `<tr><td class="px" style="padding:16px 24px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>`
     + `<td style="background:${C.cream};border:1px solid ${C.line};border-radius:4px;padding:12px 16px;font-family:${SANS};font-size:14px;line-height:1.5;color:${C.ink};">`
     + `<div style="font-family:${SERIF};font-size:17px;font-weight:bold;color:${C.green};margin:0 0 4px;">${esc(f.heading)}</div>`
-    + `${esc(f.body)}${btn}</td></tr></table></td></tr>`;
+    + `${esc(f.body)}${line}${btn}</td></tr></table></td></tr>`;
 }
 
 const a = (url, text, color) => `<a href="${esc(url)}" style="color:${color};text-decoration:underline;">${esc(text)}</a>`;
@@ -427,7 +432,9 @@ function renderText(m) {
   if (m.onThisDay) out.push(`On this day: ${m.onThisDay.text}`, '');
   if ((m.siteUpdates || []).length) out.push('Website and newsletter update:', ...siteTexts(m.siteUpdates).flatMap((t) => [t, '']), `Have a look at ${LINKS.site}`, '');
   out.push(summaryLine(m));
-  if (m.forward) out.push('', m.forward.heading.toUpperCase(), m.forward.body, ...(m.forward.url && m.forward.button ? [`${m.forward.button}: ${siteUrl(m.forward.url)}`] : []));
+  if (m.forward) out.push('', m.forward.heading.toUpperCase(), m.forward.body,
+    ...(m.forward.line ? [m.forward.line.replace(/\[([^\]]+)\]/, '$1'), ...(m.forward.url ? [siteUrl(m.forward.url)] : [])] : []),
+    ...(m.forward.url && m.forward.button ? [`${m.forward.button}: ${siteUrl(m.forward.url)}`] : []));
   const oldRegs = typeof m.regulars === 'string' ? m.regulars : '';
   if (m.events.length || oldRegs) {
     head('Coming up');

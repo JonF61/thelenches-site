@@ -19,13 +19,14 @@ assert.strictEqual(forwardBandFor({ forwardBand: { heading: 'x' } }), null, 'nee
 
 if (SITE === 'harvington') {
   assert.ok(band, 'Harvington has forwardBand');
-  assert.deepStrictEqual(m.forward, { heading: band.heading, body: band.body, button: band.button, url: band.url });
+  assert.deepStrictEqual(m.forward, { heading: band.heading, body: band.body, line: band.line, url: band.url });
   const out = render(m);
   const at = out.html.indexOf(band.heading);
   assert.ok(at > 0 && at < out.html.indexOf('Coming up'), 'band above Coming up');
-  assert.ok(out.html.includes('href="https://harvingtonvillage.org.uk/newsletter/"'), 'sign-up link');
+  assert.ok(/href="https:\/\/harvingtonvillage\.org\.uk\/newsletter\/" style="[^"]*font-weight:bold;text-decoration:underline;">click here<\/a> to get your own copy\./.test(out.html), 'click here: bold, underlined link');
+  assert.ok(!out.html.includes('&rarr;</a></td>'), 'no button');
   assert.ok(out.text.indexOf(band.heading.toUpperCase()) < out.text.indexOf('COMING UP') || !/COMING UP/.test(out.text), 'text version');
-  assert.ok(out.text.includes('Sign up for the newsletter: https://harvingtonvillage.org.uk/newsletter/'));
+  assert.ok(out.text.includes('just click here to get your own copy.\nhttps://harvingtonvillage.org.uk/newsletter/'), 'text version link');
 } else {
   assert.ok(!band, 'the Lenches has no forwardBand');
   assert.ok(!('forward' in m), 'no forward key in the Lenches model');
