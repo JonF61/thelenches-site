@@ -1,6 +1,6 @@
 ---
 name: newsletter-cartoon
-description: Weekly "Dave" pocket cartoon for both sites' newsletters (the Lenches and Harvington): gag ideas, the image prompt for ChatGPT or Gemini, then signing and adding the picture to both cartoons.json files. Use whenever Jon mentions the cartoon, a gag, a joke for the newsletter or Dave, attaches a cartoon-style picture, asks for an image prompt, or when the Wednesday cartoon check runs.
+description: Weekly "Dave" pocket cartoon for both sites' newsletters (the Lenches and Harvington): gag ideas, the image prompt, drawing it with OpenAI through the Draw cartoon workflow (or Jon's ChatGPT/Gemini picture), then signing and adding the picture to both cartoons.json files. Use whenever Jon mentions the cartoon, a gag, a joke for the newsletter or Dave, attaches a cartoon-style picture, asks for an image prompt, or when the Wednesday cartoon check runs.
 ---
 
 # Newsletter cartoon
@@ -19,9 +19,16 @@ One single-panel pocket cartoon per Thursday issue, signed "Dave", in **both** s
 ## 3. Write the image prompt
 - Use the template in `scripts/cartoon/prompt.md`: fill in **Scene**, the joke paragraph, the people paragraph and the `{setting}` / `{main feature}` / `{supporting details}` slots; keep the opening line, **Art style**, **Overall mood** and **Strict requirements** paragraphs word for word.
 - Never name or imitate a real cartoonist (their style is their own). The caption is **never** in the picture: image generators misspell lettering, and the newsletter prints the caption underneath. The only words allowed are a sign's exact text ("CLEARLY READING" in the scene); with no sign, the last line ends "no lettering or other words anywhere in the image."
-- Show the prompt in a code block, ready to paste. Jon makes the picture and attaches it to the session.
+- Show the prompt in a code block for Jon to approve (he may tweak it).
+
+## 3b. Draw it (Draw cartoon workflow; 24 Nov, Jon)
+- Since 24 Nov Kryten draws it, so Jon no longer pastes into ChatGPT (whose free plan allows one picture a day). On your branch, commit the approved prompt as `scripts/cartoon/next-prompt.md`, push, and dispatch `cartoon.yml` with that branch as ref and inputs `issue`, `slug`, `count` (default 3). It calls OpenAI (`gpt-image-2`, medium, 1024 square; repo variable `CARTOON_MODEL` overrides; secret `OPENAI_API_KEY`, Jon's prepaid credit with no auto-recharge, a few pence a version) and commits signed `scripts/cartoon/candidates/<issue>-<slug>-<a|b|c>-signed.jpg` to the branch. It refuses main.
+- `git pull`, Read each candidate, send them to Jon (SendUserFile) and ask which one, or for a redraw with a changed prompt. A 403 about verification means OpenAI's ID check on Jon's account hasn't cleared.
+- Move the chosen one to `sites/lenches/images/cartoons/<issue>-<slug>-signed.jpg` (already signed: don't run sign.js again), copy it to Harvington, and `git rm` the other candidates and `next-prompt.md` before the PR, so nothing of them reaches main.
+- If OpenAI is unavailable, Jon can still make it in ChatGPT or Gemini and attach it (step 4).
 
 ## 4. Add the picture (both sites)
+- (Signing below applies to a picture Jon attached; a Draw cartoon candidate is already signed.)
 - File name: `<issue date>-<short-slug>-signed.jpg`, a new name every time: sent and frozen issues keep linking to the old file, so reusing a name would change pictures in past newsletters.
 - Sign and resize (920px, Outlook-safe JPEG, "Dave" bottom right):
   `node scripts/cartoon/sign.js <attached picture> sites/lenches/images/cartoons/<name>.jpg`

@@ -29,6 +29,7 @@ export const WORKFLOW_NAMES = {
   'listing-suggest.yml': 'Listing suggestion',
   'listing-emails.yml': 'Find listing emails',
   'sponsor-emails.yml': 'Find sponsor emails',
+  'cartoon.yml': 'Draw cartoon',
   'unsubscribe.yml': 'Unsubscribe',
   'suggest.yml': 'Image suggestions',
   'eventimages.yml': 'Event images',

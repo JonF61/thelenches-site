@@ -1,0 +1,58 @@
+name: Draw cartoon
+
+# Newsletter cartoon drawing (24 Nov 2026, Jon; scripts/cartoon/generate.js): on a Kryten branch
+# holding scripts/cartoon/next-prompt.md, asks OpenAI's image API for up to 4 versions, signs each
+# "Dave" and commits them to scripts/cartoon/candidates/ on that same branch for Jon to choose
+# from. Manual only, dispatched by Kryten with the branch as ref; refuses main. Costs a few pence
+# per version from the prepaid OpenAI credit (no auto-recharge). Sends and publishes nothing.
+on:
+  workflow_dispatch:
+    inputs:
+      issue:
+        description: Issue date (YYYY-MM-DD, a Thursday)
+        required: true
+      slug:
+        description: Short file-name slug, e.g. bric-a-brac-cat
+        required: true
+      count:
+        description: How many versions (1-4)
+        default: '3'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cartoon-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  draw:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Refuse main
+        if: github.ref_name == 'main'
+        run: |
+          echo "Run this on a Kryten branch holding scripts/cartoon/next-prompt.md, never main."
+          exit 1
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Draw and sign
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CARTOON_ISSUE: ${{ github.event.inputs.issue }}
+          CARTOON_SLUG: ${{ github.event.inputs.slug }}
+          CARTOON_COUNT: ${{ github.event.inputs.count }}
+          CARTOON_MODEL: ${{ vars.CARTOON_MODEL }}
+        run: node scripts/cartoon/generate.js
+      - name: Commit the versions to this branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
+          git add scripts/cartoon/candidates
+          git commit -m "Cartoon versions for ${{ github.event.inputs.issue }} (Draw cartoon run ${{ github.run_id }})"
+          git push origin HEAD:${{ github.ref_name }}
