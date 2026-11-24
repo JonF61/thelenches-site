@@ -177,6 +177,7 @@ export const CLIENT_JS = String.raw`
       ['Reject', 'turns it down.']],
     lessons: [
       'Holly reads the approved lessons before every draft (the newest 20).',
+      'The number beside Holly lessons in the menu counts the suggestions waiting and the lessons with a Check note.',
       ['Proposed', 'Monday\'s suggestions from the week\'s corrections: Approve or Reject.'],
       ['Check: …', 'this lesson may clash with her fixed rules, her voice guide or another lesson.'],
       ['Add', 'your own lesson, approved straight away; Edit and Delete work on any lesson.'],
@@ -593,6 +594,20 @@ export const CLIENT_JS = String.raw`
     load(true);
   }
 
+  // Holly lessons needing you (24 Nov, Jon): suggestions waiting plus lessons with a "Check:" note;
+  // from the lessons screen once loaded, else the Summary's figure (lessons.js lessonNeedsYou).
+  function lessonsCount() {
+    var t = S.lessons;
+    if (t && !t.error) {
+      return t.rows.filter(function (r) {
+        var st = lower(r.status);
+        return st === 'proposed' || (st === 'approved' && /(^|\s)Check:/.test(str(r.notes)));
+      }).length;
+    }
+    var s = S.summary;
+    return s && !s.error && typeof s.lessonsNeedYou === 'number' ? s.lessonsNeedYou : null;
+  }
+
   function counts(d) {
     var n = function (t, kind, key) {
       if (!t || t.error) return '!';
@@ -604,7 +619,8 @@ export const CLIENT_JS = String.raw`
       photos: d.photos && !d.photos.error ? d.photos.rows.filter(function (r) { return r._waiting && !S.done['photo:' + r.drive_id]; }).length : '!',
       feedback: d.feedback && !d.feedback.error ? fbRows(d, 'waiting').length + fbRows(d, 'reply').length : '!',
       suggestions: d.listingSuggestions && !d.listingSuggestions.error ? sgRows(d).length : '!',
-      summary: null, autonomy: null, draft: null, stats: null, visitors: null, contacts: null, lessons: null, health: null, activity: null
+      lessons: lessonsCount(),
+      summary: null, autonomy: null, draft: null, stats: null, visitors: null, contacts: null, health: null, activity: null
     };
   }
 

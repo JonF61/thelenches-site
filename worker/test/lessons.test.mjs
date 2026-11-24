@@ -3,7 +3,7 @@
 // Run: node --test worker/test/
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { lessonRows, cleanLesson, nextId, newLessonRow, planLessonDecision, LESSON_HEADERS } from '../src/admin/lessons.js';
+import { lessonRows, lessonNeedsYou, cleanLesson, nextId, newLessonRow, planLessonDecision, LESSON_HEADERS } from '../src/admin/lessons.js';
 import { dispatchFor } from '../src/core.js';
 
 test('lessonRows: newest first, blank rows dropped', () => {
@@ -36,4 +36,13 @@ test('Approve / Reject a suggestion goes through decide()', () => {
   assert.equal(planLessonDecision({ action: 'reject', id: 'L1' }, { id: 'L1', status: 'proposed' }).p.a, 'lesson_no');
   assert.equal(planLessonDecision({ action: 'approve', id: 'L1' }, { id: 'L1', status: 'approved' }).status, 409);
   assert.equal(planLessonDecision({ action: 'approve', id: 'L1' }, null).status, 404);
+});
+
+test('lessonNeedsYou: suggestions waiting and lessons in use with a Check note (menu count)', () => {
+  assert.equal(lessonNeedsYou({ status: 'proposed', notes: '' }), true);
+  assert.equal(lessonNeedsYou({ status: 'approved', notes: 'Check: clashes with the voice guide.' }), true);
+  assert.equal(lessonNeedsYou({ status: 'approved', notes: 'added in the panel Check: x' }), true);
+  assert.equal(lessonNeedsYou({ status: 'approved', notes: 'added in the panel' }), false);
+  assert.equal(lessonNeedsYou({ status: 'rejected', notes: 'Check: x' }), false);
+  assert.equal(lessonNeedsYou({ status: 'approved', notes: 'Rechecked:' }), false);
 });

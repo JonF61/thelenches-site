@@ -64,6 +64,8 @@ try {
     assert.match(text, /^Rules Holly follows in every draft/m);
     assert.match(text, /SUGGESTED \(1\)[\s\S]*IN USE \(1\)[\s\S]*NOT IN USE \(1\)/i);
     await main.locator('.card', { hasText: 'Avoid naming a past month' }).locator('.note.warn', { hasText: 'Check: overlaps another lesson in use.' }).waitFor();
+    // Menu count (24 Nov): one suggestion waiting + one lesson in use with a Check note.
+    assert.equal((await page.locator('nav.side button', { hasText: 'Holly lessons' }).locator('.n').textContent()).trim(), '2');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `lessons-${name}.png`), fullPage: true });
 
     // Add.
