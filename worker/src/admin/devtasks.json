@@ -248,6 +248,12 @@
       "task": "Holly review follow-up (24 Nov): on the next few reply drafts, check Holly no longer adds \"I'll pass this on to Jon\" or promises a follow-up when nothing needs his decision (voice.md change), that retired lessons are not missed, and that the next Harvington outreach draft introduces the Harvington website with its link and doesn't name Jon",
       "added": "2026-11-24",
       "kryten": true
+    },
+    {
+      "task": "First real Draw cartoon run (cartoon.yml) once OpenAI's ID check on Jon's API account clears: check the three versions look like the house style and the log/cost are as expected.",
+      "waiting": "OpenAI identity review",
+      "added": "2026-11-24",
+      "kryten": true
     }
   ]
 }
