@@ -36,6 +36,21 @@ Thanks for sending "{title}". We already have it on the website, so it's all set
 ## ack_listed_line
 We already have "{title}" on the website: {link}
 
+## listed_nl_this
+It's in this Thursday's newsletter ({this_date}) too.
+
+## listed_nl_this_and
+It's in this Thursday's newsletter ({this_date}) too, and again on {later}.
+
+## listed_nl_later
+It'll be in the newsletter on {dates}.
+
+## listed_nl_later_many
+It'll be in the newsletters on {dates}.
+
+## listed_nl_past
+It's already been in the newsletter.
+
 ## live_one
 Good news: "{title}" is now on the website: {link}
 If you don't see it straight away, try refreshing the page.

@@ -113,6 +113,8 @@ const { applyListRequest } = require('./subscriptions');
 const welcome = require('./welcome');
 const replycheck = require('../rimmer/replycheck');
 const sitechanges = require('./sitechanges');
+const nlissues = require('./nlissues');
+const whatson = require('../../lib/whatson');
 
 const TZ = 'Europe/London';
 // This run's site (Harvington stage 4b): Holly writes from its website@ address and signs as its
@@ -446,7 +448,11 @@ function buildBody({ items: all, outOfScope, clarification, unusable = [], name 
     parts.push(fill('ack_many', { titles: (splitEarly ? soon : list).map((i) => `- ${i.label}`).join('\n') }));
   }
   else if (!listedOnes.length) parts.push(fill('ack_none'));
-  listedOnes.forEach((i, n) => parts.push(fill(n === 0 && !items.length ? 'ack_listed' : 'ack_listed_line', { title: i.title, link: i.listed })));
+  listedOnes.forEach((i, n) => {
+    const line = fill(n === 0 && !items.length ? 'ack_listed' : 'ack_listed_line', { title: i.title, link: i.listed });
+    const nl = nlissues.sentence(i.nl, fill, (k) => t[k] !== undefined);
+    parts.push(nl ? `${line}\n${nl}` : line);
+  });
   if (personal) parts.push(personal);
   if (joined) parts.push(fill('ack_newsletter'));
 
@@ -727,7 +733,10 @@ const reviewInput = (review) => (review ? { previous_draft: review.previous, rev
 // last 14 days, from git (sitechanges.js). Given to Holly's answer, follow-up and redraft
 // prompts (SITE_RULES) and to Rimmer. Empty parts are left out; never throws.
 const SITE_RULES = `sender_items, when the input has it: what this sender has sent us in the last two
-months and what became of each (state; page = its link when it is on the website now).
+months and what became of each (state; page = its link when it is on the website now;
+newsletter = which Thursday issues it is or will be in, or that it has already been in one).
+When they ask about the newsletter or "this week's email", answer from newsletter; never
+guess an issue it doesn't give.
 recent_site_changes, when the input has it: hand changes the team made to the website in the
 last two weeks (date, what was changed, the entries or pages touched).
 Read both before you write. Never ask for, chase, offer or promise something they show is
@@ -778,6 +787,7 @@ function rimmerItems(rows = [], existing = []) {
       status: r.status || '',
       still_missing: askCodes(r).map((c) => FIELD_WORDS[c]).filter(Boolean),
       live,
+      newsletter: live ? nlissues.words(listedNewsletter(r, existing)) : undefined,
     };
   });
 }
@@ -1168,6 +1178,26 @@ function senderLimit(ctx, to) {
   };
 }
 
+// Which newsletter issues the entry an item is Already listed as is in (nlissues.js):
+// a Pending entry by its row, a hand-written one by its file. null when unknown; never throws.
+function listedNewsletter(row, existing = []) {
+  try {
+    const d = dupes.parse(row.duplicate);
+    const key = String((d && d.key) || '');
+    if (key.startsWith('p:')) {
+      const r = existing.find((x) => String(x.id) === key.slice(2));
+      if (!r) return null;
+      return nlissues.plan({ kind: String(r.category).toLowerCase() === 'event' ? 'event' : 'notice',
+        date: r.event_date, newsletterCount: r.newsletter_count, roads: !!String(r.road || '').trim() });
+    }
+    const hk = whatson.parseHandKey(key);
+    if (!hk) return null;
+    const it = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', hk.rel), 'utf8'));
+    return nlissues.plan({ kind: hk.folder === 'events' ? 'event' : 'notice', date: it.date,
+      added: it.added, handWritten: true, roads: it.roads === true });
+  } catch { return null; }
+}
+
 async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, said, limit, contact, name }, skip) {
   const anonymous = result.anonymous === true;
   // Already listed and live (duplicates.js, 3 Nov): no questions about it; the thanks says
@@ -1180,7 +1210,8 @@ async function planSubmission({ msg, result, rows, ctx, unusable, mode, base, sa
   let type = needs.length || anonymous ? 'clarify' : 'ack';
   if (limit.over && type === 'ack') return skip(`${limit.note}: acknowledgement dropped`);
 
-  const items = rows.map((r) => ({ title: r.title, event_date: r.event_date, policy: splitCodes(r.policy_flags), listed: listedOf(r) }));
+  const items = rows.map((r) => ({ title: r.title, event_date: r.event_date, policy: splitCodes(r.policy_flags), listed: listedOf(r),
+    nl: listedOf(r) ? listedNewsletter(r, ctx.existing) : null }));
   const codes = unique([
     items.some((i) => i.listed) && 'already_listed',
     ...items.flatMap((i) => i.policy),
