@@ -5,7 +5,7 @@ Reads give rows keyed by header name with their real Sheet row numbers; writes n
 column by its header, never a letter, so a column can't be mistaken. Every write keeps
 /k's safeguards (stale check, RAW, never row 1, max 50 cells, a Kryten log row, an undo id).
 
-  k.py read TAB [--site S] [--where COL=VAL ...] [--has COL] [--since COL=YYYY-MM-DD]
+  k.py read TAB [--site S] [--where COL=VAL ...] [--not COL=V1,V2 ...] [--has COL] [--since COL=YYYY-MM-DD]
                 [--cols A,B] [--last N] [--width N] [--json] [--count COL]
   k.py get TAB ROW [--site S]                      every field of one row, in full
   k.py headers TAB [--site S]                      the header row with column letters
@@ -118,6 +118,7 @@ def main():
     p.add_argument('args', nargs='*')
     p.add_argument('--site', default='lenches', help='lenches (default) or harvington')
     p.add_argument('--where', action='append', default=[], help='COL=VAL (exact, case-insensitive); repeatable')
+    p.add_argument('--not', dest='nots', action='append', default=[], help='COL=V1,V2: leave out rows whose COL is one of these, or starts with one ending in "*" (e.g. ignored*); repeatable')
     p.add_argument('--has', action='append', default=[], help='COL is not blank; repeatable')
     p.add_argument('--since', help='COL=YYYY-MM-DD: keep rows whose COL starts on or after that date')
     p.add_argument('--cols', help='comma-separated columns to show')
@@ -155,6 +156,14 @@ def main():
             c, _, v = w.partition('=')
             c = need(c)
             recs = [r for r in recs if r.get(c, '').strip().lower() == v.strip().lower()]
+        for w in a.nots:
+            c, _, vs = w.partition('=')
+            c = need(c)
+            bad = [v.strip().lower() for v in vs.split(',') if v.strip()]
+            def hit(val):
+                val = val.strip().lower()
+                return any(val.startswith(b[:-1]) if b.endswith('*') else val == b for b in bad)
+            recs = [r for r in recs if not hit(r.get(c, ''))]
         for c in a.has:
             c = need(c)
             recs = [r for r in recs if r.get(c, '').strip()]

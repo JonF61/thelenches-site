@@ -1,6 +1,6 @@
 ---
 name: holly-review
-description: Kryten's periodic review of how Holly's drafts are faring: reads Reply feedback, Item feedback and Holly lessons on both Sheets, finds corrections Jon keeps making, and proposes lasting changes to scripts/replies/voice.md, templates.md, scripts/ingest/rules.md or the lessons list for Jon's approval. Use when Jon asks how Holly is doing, why her drafts keep needing edits, for a "Holly review", or to tidy her lessons; also when a session has spare time and no review has been done for about a month, or after Jon rejects or rewrites several of her drafts in a row.
+description: Kryten's periodic review of how Holly's drafts are faring: reads Reply feedback, Item feedback and Holly lessons on both Sheets, finds corrections Jon keeps making, and proposes lasting fixes (scripts/replies/voice.md, templates.md, scripts/ingest/rules.md, or lessons to retire or merge) for Jon's approval. Use whenever Jon asks how Holly is doing, says she keeps getting something wrong, asks why her drafts need edits or about her lessons or Autonomy numbers, or asks for a "Holly review"; also offer it when about a month has passed since the last review, or after Jon rejects or rewrites several of her drafts in a row.
 ---
 
 # Holly review
@@ -14,16 +14,16 @@ Everything here is personal data: what senders wrote, Jon's final text, contacts
 
 This prints the decided rows since a date (Reply feedback and Item feedback are per Sheet, so it runs for both), with what Holly drafted and what Jon did, using the `sheet-access` skill's helper:
 ```
-K=.claude/skills/sheet-access/k.py; SINCE=2026-11-02
+K=.claude/skills/sheet-access/k.py; SINCE=2026-11-25   # the day after the last review
 for s in lenches harvington; do
   python3 $K read "Reply feedback" --site $s --since decided_at=$SINCE --count outcome
-  python3 $K read "Reply feedback" --site $s --since decided_at=$SINCE --cols decided_at,type,class,outcome,reason,draft,final_text --width 700 | grep -v -E "outcome=(approved|handled|closed|ignored)"
-  python3 $K read "Item feedback" --site $s --since decided_at=$SINCE --cols decided_at,type,outcome,changed,draft,final --width 700 | grep -v -E "outcome=(approved|auto|window|ignored)"
+  python3 $K read "Reply feedback" --site $s --since decided_at=$SINCE --not outcome=approved,handled,closed,ignored* --cols decided_at,type,class,outcome,reason,draft,final_text --width 700
+  python3 $K read "Item feedback" --site $s --since decided_at=$SINCE --not outcome=approved,auto,window,ignored* --cols decided_at,type,outcome,changed,draft,final --width 700
 done
 ```
 Then read the lessons: `python3 $K read "Holly lessons" --width 0` (Lenches only). Note their `notes` "Check: …" clashes from the Monday run.
 
-Ignore `ignored:*` rows (Jon's tests and slips), `handled` ("Replied in Gmail") and `closed`. Decisions before 2026-11-02 18:50 UK are cleared down and not counted for Holly, so set `SINCE` after that unless Jon asks for history.
+Set `SINCE` to the day after the last review: find it by searching the Plan doc's Build history for "Holly review" (the first was 24 Nov 2026). Going back further re-reads corrections already dealt with. Never go before the 2 Nov 2026 18:50 clear-down unless Jon asks for history, since those decisions aren't counted for Holly. The `--not` filters leave out what isn't a correction: `ignored:*` (Jon's tests and slips), `handled` ("Replied in Gmail"), `closed`, and drafts that went out as written.
 
 ## 2. Find the patterns
 Group the edited, redrafted and rejected rows by what Jon changed, not by sender. Look for:
