@@ -46,7 +46,7 @@ Ask Jon which to apply. Wait.
 
 ## 4. Apply what Jon approves
 - **voice.md / templates.md / rules.md**: edit the wording he approved. A template's `{placeholders}` and its heading key must stay the same (replies.js reads them by name). Run `node scripts/test-replies.js` (and `node scripts/test-ackfeedback.js` for ack wording), mocking Claude as the tests do. Commit with a plain subject ("Holly's voice: shorter thank-yous"), then PR and merge (`finish-job` skill).
-- **Lessons**: Jon edits, retires or deletes them on the panel's **Holly lessons** screen (stale-checked), or asks you to make a /k `set` on the tab (with `expect`; quote the undo id). Never name anyone in a lesson.
+- **Lessons**: Jon edits, retires or deletes them on the panel's **Holly lessons** screen (stale-checked), or asks you to make a /k `set` on the tab (with `expect`; quote the undo id). /k's CSV puts the row number first, so the tab's columns are A id, B created_at, C lesson, D evidence, E status, F decided_at, G notes. To retire a lesson, set its status to `retired` (Holly uses only `approved` rows) rather than deleting it, so the record stays. Never name anyone in a lesson.
 - Add a `"kryten": true` devtasks to-do to check the next few drafts show the change.
 
 ## Why not just add lessons?
