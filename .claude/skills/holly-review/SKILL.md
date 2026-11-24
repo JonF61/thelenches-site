@@ -12,19 +12,16 @@ You propose. Jon decides. Never change Holly's public wording without his approv
 ## 1. Read the feedback (on screen only)
 Everything here is personal data: what senders wrote, Jon's final text, contacts. Read it with /k (`KRYTEN_TOKEN`), keep it on screen, and never copy it into a commit, PR, devtasks.json, log or the Plan doc. In anything that persists, describe patterns in general terms only ("asks for a time the sender already gave").
 
-This prints the decided rows since a date (default: the last 30 days), with what Holly drafted and what Jon did. Reply feedback and Item feedback are per Sheet, so it runs for both. Holly lessons is one list in the Lenches Sheet.
+This prints the decided rows since a date (Reply feedback and Item feedback are per Sheet, so it runs for both), with what Holly drafted and what Jon did, using the `sheet-access` skill's helper:
 ```
-SINCE=2026-10-25; for s in lenches harvington; do for t in "Reply feedback" "Item feedback"; do echo "== $s / $t"; curl -sS https://approvals.lenches.workers.dev/k -H "authorization: Bearer $KRYTEN_TOKEN" -H 'content-type: application/json' -d "{\"op\":\"read\",\"tab\":\"$t\",\"range\":\"A1:Z500\",\"max_rows\":500,\"site\":\"$s\"}" | SINCE=$SINCE python3 -c "
-import json,sys,csv,io,os,collections
-r=list(csv.reader(io.StringIO(json.load(sys.stdin)['csv'])))[1:]; h=r[0]; g=lambda x,c: x[h.index(c)] if c in h else ''
-rows=[x for x in r[1:] if g(x,'decided_at')[:10]>=os.environ['SINCE'] and g(x,'outcome') and not g(x,'outcome').startswith('ignored')]
-print(collections.Counter((g(x,'type'),g(x,'outcome')) for x in rows).most_common())
-for x in rows:
-  if g(x,'outcome') in ('approved','auto','window','handled','closed'): continue
-  print('---',g(x,'type'),g(x,'class'),g(x,'outcome'),'|',g(x,'reason') or g(x,'changed'))
-  print('HOLLY:',g(x,'draft')[:500]); print('FINAL:',(g(x,'final_text') or g(x,'final'))[:500])"; done; done
+K=.claude/skills/sheet-access/k.py; SINCE=2026-11-02
+for s in lenches harvington; do
+  python3 $K read "Reply feedback" --site $s --since decided_at=$SINCE --count outcome
+  python3 $K read "Reply feedback" --site $s --since decided_at=$SINCE --cols decided_at,type,class,outcome,reason,draft,final_text --width 700 | grep -v -E "outcome=(approved|handled|closed|ignored)"
+  python3 $K read "Item feedback" --site $s --since decided_at=$SINCE --cols decided_at,type,outcome,changed,draft,final --width 700 | grep -v -E "outcome=(approved|auto|window|ignored)"
+done
 ```
-Then read the lessons: `{"op":"read","tab":"Holly lessons","range":"A1:H200"}` (Lenches only). Note their `notes` "Check: …" clashes from the Monday run.
+Then read the lessons: `python3 $K read "Holly lessons" --width 0` (Lenches only). Note their `notes` "Check: …" clashes from the Monday run.
 
 Ignore `ignored:*` rows (Jon's tests and slips), `handled` ("Replied in Gmail") and `closed`. Decisions before 2026-11-02 18:50 UK are cleared down and not counted for Holly, so set `SINCE` after that unless Jon asks for history.
 
@@ -46,7 +43,7 @@ Ask Jon which to apply. Wait.
 
 ## 4. Apply what Jon approves
 - **voice.md / templates.md / rules.md**: edit the wording he approved. A template's `{placeholders}` and its heading key must stay the same (replies.js reads them by name). Run `node scripts/test-replies.js` (and `node scripts/test-ackfeedback.js` for ack wording), mocking Claude as the tests do. Commit with a plain subject ("Holly's voice: shorter thank-yous"), then PR and merge (`finish-job` skill).
-- **Lessons**: Jon edits, retires or deletes them on the panel's **Holly lessons** screen (stale-checked), or asks you to make a /k `set` on the tab (with `expect`; quote the undo id). /k's CSV puts the row number first, so the tab's columns are A id, B created_at, C lesson, D evidence, E status, F decided_at, G notes. To retire a lesson, set its status to `retired` (Holly uses only `approved` rows) rather than deleting it, so the record stays. Never name anyone in a lesson.
+- **Lessons**: Jon edits, retires or deletes them on the panel's **Holly lessons** screen (stale-checked), or asks you to change it with the helper (`python3 $K set "Holly lessons" <row> status retired --expect approved`, or `lesson` with `--expect` the old text; quote the undo id). To retire a lesson, set its status to `retired` (Holly uses only `approved` rows) rather than deleting it, so the record stays. Never name anyone in a lesson.
 - Add a `"kryten": true` devtasks to-do to check the next few drafts show the change.
 
 ## Why not just add lessons?

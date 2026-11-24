@@ -12,16 +12,12 @@ Run these quickly and cheaply, then give Jon **one short summary** (what was fou
 - For each: do it now if it is due and needs no decision from Jon; otherwise ask Jon, or leave it if it is dated for later (e.g. "after the 3 Dec issue"). Remove each one you finish from devtasks.json in that job's PR.
 
 ## 2. Rimmer findings sent to Kryten
-- With `KRYTEN_TOKEN` set (check with `[ -n "$KRYTEN_TOKEN" ]`, never print it), this lists the rows whose `status` (column K) is `kryten` on both Sheets; `fix_note` (M) is Jon's note. /k's CSV starts with a line of column letters, so the real headers are the second line:
+- With the `sheet-access` skill's helper (needs `KRYTEN_TOKEN`), list the rows whose `status` is `kryten` on both Sheets (`fix_note` is Jon's note):
   ```
-  for s in lenches harvington; do echo "== $s"; curl -sS https://approvals.lenches.workers.dev/k -H "authorization: Bearer $KRYTEN_TOKEN" -H 'content-type: application/json' -d "{\"op\":\"read\",\"tab\":\"Rimmer\",\"range\":\"A1:U300\",\"max_rows\":300,\"site\":\"$s\"}" | python3 -c "
-  import json,sys,csv,io
-  r=list(csv.reader(io.StringIO(json.load(sys.stdin)['csv'])))[1:]; h=r[0]
-  k=[x for x in r[1:] if x[h.index('status')]=='kryten']; print(len(r)-1,'rows; kryten:',len(k))
-  for x in k: print(dict(zip(h,x)))"; done
+  K=.claude/skills/sheet-access/k.py; for s in lenches harvington; do python3 $K read Rimmer --site $s --where status=kryten; done
   ```
 - Without the token (or a 403 from the proxy), use the Read Sheet tab workflow (`read-sheet-tab.yml`, tab Rimmer, range A1:M300).
-- Deal with each (fix in a PR, or explain), then ask Jon before setting its status to `fixed` or `dismissed` (a /k `set` with `expect` = `kryten`; quote the undo id).
+- Deal with each (fix in a PR, or explain), then ask Jon before setting its status to `fixed` or `dismissed` (`python3 $K set Rimmer <row> status fixed --expect kryten`; quote the undo id).
 
 ## 3. Chrome jobs
 - Read the Plan doc's **Kryten and Holly** tab (https://claude.ai/artifact/Qo9N1MsFpUonnnQcb6ZX6S) with the Claude Docs connector: outline first, then only that tab. To keep it cheap, search the tab's body (node `be3e8150-7f47`) for "Chrome job" and view only the matching rows, rather than reading the whole tab. Look for Chrome job rows that Jon has answered (an answer in the row, Status not Done); act on them and set their Status to Done. If the connector isn't available, tell Jon.
