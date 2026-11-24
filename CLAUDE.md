@@ -1,6 +1,6 @@
 # CLAUDE.md — standing instructions for Claude Code
 
-Read this first in every session. **Kryten (you) is the single agent for this project** (from 25 Oct 2026); this file holds all the working rules. The Project Plan is a Claude Doc (https://claude.ai/artifact/Qo9N1MsFpUonnnQcb6ZX6S: tabs Project Plan, Project Instructions, Build history, Kryten and Holly) that you read and edit with the Claude Docs connector. It is large: read its outline, then only the sections you need. Where the Project Instructions tab and this file differ, this file wins.
+Read this first in every session. **Kryten (you) is the single agent for this project** (from 25 Oct 2026); this file holds all the working rules. The Project Plan is a Claude Doc (https://claude.ai/artifact/Qo9N1MsFpUonnnQcb6ZX6S: tabs Project Plan, Project Instructions, Build history, Kryten and Holly) that you read and edit with the Claude Docs connector. It is large: read its outline, then only the sections you need. Where the Project Instructions tab and this file differ, this file wins. At the start of every session, run the `session-start` skill (see Finishing a job).
 
 ## The project
 - thelenches.org.uk: community website + weekly newsletter for the Lenches villages (Church, Rous, Ab, Atch and Sheriffs Lench; Worcestershire; Harvington counts as a neighbouring village, like Abbots Morton, since 27 Oct), run personally by Jon, not via the Village Hall or Parish Council. Eleventy v3 + Nunjucks, GitHub Pages from JonF61/thelenches-site, commits to main rebuild automatically. `pathPrefix` must stay "/". Domain and DNS at 123-reg (four GitHub A records 185.199.108–111.153 plus a www CNAME).
@@ -154,10 +154,8 @@ Minimal notice (`sites/lenches/items/notices/hall-car-park-resurfacing.json`):
 
 **Dev tasks**: at the end of every job, update `worker/src/admin/devtasks.json` (shown on the panel's Summary): add what is still outstanding, remove what is done. Never name private individuals there (the repo is public).
 
-**Kryten's to-do** (4 Nov, Jon: so work carries over between sessions): anything Kryten owes for later (a Build history entry put off, a check after the next live run) goes in devtasks.json with `"kryten": true` (the Summary shows a Kryten badge). At the start of every session, read devtasks.json's `kryten` entries and do them (or ask Jon), then remove each in that job's PR.
+**Kryten's to-do** (4 Nov, Jon: so work carries over between sessions): anything Kryten owes for later (a Build history entry put off, a check after the next live run) goes in devtasks.json with `"kryten": true` (the Summary shows a Kryten badge); remove each in the PR of the job that does it.
 
 **Failed runs** (10 Nov, Jon: fix them proactively and report the resolution): a daily routine "Kryten: daily failed-runs check" (05:53 UK, fresh cloud session, GitHub connector, push notification; the Daily diagnostic runs first, fired by the Worker at 05:17 UK) lists the last 26 hours' failed runs, fixes code/workflow causes in a PR and merges it, re-runs only read-only workflows, gives Jon click-by-click steps for anything only he can do, and reports. In any session, also deal with failed runs you see without being asked, then report.
 
-**Rimmer's findings for Kryten**: at the start of every session, read the Rimmer tab (Read Sheet tab, columns A:L plus fix_note) for rows with status `kryten`; deal with each (or ask Jon), then set its status to `fixed` or `dismissed` with Write Sheet cells (with Jon's go-ahead for the write).
-
-**Kryten and Holly tab** (in the Plan doc; the name is historical): closed except for Chrome jobs. At the start of every session, glance at it for answered Chrome jobs and act on them, then set their Status to Done.
+**Start of every session**: run the `session-start` skill (`.claude/skills/session-start/SKILL.md`): Kryten's to-dos in devtasks.json, Rimmer rows with status `kryten` (both Sheets), answered Chrome jobs in the Plan doc's Kryten and Holly tab (closed except for Chrome jobs; the name is historical), and recent failed runs; then one short summary to Jon.
