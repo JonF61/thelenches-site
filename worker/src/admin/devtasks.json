@@ -2,7 +2,7 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
-      "task": "Plan doc Build history: add an entry for the facebook-items skill (PR #462, 24 Nov): .claude/skills/facebook-items/SKILL.md holds the weekly Facebook routine; CLAUDE.md's bullet now points to it",
+      "task": "Plan doc Build history: add an entry for the project skills (24 Nov): facebook-items (PR #462, the weekly Facebook routine) and newsletter-cartoon (PR #464, the weekly cartoon for both sites) in .claude/skills/; CLAUDE.md's bullets now point to them",
       "added": "2026-11-24",
       "kryten": true
     },
