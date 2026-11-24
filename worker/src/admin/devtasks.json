@@ -2,11 +2,6 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
-      "task": "Plan doc Build history: add an entry for the project skills (24 Nov): facebook-items (PR #462, the weekly Facebook routine) newsletter-cartoon (PR #464, the weekly cartoon for both sites) arch-rota (the ARCH Messenger rota into services.json) and session-start (the start-of-session checks) in .claude/skills/; CLAUDE.md's bullets now point to them",
-      "added": "2026-11-24",
-      "kryten": true
-    },
-    {
       "task": "Read the Form failures tab on both Sheets (/k, tab \"Form failures\", add site harvington) a few days after PR for sign-up failure records: what stage, reason and browser the Harvington sign-up failures show (e.g. Turnstile failing in the Facebook app), then propose a fix to Jon.",
       "added": "2026-11-23",
       "kryten": true
