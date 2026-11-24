@@ -16,6 +16,7 @@ const { SITE, SITE_REL } = require('../../lib/site.js');
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const nlissues = require('./nlissues');
 
 const ROOT = path.join(__dirname, '..', '..');
 const CHANGE_DAYS = 14;
@@ -119,7 +120,7 @@ const STATE = {
 // What one sender sent lately and what became of it (pure).
 // existing: Pending rows; isSender(fromCell) -> boolean; live: Map of Pending id -> page url
 // for items on the website now; today: YYYY-MM-DD.
-function senderItems(existing = [], isSender = () => false, { live = new Map(), today = new Date().toISOString().slice(0, 10), skipMessageId = '' } = {}) {
+function senderItems(existing = [], isSender = () => false, { live = new Map(), today = new Date().toISOString().slice(0, 10), skipMessageId = '', now = Date.now() } = {}) {
   const since = new Date(new Date(`${today}T12:00:00Z`).getTime() - SENDER_DAYS * 86400000).toISOString().slice(0, 10);
   const out = [];
   for (const r of existing) {
@@ -137,6 +138,9 @@ function senderItems(existing = [], isSender = () => false, { live = new Map(), 
       decided: str(r.decided_at).slice(0, 10),
       details_they_added_later: /Details added from submitter's reply/.test(notes),
       already_listed_as: (notes.match(/Already listed: "([^"]+)"/) || [])[1] || '',
+      newsletter: ['approved', 'auto', 'trusted'].includes(status) || url ? nlissues.words(nlissues.plan({
+        kind: str(r.category).toLowerCase() === 'event' ? 'event' : 'notice', date: r.event_date,
+        newsletterCount: r.newsletter_count, roads: !!str(r.road) }, now)) : '',
     });
   }
   return out.sort((a, b) => (a.sent < b.sent ? 1 : -1)).slice(0, MAX_SENDER_ITEMS);
