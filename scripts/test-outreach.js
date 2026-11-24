@@ -107,8 +107,8 @@ async function main() {
   ok(fresh && row.type === 'outreach' && row.status === 'awaiting' && row.to === 'jane@example.org', 'awaiting outreach row');
   ok(row.message_id === '' && row.thread_id === '' && /^out-c[0-9a-f]{16}-\d{12}$/.test(row.reply_id), 'no message or thread; id carries no address');
   ok(row.subject === 'Quiz night again this year?' && row.policy_codes === 'outreach_seasonal', 'subject and kind');
-  ok(row.body.startsWith('Hi Jane,\n\n') && row.body.endsWith("If you'd rather we didn't get in touch like this, just say and we won't.\n\nBest wishes,\nHolly\nLenches website assistant"),
-    'greeting, opt-out line and Holly sign-off');
+  ok(row.body.startsWith('Hi Jane,\n\n') && row.body.endsWith("Best wishes,\nHolly\nLenches website assistant\n\nIf you'd rather we didn't get in touch like this, just say and we won't."),
+    'greeting, Holly sign-off, then the opt-out line');
   ok(/^Outreach \(seasonal\), as you asked in the panel: Last year: /.test(row.notes), 'note says why');
   const input = JSON.parse(prompts[0].messages[0].content);
   ok(input.reason === 'seasonal' && input.contact.organisation === 'Lenches Club' && input.last_year.title === 'Quiz night', 'Claude sees the contact');
@@ -132,7 +132,7 @@ async function main() {
   const re = await replies.redraftReply(row.reply_id, 'shorter please');
   const redraftIn = JSON.parse(prompts[prompts.length - 1].messages[0].content);
   ok(!redraftIn.previous_draft.includes("rather we didn't") && redraftIn.reply_type === 'outreach', 'redraft input without the opt-out');
-  ok(re.type === 'outreach' && re.body.split("If you'd rather").length === 2 && re.body.endsWith('Lenches website assistant'), 'redraft keeps opt-out once');
+  ok(re.type === 'outreach' && re.body.split("If you'd rather").length === 2 && re.body.endsWith("just say and we won't.") && re.body.includes('Lenches website assistant\n\nIf you'), 'redraft keeps opt-out once');
 
   // Approve: a new thread, no automatic-reply headers.
   await replies.decideReply(re.reply_id, 'send');
@@ -167,7 +167,7 @@ async function main() {
   const cm = await contactMail.draftContactEmail(await id('sophie@example.org'), BRIEF);
   const cmRow = tables.Replies[0];
   ok(cm && cmRow.type === 'outreach' && cmRow.status === 'awaiting' && cmRow.policy_codes === 'contact_email' && cmRow.to === 'sophie@example.org', 'contact email: awaiting outreach row');
-  ok(cmRow.body.startsWith('Hi Sophie,\n\n') && cmRow.body.includes("If you'd rather") && cmRow.body.endsWith('Lenches website assistant'), 'contact email: greeting, opt-out, sign-off');
+  ok(cmRow.body.startsWith('Hi Sophie,\n\n') && cmRow.body.endsWith("Lenches website assistant\n\nIf you'd rather we didn't get in touch like this, just say and we won't."), 'contact email: greeting, sign-off, then opt-out');
   ok(cmRow.notes.startsWith('Email you asked for in the panel: Tell her Zumba'), 'contact email: brief in notes');
   const cmIn = JSON.parse(prompts[0].messages[0].content);
   ok(cmIn.brief === BRIEF && cmIn.contact.organisation === 'Zumba with Sophie' && cmIn.links.includes('https://thelenches.org.uk/regulars/'), 'contact email: Claude sees brief, contact, links');

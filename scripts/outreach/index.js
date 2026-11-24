@@ -10,7 +10,8 @@
 // The draft is a Replies row of type "outreach", status "awaiting" ("shadow" in shadow
 // mode), with no message_id: it only goes on Jon's Approve or Edit (scripts/ingest/
 // replies.js), never by itself, even in holiday mode. Body: greeting, Claude's paragraphs,
-// the opt-out line (templates.md outreach_optout), then Holly's signature. Jon gets the
+// Holly's signature, then the opt-out line (templates.md outreach_optout; after the signature,
+// in italics, since 24 Nov). Jon gets the
 // usual card (urgent.sendReplyCard) with Approve / Edit / Redraft / Reject.
 // Claude sees the contact's name, organisation, village, role, profile and recent
 // contributions; never Jon's notes.
@@ -148,7 +149,7 @@ async function draftNudge(id) {
     hold_reason: '',
     policy_codes: `outreach_${due.kind}`,
     subject,
-    body: [replies.greeting(name), text, replies.fill('outreach_optout'), replies.fill('signature')].join('\n\n'),
+    body: [replies.greeting(name), text, replies.fill('signature'), replies.fill('outreach_optout')].join('\n\n'),
     status: mode === 'shadow' ? 'shadow' : 'awaiting',
     created_at: londonDateTime(now),
     notes: [`Outreach (${due.kind}), as you asked in the panel: ${due.why}`, ...warnings].join(' | '),
