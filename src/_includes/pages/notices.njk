@@ -28,6 +28,8 @@
 .np-card h3{font-size:1.02rem;line-height:1.35;margin:0 0 .35rem;color:var(--green-dark)}
 .np-card .np-link{margin-top:.4rem;font-size:.9rem}
 .np-card:target{background:#FDEBD8}
+.np-wide{grid-column:1/-1}
+@media (min-width:760px){.np-grid{grid-auto-flow:row dense}}
 .np-thumb{float:right;width:7.5rem;margin:0 0 .5rem .75rem}
 .np-thumb img{display:block;width:100%;aspect-ratio:3/2;object-fit:cover;border-radius:6px}
 </style>
@@ -71,7 +73,7 @@
     <div class="np-grid">
     {% for n in around %}{% set ps = n.body | leadSplit %}{% set isNew = ([n] | newThisWeek) > 0 %}
     {%- set ek = n | entryKey %}
-    <article class="np-notice np-card{% if n.image %} has-img{% endif %}" id="{{ ('notice-' + n.title) | slugify }}"{% if ek %} data-entry="{{ ek }}" data-label="Notice: {{ n.title | escape }}"{% endif %}>
+    <article class="np-notice np-card{% if n.image %} has-img{% endif %}{% if (n.body | length) > 700 %} np-wide{% endif %}" id="{{ ('notice-' + n.title) | slugify }}"{% if ek %} data-entry="{{ ek }}" data-label="Notice: {{ n.title | escape }}"{% endif %}>
       {% if n.image %}<a class="np-thumb" href="{{ n.image.url | url }}" data-viewer data-caption="{{ ((n.image.alt or n.title) + (' — ' + n.image.credit if n.image.credit else '')) | escape }}"><img src="{{ n.image.url | url }}" alt="{{ (n.image.alt or '') | escape }}" loading="lazy"></a>{% endif %}
       {% set place = n | placeLabel(localPlaces) %}{% if place or n.source or isNew %}<p class="np-meta" data-pagefind-ignore>{% if place %}<span class="np-label">{{ place | escape }}</span>{% elif n.source %}<span class="np-label">{{ n.source | escape }}</span>{% endif %}{% if isNew %}<span class="np-new">New</span>{% endif %}</p>{% endif %}
       <h3 id="{{ ('notice-' + n.title) | slugify }}-t">{{ n.title | escape }}</h3>
