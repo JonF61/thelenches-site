@@ -160,6 +160,57 @@
       ]
     }
   },
+  "atch lench road|church lench": {
+    "road": "Atch Lench Road",
+    "village": "Church Lench",
+    "looked_up": "2026-11-24",
+    "source": "nominatim",
+    "geometry": {
+      "type": "MultiLineString",
+      "coordinates": [
+        [
+          [
+            -1.95635,
+            52.15783
+          ],
+          [
+            -1.95662,
+            52.15816
+          ],
+          [
+            -1.95748,
+            52.15873
+          ],
+          [
+            -1.95976,
+            52.15889
+          ],
+          [
+            -1.96094,
+            52.15906
+          ],
+          [
+            -1.96187,
+            52.15948
+          ],
+          [
+            -1.96281,
+            52.15963
+          ]
+        ],
+        [
+          [
+            -1.96281,
+            52.15963
+          ],
+          [
+            -1.96297,
+            52.15966
+          ]
+        ]
+      ]
+    }
+  },
   "badgers hill|sheriffs lench": {
     "road": "Badgers Hill",
     "village": "Sheriffs Lench",
@@ -230,6 +281,19 @@
             52.1452
           ]
         ]
+      ]
+    }
+  },
+  "farm lane|church lench": {
+    "road": "Farm Lane",
+    "village": "Church Lench",
+    "looked_up": "2026-11-24",
+    "source": "village",
+    "geometry": {
+      "type": "Point",
+      "coordinates": [
+        -1.9625,
+        52.1596
       ]
     }
   },

@@ -211,6 +211,54 @@
   ],
   "notices": [
     {
+      "id": "1a20bbf0a35f4b3b-1",
+      "title": "Road closure — Atch Lench Road, Church Lench",
+      "body": "Atch Lench Road in Church Lench will be closed between Atch Lench Road and Leys Road from Monday 1 December to Tuesday 9 December for Openreach works. A diversion will be signed. Allow extra time for journeys between the Lenches and Harvington.",
+      "date": "2026-12-01",
+      "village": "Church Lench",
+      "start": "2026-12-01",
+      "end": "2026-12-09",
+      "road": "Atch Lench Road",
+      "expires": "2026-12-15",
+      "added": "2026-11-24",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB153551749"
+      }
+    },
+    {
+      "id": "1a20bbf0a35f4b3b-2",
+      "title": "Road closure — Farm Lane, Church Lench",
+      "body": "Farm Lane in Church Lench will be closed from Monday 1 December to Tuesday 9 December for Openreach works.",
+      "date": "2026-12-01",
+      "village": "Church Lench",
+      "start": "2026-12-01",
+      "end": "2026-12-09",
+      "road": "Farm Lane",
+      "expires": "2026-12-15",
+      "added": "2026-11-24",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB153552396"
+      }
+    },
+    {
+      "id": "1a20bbf0a35f4b3b-3",
+      "title": "Roadworks — Leys Road, Harvington",
+      "body": "Severn Trent Water is working on Leys Road in Harvington from Monday 30 November to Wednesday 2 December. Traffic will be managed by give and take, and delays are possible.",
+      "date": "2026-11-30",
+      "village": "Harvington",
+      "start": "2026-11-30",
+      "end": "2026-12-02",
+      "road": "Leys Road",
+      "expires": "2026-12-15",
+      "added": "2026-11-24",
+      "link": {
+        "text": "Details on one.network",
+        "url": "https://one.network?GB153400707"
+      }
+    },
+    {
       "id": "rss-3a47d4a3724bd234-1",
       "title": "Neighbourhood Watch: winter burglary and scam advice",
       "body": "Neighbourhood Watch says burglaries tend to rise as the evenings draw in, and asks residents to look out for vulnerable neighbours. With more Christmas parcels arriving, have deliveries left somewhere hidden, with a neighbour or at a collection point rather than on the doorstep. Shoppers are also asked to watch out for scams around Black Friday, which is on 27 November this year.",
