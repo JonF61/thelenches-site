@@ -151,7 +151,7 @@ Follow the `finish-job` skill (`.claude/skills/finish-job/SKILL.md`: pre-push ch
 
 **PR description**: the record of the work. What changed (files and behaviour), anything Jon must do by hand (Sheet cells, settings, workflow pastes), how it was tested, and what to check on the next live/shadow run. Keep it factual and complete.
 
-**Workflow files**: commit `.github/workflows/` changes yourself in the PR, like any other file (Jon agreed 25 Oct; first done in PR 60), and dispatch manual workflows yourself with the GitHub MCP actions tools. Name every workflow file changed in the PR description. Running a workflow that sends email, publishes or writes to the Sheet still needs Jon's go-ahead unless the job asked for it.
+**Workflow files** (adding one, or a Sheet column: follow the `new-workflow-or-column` skill): commit `.github/workflows/` changes yourself in the PR, like any other file (Jon agreed 25 Oct; first done in PR 60), and dispatch manual workflows yourself with the GitHub MCP actions tools. Name every workflow file changed in the PR description. Running a workflow that sends email, publishes or writes to the Sheet still needs Jon's go-ahead unless the job asked for it.
 
 **Plan doc**, once merged and without being asked: add an entry to the **Build history** tab in its style (a `### <title> (PR numbers, date)` heading and one dense bullet: what changed, files, columns, first live result) and make targeted edits to the Project Plan tab (status, design) if the plan changed. Keep the Plan lean: once something is built and tested, condense it there to a line or two and keep the detail in Build history. When a working rule changes, update this file in the same PR. If the connector isn't available, say so to Jon.
 
