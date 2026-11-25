@@ -37,7 +37,7 @@
         <span class="pl-label pl-{{ p[1] | lower | replace(' ', '-') }}" data-pagefind-ignore>{{ p[1] }}{% if e.decision %}: {{ e.decision }}{% endif %}</span>
         <h3 id="pl-{{ e.ref | slugify }}-t">{{ e.location }}</h3>
         <p>{{ e.proposal }}{% if not e.proposal.endsWith('.') %}.{% endif %}</p>
-        <p class="pl-meta">{% if e.type %}{{ e.type }} &middot; {% endif %}<a href="{{ e.link }}" target="_blank" rel="noopener">{{ e.ref }} on Wychavon's site &rarr;</a></p>
+        <p class="pl-meta">{% if e.type %}{{ e.type }} &middot; {% endif %}<a href="{{ e.link }}" target="_blank" rel="noopener">{{ e.ref }} on Wychavon's site &rarr;</a> &middot; <a href="{{ e.location | planningMap }}" target="_blank" rel="noopener">Map &rarr;</a></p>
       </div>
     </div>
     {%- endfor %}

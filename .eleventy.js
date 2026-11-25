@@ -324,6 +324,9 @@ module.exports = async function (eleventyConfig) {
   });
 
   // "Fri" / "31" / "Jul" for the date block
+  // Planning page map links (lib/planning.js mapUrl; 25 Nov 2026).
+  eleventyConfig.addFilter("planningMap", (loc) => require("./lib/planning").mapUrl(loc));
+
   eleventyConfig.addFilter("dateParts", (iso) => ({
     dow: fmt(iso, { weekday: "short" }),
     day: fmt(iso, { day: "numeric" }),

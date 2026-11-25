@@ -169,6 +169,18 @@ Total Number of Appeals = 1
   ok('parishes matched exactly; proposals shortened with …');
 }
 
+// ---- Map links
+{
+  const pt = P.gridPoint('Land at OS 0208 4905, Sheriffs Lench');
+  assert.ok(Math.abs(pt.lat - 52.1398) < 0.002 && Math.abs(pt.lon - -1.9710) < 0.002, 'SP grid ref near Sheriffs Lench');
+  const so = P.gridPoint('Land At (OS 9764 4714), Church Lane, Lower Moor');
+  assert.ok(Math.abs(so.lat - 52.1226) < 0.002 && Math.abs(so.lon - -2.0358) < 0.002, 'SO grid ref near Lower Moor');
+  assert.strictEqual(P.gridPoint('Brock House, Low Road, Church Lench'), null);
+  assert.strictEqual(P.mapUrl('Brock House, Low Road, Church Lench'), 'https://www.google.com/maps/search/?api=1&query=Brock%20House%2C%20Low%20Road%2C%20Church%20Lench%2C%20Worcestershire');
+  assert.ok(P.mapUrl('Land at OS 0208 4905, Sheriffs Lench').endsWith('query=52.13979%2C-1.97095'));
+  ok('map links: addresses searched, grid references pinned');
+}
+
 // ---- Weeks
 {
   let d = null;
