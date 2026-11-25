@@ -223,9 +223,13 @@ Total Number of Appeals = 1
   const data = { weeks: [{ from: '2026-11-16', applications: [{ ref: 'W/26/00197/FUL', location: 'x', proposal: 'y', link: P.DISPLAY + 'W/26/00197/FUL', date: '2026-11-17' },
     { ref: 'W/26/00002/HP', location: 'a', proposal: 'b', link: P.DISPLAY + 'W/26/00002/HP' }], decisions: [{ ref: 'W/26/00002/HP' }] }],
     open: [{ ref: 'W/26/00009/FUL', location: 'old', proposal: 'p', link: P.DISPLAY + 'W/26/00009/FUL' }] };
-  refreshOpen(data, { parishes: ['South Lenches'], wait: 0,
-    getDisplay: async (u) => (u.endsWith('00009/FUL') ? page('Refusal', '01/11/2026') : page('Pending', 'N/A')) }).then((r) => {
-    assert.deepStrictEqual(r.open.map((e) => e.ref), ['W/26/00197/FUL'], 'decided one dropped, one decided in a list never added');
+  const disp = async (u) => (u.endsWith('00009/FUL') ? page('Refusal', '01/11/2026') : page('Pending', 'N/A'));
+  refreshOpen(data, { parishes: ['South Lenches'], wait: 0, today: '2026-11-20', getDisplay: disp }).then((kept) => {
+    const k = kept.open.find((e) => e.ref === 'W/26/00009/FUL');
+    assert.ok(k && k.decision === 'Refusal' && k.decisionDate === '2026-11-01', 'decided within 4 weeks: kept with its outcome');
+    return refreshOpen(data, { parishes: ['South Lenches'], wait: 0, today: '2026-12-15', getDisplay: disp });
+  }).then((r) => {
+    assert.deepStrictEqual(r.open.map((e) => e.ref), ['W/26/00197/FUL'], 'decided over 4 weeks ago dropped; one decided in a list never added');
     assert.strictEqual(r.open[0].homes, 2);
     assert.strictEqual(r.open[0].homesLabel, '2 new homes');
     const json = JSON.stringify(r.open);
