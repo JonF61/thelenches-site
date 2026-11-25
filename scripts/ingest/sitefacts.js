@@ -42,7 +42,7 @@ const ALL_PAGES = [
   ['Living here', '/living-here/', 'Regular activities, groups, halls, churches, health, transport, council, schools and walks.'],
   ['Health & emergencies', '/living-here/health/', 'GPs, pharmacies, hospitals and defibrillators.'],
   ['Getting around', '/living-here/getting-around/', 'Buses, on-demand and community transport, stations.'],
-  ['Council & planning', '/living-here/council/', 'Parish councils, councillors and planning searches.'],
+  ['Council', '/living-here/council/', 'Parish councils, councillors and planning searches.'],
   ['Schools', '/living-here/schools/', 'Local schools, applying and term dates.'],
   ['Walks & footpaths', '/living-here/walks/', 'Circular walks, maps and the Countryside Code.'],
   ['Contact', '/contact/', 'How to send in events and news (submission guidelines), and how to get in touch.'],

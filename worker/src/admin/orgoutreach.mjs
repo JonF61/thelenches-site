@@ -45,7 +45,7 @@ export const PAGE_NAMES = {
   '/halls/': 'Village Halls',
   '/churches/': 'Churches',
   '/contact/': 'Contact & About',
-  '/living-here/council/': 'Council & planning',
+  '/living-here/council/': 'Council',
   '/living-here/schools/': 'Schools',
   '/living-here/health/': 'Health & emergencies',
   '/living-here/getting-around/': 'Getting around',
