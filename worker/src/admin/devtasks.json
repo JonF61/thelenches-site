@@ -2,11 +2,7 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
-      "task": "Planning feed blocked: Wychavon's website firewall (Sucuri) refuses GitHub's runners (HTTP 307), so new weekly lists are not fetched (pages and newsletters keep the weeks to 20 Nov). Waiting on Jon's choice of fix (ask Wychavon to allow it, or another route)",
-      "kryten": true
-    },
-    {
-      "task": "Planning feed (built 25 Nov): check the Worker-fired Planning list run on Wed 17:30 / Thu 05:30 UK says 'No new list' (16-20 Nov already stored), that both 26 Nov issues show Planning this week (Lenches: 3 applications; Harvington: 2 applications and the Lenchwick Lane appeal), and that the next week's list (23-27 Nov) is added by the 2 Dec runs and its Daily diagnostic has no 'Planning feed' problem",
+      "task": "Planning feed (built 25 Nov; fetched by the Wednesday 10:43 scheduled session since GitHub is blocked): check the first runs (25 Nov: probably no new list; 2 Dec: the 23-27 Nov week added through a merged PR, both sites rebuilt), that both 26 Nov issues show Planning this week and the planning website update, and that the Daily diagnostic has no 'Planning feed' problem",
       "kryten": true
     },
     {
