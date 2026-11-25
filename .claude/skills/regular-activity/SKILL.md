@@ -5,7 +5,7 @@ description: Add, update, pause or remove a regular activity (weekly class, club
 
 # Regular activities
 
-All regulars live in one file, `sites/lenches/items/regulars.json` (`regulars` array), and show on both sites (lib/whatson.js `loadWhatson`). A one-off taster session is an **event**, not a regular. For an event or notice, follow the hand-written item rules in CLAUDE.md or the `facebook-items` skill.
+All regulars live in one file, `sites/lenches/items/regulars.json` (`regulars` array), and show on both sites (lib/whatson.js `loadWhatson`). A one-off taster session is an **event**, not a regular. For an event or notice, follow the hand-written item rules in CLAUDE.md or the `add-items` skill.
 
 ## 1. Before writing: check, then ask Jon
 - Check it isn't already listed: `grep -i "<what or venue>" sites/lenches/items/regulars.json sites/harvington/items -r`. If it is, offer to update that entry instead.
