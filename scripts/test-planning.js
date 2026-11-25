@@ -342,6 +342,8 @@ function newsletter(lenchesData) {
   assert.ok(l.html.includes('https://plan.wychavon.gov.uk/Planning/Display/W/26/02669/PIP'));
   assert.ok(l.html.includes('None this week.'), 'decisions read, none for these parishes');
   assert.ok(l.html.includes('>1 new home</span>'), 'new homes badge');
+  assert.ok(/<a href="https:\/\/www\.google\.com\/maps\/search\/\?api=1&amp;query=52\.13979%2C-1\.97095" target="_blank"[^>]*>Map<\/a>/.test(l.html), 'map link opens in a new window');
+  assert.ok(l.html.indexOf('Planning this week') < l.html.indexOf('From Wychavon') && /Planning this week<\/div><\/td><\/tr><tr>/.test(l.html), 'rule straight under the title, intro below');
   assert.ok(l.text.includes('Sheriffs Lench [1 new home]:'));
   assert.ok(l.html.includes('Not yet published by Wychavon.'), 'appeals list not read yet');
   assert.ok(l.html.indexOf('Planning this week') < l.html.indexOf('>Bins<'), 'before Bins');

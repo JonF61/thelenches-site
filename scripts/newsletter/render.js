@@ -10,6 +10,7 @@
 const crypto = require('crypto');
 const { anchorUrl, calendarUrl, googleCalendarLink } = require('../../lib/anchors');
 const { siteConfig } = require('../../lib/site');
+const { mapUrl } = require('../../lib/planning');
 
 // The site's own name, address, contributions address and colours (site.json; Harvington stage 5a,
 // 16 Nov 2026). The Lenches' issue is unchanged: these are its old fixed values.
@@ -192,12 +193,16 @@ function planningBand(p) {
     if (!list.length) return `${head}<div style="color:${C.muted};">${esc(p.lists && p.lists[kind] ? PLANNING_NONE : PLANNING_NOT_YET)}</div>`;
     return head + list.map((e) => `<div style="margin:0 0 5px;"><b>${esc(e.location)}</b>${homesBadge(e)}: ${esc(e.proposal)}`
       + planningExtra(e, kind).map((x, j) => ` · ${j === 0 && kind === 'decisions' ? `<b>${esc(x)}</b>` : esc(x)}`).join('')
-      + ` · ${a(e.link, e.ref, C.accentText)}</div>`).join('');
+      + ` · ${aNew(e.link, e.ref, C.accentText)} · ${aNew(mapUrl(e.location), 'Map', C.accentText)}</div>`).join('');
   }).join('');
-  return sectionHead('Planning this week', `${esc(planningIntro(p))} ${a(siteUrl(PLANNING_PAGE), 'Last 8 weeks on our Planning page', C.accentText)}.`)
-    + `<tr><td class="px" style="padding:6px 24px 0;font-family:${SANS};font-size:14px;line-height:1.5;color:${C.ink};">${body}</td></tr>`;
+  // Rule straight under the title, the intro below it (Jon, 25 Nov).
+  return sectionHead('Planning this week')
+    + `<tr><td class="px" style="padding:6px 24px 0;font-family:${SANS};font-size:13px;line-height:1.5;color:${C.muted};">${esc(planningIntro(p))} ${a(siteUrl(PLANNING_PAGE), 'Last 8 weeks on our Planning page', C.accentText)}.</td></tr>`
+    + `<tr><td class="px" style="padding:2px 24px 0;font-family:${SANS};font-size:14px;line-height:1.5;color:${C.ink};">${body}</td></tr>`;
 }
 
+// Planning links open in a new window (Jon, 25 Nov), as on the website.
+const aNew = (url, text, color) => `<a href="${esc(url)}" target="_blank" rel="noopener" style="color:${color};text-decoration:underline;">${esc(text)}</a>`;
 const a = (url, text, color) => `<a href="${esc(url)}" style="color:${color};text-decoration:underline;">${esc(text)}</a>`;
 
 // sub (HTML, optional): a short line under the title, above the rule (Regular activities, Jon 30 Oct).
@@ -536,7 +541,7 @@ function renderText(m) {
       const list = m.planning[kind] || [];
       out.push(`${label}:`);
       if (!list.length) out.push(m.planning.lists && m.planning.lists[kind] ? PLANNING_NONE : PLANNING_NOT_YET);
-      for (const e of list) out.push(`- ${e.location}${e.homes ? ` [${homesText(e).toLowerCase()}]` : ''}: ${e.proposal}${planningExtra(e, kind).map((x) => ` · ${x}`).join('')} · ${e.ref}: ${e.link}`);
+      for (const e of list) out.push(`- ${e.location}${e.homes ? ` [${homesText(e).toLowerCase()}]` : ''}: ${e.proposal}${planningExtra(e, kind).map((x) => ` · ${x}`).join('')} · ${e.ref}: ${e.link} · Map: ${mapUrl(e.location)}`);
       out.push('');
     }
   }
