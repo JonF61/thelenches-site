@@ -22,6 +22,8 @@ on:
       - "sites/*/_data/eat.json"
       # Which listing fields the Edit page and the draft editor can change (worker/src/admin/entryedit.js).
       - "lib/entryfields.json"
+      # Never-list: the Suggestions screen badge and approve refusal (worker/src/admin/suggestions.mjs).
+      - "lib/neverlist.json"
   workflow_dispatch:
 
 permissions:
