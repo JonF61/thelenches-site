@@ -5,9 +5,10 @@ name: Planning weekly list
 # no Claude) and adds each site's parishes' entries to sites/<site>/_data/planning.json (8 weeks).
 # A list already stored is skipped, so a week with no new list commits nothing. Then both sites
 # rebuild (their Planning pages and, through the site build, the Newsletter draft).
-# Fired by the approvals Worker (repository_dispatch "planning": Wed 12:00 and 17:30, Thu 05:30 UK,
-# before Thursday's 06:30 newsletter build). Run workflow by hand with backfill ticked to fill
-# every week still on Wychavon's page.
+# 25 Nov 2026: Wychavon's firewall refuses GitHub's runners, so the weekly fetch runs in the
+# scheduled Claude session "Kryten: weekly planning lists" (Wednesdays 10:43 UK) instead, and the
+# Worker no longer fires this. Kept for manual runs (backfill ticked = every week still on the page)
+# in case GitHub's runners are let in again; a blocked run records the problem and succeeds.
 on:
   repository_dispatch:
     types: [planning]
