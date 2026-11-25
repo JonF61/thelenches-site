@@ -31,32 +31,6 @@
     <p class="page-intro">{{ pageIntro | safe }}</p>
     <p class="muted">Updated each week from Wychavon's lists. <a href="{{ council.planning.commentUrl }}" target="_blank" rel="noopener">Search all applications on Wychavon's site</a> &middot; <a href="/living-here/council/#planning">Parish councils and how to comment</a></p>
   </div>
-  {%- set open = planning.open if planning and planning.open else [] %}
-  {%- if open.length %}
-  {%- set k = open | planningCounts %}
-  <section class="month pl-week" id="awaiting">
-    <h2 class="list-label" id="awaiting-a-decision">Awaiting a decision</h2>
-    <div class="pl-key" data-pagefind-ignore>
-      <span><b>{{ k.total }}</b> application{{ "" if k.total == 1 else "s" }} awaiting a decision</span>
-      {%- if k.withHomes %}<span><b>{{ k.withHomes }}</b> include{{ "s" if k.withHomes == 1 else "" }} new homes ({{ k.homes }} home{{ "" if k.homes == 1 else "s" }} at most)</span>{% endif %}
-      {%- if k.comments %}<span><b>{{ k.comments }}</b> open for comments</span>{% endif %}
-    </div>
-    {%- for e in open %}
-    {%- set d = e.valid | dateParts if e.valid else null %}
-    <div class="item-card{% if e.homes %} pl-homes{% endif %}" id="open-{{ e.ref | slugify }}">
-      {%- if d %}<div class="date" data-pagefind-ignore><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>{% endif %}
-      <div class="item-body">
-        {% if e.type %}<span class="pl-label" data-pagefind-ignore>{{ e.type }}</span>{% endif %}{% if e.homesLabel %}<span class="pl-badge-homes" data-pagefind-ignore>{{ e.homesLabel }}</span>{% endif %}
-        <h3 id="open-{{ e.ref | slugify }}-t">{{ e.location }}</h3>
-        <p>{{ e.proposal }}{% if not e.proposal.endsWith('.') %}.{% endif %}</p>
-        <p class="pl-status">{% for x in e | planningStatus %}{% if not loop.first %} &middot; {% endif %}{% if x.strong %}<strong>{{ x.text }}</strong>{% else %}{{ x.text }}{% endif %}{% endfor %}</p>
-        <p class="pl-meta"><a href="{{ e.link }}" target="_blank" rel="noopener">{{ e.ref }} on Wychavon's site &rarr;</a> &middot; <a href="{{ e.location | planningMap }}" target="_blank" rel="noopener">Map &rarr;</a></p>
-      </div>
-    </div>
-    {%- endfor %}
-    <p class="pl-none">New homes first, then newest first. An application leaves this list once Wychavon decides it; the decision shows in that week below.</p>
-  </section>
-  {%- endif %}
   {%- set weeks = planning.weeks if planning and planning.weeks else [] %}
   {%- for w in weeks %}
   <section class="month pl-week">
