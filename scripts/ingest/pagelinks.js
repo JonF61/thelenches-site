@@ -47,19 +47,40 @@ function linksFromHtml(html, pageUrl) {
   return out;
 }
 
-async function pageLinks(url) {
+// PDF addresses anywhere in the page's main part (links, embeds, viewer iframes), same order,
+// de-duplicated: a council's newsletter is often an embedded PDF rather than a link (25 Nov).
+function pdfsFromHtml(html, pageUrl) {
+  const out = [];
+  let part = decode(mainPart(String(html || '')));
+  try { part = decodeURIComponent(part); } catch { part = part.replace(/%2F/gi, '/').replace(/%3A/gi, ':'); }
+  const re = /(?:https?:\/\/|\/)[^\s"'<>()?=&]+?\.pdf\b/gi;
+  let m;
+  while ((m = re.exec(part)) && out.length < 5) {
+    let url;
+    try { url = new URL(m[0], pageUrl).href; } catch { continue; }
+    if (/^https?:\/\//i.test(url) && !out.includes(url)) out.push(url);
+  }
+  return out;
+}
+
+// { links, pdfs } from the item's page; one fetch, best effort (empty on any failure).
+async function pageInfo(url) {
   try {
     const res = await fetch(url, {
       headers: { 'User-Agent': USER_AGENT, Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.5' },
       redirect: 'follow',
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-    if (!res.ok || !/html/i.test(res.headers.get('content-type') || '')) return [];
+    if (!res.ok || !/html/i.test(res.headers.get('content-type') || '')) return { links: [], pdfs: [] };
     const html = (await res.text()).slice(0, MAX_BYTES);
-    return linksFromHtml(html, res.url || url);
+    return { links: linksFromHtml(html, res.url || url), pdfs: pdfsFromHtml(html, res.url || url) };
   } catch {
-    return [];
+    return { links: [], pdfs: [] };
   }
 }
 
-module.exports = { pageLinks, linksFromHtml };
+async function pageLinks(url) {
+  return (await pageInfo(url)).links;
+}
+
+module.exports = { pageLinks, pageInfo, linksFromHtml, pdfsFromHtml, USER_AGENT };
