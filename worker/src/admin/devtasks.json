@@ -31,10 +31,6 @@
       "added": "2026-11-16"
     },
     {
-      "task": "Harvington after launch: its Contact page gets a village contacts table once its schools data exist (stage 6c-2); Harvington regular activities need entries (sites/harvington/items/regulars.json)",
-      "added": "2026-11-16"
-    },
-    {
       "task": "Harvington launched (stage 7b, 16 Nov; email passes SPF, DKIM and DMARC, DMARC p=quarantine since 17 Nov; Search Console added and sitemap submitted 17 Nov; replies_mode and newsletter_mode live since 17 Nov): check the first Harvington DMARC reports (to its website@ address) land under 4 DMARC, not the Harvington Pipeline label; check Site visitors shows Harvington counts; check the first live Harvington reply sends from website@harvingtonvillage.org.uk",
       "added": "2026-11-16",
       "kryten": true
@@ -163,14 +159,6 @@
       "kryten": true
     },
     {
-      "task": "Contacts page: check the first Done already item reads (…, done) in its contact's Contributions after the next daily contacts run",
-      "added": "2026-11-01"
-    },
-    {
-      "task": "Holly on Opus 5.5 with looser rules: review the first week's drafts",
-      "added": "2026-11-01"
-    },
-    {
       "task": "Write Sheet cells: after a few weeks, check the Kryten log tab and tidy old entries",
       "added": "2026-10-31"
     },
@@ -237,11 +225,6 @@
       "task": "Claude spend: compare the Claude usage tab's $3.48 for 5–14 Nov (Ingest $1.91, Rimmer $0.88, rest under $0.30 each) with the Console's Usage page for the same days; if they differ a lot, check lib/claudeusage.js PRICES and which jobs log",
       "waiting": "Jon (Console figure)",
       "added": "2026-11-14"
-    },
-    {
-      "task": "Newsletter cartoon: each week Kryten writes 2–3 gags from that week's items plus an image prompt; Jon makes the picture with an image tool and attaches it; Kryten adds it to src/_data/cartoons.json. Consider automating with an image API if the feature sticks",
-      "waiting": "Jon",
-      "added": "2026-11-11"
     },
     {
       "task": "Village halls (18 Nov): when Harvington Village Hall replies to Holly's email (Harvington Replies) with its regular groups and booking details, add the groups to sites/lenches/items/regulars.json (ask Jon: new activity or newly listed) and update Harvington's Village Halls page (sites/harvington/halls.njk) with anything new, for Jon's approval",
