@@ -155,6 +155,7 @@ export const CLIENT_JS = String.raw`
       ['Edit', 'change any field, then Save and approve.'],
       ['Reject', 'turns it down; the reason is for you only.'],
       ['Already listed?', 'names on the page that look similar: check it isn\'t there already.'],
+      ['Never-list', 'a business we must never list again (lib/neverlist.json, e.g. closed): Approve refuses it, so Reject it.'],
       'Nothing is ever sent back to the person who suggested it.'],
     replies: [
       ['Approve', 'sends Holly\'s draft as it is; Edit lets you change it, then send.'],
@@ -2449,6 +2450,7 @@ export const CLIENT_JS = String.raw`
         h('dt', null, 'Phone or website'), h('dd', null, str(r.contact)),
         h('dt', null, 'Area or village'), h('dd', null, str(r.area) || '—')),
       str(r.why) ? h('div', { class: 'fbnotes' }, h('b', null, 'Why (only you see this)'), h('div', { class: 'fbtext' }, str(r.why))) : null,
+      r._never ? h('div', { class: 'note warn' }, 'On the never-list, don\'t add: ' + r._never + '. Reject it.') : null,
       (r._similar || []).length ? h('div', { class: 'note warn' }, 'Already listed? Similar name: ' + r._similar.map(function (n) { return '"' + n + '"'; }).join(', ')) : null,
       h('div', { class: 'fbnotes' }, h('b', null, 'Approve adds'), h('dl', { class: 'sg-said' }, [h('dt', null, 'Name'), h('dd', null, str(e.name))].concat(
         sgFacts(r.kind, e).map(function (f) { return [h('dt', null, f[0]), h('dd', null, f[1])]; })))),
@@ -4393,7 +4395,7 @@ export const CLIENT_JS = String.raw`
     // Local trades / Where to eat suggestions waiting.
     var sgw = sgRows(d);
     if (d.listingSuggestions) action('Suggestions', sgw.length, !(d.listingSuggestions && d.listingSuggestions.error), sumCard('Suggestions (' + sgw.length + ')', go('suggestions'), sgw.map(function (r) {
-      return line(str(r.name), [str(r._label), age(r.confirmed_at)].filter(Boolean).join(' · '), [(r._similar || []).length ? ['Already listed?', 'warn'] : null]);
+      return line(str(r.name), [str(r._label), age(r.confirmed_at)].filter(Boolean).join(' · '), [r._never ? ['Never-list', 'warn'] : null, (r._similar || []).length ? ['Already listed?', 'warn'] : null]);
     }), { max: 5, top: d.listingSuggestions && d.listingSuggestions.error ? errorNote(d.listingSuggestions, 'Listing suggestions') : null }));
 
     // Items that published themselves after a veto window and wait for the audit (Autonomy screen).

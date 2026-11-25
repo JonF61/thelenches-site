@@ -9,6 +9,17 @@ module.exports = async function (eleventyConfig) {
   const { SITE_REL } = require("./lib/site.js");
   const fs = require("fs");
   const path = require("path");
+  // Never-list (lib/neverlist.json; Jon, 25 Nov 2026): a business on it in any site's trades or
+  // Where to eat data stops the build, so it can't quietly reappear on either site.
+  {
+    const { listedProblems } = require("./lib/neverlist.js");
+    const read = (f) => { try { return JSON.parse(fs.readFileSync(f, "utf8")); } catch { return null; } };
+    const bad = [];
+    for (const s of fs.readdirSync("sites")) {
+      for (const p of listedProblems(read(`sites/${s}/_data/trades.json`), read(`sites/${s}/_data/eat.json`))) bad.push(`${s} ${p}`);
+    }
+    if (bad.length) throw new Error(`On the never-list (lib/neverlist.json), take it out: ${bad.join("; ")}`);
+  }
   for (const f of fs.readdirSync(path.join(__dirname, "src/_data")).filter((n) => n.endsWith(".js")).sort()) {
     eleventyConfig.addGlobalData(f.replace(/\.js$/, ""), require(`./src/_data/${f}`));
   }

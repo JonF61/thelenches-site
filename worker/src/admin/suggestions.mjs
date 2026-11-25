@@ -7,6 +7,23 @@
 //   (draftEntry), Jon's edited entry checked field by field (cleanEntry), names already listed
 //   that look the same (similarNames), where a new entry goes in the data file (insertEntry),
 //   and the panel's Approve / Edit / Reject -> the decide() payload (planSuggestion).
+import NEVER from '../../../lib/neverlist.json' with { type: 'json' };
+
+// Never-list match, the same rules as lib/neverlist.js blocked() (scripts/test-neverlist.js checks
+// they agree): a name containing one of an entry's match phrases at a word start, or the same phone.
+const nNorm = (s) => ` ${String(s || '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim()} `;
+const nDigits = (s) => String(s || '').replace(/\D+/g, '').replace(/^44/, '0').slice(-11);
+export function neverListed(item, list = NEVER) {
+  if (!item) return null;
+  const name = nNorm(item.name);
+  const phones = [item.phone, item.phone2, item.contact, item.other].map(nDigits).filter((d) => d.length >= 10);
+  for (const e of (list && list.entries) || []) {
+    if ((e.match || []).some((m) => nNorm(m).trim() && name.includes(nNorm(m).trimEnd()))) return e;
+    if ((e.phones || []).some((p) => phones.includes(nDigits(p)))) return e;
+  }
+  return null;
+}
+
 // The suggester's address and "why" never leave the Sheet and the panel: never in the site,
 // a log, an env or a commit.
 
@@ -126,6 +143,9 @@ export function cleanEntry(kind, fields, data) {
     e[k] = k === 'email' ? v.toLowerCase() : v;
   }
   for (const k of REQUIRED[kind]) if (!e[k]) return { error: `Fill in ${k}` };
+  // Never-list (lib/neverlist.json; Jon, 25 Nov 2026): never added again, whatever the edit.
+  const never = neverListed(e);
+  if (never) return { error: `${never.name} is on the never-list (${never.note}): reject this suggestion` };
   if (kind === 'eat') {
     const areas = (data && data.eat && data.eat.areas) || [];
     if (!areas.includes(e.area)) return { error: `Area must be one of: ${areas.join(', ')}` };
@@ -179,6 +199,7 @@ export function panelRows(table, data) {
       _label: KINDS[r.kind] ? KINDS[r.kind].label : str(r.kind),
       _draft: KINDS[r.kind] ? draftEntry(r.kind, r, data) : null,
       _similar: KINDS[r.kind] ? similarNames(r.kind, r.name, data) : [],
+      _never: (() => { const n = neverListed({ name: r.name, phone: r.contact }); return n ? `${n.name}: ${n.note}` : ''; })(),
     })),
   };
 }

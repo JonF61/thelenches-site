@@ -59,6 +59,7 @@ async function run(deps = { g, fetch }) {
   let looked = 0; let found = 0; let sites = 0;
   for (const r of rows) {
     if (!str(r.name) || str(r.email)) continue;
+    if (require('../../lib/neverlist').blocked({ name: r.name })) continue; // never-list (Jon, 25 Nov 2026)
     looked += 1;
     let website = str(r.website) ? withUrl(str(r.website)) : '';
     let guessed = false;
