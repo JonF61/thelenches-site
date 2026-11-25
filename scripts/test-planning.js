@@ -161,7 +161,7 @@ Total Number of Appeals = 1
   assert.ok(P.isTreeWork('W/26/1/TPOA') && P.isTreeWork('W/26/1/CAN') && !P.isTreeWork('W/26/1/HED'));
   ok('entries parsed, kept fields only, tree works out');
 
-  assert.deepStrictEqual(P.forParishes(apps, ['South Lenches', 'Rous Lench', 'Abbots Morton']).map((e) => e.ref), ['W/26/02669/PIP', 'W/26/00001/HP']);
+  assert.deepStrictEqual(P.forParishes(apps, ['South Lenches', 'Rous Lench']).map((e) => e.ref), ['W/26/02669/PIP', 'W/26/00001/HP']);
   assert.deepStrictEqual(P.forParishes(apps, ['Harvington', 'Norton and Lenchwick']).map((e) => e.ref), ['W/26/00002/FUL'], 'exact parish names (not Bredon\'s Norton)');
   const short = P.shortProposal(apps[1].proposal);
   assert.ok(short.length <= 121 && short.endsWith('…'));
@@ -228,9 +228,18 @@ Total Number of Appeals = 1
 
 function lists2() {
   let d = null;
-  d = P.addList(d, P.weekOf(APPS), 'applications', P.forParishes(P.parseList(APPS, 'applications'), ['South Lenches', 'Rous Lench', 'Abbots Morton']));
+  d = P.addList(d, P.weekOf(APPS), 'applications', P.forParishes(P.parseList(APPS, 'applications'), ['South Lenches', 'Rous Lench']));
   d = P.addList(d, P.weekOf(DECS), 'decisions', []);
   return d;
+}
+
+// ---- readLists(): a page that can't be read is a problem, not a crash
+{
+  const { readLists } = require('./planning/index.js');
+  readLists({ getText: async () => { throw new Error('HTTP 307 for https://www.wychavon.gov.uk/x'); } }).then((r) => {
+    assert.deepStrictEqual(r, { lists: [], problems: ["Wychavon's weekly list page could not be read (HTTP 307)"] });
+    ok('readLists() records an unreadable page as a problem');
+  }).catch((e) => { console.error(e); process.exit(1); });
 }
 
 // ---- Newsletter section, both sites (child processes: SITE is read at load).
@@ -258,7 +267,7 @@ function newsletter(lenchesData) {
   assert.strictEqual(l.keys, 0, 'planning is not counted as items');
   assert.ok(l.empty, 'planning alone leaves the issue "empty" (no items)');
   assert.ok(l.html.includes('Planning this week'));
-  assert.ok(l.html.includes("From Wychavon&#39;s weekly list for South Lenches, Rous Lench and Abbots Morton parishes, 16 to 20 November."));
+  assert.ok(l.html.includes("From Wychavon&#39;s weekly list for South Lenches and Rous Lench parishes, 16 to 20 November."));
   assert.ok(l.html.includes('https://thelenches.org.uk/living-here/planning/'));
   assert.ok(l.html.includes('<b>Land at OS 0208 4905, Sheriffs Lench</b>'));
   assert.ok(l.html.includes('https://plan.wychavon.gov.uk/Planning/Display/W/26/02669/PIP'));

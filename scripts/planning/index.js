@@ -49,7 +49,15 @@ const readData = (site) => {
 // Planning page; the page keeps about 4 weeks): { lists: [{ kind, name, week, entries }], problems: [] }.
 async function readLists({ getText = fetchText, getPdfText = fetchPdfText, backfill = false } = {}) {
   const problems = [];
-  const html = await getText(P.LIST_PAGE);
+  let html;
+  try {
+    html = await getText(P.LIST_PAGE);
+  } catch (e) {
+    // 25 Nov 2026: Wychavon's firewall (Sucuri) answers GitHub's runners with HTTP 307. Not a
+    // failed run: the Daily diagnostic reports it from the file's check.
+    problems.push(`Wychavon's weekly list page could not be read (${String(e.message || e).replace(/ for https?:\S+/, '').slice(0, 60)})`);
+    return { lists: [], problems };
+  }
   const newest = P.newestLinks(html, P.LIST_PAGE);
   const all = P.pdfLinks(html, P.LIST_PAGE);
   const lists = [];
