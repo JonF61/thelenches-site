@@ -364,6 +364,16 @@
       "checked": "2026-11",
       "added": "2026-11-24",
       "newActivity": true
+    },
+    {
+      "day": "Saturday",
+      "time": "10am-noon",
+      "what": "Coffee morning",
+      "where": "St Egwin's Church, Norton",
+      "frequency": "3rd Saturday of the month",
+      "about": "Coffee and a chat. All welcome.",
+      "checked": "2026-11",
+      "added": "2026-11-25"
     }
   ]
 }
