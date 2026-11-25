@@ -479,6 +479,9 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, car
     subjectMore: all.length > subjectTeaser.length,
     holiday,
     siteUpdates,
+    // Each website update links to its own page (25 Nov, Jon: the planning entry linked the home
+    // page). Older snapshots lack the flag and keep the one home-page link after the last entry.
+    siteUpdateLinks: true,
     onThisDay: onThisDayFor(onthisday, issueDate),
     cartoon: cartoonFor(cartoons, issueDate, jpegFor),
     where: whereFor(wherelenches, issueDate, jpegFor),

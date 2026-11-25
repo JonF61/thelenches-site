@@ -30,6 +30,10 @@ const LINKS = {
 // The Website update paragraph: each entry's text, joined with spaces.
 // Website update texts, one per entry (each its own paragraph; Jon, 3 Nov: the joined block was too dense).
 const siteTexts = (site) => site.map((u) => String(u.text || '').trim()).filter(Boolean);
+// Since 25 Nov (model siteUpdateLinks): each entry ends with a link to its own page, shown as the
+// address without https:// or a trailing slash. Older snapshots: one home-page link after the last.
+const siteEntries = (site) => site.filter((u) => String(u.text || '').trim());
+const shortUrl = (url) => String(url).replace(/^https?:\/\//, '').replace(/\/$/, '');
 
 // Regular activities, grouped by day since 30 Oct (Jon): [{ day, items }] in list order (lib/whatson.js
 // sorts Monday first, then by time), each line "What · 7pm (1st of the month) · where"; site-relative
@@ -357,8 +361,11 @@ function renderHtml(m, subject) {
   if (site.length) {
     rows.push(`<tr><td class="px" style="background:${C.cream};padding:10px 24px;border-bottom:1px solid ${C.line};">`
       + `<div style="font-family:${SANS};font-size:11px;font-weight:bold;letter-spacing:1px;color:${C.accentText};">WEBSITE AND NEWSLETTER UPDATE</div>`
-      + siteTexts(site).map((t, i, all) => `<div style="font-family:${SANS};font-size:13px;line-height:1.5;color:${C.ink};padding-top:${i ? 8 : 2}px;">${esc(t)}`
-        + (i === all.length - 1 ? ` Have a look at ${a(LINKS.site, DOMAIN, C.accentText)}.` : '') + `</div>`).join('')
+      + (m.siteUpdateLinks
+        ? siteEntries(site).map((u, i) => `<div style="font-family:${SANS};font-size:13px;line-height:1.5;color:${C.ink};padding-top:${i ? 8 : 2}px;">${esc(String(u.text).trim())}`
+          + ` Have a look at ${a(u.url || LINKS.site, shortUrl(u.url || LINKS.site), C.accentText)}.</div>`).join('')
+        : siteTexts(site).map((t, i, all) => `<div style="font-family:${SANS};font-size:13px;line-height:1.5;color:${C.ink};padding-top:${i ? 8 : 2}px;">${esc(t)}`
+          + (i === all.length - 1 ? ` Have a look at ${a(LINKS.site, DOMAIN, C.accentText)}.` : '') + `</div>`).join(''))
       + `</td></tr>`);
   }
   rows.push(`<tr><td class="px" style="padding:16px 24px 0;font-family:${SERIF};font-size:15px;line-height:1.6;color:${C.ink};">${esc(summaryLine(m))}</td></tr>`);
@@ -482,7 +489,10 @@ function renderText(m) {
 
   out.push(NAME.toUpperCase(), ...(TAGLINE ? [TAGLINE] : []), `${p.long} · ${LINKS.site}`, '', `Got something for the newsletter? Email ${LINKS.submit} by 6pm Wednesday for the next issue.`, '');
   if (m.onThisDay) out.push(`On this day: ${m.onThisDay.text}`, '');
-  if ((m.siteUpdates || []).length) out.push('Website and newsletter update:', ...siteTexts(m.siteUpdates).flatMap((t) => [t, '']), `Have a look at ${LINKS.site}`, '');
+  if ((m.siteUpdates || []).length) {
+    if (m.siteUpdateLinks) out.push('Website and newsletter update:', ...siteEntries(m.siteUpdates).flatMap((u) => [`${String(u.text).trim()} Have a look at ${u.url || LINKS.site}`, '']));
+    else out.push('Website and newsletter update:', ...siteTexts(m.siteUpdates).flatMap((t) => [t, '']), `Have a look at ${LINKS.site}`, '');
+  }
   out.push(summaryLine(m));
   if (m.forward) out.push('', m.forward.heading.toUpperCase(), m.forward.body,
     ...(m.forward.line ? [m.forward.line.replace(/\[([^\]]+)\]/, '$1'), ...(m.forward.url ? [siteUrl(m.forward.url)] : [])] : []),
