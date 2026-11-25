@@ -181,6 +181,59 @@ Total Number of Appeals = 1
   ok('map links: addresses searched, grid references pinned');
 }
 
+// ---- New homes, open applications (25 Nov 2026)
+{
+  const cases = [
+    ['Permission in Principle for minimum of 3 dwellings and maximum 5 dwellings.', 'W/26/1/PIP', 5, 'Up to 5 new homes'],
+    ['Permission in principle for minimum of 1 and maximum of 1 dwelling', 'W/26/1/PIP', 1, '1 new home'],
+    ['Notification for Prior Approval for the change of use of an Agricultural Building to 2 Dwellinghouses (Class C3)', 'W/26/1/GPDQ', 2, '2 new homes'],
+    ['Erection of a 5no. holiday cabins together with ancillary works.', 'W/26/1/FUL', 0, ''],
+    ['Conversion of existing outbuildings into a family annexe', 'W/26/1/FUL', 0, ''],
+    ['Two storey side and rear extensions to dwelling', 'W/26/1/HP', 0, ''],
+    ['Outline application for up to 30 dwellings with access', 'W/26/1/OUT', 30, 'Up to 30 new homes'],
+    ['Proposed rural workers dwelling', 'W/26/1/FUL', 1, '1 new home'],
+  ];
+  for (const [prop, ref, n, label] of cases) {
+    assert.strictEqual(P.homesIn(prop, ref), n, prop);
+    assert.strictEqual(P.homesLabel(prop, n), label, prop);
+  }
+  ok('new homes counted from the wording; extensions, annexes and holiday lets left out');
+
+  const page = (decision, date) => `<html><body><h2>Planning Online Status</h2><div>Application</div><div>Valid</div><div>27/07/2026</div>
+    <div>Consultation</div><div>End</div><div>17/12/2026</div><div>Committee</div><div>Meeting</div><div>N/A</div>
+    <div>Decision</div><div>${decision}</div><div>Decision</div><div>Date</div><div>${date}</div>
+    <div>Appeal</div><div>Started</div><div>N/A</div><div>Appeal</div><div>Decision</div><div>N/A</div>
+    <h3>Summary</h3><dt>Application Number</dt><dd>W/26/00197/FUL</dd><dt>Location Address</dt><dd>Hill Barn Orchard</dd><dd>Church Lench</dd><dd>Evesham</dd><dd>WR11 4UB</dd>
+    <dt>Proposal</dt><dd>Erection of 2 dwellings.</dd><dt>Status</dt><dd>${decision}</dd><dt>Application Type</dt><dd>Full planning permission</dd>
+    <dt>Case Officer</dt><dd>Officer Person</dd><dt>Parish</dt><dd>South Lenches</dd><dt>Applicant</dt><dd>Mr Private</dd><dt>Agent Address</dt><dd>1 Agent St</dd></body></html>`;
+  const d = P.parseDisplay(page('Pending', 'N/A'));
+  assert.deepStrictEqual(d, { valid: '2026-07-27', consultationEnd: '2026-12-17', committee: '', decision: 'Pending', decisionDate: '',
+    appealStarted: '', appealDecision: '', status: 'Pending', location: 'Hill Barn Orchard, Church Lench', proposal: 'Erection of 2 dwellings.',
+    type: 'Full planning permission', parish: 'South Lenches' });
+  assert.ok(P.isOpen(d));
+  assert.ok(!P.isOpen(P.parseDisplay(page('Approval', '04/11/2026'))));
+  assert.strictEqual(P.parseDisplay('<html>Not found</html>'), null);
+  const st = P.openStatus({ valid: '2026-07-27', consultationEnd: '2026-12-17' }, '2026-11-25').map((x) => x.text);
+  assert.deepStrictEqual(st, ['Valid 27 Jul', 'Comments until 17 Dec', 'waiting 3 months']);
+  const old = P.openStatus({ valid: '2024-04-29', consultationEnd: '2025-07-03', committee: '2025-09-18' }, '2026-11-25').map((x) => x.text);
+  assert.deepStrictEqual(old, ['Valid 29 Apr 2024', 'comments closed 3 Jul 2025', 'went to planning committee 18 Sep 2025', 'waiting 2 years: check Wychavon for the latest']);
+  ok('application pages read for stage only; stage lines');
+
+  const { refreshOpen } = require('./planning/index.js');
+  const data = { weeks: [{ from: '2026-11-16', applications: [{ ref: 'W/26/00197/FUL', location: 'x', proposal: 'y', link: P.DISPLAY + 'W/26/00197/FUL', date: '2026-11-17' },
+    { ref: 'W/26/00002/HP', location: 'a', proposal: 'b', link: P.DISPLAY + 'W/26/00002/HP' }], decisions: [{ ref: 'W/26/00002/HP' }] }],
+    open: [{ ref: 'W/26/00009/FUL', location: 'old', proposal: 'p', link: P.DISPLAY + 'W/26/00009/FUL' }] };
+  refreshOpen(data, { parishes: ['South Lenches'], wait: 0,
+    getDisplay: async (u) => (u.endsWith('00009/FUL') ? page('Refusal', '01/11/2026') : page('Pending', 'N/A')) }).then((r) => {
+    assert.deepStrictEqual(r.open.map((e) => e.ref), ['W/26/00197/FUL'], 'decided one dropped, one decided in a list never added');
+    assert.strictEqual(r.open[0].homes, 2);
+    assert.strictEqual(r.open[0].homesLabel, '2 new homes');
+    const json = JSON.stringify(r.open);
+    for (const secret of ['Officer', 'Private', 'Agent']) assert.ok(!json.includes(secret), `never keeps "${secret}"`);
+    ok('refreshOpen() keeps undecided ones with their stage and drops decided ones');
+  }).catch((e) => { console.error(e); process.exit(1); });
+}
+
 // ---- Weeks
 {
   let d = null;
@@ -284,9 +337,11 @@ function newsletter(lenchesData) {
   assert.ok(l.html.includes('<b>Land at OS 0208 4905, Sheriffs Lench</b>'));
   assert.ok(l.html.includes('https://plan.wychavon.gov.uk/Planning/Display/W/26/02669/PIP'));
   assert.ok(l.html.includes('None this week.'), 'decisions read, none for these parishes');
+  assert.ok(l.html.includes('>1 new home</span>'), 'new homes badge');
+  assert.ok(l.text.includes('Sheriffs Lench [1 new home]:'));
   assert.ok(l.html.includes('Not yet published by Wychavon.'), 'appeals list not read yet');
   assert.ok(l.html.indexOf('Planning this week') < l.html.indexOf('>Bins<'), 'before Bins');
-  assert.ok(l.text.includes('PLANNING THIS WEEK') && l.text.includes('- Land at OS 0208 4905, Sheriffs Lench: Permission in principle'));
+  assert.ok(l.text.includes('PLANNING THIS WEEK') && l.text.includes('- Land at OS 0208 4905, Sheriffs Lench [1 new home]: Permission in principle'));
   assert.ok(!l.oldHtml.includes('Planning this week'));
   assert.strictEqual(l.stripped, l.oldHtml, 'a snapshot without planning renders exactly as before');
   ok('Lenches newsletter section; older snapshots unchanged');

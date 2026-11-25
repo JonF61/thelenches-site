@@ -120,5 +120,177 @@
       "decisions": [],
       "appeals": []
     }
+  ],
+  "open": [
+    {
+      "ref": "W/26/02669/PIP",
+      "location": "Land at OS 0208 4905, Sheriffs Lench",
+      "proposal": "Permission in principle for minimum of 1 and maximum of 1 dwelling",
+      "type": "Permission in Principle",
+      "parish": "South Lenches",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02669/PIP",
+      "valid": "2026-11-17",
+      "consultationEnd": "2026-12-01",
+      "homes": 1,
+      "homesLabel": "1 new home"
+    },
+    {
+      "ref": "W/26/02518/PIP",
+      "location": "Woodlands, Low Road, Church Lench",
+      "proposal": "Permission in Principle for minimum of 3 dwellings and maximum 5 dwellings.",
+      "type": "Permission in Principle",
+      "parish": "South Lenches",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02518/PIP",
+      "valid": "2026-11-09",
+      "consultationEnd": "2026-11-30",
+      "homes": 5,
+      "homesLabel": "Up to 5 new homes"
+    },
+    {
+      "ref": "W/26/02632/FUL",
+      "location": "Land at OS 0290 5186, Low Road, Church Lench",
+      "proposal": "Retrospective application for Conversion of agricultural building to residential dwelling",
+      "type": "Full planning permission",
+      "parish": "South Lenches",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02632/FUL",
+      "valid": "2026-11-09",
+      "consultationEnd": "2026-12-02",
+      "homes": 1,
+      "homesLabel": "1 new home"
+    },
+    {
+      "ref": "W/26/02564/PIP",
+      "location": "Manor Farm House, Abbots Lench Lane, Abbots Lench, Church Lench",
+      "proposal": "Permission in Principle for the proposed erection of 1 no. dwelling",
+      "type": "Permission in Principle",
+      "parish": "South Lenches",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02564/PIP",
+      "valid": "2026-11-02",
+      "consultationEnd": "2026-11-18",
+      "homes": 1,
+      "homesLabel": "1 new home"
+    },
+    {
+      "ref": "W/26/02358/GPDQ",
+      "location": "Land at (OS 0265 4891), Evesham Road, Church Lench",
+      "proposal": "Notification for Prior Approval for the proposed change of use of an Agricultural Building to 2 Dwellinghouses (Class C3), and for building operations reasonably necessary for the conversion.",
+      "type": "GPDQ - agricultural to C3 dwellinghouse",
+      "parish": "South Lenches",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02358/GPDQ",
+      "valid": "2026-10-07",
+      "consultationEnd": "2026-11-19",
+      "homes": 2,
+      "homesLabel": "2 new homes"
+    },
+    {
+      "ref": "W/26/02346/CU",
+      "location": "Little Acre, Evesham Road, Church Lench",
+      "proposal": "Change of use from existing holiday let to dwellinghouse.",
+      "type": "Change of use",
+      "parish": "South Lenches",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02346/CU",
+      "valid": "2026-10-06",
+      "consultationEnd": "2026-11-25",
+      "homes": 1,
+      "homesLabel": "1 new home"
+    },
+    {
+      "ref": "W/26/02493/HP",
+      "location": "Brock House, Low Road, Church Lench",
+      "proposal": "Permission for installation of a new dropped kerb for vehicle access off Low Road.",
+      "type": "Householder Planning",
+      "parish": "South Lenches",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02493/HP",
+      "valid": "2026-11-17",
+      "consultationEnd": "2026-12-17"
+    },
+    {
+      "ref": "W/26/02673/CCO",
+      "location": "Checketts Farm, The Green, Rous Lench",
+      "proposal": "Discharge of Condition 3 (Landscape Scheme) of Planning Permission number W/26/01441/HP",
+      "type": "Condition Discharge",
+      "parish": "Rous Lench",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02673/CCO",
+      "valid": "2026-11-12",
+      "consultationEnd": "2026-12-07"
+    },
+    {
+      "ref": "W/26/02320/HP",
+      "location": "Hill Barn Orchard, Evesham Road, Church Lench",
+      "proposal": "Two storey side and rear extensions including installation of solar panels",
+      "type": "Householder Planning",
+      "parish": "South Lenches",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02320/HP",
+      "valid": "2026-11-04",
+      "consultationEnd": "2026-11-25"
+    },
+    {
+      "ref": "W/26/01984/FUL",
+      "location": "Stables Opposite, Tudor Cottage, Mill Lane, Radford",
+      "proposal": "Conversion to domestic storage building including external alterations and change of use of land to garden use",
+      "type": "Full planning permission",
+      "parish": "Rous Lench",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/01984/FUL",
+      "valid": "2026-10-22",
+      "consultationEnd": "2026-12-07"
+    },
+    {
+      "ref": "W/26/02439/CCO",
+      "location": "Tudor Cottage, Mill Lane, Radford",
+      "proposal": "Discharge of condition 3 (external materials) of planning permission W/26/01722/LB",
+      "type": "Condition Discharge",
+      "parish": "Rous Lench",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02439/CCO",
+      "valid": "2026-10-22"
+    },
+    {
+      "ref": "W/26/02471/CCO",
+      "location": "Tudor Cottage, Mill Lane, Radford",
+      "proposal": "Discharge of Condition 4 (External Materials) of planning application W/26/01721/HP",
+      "type": "Condition Discharge",
+      "parish": "Rous Lench",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02471/CCO",
+      "valid": "2026-10-21"
+    },
+    {
+      "ref": "W/26/02318/FUL",
+      "location": "The Annexe At, Radford Mill, Mill Lane, Radford",
+      "proposal": "Change of use of existing annexe to holiday let (retrospective)",
+      "type": "Full planning permission",
+      "parish": "Rous Lench",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02318/FUL",
+      "valid": "2026-10-08",
+      "consultationEnd": "2026-12-02"
+    },
+    {
+      "ref": "W/26/02287/CCO",
+      "location": "Sheriffs Lench Manor, Sheriffs Lench",
+      "proposal": "Discharge of Condition 3 (Door Details) on granted Listed Building Consent W/26/00530/LB",
+      "type": "Condition Discharge",
+      "parish": "South Lenches",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02287/CCO",
+      "valid": "2026-09-29",
+      "consultationEnd": "2026-10-21"
+    },
+    {
+      "ref": "W/26/00197/FUL",
+      "location": "Hill Barn Orchard, Evesham Road, Church Lench",
+      "proposal": "Erection of a 5no. holiday cabins together with ancillary works.",
+      "type": "Full planning permission",
+      "parish": "South Lenches",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/00197/FUL",
+      "valid": "2026-07-27",
+      "consultationEnd": "2026-09-17"
+    },
+    {
+      "ref": "W/24/01110/CCO",
+      "location": "Walnut Place, Radford Road, Rous Lench",
+      "proposal": "Discharge of Conditions 3( External materials), 4( Renewable Energy), 5( Landscaping), 7(Drainage), 8(Bird and bat boxes), 9(EV charging) and 11(External lighting) of planning application W/21/00712/FUL.",
+      "type": "Condition Discharge",
+      "parish": "Rous Lench",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/24/01110/CCO",
+      "valid": "2024-06-04",
+      "consultationEnd": "2024-07-02"
+    }
   ]
 }

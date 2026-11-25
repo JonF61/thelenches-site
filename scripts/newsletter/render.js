@@ -181,12 +181,16 @@ const planningExtra = (e, kind) => [
   kind === 'decisions' && e.decision ? e.decision : '',
   kind === 'appeals' && e.date ? `appeal started ${dateParts(e.date).date} ${dateParts(e.date).mon}` : '',
 ].filter(Boolean);
+// New homes badge (25 Nov 2026, Jon; select.js puts homes on the entry): a small filled label after
+// the address. Entries without homes (and older snapshots) render as before.
+const homesText = (e) => (e.homes ? String(e.homesLabel || (e.homes === 1 ? '1 new home' : `${e.homes} new homes`)) : '');
+const homesBadge = (e) => (e.homes ? ` <span style="background:#b5471b;color:#ffffff;font-size:11px;font-weight:bold;padding:1px 6px;border-radius:3px;white-space:nowrap;">${esc(homesText(e))}</span>` : '');
 function planningBand(p) {
   const body = PLANNING_PARTS.map(([kind, label], i) => {
     const list = p[kind] || [];
     const head = `<div style="font-weight:bold;color:${C.green};margin:${i ? 10 : 8}px 0 2px;">${esc(label)}</div>`;
     if (!list.length) return `${head}<div style="color:${C.muted};">${esc(p.lists && p.lists[kind] ? PLANNING_NONE : PLANNING_NOT_YET)}</div>`;
-    return head + list.map((e) => `<div style="margin:0 0 5px;"><b>${esc(e.location)}</b>: ${esc(e.proposal)}`
+    return head + list.map((e) => `<div style="margin:0 0 5px;"><b>${esc(e.location)}</b>${homesBadge(e)}: ${esc(e.proposal)}`
       + planningExtra(e, kind).map((x, j) => ` · ${j === 0 && kind === 'decisions' ? `<b>${esc(x)}</b>` : esc(x)}`).join('')
       + ` · ${a(e.link, e.ref, C.accentText)}</div>`).join('');
   }).join('');
@@ -532,7 +536,7 @@ function renderText(m) {
       const list = m.planning[kind] || [];
       out.push(`${label}:`);
       if (!list.length) out.push(m.planning.lists && m.planning.lists[kind] ? PLANNING_NONE : PLANNING_NOT_YET);
-      for (const e of list) out.push(`- ${e.location}: ${e.proposal}${planningExtra(e, kind).map((x) => ` · ${x}`).join('')} · ${e.ref}: ${e.link}`);
+      for (const e of list) out.push(`- ${e.location}${e.homes ? ` [${homesText(e).toLowerCase()}]` : ''}: ${e.proposal}${planningExtra(e, kind).map((x) => ` · ${x}`).join('')} · ${e.ref}: ${e.link}`);
       out.push('');
     }
   }

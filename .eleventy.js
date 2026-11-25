@@ -326,6 +326,15 @@ module.exports = async function (eleventyConfig) {
   // "Fri" / "31" / "Jul" for the date block
   // Planning page map links (lib/planning.js mapUrl; 25 Nov 2026).
   eleventyConfig.addFilter("planningMap", (loc) => require("./lib/planning").mapUrl(loc));
+  // Planning page (25 Nov 2026): new-homes badge, an open application's stage line and the top counts.
+  const ukToday = () => new Date().toLocaleDateString("en-CA", { timeZone: "Europe/London" });
+  eleventyConfig.addFilter("planningHomes", (e) => { const P = require("./lib/planning"); const n = P.homesIn(e.proposal, e.ref); return n ? P.homesLabel(e.proposal, n) : ""; });
+  eleventyConfig.addFilter("planningStatus", (e) => require("./lib/planning").openStatus(e, ukToday()));
+  eleventyConfig.addFilter("planningCounts", (open) => {
+    const P = require("./lib/planning"); const t = ukToday(); const list = open || [];
+    const homes = list.filter((e) => e.homes);
+    return { total: list.length, withHomes: homes.length, homes: homes.reduce((n, e) => n + e.homes, 0), comments: list.filter((e) => P.commentsOpen(e, t)).length };
+  });
 
   eleventyConfig.addFilter("dateParts", (iso) => ({
     dow: fmt(iso, { weekday: "short" }),

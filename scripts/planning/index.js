@@ -113,11 +113,104 @@ function apply({ lists, problems }, { sites = SITES, read = readData, write, tod
       source: P.LIST_PAGE,
       check: { at: today, problems },
       weeks: data.weeks,
+      ...(data.open ? { open: data.open } : {}),
     };
     write(site, out);
     changed.push(site);
   }
   return { changed, counts };
+}
+
+// ---- Awaiting a decision (25 Nov 2026, Jon). Kept in planning.json "open" (never cut by the
+// 8-week limit): each site's applications from the weekly lists, plus (SEED_OPEN=true, a one-off
+// back-fill) every application Wychavon's planning search lists as undecided for its parishes. Each
+// run re-reads every open application's own page (lib/planning.js parseDisplay) for its stage and
+// drops it once decided or withdrawn. Wychavon's planning site isn't behind the weekly list page's
+// firewall; one request at a time, half a second apart.
+const PLAN = 'https://plan.wychavon.gov.uk';
+const pause = (ms) => new Promise((r) => { setTimeout(r, ms); });
+async function getPage(url, { jar, method = 'GET', body } = {}) {
+  const headers = { 'user-agent': UA, ...(jar && jar.size ? { cookie: [...jar].map(([k, v]) => `${k}=${v}`).join('; ') } : {}) };
+  if (body) headers['content-type'] = 'application/x-www-form-urlencoded';
+  const res = await fetch(url, { method, body, headers, redirect: 'manual' });
+  if (jar && typeof res.headers.getSetCookie === 'function') {
+    for (const c of res.headers.getSetCookie()) { const m = /^\s*([^=;\s]+)=([^;]*)/.exec(c); if (m) jar.set(m[1], m[2]); }
+  }
+  if ([301, 302, 303].includes(res.status) && res.headers.get('location')) return getPage(new URL(res.headers.get('location'), url).href, { jar });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.text();
+}
+
+// Every undecided planning application for one parish (by Wychavon's exact name): [ref].
+async function searchOpen(parish, get = getPage) {
+  const jar = new Map();
+  const form = await get(`${PLAN}/Search/Advanced`, { jar });
+  const token = (/name="__RequestVerificationToken"[^>]*value="([^"]+)"/.exec(form) || [])[1];
+  const select = (/<select[^>]*name="Parish"[\s\S]*?<\/select>/.exec(form) || [''])[0];
+  const opt = [...select.matchAll(/<option[^>]*value="([^"]*)"[^>]*>([^<]*)/g)]
+    .find((m) => P.pageText(m[2]).join(' ').trim().toLowerCase() === parish.toLowerCase());
+  if (!token || !opt) throw new Error(`parish "${parish}" not found on Wychavon's search form`);
+  const body = new URLSearchParams([['__RequestVerificationToken', token], ['AdvancedSearch', 'True'], ['SearchPlanning', 'true'],
+    ['SearchPlanning', 'false'], ['SearchEnforcement', 'false'], ['SearchTreePreservationOrders', 'false'], ['Parish', opt[1]],
+    ['ExcludeDecidedApps', 'true'], ['ExcludeDecidedApps', 'false']]).toString();
+  const refs = new Set();
+  let html = await get(`${PLAN}/Search/SiteResults`, { jar, method: 'POST', body });
+  for (let page = 2; page < 30; page += 1) {
+    for (const m of html.matchAll(/Planning\/Display\/(W\/\d{2}\/\d{5}\/[A-Z0-9]+)/g)) refs.add(m[1]);
+    if (!new RegExp(`ResultsPage/${page}\\?module=PLA`).test(html)) break;
+    await pause(500);
+    html = await get(`${PLAN}/Search/ResultsPage/${page}?module=PLA`, { jar });
+  }
+  return [...refs];
+}
+
+// Refreshes data.open for one site. Returns { open, problems, dropped, added }.
+async function refreshOpen(data, { parishes, seed = [], getDisplay, wait = 500 }) {
+  const decided = new Set();
+  const fromLists = [];
+  for (const w of (data && data.weeks) || []) {
+    for (const e of w.decisions || []) decided.add(e.ref);
+    for (const e of w.applications || []) fromLists.push(e);
+  }
+  const byRef = new Map(((data && data.open) || []).map((e) => [e.ref, e]));
+  let added = 0;
+  for (const e of fromLists) {
+    if (byRef.has(e.ref) || decided.has(e.ref) || P.isTreeWork(e.ref, e.type)) continue;
+    byRef.set(e.ref, { ref: e.ref, location: e.location, proposal: e.proposal, type: e.type, parish: e.parish, link: e.link, valid: e.date });
+    added += 1;
+  }
+  for (const ref of seed) {
+    if (byRef.has(ref) || P.isTreeWork(ref, '')) continue;
+    byRef.set(ref, { ref, link: P.DISPLAY + ref });
+    added += 1;
+  }
+  const want = new Set((parishes || []).map((p) => p.toLowerCase()));
+  const open = [];
+  const problems = [];
+  let dropped = 0;
+  let first = true;
+  for (const e of byRef.values()) {
+    if (!first && wait) await pause(wait);
+    first = false;
+    let d = null;
+    try { d = P.parseDisplay(await getDisplay(e.link || P.DISPLAY + e.ref)); } catch (err) { d = null; }
+    if (!d) { problems.push(`${e.ref}: its page could not be read`); if (e.location) open.push(e); continue; }
+    if (!P.isOpen(d)) { dropped += 1; continue; }
+    const parish = d.parish || e.parish || '';
+    if (parish && want.size && !parish.split(/\s*,\s*/).some((x) => want.has(x.toLowerCase()))) { dropped += 1; continue; }
+    const proposal = d.proposal || e.proposal || '';
+    const homes = P.homesIn(proposal, e.ref);
+    open.push({
+      ref: e.ref, location: d.location || e.location || '', proposal, type: d.type || e.type || '', parish,
+      link: P.DISPLAY + e.ref, valid: d.valid || e.valid || '',
+      ...(d.consultationEnd ? { consultationEnd: d.consultationEnd } : {}),
+      ...(d.committee ? { committee: d.committee } : {}),
+      ...(d.appealStarted ? { appealStarted: d.appealStarted } : {}),
+      ...(homes ? { homes, homesLabel: P.homesLabel(proposal, homes) } : {}),
+    });
+  }
+  if (problems.length > 3) problems.splice(3, problems.length - 3, `and ${problems.length - 3} more`);
+  return { open: P.sortOpen(open), problems, dropped, added };
 }
 
 async function main() {
@@ -131,6 +224,25 @@ async function main() {
   for (const [k, n] of Object.entries(res.counts)) console.log(`Added ${k}: ${n}`);
   for (const p of got.problems) console.log(`Problem: ${p}`);
   console.log(res.changed.length ? `Changed: ${res.changed.join(', ')}` : 'No new list: nothing written.');
+  if (process.env.OPEN !== 'false') {
+    for (const site of SITES) {
+      const parishes = siteConfigFor(site).planningParishes;
+      if (!Array.isArray(parishes) || !parishes.length) continue;
+      const data = readData(site) || { weeks: [] };
+      let seed = [];
+      if (process.env.SEED_OPEN === 'true') {
+        for (const p of parishes) seed = seed.concat(await searchOpen(p));
+        console.log(`${site}: ${seed.length} undecided applications on Wychavon's search`);
+      }
+      const r = await refreshOpen(data, { parishes, seed, getDisplay: (u) => getPage(u) });
+      const before = JSON.stringify(data.open || []);
+      if (before === JSON.stringify(r.open)) { console.log(`${site}: awaiting a decision unchanged (${r.open.length})`); continue; }
+      data.open = r.open;
+      fs.writeFileSync(fileFor(site), `${JSON.stringify(data, null, 2)}\n`);
+      if (!res.changed.includes(site)) res.changed.push(site);
+      console.log(`${site}: awaiting a decision ${r.open.length} (${r.added} added, ${r.dropped} decided or gone)${r.problems.length ? `; ${r.problems.join('; ')}` : ''}`);
+    }
+  }
   if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, `changed=${res.changed.join(' ')}\n`);
 }
 
@@ -138,4 +250,4 @@ if (require.main === module) {
   main().catch((e) => { console.error(e && e.stack ? e.stack : e); process.exit(1); });
 }
 
-module.exports = { readLists, apply };
+module.exports = { readLists, apply, refreshOpen, searchOpen };
