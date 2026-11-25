@@ -1,0 +1,12 @@
+{
+  "_help": "Businesses never to be listed again on either site (Local trades, Where to eat, sponsor prospects), at Jon's request. Keep entries factual and impersonal: the repo is public. match: lower-case phrases; a name containing any of them is blocked (so 'JD Landscapes Ltd' is caught too). phones: digits only. Checked by the site build (.eleventy.js), the Suggestions screen and its approve step (worker/src/admin/suggestions.mjs cleanEntry), the sponsor email finder, and scripts/test-neverlist.js. Kryten checks it before adding any business by hand.",
+  "entries": [
+    {
+      "name": "JD Landscape & Groundwork Contractors",
+      "match": ["jd landscape"],
+      "phones": ["07789325879"],
+      "note": "Business closed; do not relist (Jon's request)",
+      "added": "2026-11-25"
+    }
+  ]
+}
