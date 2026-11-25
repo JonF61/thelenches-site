@@ -41,12 +41,12 @@ assert.deepEqual(problems(), ['School terms: the breaks differ between the Lench
 edit('harvington', '_data/schools.json', (j) => { j.terms.breaks = JSON.parse(fs.readFileSync(file('lenches', '_data/schools.json'), 'utf8')).terms.breaks; });
 
 // Cartoons: on one site only, a different caption, a missing JPEG; before Harvington's first issue only the Lenches'.
-edit('lenches', '_data/cartoons.json', (j) => { j.entries['2026-11-26'] = { image: '/images/cartoons/x.jpg', alt: 'a', caption: 'c' }; });
+edit('lenches', '_data/cartoons.json', (j) => { j.entries['2099-01-01'] = { image: '/images/cartoons/x.jpg', alt: 'a', caption: 'c' }; });
 fs.writeFileSync(file('lenches', 'images/cartoons/x.jpg'), '');
-assert.deepEqual(problems(), ["Cartoon 2026-11-26: in the Lenches' cartoons.json but not Harvington's"]);
-edit('harvington', '_data/cartoons.json', (j) => { j.entries['2026-11-26'] = { image: '/images/cartoons/x.jpg', alt: 'a', caption: 'other' }; });
-assert.deepEqual(problems(), ['Cartoon 2026-11-26: caption differs between the two sites', 'Cartoon 2026-11-26: images/cartoons/x.jpg is missing from sites/harvington/']);
-edit('harvington', '_data/cartoons.json', (j) => { j.entries['2026-11-26'].caption = 'c'; });
+assert.deepEqual(problems(), ["Cartoon 2099-01-01: in the Lenches' cartoons.json but not Harvington's"]);
+edit('harvington', '_data/cartoons.json', (j) => { j.entries['2099-01-01'] = { image: '/images/cartoons/x.jpg', alt: 'a', caption: 'other' }; });
+assert.deepEqual(problems(), ['Cartoon 2099-01-01: caption differs between the two sites', 'Cartoon 2099-01-01: images/cartoons/x.jpg is missing from sites/harvington/']);
+edit('harvington', '_data/cartoons.json', (j) => { j.entries['2099-01-01'].caption = 'c'; });
 fs.writeFileSync(file('harvington', 'images/cartoons/x.jpg'), '');
 assert.deepEqual(problems(), []);
 

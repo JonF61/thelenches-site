@@ -64,6 +64,7 @@
       {% if n.link or n.link2 or n.image %}<p class="np-link">{% if n.link %}<a href="{{ n.link.url | escape }}" target="_blank" rel="noopener">{{ n.link.text | escape }} &rarr;</a>{% endif %}{% if n.link2 %} <a href="{{ n.link2.url | escape }}" target="_blank" rel="noopener">{{ n.link2.text | escape }} &rarr;</a>{% endif %}{% if n.image %} <a href="{{ n.image.url | url }}" data-viewer data-caption="{{ ((n.image.alt or n.title) + (' — ' + n.image.credit if n.image.credit else '')) | escape }}">(image)</a>{% endif %}</p>{% endif %}
     </article>
     {% endfor %}
+    <p class="np-roads">Parish council meetings, contacts and minutes are on <a href="{{ '/living-here/council/' | url }}">Council &amp; planning</a>.</p>
   </section>
   {% endif %}
 

@@ -1,0 +1,12 @@
+{
+  "_help": "Short paragraph under the newsletter header, labelled WEBSITE UPDATE: the due entries' text each as its own short paragraph in order of from date, then key, the last followed by one 'Have a look at harvingtonvillage.org.uk.' link (render.js). So write each text as one or two plain sentences that read well beside the others (check the other due entries so none repeats another): no 'New on the website:' and no 'Have a look'. Each entry: key (unique, letters/numbers/hyphens, never reused), from (first issue date it can appear, YYYY-MM-DD), optional until (last date), text, link (kept for the record; not shown). Shown in one issue that is sent live, then retired automatically.",
+  "entries": [
+    {
+      "key": "planning-page-2026-11",
+      "from": "2026-11-26",
+      "until": "2026-12-02",
+      "link": "https://harvingtonvillage.org.uk/living-here/planning/",
+      "text": "Planning applications, decisions and appeals for Harvington and Norton and Lenchwick now appear in the newsletter each week, and the last eight weeks are on our new Planning page."
+    }
+  ]
+}
