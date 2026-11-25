@@ -14,7 +14,7 @@ Work through these in order. Small jobs are where steps get forgotten (a Build h
 - Moved or reorganised files: build before into a scratch folder, build after, then `scripts/compare-build.sh <before> _site`.
 - Data shared between the sites (bins, term dates, cartoons, a new `_data` file or page): `node lib/parity.js`; add any intended difference to `KNOWN` with the reason.
 - Admin panel, both-sites or newsletter changes: work through the `panel-change`, `both-sites` or `newsletter-change` checklist too.
-- Visual or email changes: show Jon a preview (a screenshot or a sample render) before merging.
+- Visual or email changes beyond the trivial (typo, date, one content item): build here, screenshot the changed part at desktop (600px for the newsletter) and phone width, show Jon, and wait for his OK before merging (Jon, 25 Nov; CLAUDE.md Preview before merge).
 - Public-facing wording: Jon approves it before it is committed.
 
 ## 2. Commit
