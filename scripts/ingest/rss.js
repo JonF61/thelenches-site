@@ -20,7 +20,7 @@ const replies = require('./replies');
 const trust = require('./trusted');
 const itemFeedback = require('./itemfeedback');
 const { LOCAL_FEED, keepLocalStory } = require('../../lib/sources');
-const { pageLinks } = require('./pagelinks');
+const { pageInfo, USER_AGENT: PAGE_AGENT } = require('./pagelinks');
 const dupes = require('./duplicates');
 
 const MAX_FEED_ITEMS_PER_RUN = 10; // across all feeds; the rest wait for the next run
@@ -29,6 +29,61 @@ const FETCH_TIMEOUT_MS = 20000;
 const USER_AGENT = 'LenchesPipeline/1.0 (+https://thelenches.org.uk)';
 // Tracking parameters removed from article links (plus any utm_*).
 const TRACKING_PARAMS = ['fbclid', 'gclid', 'mc_cid', 'mc_eid', 'ref'];
+
+// Newsletters (25 Nov, Jon, after the Harvington PC November newsletter was written up as "read
+// our newsletter"): when a non-newspaper feed item announces a newsletter, bulletin or magazine
+// and its page carries a PDF, the PDF goes to Claude in newsletter mode (extract.js DIGEST) and
+// each thing in it becomes its own item. If no PDF can be read the item fails (retried, then
+// the run fails so GitHub emails Jon) rather than advertising the other newsletter.
+const NEWSLETTER_RE = /\b(news ?letters?|bulletin|magazine|messenger|parish news)\b/i;
+const MAX_PDF_BYTES = 25 * 1024 * 1024;
+const MAX_PDF_TEXT_PAGES = 30;
+const isNewsletterItem = (item) => NEWSLETTER_RE.test(`${item.title}\n${item.text}`);
+
+async function fetchPdf(url, { fetchImpl = fetch, timeoutMs = FETCH_TIMEOUT_MS } = {}) {
+  const res = await fetchImpl(url, {
+    headers: { 'User-Agent': PAGE_AGENT, Accept: 'application/pdf,*/*;q=0.5' },
+    redirect: 'follow',
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = Buffer.from(await res.arrayBuffer());
+  if (data.length > MAX_PDF_BYTES) throw new Error('over 25 MB');
+  if (data.slice(0, 5).toString('latin1') !== '%PDF-') throw new Error('not a PDF (blocked or a web page)');
+  const filename = decodeURIComponent(new URL(res.url || url).pathname.split('/').pop() || 'newsletter.pdf');
+  return { filename, data };
+}
+
+// The PDF's words, only to check a second link Claude takes from it is really written there.
+async function pdfText(data) {
+  try {
+    const mupdf = await import('mupdf');
+    const doc = mupdf.Document.openDocument(data, 'application/pdf');
+    const n = Math.min(doc.countPages(), MAX_PDF_TEXT_PAGES);
+    const out = [];
+    for (let i = 0; i < n; i += 1) out.push(doc.loadPage(i).toStructuredText().asText());
+    return out.join('\n');
+  } catch {
+    return '';
+  }
+}
+
+// The newsletter PDF for a feed item: the item's own link if it is a PDF, else the first PDF on
+// its page that downloads. Returns { pdf, text } or throws with why none could be read.
+async function newsletterPdf(link, pdfUrls, opts) {
+  const urls = [...(/\.pdf(\?|$)/i.test(link) ? [link] : []), ...pdfUrls].slice(0, 3);
+  if (!urls.length) throw new Error('Newsletter PDF could not be read: no PDF found on its page');
+  const why = [];
+  for (const url of urls) {
+    try {
+      const pdf = await fetchPdf(url, opts);
+      return { pdf, text: await pdfText(pdf.data) };
+    } catch (err) {
+      why.push((err && err.message) || String(err));
+    }
+  }
+  throw new Error(`Newsletter PDF could not be read: ${why.join('; ')}`);
+}
 
 const isLocalFeed = (feed) => LOCAL_FEED.test(`${feed.source} ${feed.match}`);
 const aboutPlaces = keepLocalStory;
@@ -138,11 +193,17 @@ async function processItem(entry, ctx, h) {
   if (!link) throw new Error(`No usable link for "${item.title}"`);
 
   // Council and other non-newspaper feeds: the article's own links, for a second link (pagelinks.js).
-  const pageLinksFound = isLocalFeed(feed) ? [] : await pageLinks(link);
+  const page = isLocalFeed(feed) ? { links: [], pdfs: [] } : await pageInfo(link);
+  const pageLinksFound = page.links;
+  // A newsletter: read its PDF and list what's in it, never the newsletter itself.
+  const nl = !isLocalFeed(feed) && isNewsletterItem(item) ? await newsletterPdf(link, page.pdfs) : null;
   const result = await extract({
     signpost: true,
     local: isLocalFeed(feed),
-    feedItem: { title: item.title, published: received, text: item.text, link, pageLinks: pageLinksFound },
+    feedItem: {
+      title: item.title, published: received, text: item.text, link, pageLinks: pageLinksFound,
+      ...(nl ? { pdfs: [nl.pdf], pdfText: nl.text } : {}),
+    },
     sourceName: feed.source,
     receivedIso: received,
     today: ctx.today,
@@ -152,7 +213,7 @@ async function processItem(entry, ctx, h) {
 
   const id = key.replace(':', '-');
   // Links Holly may add: only ones in the feed text, the article link or the article's own links.
-  const given = [item.text, link, ...pageLinksFound.map((l) => l.url)].join('\n');
+  const given = [item.text, link, ...pageLinksFound.map((l) => l.url), nl ? nl.text : ''].join('\n');
   const listed = result.items.length ? dupes.listings(ctx.existing) : [];
   const found = [];
   const roadworks = (it) => /one\.network/i.test(String(it.link_url || ''));
@@ -173,6 +234,7 @@ async function processItem(entry, ctx, h) {
     }
     decided = holdRegular(it, decided, noteParts);
     if (it.holly_note) noteParts.push(`Holly: ${it.holly_note}`);
+    if (nl) noteParts.push(`From the ${feed.source} newsletter (${nl.pdf.filename})`);
     const row = {
       id: `${id}-${n + 1}`,
       received,
@@ -224,7 +286,8 @@ async function processItem(entry, ctx, h) {
     received,
     source: feed.source,
     items: rows.length,
-    error: rows.length ? '' : `No items: ${result.skipReason || 'not relevant'}`,
+    error: rows.length ? (nl ? `Newsletter: ${rows.length} item(s) from ${nl.pdf.filename}` : '')
+      : `No items: ${result.skipReason || 'not relevant'}`,
   };
 }
 
@@ -322,4 +385,4 @@ async function run(ctx, logById, startMs, h) {
   return out;
 }
 
-module.exports = { run, fetchFeed, parseFeed, cleanLink, htmlToText, isLocalFeed, aboutPlaces, processItem };
+module.exports = { run, fetchFeed, fetchPdf, newsletterPdf, isNewsletterItem, parseFeed, cleanLink, htmlToText, isLocalFeed, aboutPlaces, processItem };
