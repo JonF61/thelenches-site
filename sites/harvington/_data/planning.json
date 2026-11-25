@@ -1,0 +1,118 @@
+{
+  "_help": "Written by scripts/planning (planning.yml): Wychavon weekly planning lists for this site's parishes (site.json planningParishes), newest week first, 8 weeks. Reference, location, proposal, type, date, decision and link only; tree works left out. Don't edit by hand.",
+  "source": "https://www.wychavon.gov.uk/planning/other-planning-services/planning-weekly-list",
+  "check": {
+    "at": "2026-11-25",
+    "problems": []
+  },
+  "weeks": [
+    {
+      "from": "2026-11-16",
+      "to": "2026-11-20",
+      "lists": {
+        "applications": true,
+        "appeals": true,
+        "decisions": true
+      },
+      "applications": [
+        {
+          "ref": "W/26/02596/CLPU",
+          "location": "Fairhaven, Oak Tree Road, Harvington",
+          "proposal": "Application for a certificate of proposed lawful use/development for demolition of existing conservatory and erection of single-storey rear extension with flat roof extending beyond original rear wall with a loft conversion with a flat-roof dormer.",
+          "type": "Certificate of Lawfulness of proposed use",
+          "date": "2026-11-18",
+          "parish": "Harvington",
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02596/CLPU"
+        },
+        {
+          "ref": "W/26/02715/AGR",
+          "location": "Ellenden Farm, Evesham Road, Harvington",
+          "proposal": "Erection of general purpose agricultural storage building",
+          "type": "Agricultural/Forestry/PropRoad",
+          "date": "2026-11-18",
+          "parish": "Harvington",
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02715/AGR"
+        }
+      ],
+      "decisions": [],
+      "appeals": [
+        {
+          "ref": "W/26/00662/PIP",
+          "location": "74 Lenchwick Lane, Lenchwick",
+          "proposal": "Permission in Principle for 1 no. dwelling",
+          "type": "Permission in principle",
+          "date": "2026-11-18",
+          "parish": "Norton and Lenchwick",
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/00662/PIP"
+        }
+      ]
+    },
+    {
+      "from": "2026-11-09",
+      "to": "2026-11-13",
+      "lists": {
+        "applications": true,
+        "appeals": true,
+        "decisions": true
+      },
+      "applications": [
+        {
+          "ref": "W/26/02281/FUL",
+          "location": "Land at (OS 0350 4664), Lenchwick Lane, Twyford",
+          "proposal": "Reinstatement, extension and re-development of 2 former bothies (agricultural workers accommodation/hovels) and associated buildings into 2 x holiday lets and associated works including change of use agricultural land to amenity land and new/altered access arrangements",
+          "type": "Full planning permission",
+          "date": "2026-11-09",
+          "parish": "Norton and Lenchwick",
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02281/FUL"
+        }
+      ],
+      "decisions": [],
+      "appeals": []
+    },
+    {
+      "from": "2026-11-02",
+      "to": "2026-11-06",
+      "lists": {
+        "applications": true,
+        "appeals": true,
+        "decisions": true
+      },
+      "applications": [
+        {
+          "ref": "W/26/02210/HP",
+          "location": "Blairfindy, Twyford Bank, Twyford",
+          "proposal": "Two-storey front, side and rear extensions together with the comprehensive remodelling of the existing dwelling, including alterations to the roof form, external materials, windows and doors",
+          "type": "Householder Planning",
+          "date": "2026-11-02",
+          "parish": "Norton and Lenchwick",
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02210/HP"
+        }
+      ],
+      "decisions": [
+        {
+          "ref": "W/26/01704/HP",
+          "location": "1 Brookdale, Harvington",
+          "proposal": "Proposed first floor extension above existing garage and conversion of garage to dining room.",
+          "type": "Householder",
+          "date": "2026-11-04",
+          "parish": "Harvington",
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/01704/HP",
+          "decision": "Approval"
+        }
+      ],
+      "appeals": []
+    },
+    {
+      "from": "2026-10-26",
+      "to": "2026-10-30",
+      "lists": {
+        "applications": true,
+        "appeals": true,
+        "decisions": true
+      },
+      "applications": [],
+      "decisions": [],
+      "appeals": []
+    }
+  ]
+}

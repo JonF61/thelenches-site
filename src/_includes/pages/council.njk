@@ -73,6 +73,9 @@
     <div class="card cp-card">
       <p class="mt0">{{ pl.text }}</p>
       <p><a href="{{ pl.commentUrl }}" target="_blank" rel="noopener">Search and comment</a> &middot; <a href="{{ pl.weeklyUrl }}" target="_blank" rel="noopener">Weekly list (email sign-up)</a> &middot; Planning: <a href="tel:{{ pl.phone | replace(' ', '') }}">{{ pl.phone }}</a></p>
+      {%- if site.planningParishes %}
+      <p>See new applications, decisions and appeals near you on our <a href="/living-here/planning/">Planning page</a>.</p>
+      {%- endif %}
     </div>
   </section>
 

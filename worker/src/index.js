@@ -29,7 +29,8 @@
 //                       alerts via GitHub
 //   cron SCHEDULE_CRON  UK-time schedule: Wed 18:30 digest; Thu 06:30 newsletter build,
 //                       08:00 auto-send (does nothing unless holiday mode + live), 12:00
-//                       and 17:00 reminders; Wed 19:00 Rimmer's newsletter check.
+//                       and 17:00 reminders; Wed 19:00 Rimmer's newsletter check; Wed 12:00,
+//                       17:30 and Thu 05:30 the planning weekly list (planning.yml).
 //                       A failed dispatch raises a watchdog alert.
 //   cron NIGHTLY_CRON   00:10 UK every night: fires repository_dispatch "rebuild" so
 //                       build.yml rebuilds the site and yesterday's events drop off.
@@ -96,6 +97,11 @@ const SLOTS = [
   // Rimmer's newsletter check, after the 6pm cutoff (rimmer.yml; was GitHub's cron, hours late).
   // perSite (Harvington stage 5a): fired for each site whose newsletter is on (Settings
   // newsletter_mode not off), the Lenches first and always, as before.
+  // Planning feed (25 Nov 2026, Jon; planning.yml): Wychavon's weekly lists, both sites in one run,
+  // before the 6pm cutoff and again before Thursday's 06:30 build; a list already read is skipped.
+  { dow: 'Wed', hm: '12:00', event: 'planning', payload: () => ({}) },
+  { dow: 'Wed', hm: '17:30', event: 'planning', payload: () => ({}) },
+  { dow: 'Thu', hm: '05:30', event: 'planning', payload: () => ({}) },
   { dow: 'Wed', hm: '19:00', event: 'rimmer', payload: () => ({ scope: 'newsletter' }), perSite: true },
   { dow: 'Thu', hm: '06:30', event: 'newsletter', payload: (d) => ({ action: 'build', issue_date: d }), perSite: true },
   { dow: 'Thu', hm: '08:00', event: 'newsletter', payload: (d) => ({ action: 'autosend', issue_date: d }), perSite: true },

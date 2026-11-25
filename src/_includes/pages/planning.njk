@@ -1,0 +1,48 @@
+{#- Shared Planning page (25 Nov 2026, Jon): Wychavon's weekly planning lists for the site's parishes
+    (site.json planningParishes), last 8 weeks, from _data/planning.json (written by scripts/planning,
+    planning.yml). Each site's living-here/planning.njk sets its wording (pageIntro), then includes this.
+    Reference, location, proposal, type, date, decision and link only; tree works are left out. -#}
+{%- set months = ["January","February","March","April","May","June","July","August","September","October","November","December"] -%}
+{%- macro dm(iso) -%}{{ iso.slice(8,10) | int }} {{ months[(iso.slice(5,7) | int) - 1].slice(0,3) }}{%- endmacro -%}
+{%- macro weekHead(w) -%}{{ w.from.slice(8,10) | int }}{% if w.from.slice(5,7) != w.to.slice(5,7) %} {{ months[(w.from.slice(5,7) | int) - 1] }}{% endif %} to {{ w.to.slice(8,10) | int }} {{ months[(w.to.slice(5,7) | int) - 1] }} {{ w.to.slice(0,4) }}{%- endmacro -%}
+{%- set parts = [["applications", "New applications", "valid"], ["decisions", "Decisions", "decided"], ["appeals", "Appeals", "appeal started"]] -%}
+<style>
+.pl-week h2{margin-bottom:.25rem}
+.pl-week h3{margin:.9rem 0 .3rem;font-size:1.02rem}
+.pl-week ul{margin:0;padding-left:1.2rem}
+.pl-week li{margin:0 0 .5rem}
+.pl-muted{color:#666;font-size:.92rem}
+.pl-dec{font-weight:700}
+</style>
+<main class="container">
+  <section>
+    <h1>Planning applications</h1>
+    <p class="mt0">{{ pageIntro | safe }}</p>
+    <p class="pl-muted">Updated each week from Wychavon's lists. <a href="{{ council.planning.commentUrl }}" target="_blank" rel="noopener">Search all applications on Wychavon's site</a> &middot; <a href="/living-here/council/#planning">Parish councils and how to comment</a></p>
+  </section>
+  {%- set weeks = planning.weeks if planning and planning.weeks else [] %}
+  {%- if not weeks.length %}
+  <p>No weekly lists yet: check back after the next one.</p>
+  {%- endif %}
+  {%- for w in weeks %}
+  <section class="pl-week" id="week-{{ w.from }}">
+    <h2>{{ weekHead(w) }}</h2>
+    {%- for p in parts %}
+    {%- set list = w[p[0]] or [] %}
+    <h3>{{ p[1] }}</h3>
+    {%- if list.length %}
+    <ul>
+      {%- for e in list %}
+      <li><strong>{{ e.location }}</strong>: {{ e.proposal }}{% if not e.proposal.endsWith('.') %}.{% endif %}
+        {% if e.decision %}<span class="pl-dec">{{ e.decision }}</span> &middot; {% endif %}<span class="pl-muted">{% if e.type %}{{ e.type }} &middot; {% endif %}{% if e.date %}{{ p[2] }} {{ dm(e.date) }}{% endif %}</span>
+        &middot; <a href="{{ e.link }}" target="_blank" rel="noopener">{{ e.ref }}</a></li>
+      {%- endfor %}
+    </ul>
+    {%- else %}
+    <p class="pl-muted">{{ "None this week." if w.lists and w.lists[p[0]] else "Not yet published by Wychavon." }}</p>
+    {%- endif %}
+    {%- endfor %}
+  </section>
+  {%- endfor %}
+  <p class="pl-muted">From Wychavon District Council's weekly planning lists. Plans, documents and comments are on Wychavon's planning site: follow an application's reference.</p>
+</main>

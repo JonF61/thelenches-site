@@ -2,6 +2,10 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Planning feed (built 25 Nov): check the Worker-fired Planning list run on Wed 17:30 / Thu 05:30 UK says 'No new list' (16-20 Nov already stored), that both 26 Nov issues show Planning this week (Lenches: 3 applications; Harvington: 2 applications and the Lenchwick Lane appeal), and that the next week's list (23-27 Nov) is added by the 2 Dec runs and its Daily diagnostic has no 'Planning feed' problem",
+      "kryten": true
+    },
+    {
       "task": "Where in Harvington? puzzle for the Harvington newsletter (Jon, 24 Nov: maybe from the 3 Dec issue): its own sites/harvington/_data data file and images/where/ close-ups from the Harvington photos (never a church, no giveaway signs), the newsletter heading per site, and lib/parity.js KNOWN updated; ask Jon before starting.",
       "added": "2026-11-24",
       "kryten": true

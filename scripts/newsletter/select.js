@@ -54,6 +54,7 @@ const inLenches = (x) => THIS_SITE === 'lenches' && inLenchesArea(x);
 const { bodyOf } = require('../../lib/wording');
 const { localSource } = require('../../lib/sources');
 const anchors = require('../../lib/anchors');
+const { weekForIssue } = require('../../lib/planning');
 
 const WINDOW_DAYS = 14;
 const MAX_APPEARANCES = 3;
@@ -287,7 +288,17 @@ function whereFor(data, issueDate, jpegFor) {
   return out.puzzle || out.answer ? out : null;
 }
 
-function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, cartoons, wherelenches, issues, settings, sources, jpegFor, cutoff, photos }) {
+// Planning this week (25 Nov, Jon): the week's applications, decisions and appeals for the site's
+// parishes (site.json planningParishes), from sites/<site>/_data/planning.json (scripts/planning).
+// Not counted as items (keys, subject, empty): it is a band, like the bins.
+function planningFor(data, issueDate) {
+  const parishes = siteConfig().planningParishes;
+  if (!data || !Array.isArray(parishes) || !parishes.length) return null;
+  const w = weekForIssue(data, issueDate);
+  return w ? { ...w, parishes: [...parishes] } : null;
+}
+
+function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, cartoons, wherelenches, planning, issues, settings, sources, jpegFor, cutoff, photos }) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate || '')) throw new Error(`Bad issue date "${issueDate}"`);
   const deadline = str(cutoff);
   if (deadline && !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(deadline)) throw new Error(`Bad cutoff "${cutoff}"`);
@@ -471,6 +482,9 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, car
     onThisDay: onThisDayFor(onthisday, issueDate),
     cartoon: cartoonFor(cartoons, issueDate, jpegFor),
     where: whereFor(wherelenches, issueDate, jpegFor),
+    // Planning this week (25 Nov, Jon): the Wychavon weekly list for this site's parishes
+    // (lib/planning.js weekForIssue); absent without data, and in older snapshots, which render as before.
+    ...(planningFor(planning, issueDate) ? { planning: planningFor(planning, issueDate) } : {}),
     lastIssue,
     // "Forward this" band above Coming up (24 Nov, Jon: Harvington only), from site.json
     // forwardBand; absent for a site without it and in older snapshots, which render as before.

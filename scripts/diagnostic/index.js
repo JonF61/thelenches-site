@@ -14,6 +14,7 @@
 'use strict';
 
 const fs = require('fs');
+const path = require('path');
 const tls = require('tls');
 const crypto = require('crypto');
 const dns = require('dns').promises;
@@ -583,6 +584,24 @@ async function checkParity() {
   for (const p of parityProblems()) problem(`Sites not in step: ${clip(p, 160)}`);
 }
 
+// Planning feed (25 Nov 2026, Jon; scripts/planning, planning.yml): each site's planning.json
+// "check" problems (a non-empty PDF with no entries parsed, a missing link or week heading) and a
+// feed gone quiet (newest list week ended over 16 days ago). Offline, from the repo.
+async function checkPlanning() {
+  const { SITES, siteConfigFor } = require('../../lib/site');
+  const { addDays } = require('../../lib/planning');
+  const today = new Date().toISOString().slice(0, 10);
+  for (const site of SITES) {
+    if (!(siteConfigFor(site).planningParishes || []).length) continue;
+    let data = null;
+    try { data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'sites', site, '_data', 'planning.json'), 'utf8')); } catch { /* none yet */ }
+    if (!data) { problem(`Planning feed (${site}): no planning.json yet (run planning.yml)`); continue; }
+    for (const p of (data.check && data.check.problems) || []) problem(`Planning feed (${site}): ${clip(p, 160)}`);
+    const newest = ((data.weeks || [])[0] || {}).to || '';
+    if (!newest || newest < addDays(today, -16)) problem(`Planning feed (${site}): no new Wychavon weekly list since ${newest || 'ever'}`);
+  }
+}
+
 async function main() {
   const ctx = {};
   await checkSheets(ctx);
@@ -608,6 +627,7 @@ async function main() {
     safe('DNS', checkDns),
     safe('DISPATCH_TOKEN', checkDispatchAndKeepAlive),
     safe('Sites in step', checkParity),
+    safe('Planning feed', checkPlanning),
   ]);
   if (ctx.sheetsOk) {
     await safe('Log requeue', () => checkLog(pastFixes));
