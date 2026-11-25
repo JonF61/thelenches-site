@@ -2,6 +2,11 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Feed newsletters (built 25 Nov, PRs 520 and 522): when Harvington PC's December newsletter reaches the feed, check its Log row. Items in Pending with \"From the Harvington PC newsletter\" = working. \"Newsletter PDF could not be read: … (reason)\" = blocked or not spotted: if blocked, ask Jon to attach the PDF and add items by hand (add-items skill, our own words); if the PDF is on the page but missed, fix pdfsFromHtml.",
+      "kryten": true,
+      "added": "2026-11-25"
+    },
+    {
       "task": "Where to eat pages, both sites (Jon, 25 Nov: soon, they are weak on every count): more places (pubs, cafés, restaurants, takeaways nearby), fuller entries (food, price guide, booking, dogs/children, parking, accessibility; facts only, no opening hours), a better look (photos, a map), and ways to choose (filter or group by type and distance). Also consider pulling in Google reviews/ratings (Jon, 25 Nov): needs a Google Places API key and billing, Google's display and attribution rules and limits on storing them, and a change to the current \"facts only, no reviews\" rule for these pages. Research a candidate list and mock-ups (preview skill) for Jon before building.",
       "waiting": "Jon to say go",
       "added": "2026-11-25"
