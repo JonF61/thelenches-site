@@ -114,5 +114,166 @@
       "decisions": [],
       "appeals": []
     }
+  ],
+  "open": [
+    {
+      "ref": "W/26/01176/FUL",
+      "location": "Land at OS 0468 4810, Harvington Lane, Norton",
+      "proposal": "The erection of four dwellings (Class C3 Use), formation of site accesses off Harvington Lane including removal of frontage hedgerow, provision of hard and soft landscaping and photovoltaic (pv) panels on roofs, and associated works",
+      "type": "Full planning permission",
+      "parish": "Norton and Lenchwick",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/01176/FUL",
+      "valid": "2026-07-22",
+      "consultationEnd": "2026-09-10",
+      "homes": 4,
+      "homesLabel": "4 new homes"
+    },
+    {
+      "ref": "W/25/02185/FUL",
+      "location": "Land at (OS 0497 4920), Evesham Road, Harvington",
+      "proposal": "Full Planning Permission for the proposed residential development of 9 dwellings.",
+      "type": "Full planning permission",
+      "parish": "Harvington",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/25/02185/FUL",
+      "valid": "2025-10-15",
+      "consultationEnd": "2026-02-26",
+      "homes": 9,
+      "homesLabel": "9 new homes"
+    },
+    {
+      "ref": "W/24/00656/FUL",
+      "location": "Land Rear Of Sefton, Station Road, Harvington",
+      "proposal": "Erection of up to 55 residential dwellings with associated open space, landscaping and infrastructure",
+      "type": "Full planning permission",
+      "parish": "Harvington",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/24/00656/FUL",
+      "valid": "2024-04-29",
+      "consultationEnd": "2025-07-03",
+      "committee": "2025-09-18",
+      "homes": 55,
+      "homesLabel": "Up to 55 new homes"
+    },
+    {
+      "ref": "W/22/01463/FUL",
+      "location": "Richmond Wood Norton, Evesham Road, Wood Norton",
+      "proposal": "Re-development of existing car park for the erection of 2 x two-storey blocks (A and B), providing 12 care apartments (Use Class C2) and associated development, to be operated and occupied as part of the existing Integrated Retirement Community",
+      "type": "Full planning permission",
+      "parish": "Norton and Lenchwick",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/22/01463/FUL",
+      "valid": "2022-06-29",
+      "consultationEnd": "2022-09-03",
+      "homes": 12,
+      "homesLabel": "12 new homes"
+    },
+    {
+      "ref": "W/26/02596/CLPU",
+      "location": "Fairhaven, Oak Tree Road, Harvington",
+      "proposal": "Application for a certificate of proposed lawful use/development for demolition of existing conservatory and erection of single-storey rear extension with flat roof extending beyond original rear wall with a loft conversion with a flat-roof dormer.",
+      "type": "Certificate of Lawfulness of proposed use",
+      "parish": "Harvington",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02596/CLPU",
+      "valid": "2026-11-18",
+      "consultationEnd": "2026-12-09"
+    },
+    {
+      "ref": "W/26/02715/AGR",
+      "location": "Ellenden Farm, Evesham Road, Harvington",
+      "proposal": "Erection of general purpose agricultural storage building",
+      "type": "Agricultural/Forestry/PropRoad",
+      "parish": "Harvington",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02715/AGR",
+      "valid": "2026-11-18",
+      "consultationEnd": "2026-12-02"
+    },
+    {
+      "ref": "W/26/02281/FUL",
+      "location": "Land at (OS 0350 4664), Lenchwick Lane, Twyford",
+      "proposal": "Reinstatement, extension and re-development of 2 former bothies (agricultural workers accommodation/hovels) and associated buildings into 2 x holiday lets and associated works including change of use agricultural land to amenity land and new/altered access arrangements",
+      "type": "Full planning permission",
+      "parish": "Norton and Lenchwick",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02281/FUL",
+      "valid": "2026-11-09",
+      "consultationEnd": "2026-11-30"
+    },
+    {
+      "ref": "W/26/02210/HP",
+      "location": "Blairfindy, Twyford Bank, Twyford",
+      "proposal": "Two-storey front, side and rear extensions together with the comprehensive remodelling of the existing dwelling, including alterations to the roof form, external materials, windows and doors",
+      "type": "Householder Planning",
+      "parish": "Norton and Lenchwick",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02210/HP",
+      "valid": "2026-11-02",
+      "consultationEnd": "2026-12-11"
+    },
+    {
+      "ref": "W/26/02371/CCO",
+      "location": "Weaving Machinery, Chadbury Road, Chadbury, Lenchwick",
+      "proposal": "Discharge of condition 4 (renewable or low carbon energy generating facilities) and condition 6 (cycle parking) of planning permission reference W/24/00243/FUL",
+      "type": "Condition Discharge",
+      "parish": "Norton and Lenchwick",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02371/CCO",
+      "valid": "2026-10-08",
+      "consultationEnd": "2026-11-03"
+    },
+    {
+      "ref": "W/26/02039/HP",
+      "location": "Fairhaven, Oak Tree Road, Harvington",
+      "proposal": "Hipped to gable loft conversion and alterations to existing roof.",
+      "type": "Householder Planning",
+      "parish": "Harvington",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02039/HP",
+      "valid": "2026-10-06",
+      "consultationEnd": "2026-11-12"
+    },
+    {
+      "ref": "W/26/01930/FUL",
+      "location": "Leys Barn Farm, Leys Road, Harvington",
+      "proposal": "Proposed new access from Leys Road, access track, storage container, and associated parking and turning area.",
+      "type": "Full planning permission",
+      "parish": "Harvington",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/01930/FUL",
+      "valid": "2026-09-14",
+      "consultationEnd": "2026-10-13"
+    },
+    {
+      "ref": "W/26/01423/FUL",
+      "location": "Orchard at OS 0583 4884, Bromley Close, Harvington",
+      "proposal": "Shed for storage of horticultural equipment",
+      "type": "Full planning permission",
+      "parish": "Harvington",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/01423/FUL",
+      "valid": "2026-08-12",
+      "consultationEnd": "2026-12-02"
+    },
+    {
+      "ref": "W/25/02787/FUL",
+      "location": "Land at (OS 0434 4665), Evesham Country Park, Norton",
+      "proposal": "Erection of health, fitness and racquets club, including three outdoor tennis courts within an enclosed air dome structure, three outdoor padel courts enclosed within a canopy, padel court social, indoor and outdoor swimming pools, outdoor multi use court, outdoor battle box exercise facility, external spa garden, child activity area, lounge facilities including a business hub and terrace, together with ancillary facilities, car parking, servicing, landscaping and associated works.",
+      "type": "Full planning permission",
+      "parish": "Norton and Lenchwick",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/25/02787/FUL",
+      "valid": "2026-07-08",
+      "consultationEnd": "2026-09-14"
+    },
+    {
+      "ref": "W/26/00735/FUL",
+      "location": "No 2 The Courtyard, Oak Tree Farm, Crest Hill, Harvington",
+      "proposal": "Provision of freestanding timber barrel sauna and adjoining open shower. Change storeroom into treatment room and WC",
+      "type": "Full planning permission",
+      "parish": "Harvington",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/00735/FUL",
+      "valid": "2026-04-10",
+      "consultationEnd": "2026-12-01"
+    },
+    {
+      "ref": "W/25/02800/CCO",
+      "location": "Land OS 0048, Worcester Road, Chadbury",
+      "proposal": "Discharge of condition 7 (site/slab levels) and condition 8 (scheme of landscaping) of planning reference W/22/02586/CU (Allowed at appeal reference APP/H1840/W/24/3351881)",
+      "type": "Condition Discharge",
+      "parish": "Norton and Lenchwick",
+      "link": "https://plan.wychavon.gov.uk/Planning/Display/W/25/02800/CCO",
+      "valid": "2025-12-23",
+      "consultationEnd": "2026-01-13"
+    }
   ]
 }
