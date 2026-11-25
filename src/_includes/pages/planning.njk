@@ -1,48 +1,52 @@
 {#- Shared Planning page (25 Nov 2026, Jon): Wychavon's weekly planning lists for the site's parishes
-    (site.json planningParishes), last 8 weeks, from _data/planning.json (written by scripts/planning,
-    planning.yml). Each site's living-here/planning.njk sets its wording (pageIntro), then includes this.
-    Reference, location, proposal, type, date, decision and link only; tree works are left out. -#}
+    (site.json planningParishes), last 8 weeks, from _data/planning.json (written by scripts/planning).
+    Each site's living-here/planning.njk sets its wording (pageIntro), then includes this.
+    Laid out like the Events page (Jon, 25 Nov: no wall of text): a heading per week, then one
+    item-card per entry with the date box (date valid, decided or appeal started) and a label for
+    its kind. Reference, location, proposal, type, date, decision and link only; tree works left out. -#}
 {%- set months = ["January","February","March","April","May","June","July","August","September","October","November","December"] -%}
-{%- macro dm(iso) -%}{{ iso.slice(8,10) | int }} {{ months[(iso.slice(5,7) | int) - 1].slice(0,3) }}{%- endmacro -%}
 {%- macro weekHead(w) -%}{{ w.from.slice(8,10) | int }}{% if w.from.slice(5,7) != w.to.slice(5,7) %} {{ months[(w.from.slice(5,7) | int) - 1] }}{% endif %} to {{ w.to.slice(8,10) | int }} {{ months[(w.to.slice(5,7) | int) - 1] }} {{ w.to.slice(0,4) }}{%- endmacro -%}
-{%- set parts = [["applications", "New applications", "valid"], ["decisions", "Decisions", "decided"], ["appeals", "Appeals", "appeal started"]] -%}
+{%- set parts = [["applications", "New application", "Valid", "new applications"], ["decisions", "Decision", "Decided", "decisions"], ["appeals", "Appeal", "Appeal started", "appeals"]] -%}
 <style>
-.pl-week h2{margin-bottom:.25rem}
-.pl-week h3{margin:.9rem 0 .3rem;font-size:1.02rem}
-.pl-week ul{margin:0;padding-left:1.2rem}
-.pl-week li{margin:0 0 .5rem}
-.pl-muted{color:#666;font-size:.92rem}
-.pl-dec{font-weight:700}
+.pl-label{display:inline-block;margin:0 0 .3rem;padding:0 .45rem;border-radius:4px;background:var(--green-light,#EFE7D3);color:var(--green-dark,#2E3D26);font-size:.75rem;font-weight:700;line-height:1.7;letter-spacing:.02em}
+.pl-label.pl-decision{background:#fdf0dc;color:#7a4a06}
+.pl-label.pl-appeal{background:#fbe6d6;color:#8a3e0c}
+.pl-meta{margin:.35rem 0 0;font-size:.9rem;color:var(--muted,#666)}
+.pl-none{margin:.2rem 0 1rem;color:var(--muted,#666);font-size:.95rem}
+.pl-week .item-card h3{font-size:1.02rem}
 </style>
 <main class="container">
-  <section>
+  <div class="page-head">
     <h1>Planning applications</h1>
-    <p class="mt0">{{ pageIntro | safe }}</p>
-    <p class="pl-muted">Updated each week from Wychavon's lists. <a href="{{ council.planning.commentUrl }}" target="_blank" rel="noopener">Search all applications on Wychavon's site</a> &middot; <a href="/living-here/council/#planning">Parish councils and how to comment</a></p>
-  </section>
+    <p class="page-intro">{{ pageIntro | safe }}</p>
+    <p class="muted">Updated each week from Wychavon's lists. <a href="{{ council.planning.commentUrl }}" target="_blank" rel="noopener">Search all applications on Wychavon's site</a> &middot; <a href="/living-here/council/#planning">Parish councils and how to comment</a></p>
+  </div>
   {%- set weeks = planning.weeks if planning and planning.weeks else [] %}
-  {%- if not weeks.length %}
-  <p>No weekly lists yet: check back after the next one.</p>
-  {%- endif %}
   {%- for w in weeks %}
-  <section class="pl-week" id="week-{{ w.from }}">
-    <h2>{{ weekHead(w) }}</h2>
+  <section class="month pl-week">
+    <h2 class="list-label" id="week-{{ w.from }}">{{ weekHead(w) }}</h2>
+    {%- set empty = [] %}{% set notYet = [] %}
     {%- for p in parts %}
     {%- set list = w[p[0]] or [] %}
-    <h3>{{ p[1] }}</h3>
-    {%- if list.length %}
-    <ul>
-      {%- for e in list %}
-      <li><strong>{{ e.location }}</strong>: {{ e.proposal }}{% if not e.proposal.endsWith('.') %}.{% endif %}
-        {% if e.decision %}<span class="pl-dec">{{ e.decision }}</span> &middot; {% endif %}<span class="pl-muted">{% if e.type %}{{ e.type }} &middot; {% endif %}{% if e.date %}{{ p[2] }} {{ dm(e.date) }}{% endif %}</span>
-        &middot; <a href="{{ e.link }}" target="_blank" rel="noopener">{{ e.ref }}</a></li>
-      {%- endfor %}
-    </ul>
-    {%- else %}
-    <p class="pl-muted">{{ "None this week." if w.lists and w.lists[p[0]] else "Not yet published by Wychavon." }}</p>
-    {%- endif %}
+    {%- if not list.length %}{% if w.lists and w.lists[p[0]] %}{% set empty = (empty.push(p[3]), empty) %}{% else %}{% set notYet = (notYet.push(p[3]), notYet) %}{% endif %}{% endif %}
+    {%- for e in list %}
+    {%- set d = e.date | dateParts if e.date else null %}
+    <div class="item-card" id="pl-{{ e.ref | slugify }}">
+      {%- if d %}<div class="date" data-pagefind-ignore><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>{% endif %}
+      <div class="item-body">
+        <span class="pl-label pl-{{ p[1] | lower | replace(' ', '-') }}" data-pagefind-ignore>{{ p[1] }}{% if e.decision %}: {{ e.decision }}{% endif %}</span>
+        <h3 id="pl-{{ e.ref | slugify }}-t">{{ e.location }}</h3>
+        <p>{{ e.proposal }}{% if not e.proposal.endsWith('.') %}.{% endif %}</p>
+        <p class="pl-meta">{% if e.type %}{{ e.type }} &middot; {% endif %}<a href="{{ e.link }}" target="_blank" rel="noopener">{{ e.ref }} on Wychavon's site &rarr;</a></p>
+      </div>
+    </div>
     {%- endfor %}
+    {%- endfor %}
+    {%- if empty.length %}<p class="pl-none">No {% if empty.length > 2 %}{{ empty.slice(0, -1) | join(", ") }} or {{ empty | last }}{% else %}{{ empty | join(" or ") }}{% endif %} this week.</p>{% endif %}
+    {%- if notYet.length %}<p class="pl-none">{{ notYet | join(" and ") | capitalize }}: not yet published by Wychavon.</p>{% endif %}
   </section>
+  {%- else %}
+  <p class="muted">No weekly lists yet: check back after the next one.</p>
   {%- endfor %}
-  <p class="pl-muted">From Wychavon District Council's weekly planning lists. Plans, documents and comments are on Wychavon's planning site: follow an application's reference.</p>
+  <p class="muted">From Wychavon District Council's weekly planning lists. Plans, documents and comments are on Wychavon's planning site: follow an application's reference.</p>
 </main>
