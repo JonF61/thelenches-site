@@ -164,18 +164,22 @@ async function searchOpen(parish, get = getPage) {
   return [...refs];
 }
 
+// Decided applications stay on the page, marked with their outcome, for 4 weeks after the decision
+// (Jon, 25 Nov 2026), then drop off.
+const KEEP_DECIDED_DAYS = 28;
+
 // Refreshes data.open for one site. Returns { open, problems, dropped, added }.
-async function refreshOpen(data, { parishes, seed = [], getDisplay, wait = 500 }) {
-  const decided = new Set();
+async function refreshOpen(data, { parishes, seed = [], getDisplay, wait = 500, today = new Date().toISOString().slice(0, 10), keepDays = KEEP_DECIDED_DAYS }) {
+  const listDecided = new Set();
   const fromLists = [];
   for (const w of (data && data.weeks) || []) {
-    for (const e of w.decisions || []) decided.add(e.ref);
+    for (const e of w.decisions || []) listDecided.add(e.ref);
     for (const e of w.applications || []) fromLists.push(e);
   }
   const byRef = new Map(((data && data.open) || []).map((e) => [e.ref, e]));
   let added = 0;
   for (const e of fromLists) {
-    if (byRef.has(e.ref) || decided.has(e.ref) || P.isTreeWork(e.ref, e.type)) continue;
+    if (byRef.has(e.ref) || listDecided.has(e.ref) || P.isTreeWork(e.ref, e.type)) continue;
     byRef.set(e.ref, { ref: e.ref, location: e.location, proposal: e.proposal, type: e.type, parish: e.parish, link: e.link, valid: e.date });
     added += 1;
   }
@@ -195,7 +199,8 @@ async function refreshOpen(data, { parishes, seed = [], getDisplay, wait = 500 }
     let d = null;
     try { d = P.parseDisplay(await getDisplay(e.link || P.DISPLAY + e.ref)); } catch (err) { d = null; }
     if (!d) { problems.push(`${e.ref}: its page could not be read`); if (e.location) open.push(e); continue; }
-    if (!P.isOpen(d)) { dropped += 1; continue; }
+    const decided = !P.isOpen(d);
+    if (decided && !(d.decisionDate && d.decisionDate >= P.addDays(today, -keepDays))) { dropped += 1; continue; }
     const parish = d.parish || e.parish || '';
     if (parish && want.size && !parish.split(/\s*,\s*/).some((x) => want.has(x.toLowerCase()))) { dropped += 1; continue; }
     const proposal = d.proposal || e.proposal || '';
@@ -207,6 +212,7 @@ async function refreshOpen(data, { parishes, seed = [], getDisplay, wait = 500 }
       ...(d.committee ? { committee: d.committee } : {}),
       ...(d.appealStarted ? { appealStarted: d.appealStarted } : {}),
       ...(homes ? { homes, homesLabel: P.homesLabel(proposal, homes) } : {}),
+      ...(decided ? { decision: d.decision || d.status, decisionDate: d.decisionDate } : {}),
     });
   }
   if (problems.length > 3) problems.splice(3, problems.length - 3, `and ${problems.length - 3} more`);

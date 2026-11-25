@@ -331,7 +331,7 @@ module.exports = async function (eleventyConfig) {
   eleventyConfig.addFilter("planningHomes", (e) => { const P = require("./lib/planning"); const n = P.homesIn(e.proposal, e.ref); return n ? P.homesLabel(e.proposal, n) : ""; });
   eleventyConfig.addFilter("planningStatus", (e) => require("./lib/planning").openStatus(e, ukToday()));
   eleventyConfig.addFilter("planningCounts", (open) => {
-    const P = require("./lib/planning"); const t = ukToday(); const list = open || [];
+    const P = require("./lib/planning"); const t = ukToday(); const list = (open || []).filter((e) => !e.decisionDate);
     const homes = list.filter((e) => e.homes);
     return { total: list.length, withHomes: homes.length, homes: homes.reduce((n, e) => n + e.homes, 0), comments: list.filter((e) => P.commentsOpen(e, t)).length };
   });
