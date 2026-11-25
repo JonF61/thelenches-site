@@ -70,9 +70,9 @@ async function pdfText(data) {
 
 // The newsletter PDF for a feed item: the item's own link if it is a PDF, else the first PDF on
 // its page that downloads. Returns { pdf, text } or throws with why none could be read.
-async function newsletterPdf(link, pdfUrls, opts) {
+async function newsletterPdf(link, pdfUrls, opts, pageProblem = '') {
   const urls = [...(/\.pdf(\?|$)/i.test(link) ? [link] : []), ...pdfUrls].slice(0, 3);
-  if (!urls.length) throw new Error('Newsletter PDF could not be read: no PDF found on its page');
+  if (!urls.length) throw new Error(`Newsletter PDF could not be read: no PDF found on its page${pageProblem ? ` (${pageProblem})` : ''}`);
   const why = [];
   for (const url of urls) {
     try {
@@ -196,7 +196,7 @@ async function processItem(entry, ctx, h) {
   const page = isLocalFeed(feed) ? { links: [], pdfs: [] } : await pageInfo(link);
   const pageLinksFound = page.links;
   // A newsletter: read its PDF and list what's in it, never the newsletter itself.
-  const nl = !isLocalFeed(feed) && isNewsletterItem(item) ? await newsletterPdf(link, page.pdfs) : null;
+  const nl = !isLocalFeed(feed) && isNewsletterItem(item) ? await newsletterPdf(link, page.pdfs, undefined, page.problem) : null;
   const result = await extract({
     signpost: true,
     local: isLocalFeed(feed),

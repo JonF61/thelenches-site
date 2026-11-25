@@ -71,11 +71,18 @@ async function pageInfo(url) {
       redirect: 'follow',
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-    if (!res.ok || !/html/i.test(res.headers.get('content-type') || '')) return { links: [], pdfs: [] };
+    if (!res.ok) return { links: [], pdfs: [], problem: `page answered HTTP ${res.status}` };
+    if (!/html/i.test(res.headers.get('content-type') || '')) return { links: [], pdfs: [], problem: 'page is not HTML' };
     const html = (await res.text()).slice(0, MAX_BYTES);
-    return { links: linksFromHtml(html, res.url || url), pdfs: pdfsFromHtml(html, res.url || url) };
-  } catch {
-    return { links: [], pdfs: [] };
+    const pdfs = pdfsFromHtml(html, res.url || url);
+    const challenge = /<title>\s*Just a moment/i.test(html);
+    return {
+      links: linksFromHtml(html, res.url || url),
+      pdfs,
+      problem: pdfs.length ? '' : challenge ? 'page is a firewall check (blocked)' : `no PDF address in the page (${html.length} characters read)`,
+    };
+  } catch (err) {
+    return { links: [], pdfs: [], problem: `page could not be fetched: ${(err && err.message) || err}` };
   }
 }
 

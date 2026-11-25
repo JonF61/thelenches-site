@@ -50,3 +50,10 @@ const rss = require('./ingest/rss.js');
   assert.strictEqual(toSignpost(many, 'PC', 'u', false).length, 1);
   console.log('test-newsletter-feed: all passed');
 })().catch((e) => { console.error(e); process.exit(1); });
+
+// Why no PDF was found is named in the error (25 Nov: the first live run only said "no PDF found").
+(async () => {
+  await assert.rejects(rss.newsletterPdf('https://example.gov.uk/news/a', [], {}, 'page answered HTTP 403'),
+    /no PDF found on its page \(page answered HTTP 403\)/);
+  console.log('test-newsletter-feed: diagnostics passed');
+})().catch((e) => { console.error(e); process.exit(1); });
