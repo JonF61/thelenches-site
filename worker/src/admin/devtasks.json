@@ -2,6 +2,11 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Where to eat pages, both sites (Jon, 25 Nov: soon, they are weak on every count): more places (pubs, cafés, restaurants, takeaways nearby), fuller entries (food, price guide, booking, dogs/children, parking, accessibility; facts only, no opening hours), a better look (photos, a map), and ways to choose (filter or group by type and distance). Research a candidate list and mock-ups (preview skill) for Jon before building.",
+      "waiting": "Jon to say go",
+      "added": "2026-11-25"
+    },
+    {
       "task": "Planning feed (built 25 Nov; fetched by the Wednesday 10:43 scheduled session since GitHub is blocked): check the first runs (25 Nov: probably no new list; 2 Dec: the 23-27 Nov week added through a merged PR, both sites rebuilt), that both 26 Nov issues show Planning this week and the planning website update, and that the Daily diagnostic has no 'Planning feed' problem",
       "kryten": true
     },
