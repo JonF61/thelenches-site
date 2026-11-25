@@ -21,6 +21,7 @@ export const WORKFLOW_NAMES = {
   'diagnostic.yml': 'Diagnostic',
   'contacts.yml': 'Contacts',
   'lessons.yml': 'Holly lessons',
+  'planning.yml': 'Planning list',
   'rimmer.yml': 'Rimmer',
   'rimmer-fix.yml': 'Rimmer fix',
   'photos.yml': 'Photos',

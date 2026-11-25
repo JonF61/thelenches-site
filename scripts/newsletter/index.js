@@ -127,6 +127,7 @@ async function main() {
     bins: readJson(`${SITE_REL}/_data/bins.json`),
     siteupdates: readJson(`${SITE_REL}/_data/siteupdates.json`),
     onthisday: readJson(`${SITE_REL}/_data/onthisday.json`), cartoons: readJson(`${SITE_REL}/_data/cartoons.json`), wherelenches: readJson(`${SITE_REL}/_data/wherelenches.json`),
+    planning: readJson(`${SITE_REL}/_data/planning.json`),
     photos: readJson(`${SITE_REL}/_data/photos.json`),
   });
   const issue = render(model);

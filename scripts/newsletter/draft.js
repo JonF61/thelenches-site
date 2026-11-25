@@ -67,7 +67,7 @@ function buildDraft(inputs) {
   if (!model) {
     model = select({
       issueDate, pending: inputs.shared || inputs.pending, issues, settings: inputs.settings, sources: inputs.sources, jpegFor: inputs.jpegFor,
-      cutoff: deadlineFor(issueDate), whatson: inputs.whatson, bins: inputs.bins, siteupdates: inputs.siteupdates, onthisday: inputs.onthisday, cartoons: inputs.cartoons, wherelenches: inputs.wherelenches, photos: inputs.photos,
+      cutoff: deadlineFor(issueDate), whatson: inputs.whatson, bins: inputs.bins, siteupdates: inputs.siteupdates, onthisday: inputs.onthisday, cartoons: inputs.cartoons, wherelenches: inputs.wherelenches, planning: inputs.planning, photos: inputs.photos,
     });
   }
   const tagged = editTags(model, inputs);
@@ -149,6 +149,7 @@ async function loadInputs(g) {
   return {
     today, pending, shared, issues, settings, sources, jpegFor, whatson: loadWhatson(), subscribers, dns,
     bins: readJson(`${SITE_REL}/_data/bins.json`), siteupdates: readJson(`${SITE_REL}/_data/siteupdates.json`), onthisday: readJson(`${SITE_REL}/_data/onthisday.json`), cartoons: readJson(`${SITE_REL}/_data/cartoons.json`), wherelenches: readJson(`${SITE_REL}/_data/wherelenches.json`),
+    planning: readJson(`${SITE_REL}/_data/planning.json`),
     photos: readJson(`${SITE_REL}/_data/photos.json`),
   };
 }

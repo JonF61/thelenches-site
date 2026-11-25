@@ -158,6 +158,42 @@ function forwardBand(f) {
     + `${esc(f.body)}${line}${btn}</td></tr></table></td></tr>`;
 }
 
+// Planning this week (25 Nov 2026, Jon; select.js planningFor, lib/planning.js): Wychavon's weekly
+// list for the site's parishes, one line each (address, proposal, the reference linking to
+// Wychavon), in three parts. A part with nothing says so; a list Wychavon hasn't published yet says
+// that instead. After Where in…?, before Bins.
+const PLANNING_PAGE = '/living-here/planning/';
+const PLANNING_PARTS = [['applications', 'New applications'], ['decisions', 'Decisions'], ['appeals', 'Appeals']];
+const PLANNING_NONE = 'None this week.';
+const PLANNING_NOT_YET = 'Not yet published by Wychavon.';
+const andList = (xs) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}` : xs[0] || '');
+function planningRange(from, to) {
+  const a = new Date(`${from}T12:00:00Z`);
+  const b = new Date(`${to}T12:00:00Z`);
+  const same = a.getUTCMonth() === b.getUTCMonth();
+  return `${a.getUTCDate()}${same ? '' : ` ${MONTHS[a.getUTCMonth()]}`} to ${b.getUTCDate()} ${MONTHS[b.getUTCMonth()]}`;
+}
+function planningIntro(p) {
+  const n = (p.parishes || []).length;
+  return `From Wychavon's weekly list for ${andList(p.parishes || [])} ${n === 1 ? 'parish' : 'parishes'}, ${planningRange(p.from, p.to)}.`;
+}
+const planningExtra = (e, kind) => [
+  kind === 'decisions' && e.decision ? e.decision : '',
+  kind === 'appeals' && e.date ? `appeal started ${dateParts(e.date).date} ${dateParts(e.date).mon}` : '',
+].filter(Boolean);
+function planningBand(p) {
+  const body = PLANNING_PARTS.map(([kind, label], i) => {
+    const list = p[kind] || [];
+    const head = `<div style="font-weight:bold;color:${C.green};margin:${i ? 10 : 8}px 0 2px;">${esc(label)}</div>`;
+    if (!list.length) return `${head}<div style="color:${C.muted};">${esc(p.lists && p.lists[kind] ? PLANNING_NONE : PLANNING_NOT_YET)}</div>`;
+    return head + list.map((e) => `<div style="margin:0 0 5px;"><b>${esc(e.location)}</b>: ${esc(e.proposal)}`
+      + planningExtra(e, kind).map((x, j) => ` · ${j === 0 && kind === 'decisions' ? `<b>${esc(x)}</b>` : esc(x)}`).join('')
+      + ` · ${a(e.link, e.ref, C.accentText)}</div>`).join('');
+  }).join('');
+  return sectionHead('Planning this week', `${esc(planningIntro(p))} ${a(siteUrl(PLANNING_PAGE), 'Last 8 weeks on our Planning page', C.accentText)}.`)
+    + `<tr><td class="px" style="padding:6px 24px 0;font-family:${SANS};font-size:14px;line-height:1.5;color:${C.ink};">${body}</td></tr>`;
+}
+
 const a = (url, text, color) => `<a href="${esc(url)}" style="color:${color};text-decoration:underline;">${esc(text)}</a>`;
 
 // sub (HTML, optional): a short line under the title, above the rule (Regular activities, Jon 30 Oct).
@@ -387,6 +423,7 @@ function renderHtml(m, subject) {
         + `</td></tr>`);
     }
   }
+  if (m.planning) rows.push(planningBand(m.planning));
   rows.push(sectionHead(m.roads.length ? 'Bins and roads' : 'Bins'));
   rows.push(binsBox(m));
   const roadRows = roadsAndBins(m);
@@ -487,6 +524,17 @@ function renderText(m) {
     head('Where in the Lenches?');
     if (m.where.answer) out.push(`Last week's answer: ${m.where.answer.text}`, '');
     if (m.where.puzzle) out.push(WHERE_INTRO, `See this week's close-up: ${m.where.puzzle.src}`, '');
+  }
+  if (m.planning) {
+    head('Planning this week');
+    out.push(planningIntro(m.planning), `Last 8 weeks on our Planning page: ${siteUrl(PLANNING_PAGE)}`, '');
+    for (const [kind, label] of PLANNING_PARTS) {
+      const list = m.planning[kind] || [];
+      out.push(`${label}:`);
+      if (!list.length) out.push(m.planning.lists && m.planning.lists[kind] ? PLANNING_NONE : PLANNING_NOT_YET);
+      for (const e of list) out.push(`- ${e.location}: ${e.proposal}${planningExtra(e, kind).map((x) => ` · ${x}`).join('')} · ${e.ref}: ${e.link}`);
+      out.push('');
+    }
   }
   head(m.roads.length ? 'Bins and roads' : 'Bins');
   const bl = binLines(m.bins);
