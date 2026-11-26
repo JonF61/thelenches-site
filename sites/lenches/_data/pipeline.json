@@ -65,19 +65,6 @@
       }
     },
     {
-      "id": "1a1fe24eefebb56b-2",
-      "title": "Children's Christmas Party — Norton Village Hall",
-      "body": "Children's Christmas party at Norton Village Hall on Sunday 6 December, 4pm to 6pm.",
-      "date": "2026-12-06",
-      "village": "Norton",
-      "expires": "2026-12-06",
-      "from": "harvington",
-      "link": {
-        "text": "Email Caroline",
-        "url": "mailto:cj.norton@ymail.com"
-      }
-    },
-    {
       "id": "1a17d10d5d56383f-5",
       "title": "Festive Wreath Making Workshop — The Vale Golf & Country Club",
       "body": "A third Christmas wreath-making workshop at The Vale Golf and Country Club, Bishampton. Sunday 6 December, 2pm-5pm, £50 per person. Booking via the club's website.",
@@ -91,32 +78,6 @@
       "image": {
         "url": "/images/items/1a17d10d5d56383f-5.webp",
         "alt": "Hands arranging a festive wreath of fir, berries and pine cones on a wooden table"
-      }
-    },
-    {
-      "id": "1a1fe24eefebb56b-3",
-      "title": "Coffee Morning — Norton Village Hall",
-      "body": "Coffee morning at Norton Village Hall on Wednesday 9 December, 10am to 12 noon.",
-      "date": "2026-12-09",
-      "village": "Norton",
-      "expires": "2026-12-09",
-      "from": "harvington",
-      "link": {
-        "text": "Email Caroline",
-        "url": "mailto:cj.norton@ymail.com"
-      }
-    },
-    {
-      "id": "1a1fe24eefebb56b-4",
-      "title": "Christmas Bingo — Norton Village Hall",
-      "body": "Christmas bingo at Norton Village Hall on Friday 11 December, 7.30 for 8pm.",
-      "date": "2026-12-11",
-      "village": "Norton",
-      "expires": "2026-12-11",
-      "from": "harvington",
-      "link": {
-        "text": "Email Caroline",
-        "url": "mailto:cj.norton@ymail.com"
       }
     },
     {
@@ -149,19 +110,6 @@
       "image": {
         "url": "/images/items/1a1c605c25d4b905-7.webp",
         "alt": "Poster for the Amulet Blooms Christmas wreath workshop showing a wreath of fir, pine cones and dried flowers"
-      }
-    },
-    {
-      "id": "1a1fe24eefebb56b-5",
-      "title": "Carol Service — St Egwin's Church, Norton",
-      "body": "Carol service at St Egwin's Church, Norton, on Sunday 13 December at 3pm, with the Vale Connection ladies choir.",
-      "date": "2026-12-13",
-      "village": "Norton",
-      "expires": "2026-12-13",
-      "from": "harvington",
-      "link": {
-        "text": "Email Caroline",
-        "url": "mailto:cj.norton@ymail.com"
       }
     },
     {
