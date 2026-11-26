@@ -15,6 +15,9 @@
 //           email, brief } or { kind: "nudge", email }, with optional site. The same checks
 //           and decide() as the panel's Draft email / Draft nudge (admin/index.js
 //           krytenDraft); the draft waits in Replies for Jon's Approve. Nothing is sent.
+//   rankings (26 Nov, Jon) read-only: the panel's SEO → Rankings data (admin/rankings.js, Ahrefs
+//           Rank Tracker, same cache) for the site; with { serp: "<phrase>", device:
+//           "mobile" | "desktop" } that phrase's Top 10. Answers include the Ahrefs units charged.
 // Auth: header "authorization: Bearer <KRYTEN_TOKEN>" (Worker secret, added by hand in the
 // Cloudflare dashboard; the same value is in Kryten's cloud environment). Without the secret
 // (or with one under 32 characters) /k answers 404 as if it did not exist. Outside /admin,
@@ -24,6 +27,7 @@
 import { accessToken, SCOPES } from './admin/google.js';
 import { knownSite, siteEnv } from './sites.js';
 import { krytenDraft } from './admin/index.js';
+import { rankings, rankSerp } from './admin/rankings.js';
 
 const SHEETS = 'https://sheets.googleapis.com/v4/spreadsheets';
 
@@ -261,7 +265,13 @@ export async function handleKryten(request, env, client = null) {
       console.log(`Kryten draft: ${String(body.kind || '').slice(0, 20)}`);
       return await krytenDraft(env, body);
     }
-    return json({ error: 'op must be read, set, append, undo or draft' }, 400);
+    if (op === 'rankings') {
+      const renv = site ? siteEnv(env, site) : env;
+      console.log(`Kryten rankings${body.serp ? ' (top 10)' : ''}`);
+      if (body.serp !== undefined) return json(await rankSerp(renv, String(body.serp).slice(0, 200), String(body.device || 'mobile')));
+      return json(await rankings(renv));
+    }
+    return json({ error: 'op must be read, set, append, undo, draft or rankings' }, 400);
   } catch (e) {
     return json({ error: e.message }, 400);
   }

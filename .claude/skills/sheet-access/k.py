@@ -13,6 +13,7 @@ column by its header, never a letter, so a column can't be mistaken. Every write
   k.py set TAB ROW COLUMN VALUE --blank [--site S]        (only into an empty cell)
   k.py append TAB '{"col": "value", ...}' [--site S]      (one row, columns by header)
   k.py undo UNDO_ID [--site S]
+  k.py rankings [PHRASE [mobile|desktop]] [--site S]   SEO → Rankings (Ahrefs), or one phrase's top 10; read-only
 
 Needs KRYTEN_TOKEN in the environment (never printed). Output is for Kryten's screen
 only: never copy it into a commit, PR, workflow input, log or the Plan doc.
@@ -114,7 +115,7 @@ def arg_text(v):
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument('cmd', choices=['read', 'get', 'headers', 'set', 'append', 'undo'])
+    p.add_argument('cmd', choices=['read', 'get', 'headers', 'set', 'append', 'undo', 'rankings'])
     p.add_argument('args', nargs='*')
     p.add_argument('--site', default='lenches', help='lenches (default) or harvington')
     p.add_argument('--where', action='append', default=[], help='COL=VAL (exact, case-insensitive); repeatable')
@@ -131,6 +132,13 @@ def main():
     a = p.parse_args()
     site = a.site.strip().lower()
 
+    if a.cmd == 'rankings':
+        body = {'op': 'rankings'}
+        if a.args:
+            body['serp'] = a.args[0]
+            body['device'] = a.args[1] if len(a.args) > 1 else 'mobile'
+        print(json.dumps(call(body, site), indent=1, ensure_ascii=False))
+        return
     if a.cmd == 'headers':
         for l, n in headers(a.args[0], site):
             if n:

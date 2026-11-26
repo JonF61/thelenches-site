@@ -146,5 +146,20 @@ test('/k draft: token, kinds and sites', async () => {
   }
   assert.equal((await call({ op: 'draft', kind: 'contactmail', site: 'nowhere' })).status, 400);
   const bad = await call({ op: 'nope' });
-  assert.match((await bad.json()).error, /read, set, append, undo or draft/);
+  assert.match((await bad.json()).error, /read, set, append, undo, draft or rankings/);
+});
+
+// op "rankings" (26 Nov): read-only SEO → Rankings data; without the Ahrefs key it says so.
+test('/k rankings: token, site and no Ahrefs key', async () => {
+  const env = { KRYTEN_TOKEN: TOKEN };
+  const call = (body, auth = `Bearer ${TOKEN}`) => k.handleKryten(new Request('https://x/k', {
+    method: 'POST', headers: { authorization: auth, 'content-type': 'application/json' }, body: JSON.stringify(body),
+  }), env);
+  assert.equal((await call({ op: 'rankings' }, 'Bearer nope')).status, 401);
+  assert.equal((await call({ op: 'rankings', site: 'nowhere' })).status, 400);
+  const r = await call({ op: 'rankings', site: 'harvington' });
+  assert.equal(r.status, 200);
+  assert.equal((await r.json()).off, true);
+  const t = await call({ op: 'rankings', serp: 'x', device: 'mobile' });
+  assert.match((await t.json()).error, /Ahrefs key/);
 });
