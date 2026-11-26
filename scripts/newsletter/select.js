@@ -157,6 +157,26 @@ function recentRegulars(list, issueDate) {
   return list.filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(String(r.added || '')) && r.added >= from && r.added <= issueDate);
 }
 
+// A submission's time cell as the site writes times (26 Nov 2026, Jon, after Rimmer read
+// "16:00-18:00" in both issues): 24-hour "HH:MM", "HH:MM-HH:MM" or "HH:MM-" become "4pm",
+// "4pm to 6pm", "7.30pm"; noon and midnight by name. Anything else is shown as typed.
+function hm12(h, m) {
+  const hh = Number(h); const mm = Number(m);
+  if (!(hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59)) return null;
+  if (mm === 0 && hh === 12) return 'noon';
+  if (mm === 0 && hh === 0) return 'midnight';
+  const n = hh % 12 || 12;
+  return `${n}${mm ? `.${String(mm).padStart(2, '0')}` : ''}${hh < 12 ? 'am' : 'pm'}`;
+}
+function niceTime(t) {
+  const m = /^\s*(\d{1,2})[:.](\d{2})\s*(?:(?:-|–|to)\s*(?:(\d{1,2})[:.](\d{2}))?)?\s*$/i.exec(String(t || ''));
+  if (!m) return String(t || '').trim();
+  const a = hm12(m[1], m[2]);
+  const b = m[3] ? hm12(m[3], m[4]) : '';
+  if (!a || b === null) return String(t).trim();
+  return b ? `${a} to ${b}` : a;
+}
+
 function deadlineFor(issueDate) {
   return `${addDays(issueDate, -1)} ${DEADLINE_HM}`;
 }
@@ -395,7 +415,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, car
     const cat = str(row.category).toLowerCase();
     const count = Math.max(num(row.newsletter_count), shown.get(key) || 0);
     const isNew = count === 0 && start >= newFrom && start <= issueDate;
-    const meta = [str(row.village), str(row.event_time), str(row.cost)].filter(Boolean).join(' · ');
+    const meta = [str(row.village), niceTime(row.event_time), str(row.cost)].filter(Boolean).join(' · ');
     const base = {
       key, title: str(row.title), body: bodyOf(row), meta,
       link: linkOf(row.link_text, row.link_url), date, sortStart: start,
@@ -439,7 +459,7 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, car
     if (pendingEvents.has(`${normTitle(ev.title)}|${date}`)) continue;
     const key = whatsonKey('events', ev);
     if ((shown.get(key) || 0) >= MAX_APPEARANCES) continue;
-    events.push({ key, title: str(ev.title), body: str(ev.body), meta: '', link: linkOf(ev.link && ev.link.text, ev.link && ev.link.url), ...link2Of(ev), date, sortStart: '', lenches: inLenches(ev), image: whatsonImage(ev, key, true) });
+    events.push({ key, title: str(ev.title), body: str(ev.body), meta: '', ...(ymd(ev.endDate) > date ? { endDate: ymd(ev.endDate) } : {}), link: linkOf(ev.link && ev.link.text, ev.link && ev.link.url), ...link2Of(ev), date, sortStart: '', lenches: inLenches(ev), image: whatsonImage(ev, key, true) });
   }
   let pins = 0; // pinned notices keep the site's order (lib/whatson.js: "order", then file name)
   for (const it of [...(w.notices || []), ...(w.news || [])]) {
@@ -518,4 +538,5 @@ function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, car
   };
 }
 
-module.exports = { forwardBandFor, shortenBody, LONG_BODY, shortName, select, whatsonKey, ymd, addDays, minuteKey, deadlineFor };
+module.exports = {
+  niceTime, forwardBandFor, shortenBody, LONG_BODY, shortName, select, whatsonKey, ymd, addDays, minuteKey, deadlineFor };

@@ -60,6 +60,16 @@ function gcalSummary(url) {
   return parts.length ? `Google Calendar, prefilled: ${parts.join('; ')}` : 'Google Calendar, nothing prefilled';
 }
 
+// "Google Maps search: <place>" for a google.com/maps/search link (26 Nov 2026: with its query cut
+// off, Rimmer reported every planning Map link as empty), else ''.
+function mapsSummary(url) {
+  let u;
+  try { u = new URL(url); } catch { return ''; }
+  if (!/(^|\.)google\.[a-z.]+$/.test(u.hostname) || !u.pathname.startsWith('/maps/search')) return '';
+  const q = u.searchParams.get('query');
+  return q ? `Google Maps search: ${q}` : 'Google Maps search, no place given';
+}
+
 function decode(t) {
   return t.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => {
     if (e[0] === '#') {
@@ -89,6 +99,8 @@ function htmlToText(html) {
       // with its query cut off, Rimmer reported every calendar link as empty).
       const gcal = gcalSummary(url);
       if (gcal) return ` ${words} (${gcal}) `;
+      const maps = mapsSummary(url);
+      if (maps) return ` ${words} (${maps}) `;
       // mailto:/tel: shown as the address or number itself, so the reader-visible target is never hidden.
       const shown = url.replace(/^(mailto:|tel:)/i, '').replace(/\?.*$/, '');
       return words.includes(shown.replace(/^https?:\/\//, '').replace(/\/$/, '')) ? ` ${words} ` : ` ${words} (${shown}) `;
