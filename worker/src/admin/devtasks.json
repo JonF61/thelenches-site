@@ -264,7 +264,7 @@
       "added": "2026-11-25"
     },
     {
-      "task": "Rimmer findings sent to Kryten on 25 Nov (both sites): handbell calendar time, planning Map links with no location, the 'Harvington' 24-hour label on Norton items, regulars count 27 vs 28, shared notices missing from the Lenches issue. Also check the next applied fix closes its twin on the other site.",
+      "task": "Check the next applied Rimmer fix also closes its twin finding on the other site (PR 528).",
       "added": "2026-11-26",
       "kryten": true
     }
