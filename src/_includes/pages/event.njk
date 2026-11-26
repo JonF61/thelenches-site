@@ -6,7 +6,7 @@
 <style>
   .ev-when{margin:.35rem 0 0;font-size:1.05rem;color:var(--muted,#555)}
   .ev-back{margin:0 0 .6rem;font-size:.95rem}
-  .ev-back a{text-decoration:none}
+  .ev-back a{display:inline-flex;align-items:center;gap:.35rem;padding:.45rem 1rem;border-radius:999px;font-weight:500}
   .ev-done{background:#fdeee0;border-left:4px solid #c8641c;color:#7a3a0c;padding:.7rem 1rem;border-radius:4px;margin:0 0 1rem;font-weight:600}
   .ev-past .ev-main{opacity:.6}
   .ev-more h2{margin-top:1.6rem}
@@ -20,7 +20,7 @@
 {% set place = ev | eventPlace %}
 <script type="application/ld+json">{{ ev | eventLd(photos, site) | safe }}</script>
 <main class="container{% if past %} ev-past{% endif %}">
-  <p class="ev-back"><a href="{{ '/events/' | url }}">&larr; All events</a></p>
+  <p class="ev-back"><a class="btn btn-outline" href="{{ '/events/' | url }}">&larr; All events</a></p>
   <div class="page-head">
     <h1>{{ ev.title | escape }}</h1>
     <p class="ev-when">{{ ev.date | longDate | replace(",", "") }}{% if ev.endDate and ev.endDate != ev.date %} to {{ ev.endDate | longDate | replace(",", "") }}{% endif %}{% if when %} &middot; {{ when }}{% endif %}{% if place %} &middot; {{ place | escape }}{% endif %}</p>
@@ -55,5 +55,5 @@
   </section>
   {% endif %}
 
-  <p class="ev-back"><a href="{{ '/events/' | url }}">&larr; All events</a></p>
+  <p class="ev-back"><a class="btn btn-outline" href="{{ '/events/' | url }}">&larr; All events</a></p>
 </main>
