@@ -76,10 +76,11 @@ export const CLIENT_JS = String.raw`
     return '';
   }
   var withSite = function (path) { return path + (path.indexOf('?') < 0 ? '?' : '&') + 'site=' + encodeURIComponent(SITE); };
-  var VIEWS = [['summary', 'Summary'], ['draft', 'Newsletter draft'], ['stats', 'Newsletter stats'], ['visitors', 'Site visitors'], ['queue', 'Submissions'], ['suggestions', 'Suggestions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['autonomy', 'Autonomy'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
+  var VIEWS = [['summary', 'Summary'], ['draft', 'Newsletter draft'], ['stats', 'Newsletter stats'], ['visitors', 'Site visitors'], ['seo', 'SEO'], ['queue', 'Submissions'], ['suggestions', 'Suggestions'], ['replies', 'Replies'], ['owed', 'Owed'], ['feedback', 'Feedback'], ['lessons', 'Holly lessons'], ['autonomy', 'Autonomy'], ['contacts', 'Contacts'], ['photos', 'Photos'], ['activity', 'Activity']];
   // Health has no menu entry (28 Oct): the top bar's Diagnostic and Watchdog open it, as does Summary's Site health.
   // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
   var INTROS = {
+    seo: 'How each page is set up for Google: its search phrase, search title, description and main heading, checked by code at every build. Fix the pages listed first.',
     draft: 'The next newsletter as it would be built now from what is approved. It updates after each approval and every 3 hours. Once the issue is built on Thursday, this shows it exactly as built. Edit text lets you change entries\' wording and links here.',
     visitors: 'How many people use the website: page views and visits by day and by month, and the most viewed pages. Counts only: nobody can be identified.',
     stats: 'How each newsletter did: how many it went to, bounces, and anonymous opens and link clicks. Counts are totals only: nobody can see who opened or clicked.',
@@ -99,6 +100,13 @@ export const CLIENT_JS = String.raw`
   // How this works (Jon, 4 Nov: every screen says how to use it and what its words mean): a folded
   // guide under each screen's intro. [term, meaning] pairs; a plain string is a sentence on its own.
   var HELP = {
+    seo: [
+      'Each page has one search phrase (the words we want it found for, agreed with you). Every site build checks the page against it.',
+      ['Search title', 'the blue headline Google shows (seoTitle). Google cuts it after about 60 characters.'],
+      ['Description', 'the grey text under it in Google. About 155 characters are shown.'],
+      ['Main heading', 'the big heading at the top of the page.'],
+      ['No other page links to it', 'Google finds pages by following links; a page nothing links to is hard to find.'],
+      'These are suggestions, not errors: ask Kryten to change a title or description. Search Console figures (searches, clicks, position) come in the next step.'],
     summary: [
       'Each box is one screen in short. Tap its heading to open that screen.',
       ['Subscribers (top bar)', 'how many people this website\'s newsletter would go to if it were sent now: active subscribers, each address once, leaving out anyone on Do Not Send. Updates each time the panel loads or you tap Reload.'],
@@ -621,7 +629,7 @@ export const CLIENT_JS = String.raw`
       feedback: d.feedback && !d.feedback.error ? fbRows(d, 'waiting').length + fbRows(d, 'reply').length : '!',
       suggestions: d.listingSuggestions && !d.listingSuggestions.error ? sgRows(d).length : '!',
       lessons: lessonsCount(),
-      summary: null, autonomy: null, draft: null, stats: null, visitors: null, contacts: null, health: null, activity: null
+      summary: null, autonomy: null, draft: null, stats: null, visitors: null, seo: null, contacts: null, health: null, activity: null
     };
   }
 
@@ -653,6 +661,7 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'activity') return [h('div', { class: 'list wide' }, top, activityView())];
     if (notYet(S.view)) return [h('div', { class: 'list wide' }, top, h('div', { class: 'note' }, notYet(S.view)))];
     if (S.view === 'stats') return [h('div', { class: 'list wide' }, top, statsView())];
+    if (S.view === 'seo') return [h('div', { class: 'list wide' }, top, seoView())];
     // Site visitors: Refresh at the top right, beside the intro (Jon, 3 Nov).
     if (S.view === 'visitors') return [h('div', { class: 'list wide' }, h('div', { class: 'intro-row' }, top,
       h('button', { class: 'btn', disabled: S.svLoading ? true : null, onclick: function () { S.sv = null; render(); } }, 'Refresh')), visitorsView())];
@@ -3615,6 +3624,48 @@ export const CLIENT_JS = String.raw`
     }
     if (t.issues.some(function (x) { return x.early; })) els.push(h('p', { class: 'meta' }, '★ Sent before counts began (28 October), so no opens or clicks were counted.'));
     els.push(h('p', { class: 'meta' }, '* Opens are approximate: some email apps open every image automatically, others block images. Clicks may include link checkers in some email services. Counts are kept for about 3 months.'));
+    return els;
+  }
+
+  /* -------------------------------------------------------------------- seo -- */
+
+  // The site's build report (admin/seo.js, lib/seo.js): pages with something to look at first.
+  async function loadSeo() {
+    S.seoLoading = true;
+    var r = await api('/admin/api/seo');
+    S.seoLoading = false;
+    S.seoRep = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'seo') render();
+  }
+
+  function seoView() {
+    var t = S.seoRep;
+    if (!t) {
+      if (!S.seoLoading) loadSeo();
+      return [h('p', { class: 'loading' }, 'Loading the SEO report…')];
+    }
+    if (t.error) return [errorNote(t, 'SEO')];
+    if (t.none) return [h('div', { class: 'note' }, 'No search phrases are set for this website yet, so there is no report.')];
+    var pages = t.pages || [];
+    var todo = pages.filter(function (p) { return p.problems.length; });
+    var fine = pages.filter(function (p) { return !p.problems.length; });
+    var els = [h('p', { class: 'meta' }, plural(pages.length, 'page', 'pages') + ' checked, ' + plural(todo.length, 'page', 'pages') + ' with something to look at. ' +
+      plural(t.eventPages || 0, 'event page', 'event pages') + ' too (each event\u2019s own page). As of the last site build' + (t.at ? ', ' + day(String(t.at).slice(0, 10)) : '') + '.')];
+    var row = function (label, value, ok) {
+      return h('tr', null, h('th', null, label), h('td', { class: ok === false ? 'bad-text' : null }, value || '\u2013'));
+    };
+    todo.concat(fine).forEach(function (p) {
+      var has = function (w) { return p.problems.every(function (x) { return x.indexOf(w) < 0; }); };
+      els.push(h('div', { class: 'card' },
+        h('h2', null, h('a', { href: siteUrl() + p.url, target: '_blank', rel: 'noopener' }, p.url === '/' ? 'Home' : p.url)),
+        h('table', { class: 'h' }, h('tbody', null,
+          row('Search phrase', p.keyword, p.keyword ? null : false),
+          row('Search title', p.title + ' (' + p.title.length + ')', has('search title') && has('Search title')),
+          row('Description', p.description + (p.description ? ' (' + p.description.length + ')' : ''), has('description') && has('Description')),
+          row('Main heading', p.h1, has('main heading')))),
+        p.problems.length ? h('ul', { class: 'seo-probs' }, p.problems.map(function (x) { return h('li', null, x); }))
+          : h('p', { class: 'meta' }, 'All fine.')));
+    });
     return els;
   }
 

@@ -418,6 +418,13 @@ module.exports = async function (eleventyConfig) {
     const pipeline = readJson("pipeline.json", {});
     const coming = require("./lib/comingup.js").comingUp({ whatson: require("./lib/whatson.js").loadWhatson(), pipeline }, ukToday);
     fs.writeFileSync(path.join(outDir, "coming-up.json"), JSON.stringify(coming, null, 1) + "\n");
+    // SEO report for the admin panel's SEO screen (SEO step 7, 26 Nov 2026; lib/seo.js), on a site
+    // with _data/seo.json keywords.
+    const seo = readJson("seo.json", null);
+    if (seo && seo.keywords) {
+      const pages = (results || []).filter((r) => r.url && String(r.outputPath || "").endsWith(".html")).map((r) => ({ url: r.url, html: r.content }));
+      fs.writeFileSync(path.join(outDir, "seo-report.json"), JSON.stringify(require("./lib/seo.js").seoReport(pages, seo.keywords, { skip: seo.skip || [] }), null, 1) + "\n");
+    }
   });
 
   // "October 2026" from "2026-10" (Regular activities: details last checked)
