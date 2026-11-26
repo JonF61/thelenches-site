@@ -267,6 +267,12 @@
       "task": "SEO steps 1-3 follow-up (PR 533, 26 Nov): open a few live event pages and check Search Console's Events report over the next week (addresses, offers, no new warnings); find the postcodes for Abbots Morton Village Hall (sources disagree: WR7 4NA / WR7 4LT) and St Peter's Church, Abbots Morton, and add them to lib/venues.json once confirmed.",
       "kryten": true,
       "added": "2026-11-26"
+    },
+    {
+      "task": "SEO → Rankings (Ahrefs Rank Tracker, built 26 Nov): once Ahrefs has checked the 22 Lenches phrases, check the panel shows real positions and the Top 10 opens, and note the API units a view costs. Harvington needs its own search phrases (seo.json) and Rank Tracker keywords before its Rankings show.",
+      "waiting": "Ahrefs first check (about a day)",
+      "added": "2026-11-26",
+      "kryten": true
     }
   ]
 }
