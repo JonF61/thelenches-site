@@ -43,7 +43,7 @@ k.py stops with a clear message when `KRYTEN_TOKEN` is missing or the proxy refu
 
 ## Asking Holly for a draft (only when Jon asks)
 /k also takes `{"op":"draft","kind":"contactmail"|"nudge","email":"<a Contacts row's address>","brief":"…","site":"harvington"}`. It runs the panel's own Draft email / Draft nudge checks, and the draft waits in Replies for Jon's Approve. Send it with curl as in CLAUDE.md, adding `-A kryten-helper/1.0` (Cloudflare refuses some default clients with error 1010).
+A Link partners row's link request (or its chaser, when due) is `{"op":"draft","kind":"linkask","id":"<partner id>","site":"harvington"}`: the panel's Draft request checks (email on the row, not already asked), fixed wording, waiting in Replies for Jon's Approve.
 
 ## SEO rankings (read-only)
 `python3 $K rankings [--site harvington]` prints the panel's SEO → Rankings data (Ahrefs Rank Tracker: phone and computer positions now and a week ago, `checked`, `units` charged); `python3 $K rankings "<phrase>" mobile|desktop` prints that tracked phrase's Google top 10. Same 12-hour (overview) and one-day (top 10) cache as the panel, so repeat calls cost no Ahrefs units.
-A Link partners row's link request (or its chaser, when due) is `{"op":"draft","kind":"linkask","id":"<partner id>","site":"harvington"}`: the panel's Draft request checks (email on the row, not already asked), fixed wording, waiting in Replies for Jon's Approve.
