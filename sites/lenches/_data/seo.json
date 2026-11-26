@@ -1,0 +1,31 @@
+{
+  "_help": "SEO step 7 (26 Nov 2026; list approved by Jon): each page's main search phrase, by page address. lib/seo.js checks it appears in the page's search title, description and main heading and writes the build's seo-report.json for the panel's SEO screen. Pages not listed get none (Privacy, Search, event pages). \"skip\": pages that need no search phrase.",
+  "keywords": {
+    "/": "the Lenches",
+    "/events/": "events near Evesham",
+    "/events/this-weekend/": "this weekend near Evesham",
+    "/regulars/": "classes near Evesham",
+    "/notices/": "Lenches news",
+    "/living-here/roads/": "road closures near Evesham",
+    "/bins/": "Lenches bin collection",
+    "/churches/": "Lenches church services",
+    "/groups/": "Lenches clubs",
+    "/halls/": "Lenches village hall hire",
+    "/living-here/": "living in the Lenches",
+    "/living-here/council/": "Lenches parish council",
+    "/living-here/planning/": "Lenches planning applications",
+    "/living-here/schools/": "Church Lench school",
+    "/living-here/health/": "Lenches GP",
+    "/living-here/getting-around/": "buses Lenches to Evesham",
+    "/living-here/walks/": "walks near Evesham",
+    "/living-here/eat/": "pubs near Evesham",
+    "/living-here/trades/": "Lenches tradesmen",
+    "/living-here/what-to-do/": "Lenches emergency contacts",
+    "/newsletter/": "Lenches newsletter",
+    "/contact/": "contact the Lenches website"
+  },
+  "skip": [
+    "/privacy/",
+    "/search/"
+  ]
+}

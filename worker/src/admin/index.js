@@ -112,6 +112,8 @@
 //                                   rebuild (nlquiet) sends nothing; test (nltest) sends only the
 //                                   preview, with its Send button, to preview_to (Jon); send (nlsend,
 //                                   4 Nov) is the preview email's Send decision, checked by send.js
+//   GET  /admin/api/seo             SEO (seo.js): the shown site's seo-report.json (build checks of
+//                                   each page's search phrase, titles and descriptions; 26 Nov 2026).
 //   GET  /admin/api/site-visitors   Site visitors (sitestats.js): saved days and months from the
 //                                   Visitors tab, plus today so far from Cloudflare.
 //   GET  /admin/api/nlstats?i=DATE  Newsletter stats (nlstats.js): sent issues with sent, bounced,
@@ -153,6 +155,7 @@
 // edits from the Edit page and the draft editor (entryedit), plus the read-only runs it starts by repository_dispatch
 // (Check email now, Refresh draft, Check now for Rimmer).
 
+import { seoReportFile } from './seo.js';
 import { ACTIONS, decide, github, dispatch } from '../core.js';
 import { DEFAULT_SITE, knownSite, siteEnv, siteList, siteConfig, siteIds } from '../sites.js';
 import { verifyAccess } from './access.js';
@@ -1150,6 +1153,7 @@ export async function handleAdmin(request, rawEnv) {
       if (path === '/admin/api/history') return json(await submissionsHistory(env));
       if (path === '/admin/api/summary') return json(await summary(env, lenv));
       if (path === '/admin/api/site-visitors') return json(await visitorHistory(env));
+      if (path === '/admin/api/seo') return json(await seoReportFile(env));
       if (path === '/admin/api/nlstats') {
         const [issues, sends, dns] = await Promise.all([readTable(env, 'Issues'), readTable(env, 'Sends'), readTable(env, 'Do Not Send')]);
         return json(await nlStats(env, { issues: issues.rows, sends: sends.rows, dns: dns.rows }, String(url.searchParams.get('i') || '')));
