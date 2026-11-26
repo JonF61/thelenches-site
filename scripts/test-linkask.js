@@ -22,6 +22,18 @@ assert.strictEqual(chase.subject, 'Re: A link to thelenches.org.uk?');
 assert.match(chase.body, /Just following up my email about a link to thelenches\.org\.uk/);
 assert.doesNotMatch(chase.body, /rather we didn't/);
 
+// Harvington (26 Nov): its own wording, never the Lenches' address.
+const hcfg = { site: 'harvington', domain: 'harvingtonvillage.org.uk' };
+const h = linkEmail({ name: 'Harvington Parish Council', listed_page: 'Council', listed_url: 'https://harvingtonvillage.org.uk/living-here/council/' }, 'request', { cfg: hcfg });
+assert.strictEqual(h.subject, 'A link to harvingtonvillage.org.uk?');
+assert.match(h.body, /I help look after harvingtonvillage\.org\.uk, the free community website and weekly newsletter for Harvington, Norton and Lenchwick\./);
+assert.match(h.body, /The Harvington Website \(https:\/\/harvingtonvillage\.org\.uk\/\): events, news and local information for Harvington, Norton and Lenchwick\./);
+assert.match(h.body, /Harvington Parish Council is listed on our Council page/);
+assert.doesNotMatch(h.body, /thelenches/);
+const hc = linkEmail({ name: 'ARCH' }, 'chase', { cfg: hcfg });
+assert.match(hc.body, /a link to harvingtonvillage\.org\.uk from your website/);
+assert.doesNotMatch(hc.body, /thelenches/);
+
 // draftLinkAsk with the Sheet mocked: one awaiting outreach row, then nothing while it waits.
 (async () => {
   const g = require('./ingest/google');

@@ -33,16 +33,24 @@ function subjectFor(cfg = siteConfig()) {
   return `A link to ${cfg.domain || 'thelenches.org.uk'}?`;
 }
 
+// A site's own version of a template (<key>_<site>, e.g. link_request_harvington; 26 Nov), chosen
+// from cfg so the draft always matches the site it is for, else the shared (Lenches) one.
+function siteFill(key, cfg, vars) {
+  const own = cfg && cfg.site ? `${key}_${cfg.site}` : '';
+  try { if (own) return replies.fill(own, vars); } catch { /* no site version: the shared one */ }
+  return replies.fill(key, vars);
+}
+
 // { subject, body } for one partner (kind: request | chase). optout: a first email to them.
 function linkEmail(row, kind, { optout = true, cfg = siteConfig() } = {}) {
   const subject = subjectFor(cfg);
   if (kind === 'chase') {
-    return { subject: `Re: ${subject}`, body: [replies.greeting(''), replies.fill('link_chase'), replies.fill('signature')].join('\n\n') };
+    return { subject: `Re: ${subject}`, body: [replies.greeting(''), siteFill('link_chase', cfg), replies.fill('signature')].join('\n\n') };
   }
   const listed = str(row.listed_page) && str(row.listed_url)
     ? replies.fill('link_request_listed', { organisation: str(row.name), page: str(row.listed_page), page_url: str(row.listed_url) })
     : '';
-  const text = replies.fill('link_request', { listed_line: listed }).replace(/\n{3,}/g, '\n\n');
+  const text = siteFill('link_request', cfg, { listed_line: listed }).replace(/\n{3,}/g, '\n\n');
   const parts = [replies.greeting(''), text, replies.fill('signature')];
   if (optout) parts.push(replies.fill('outreach_optout'));
   return { subject, body: parts.join('\n\n') };
