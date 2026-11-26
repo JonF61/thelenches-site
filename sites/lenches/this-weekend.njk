@@ -1,0 +1,13 @@
+---
+layout: base.njk
+title: This weekend
+permalink: /events/this-weekend/
+description: "What's on this weekend in the Lenches and nearby villages near Evesham: Friday evening to Sunday, with times, places and links. Updated every day."
+seoTitle: "What's on this weekend near Evesham — the Lenches and nearby villages"
+---
+{#- This weekend (SEO step 4, 26 Nov 2026): the shared src/_includes/pages/weekend.njk. -#}
+{%- set wkDates = (whatson.events | merge(pipeline.events) | upcoming) | weekendRange -%}
+{%- set pageIntro -%}What's on across the villages from Friday evening {{ wkDates.fri | dayMonth }} to Sunday {{ wkDates.sun | dayMonth }}.{%- endset -%}
+{%- set emptyNote -%}Nothing is listed for this weekend yet. Here's what's coming up next.{%- endset -%}
+{%- set submitNote -%}Got an event to include? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a> by 6pm on Wednesday. See our <a href="{{ '/contact/' | url }}#submit">submission guidelines</a>.{%- endset -%}
+{%- include "pages/weekend.njk" %}
