@@ -46,3 +46,4 @@ k.py stops with a clear message when `KRYTEN_TOKEN` is missing or the proxy refu
 
 ## SEO rankings (read-only)
 `python3 $K rankings [--site harvington]` prints the panel's SEO → Rankings data (Ahrefs Rank Tracker: phone and computer positions now and a week ago, `checked`, `units` charged); `python3 $K rankings "<phrase>" mobile|desktop` prints that tracked phrase's Google top 10. Same 12-hour (overview) and one-day (top 10) cache as the panel, so repeat calls cost no Ahrefs units.
+A Link partners row's link request (or its chaser, when due) is `{"op":"draft","kind":"linkask","id":"<partner id>","site":"harvington"}`: the panel's Draft request checks (email on the row, not already asked), fixed wording, waiting in Replies for Jon's Approve.
