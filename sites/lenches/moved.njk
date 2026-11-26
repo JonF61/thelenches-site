@@ -1,0 +1,30 @@
+---
+pagination:
+  data: moved
+  size: 1
+  alias: m
+permalink: "{{ m.from }}"
+eleventyExcludeFromCollections: true
+moved:
+  - { from: /history-of-the-lenches/, to: /living-here/, name: Living here }
+  - { from: /all-saints-church-lench/, to: /churches/, name: Churches }
+  - { from: /st-peters-rous-lench/, to: /churches/, name: Churches }
+  - { from: /lenches-club.html, to: /groups/, name: Groups & Clubs }
+  - { from: /sports-club.html, to: /groups/, name: Groups & Clubs }
+  - { from: /glads.html, to: /groups/#glads, name: Groups & Clubs }
+  - { from: /technology-machinery-farming-services/, to: /living-here/trades/, name: Local trades }
+---
+{#- Addresses from the old website that Google still lists (SEO, 26 Nov 2026): each sends visitors to the page that replaced it. Add more here as Search Console shows them. -#}
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex">
+  <meta http-equiv="refresh" content="0; url={{ m.to | url }}">
+  <link rel="canonical" href="{{ site.url }}{{ m.to }}">
+  <title>Moved — The Lenches</title>
+</head>
+<body>
+  <p>This page has moved to <a href="{{ m.to | url }}">{{ m.name }}</a>.</p>
+</body>
+</html>

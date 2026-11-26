@@ -47,7 +47,7 @@
 {% endmacro %}
 <main class="container">
   <section>
-    <h1>Roads</h1>
+    <h1>{{ heading or "Roads" }}</h1>
     <p class="mt0">{{ pageIntro | safe }}</p>
     {% set roadmap = pipeline | roadMap(whatson, roadgeo) %}
     <div class="rd-maparea" id="rd-maparea" hidden>

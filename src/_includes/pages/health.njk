@@ -29,7 +29,7 @@
 <main class="container">
 
   <section>
-    <h1>Health &amp; emergencies</h1>
+    <h1>{{ heading or "Health & emergencies" }}</h1>
     <div class="he-nums">
       {%- for n in h.numbers %}
       <a{% if n.urgent %} class="he-urgent"{% endif %} href="tel:{{ n.number | replace(' ', '') }}"><span>{{ n.label }}</span><b>{{ n.number }}</b></a>

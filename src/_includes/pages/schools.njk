@@ -17,7 +17,7 @@
 <main class="container">
 
   <section>
-    <h1>Schools</h1>
+    <h1>{{ heading or "Schools" }}</h1>
     <p class="mt0">{{ s.intro }}</p>
     <ul class="sc-stages">{% for st in s.stages %}<li>{{ st }}</li>{% endfor %}</ul>
   </section>
