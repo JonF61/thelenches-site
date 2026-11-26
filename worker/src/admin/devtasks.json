@@ -269,15 +269,10 @@
       "added": "2026-11-26"
     },
     {
-      "task": "SEO → Rankings (Ahrefs Rank Tracker, built 26 Nov): once Ahrefs has checked the 22 Lenches phrases, check the panel shows real positions and the Top 10 opens, and note the API units a view costs. Harvington: its 20 phrases (seo.json, 26 Nov) to be added to its Ahrefs project, location Evesham.",
+      "task": "SEO → Rankings (Ahrefs Rank Tracker, built 26 Nov): once Ahrefs has checked the 22 Lenches phrases, check the panel shows real positions and the Top 10 opens, and note the API units a view costs. Harvington: its 20 phrases are in its Ahrefs project too (Evesham); check its Rankings as well.",
       "waiting": "Ahrefs first check (about a day)",
       "added": "2026-11-26",
       "kryten": true
-    },
-    {
-      "task": "Harvington on-page SEO (26 Nov): with its search phrases added, 21 of 22 pages are flagged on the SEO screen (phrase missing from heading, title or description; some titles too long). Propose new titles, descriptions and headings for Jon to approve.",
-      "waiting": "Jon",
-      "added": "2026-11-26"
     }
   ]
 }
