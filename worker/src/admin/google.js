@@ -11,6 +11,7 @@
 //            as the account itself, never impersonating anyone: it reaches only what is
 //            shared with it (Lenches Photos, as Editor), and photofiles.js refuses anything
 //            outside that tree. drive.file would not do: it covers only files the app made.
+//   Search Console  read-only (webmasters.readonly), as the account itself: the SEO screen.
 //   Gmail    read-only, impersonating GMAIL_USER (Worker secret) through the same
 //            domain-wide delegation the ingestion uses: Pending images are still
 //            email attachments until publish.
@@ -23,6 +24,9 @@ export const SCOPES = {
   drive: 'https://www.googleapis.com/auth/drive.readonly',
   driveWrite: 'https://www.googleapis.com/auth/drive',
   gmail: 'https://www.googleapis.com/auth/gmail.readonly',
+  // Search Console figures for the SEO screen (26 Nov 2026): read-only, as the account itself
+  // (Jon added it as a Restricted user of the site's property).
+  searchConsole: 'https://www.googleapis.com/auth/webmasters.readonly',
 };
 // scope -> true: impersonation only (a sub is required); false: own identity only (no sub).
 const ALLOWED_SCOPES = new Map([
@@ -30,6 +34,7 @@ const ALLOWED_SCOPES = new Map([
   [SCOPES.sheets, false],
   [SCOPES.drive, false],
   [SCOPES.driveWrite, false],
+  [SCOPES.searchConsole, false],
 ]);
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const SHEETS = 'https://sheets.googleapis.com/v4/spreadsheets';

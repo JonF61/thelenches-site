@@ -106,7 +106,8 @@ export const CLIENT_JS = String.raw`
       ['Description', 'the grey text under it in Google. About 155 characters are shown.'],
       ['Main heading', 'the big heading at the top of the page.'],
       ['No other page links to it', 'Google finds pages by following links; a page nothing links to is hard to find.'],
-      'These are suggestions, not errors: ask Kryten to change a title or description. Search Console figures (searches, clicks, position) come in the next step.'],
+      ['Google search', 'from Search Console, the last 28 days ending 3 days ago (Google runs behind): how often pages were shown in results, how often clicked, and the average position (1 = top).'],
+      'These are suggestions, not errors: ask Kryten to change a title or description.'],
     summary: [
       'Each box is one screen in short. Tap its heading to open that screen.',
       ['Subscribers (top bar)', 'how many people this website\'s newsletter would go to if it were sent now: active subscribers, each address once, leaving out anyone on Do Not Send. Updates each time the panel loads or you tap Reload.'],
@@ -3645,12 +3646,29 @@ export const CLIENT_JS = String.raw`
       return [h('p', { class: 'loading' }, 'Loading the SEO report…')];
     }
     if (t.error) return [errorNote(t, 'SEO')];
-    if (t.none) return [h('div', { class: 'note' }, 'No search phrases are set for this website yet, so there is no report.')];
+    var sc = t.console || {};
+    var scCard = function () {
+      if (sc.error) return h('div', { class: 'note bad' }, sc.error);
+      if (sc.off) return h('div', { class: 'note' }, sc.why || 'Search Console is not connected.');
+      if (!sc.totals) return null;
+      return h('div', { class: 'card' },
+        h('h2', null, 'Google search, ' + day(sc.startDate) + ' to ' + day(sc.endDate)),
+        h('p', null, plural(sc.totals.impressions, 'time', 'times') + ' shown in Google results, ' + plural(sc.totals.clicks, 'click', 'clicks') +
+          (sc.totals.impressions ? ', average position ' + sc.totals.position : '') + '.'),
+        sc.queries && sc.queries.length ? h('table', { class: 'h' },
+          h('thead', null, h('tr', null, ['What people searched', 'Shown', 'Clicks', 'Position'].map(function (x) { return h('th', null, x); }))),
+          h('tbody', null, sc.queries.map(function (q) {
+            return h('tr', null, h('td', null, q.key), h('td', null, String(q.impressions)), h('td', null, String(q.clicks)), h('td', null, String(q.position)));
+          }))) : h('p', { class: 'meta' }, 'No searches in this period yet.'));
+    };
+    if (t.none) return [scCard(), h('div', { class: 'note' }, 'No search phrases are set for this website yet, so there is no page report.')].filter(Boolean);
     var pages = t.pages || [];
     var todo = pages.filter(function (p) { return p.problems.length; });
     var fine = pages.filter(function (p) { return !p.problems.length; });
     var els = [h('p', { class: 'meta' }, plural(pages.length, 'page', 'pages') + ' checked, ' + plural(todo.length, 'page', 'pages') + ' with something to look at. ' +
       plural(t.eventPages || 0, 'event page', 'event pages') + ' too (each event\u2019s own page). As of the last site build' + (t.at ? ', ' + day(String(t.at).slice(0, 10)) : '') + '.')];
+    var scc = scCard();
+    if (scc) els.unshift(scc);
     var row = function (label, value, ok) {
       return h('tr', null, h('th', null, label), h('td', { class: ok === false ? 'bad-text' : null }, value || '\u2013'));
     };
@@ -3662,7 +3680,8 @@ export const CLIENT_JS = String.raw`
           row('Search phrase', p.keyword, p.keyword ? null : false),
           row('Search title', p.title + ' (' + p.title.length + ')', has('search title') && has('Search title')),
           row('Description', p.description + (p.description ? ' (' + p.description.length + ')' : ''), has('description') && has('Description')),
-          row('Main heading', p.h1, has('main heading')))),
+          row('Main heading', p.h1, has('main heading')),
+          sc.pages ? row('In Google', sc.pages[p.url] ? plural(sc.pages[p.url].impressions, 'time', 'times') + ' shown, ' + plural(sc.pages[p.url].clicks, 'click', 'clicks') + ', position ' + sc.pages[p.url].position : 'Not shown in this period') : null)),
         p.problems.length ? h('ul', { class: 'seo-probs' }, p.problems.map(function (x) { return h('li', null, x); }))
           : h('p', { class: 'meta' }, 'All fine.')));
     });

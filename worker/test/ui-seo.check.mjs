@@ -30,6 +30,10 @@ const report = seoReport([
   { url: '/bins/', html: pg('Bin collection days — Church Lench, Rous Lench and the Lenches', 'When bins are collected in the Lenches and what goes in each bin.', 'Bins', '<a href="/">Home</a>') },
 ], { '/': 'the Lenches', '/bins/': 'Lenches bin collection' }, { now: '2026-11-26T10:00:00Z' });
 report.eventPages = 33;
+report.console = { property: 'sc-domain:thelenches.org.uk', startDate: '2026-10-27', endDate: '2026-11-23',
+  totals: { clicks: 40, impressions: 900, position: 12.3 },
+  queries: [{ key: 'lenches bin collection', clicks: 5, impressions: 60, position: 3.2 }, { key: 'church lench', clicks: 4, impressions: 80, position: 6.1 }],
+  pages: { '/bins/': { key: '/bins/', clicks: 9, impressions: 120, position: 4.5 } } };
 const summary = {
   today: '2026-11-26', failing: [], devTasks: [], lessons: [], outreach: { seasonal: 0, quiet: 0, lead: 0 }, orgs: { due: 0, chase: 0 },
   coming: { events: [], roads: [] }, subscribers: { since: '2026-10-29', joined: 0, left: 0, total: 425 },
@@ -69,8 +73,13 @@ try {
     assert.match(text, /2 pages checked, 1 page with something to look at\. 33 event pages too/);
     assert.match(text, /Search phrase not in the main heading/);
     assert.match(text, /All fine\./);
+    assert.match(text, /Google search, Tue 27 Oct to Mon 23 Nov/);
+    assert.match(text, /900 times shown in Google results, 40 clicks, average position 12\.3/);
+    assert.match(text, /lenches bin collection\s+60\s+5\s+3\.2/);
+    assert.match(text, /120 times shown, 9 clicks, position 4\.5/);
+    assert.match(text, /Not shown in this period/);
     // The page with something to look at comes first.
-    assert.equal(await main.locator('.card h2').first().innerText(), '/bins/');
+    assert.equal(await main.locator('.card h2 a').first().innerText(), '/bins/');
     const wide = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     assert.equal(wide, false, 'no sideways scroll');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `seo-${name}.png`), fullPage: true });
