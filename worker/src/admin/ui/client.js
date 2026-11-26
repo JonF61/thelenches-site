@@ -80,7 +80,7 @@ export const CLIENT_JS = String.raw`
   // Health has no menu entry (28 Oct): the top bar's Diagnostic and Watchdog open it, as does Summary's Site health.
   // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
   var INTROS = {
-    seo: 'How each page is set up for Google: its search phrase, search title, description and main heading, checked by code at every build. Fix the pages listed first.',
+    seo: 'How the site does in Google: Search Console’s figures, each page’s set-up (On-page SEO) and which other websites link to us (Inbound links).',
     draft: 'The next newsletter as it would be built now from what is approved. It updates after each approval and every 3 hours. Once the issue is built on Thursday, this shows it exactly as built. Edit text lets you change entries\' wording and links here.',
     visitors: 'How many people use the website: page views and visits by day and by month, and the most viewed pages. Counts only: nobody can be identified.',
     stats: 'How each newsletter did: how many it went to, bounces, and anonymous opens and link clicks. Counts are totals only: nobody can see who opened or clicked.',
@@ -107,7 +107,10 @@ export const CLIENT_JS = String.raw`
       ['Main heading', 'the big heading at the top of the page.'],
       ['No other page links to it', 'Google finds pages by following links; a page nothing links to is hard to find.'],
       ['Google search', 'from Search Console, the last 28 days ending 3 days ago (Google runs behind): how often pages were shown in results, how often clicked, and the average position (1 = top).'],
-      'These are suggestions, not errors: ask Kryten to change a title or description.'],
+      'These are suggestions, not errors: ask Kryten to change a title or description.',
+      ['Inbound links', 'websites we would like to link to us (Link partners in the Sheet). Each Monday the check reads every partner’s website (home page and its links, community or what’s-on pages) for a link to this site; Check now runs it straight away.'],
+      ['Status', 'To ask (not asked yet), Asked (you asked; the day is noted), Linking (a link was found), Link gone (a link we had is no longer there), Declined, Not now. The check only ever sets Linking or Link gone; Declined and Not now stay as you set them.'],
+      ['Notes and email', 'your own notes and the address to ask, kept in the Sheet only (never on the site).']],
     summary: [
       'Each box is one screen in short. Tap its heading to open that screen.',
       ['Subscribers (top bar)', 'how many people this website\'s newsletter would go to if it were sent now: active subscribers, each address once, leaving out anyone on Do Not Send. Updates each time the panel loads or you tap Reload.'],
@@ -3639,38 +3642,62 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'seo') render();
   }
 
+  // Three sub-pages (Jon, 26 Nov): Search Console, On-page SEO, Inbound links.
   function seoView() {
+    var cur = S.seoTab === 'onpage' || S.seoTab === 'links' ? S.seoTab : 'console';
+    var tab = function (key, label) {
+      return h('button', { class: 'btn' + (cur === key ? '' : ' link'), 'aria-pressed': cur === key ? 'true' : 'false',
+        onclick: function () { S.seoTab = key; render(); } }, label);
+    };
+    var tabs = h('div', { class: 'actions seo-tabs' }, tab('console', 'Search Console'), tab('onpage', 'On-page SEO'), tab('links', 'Inbound links'));
+    if (cur === 'links') return [tabs].concat(linksView());
     var t = S.seoRep;
     if (!t) {
       if (!S.seoLoading) loadSeo();
-      return [h('p', { class: 'loading' }, 'Loading the SEO report…')];
+      return [tabs, h('p', { class: 'loading' }, 'Loading the SEO report…')];
     }
-    if (t.error) return [errorNote(t, 'SEO')];
+    if (t.error) return [tabs, errorNote(t, 'SEO')];
+    return [tabs].concat(cur === 'onpage' ? onPageView(t) : consoleView(t));
+  }
+
+  function consoleView(t) {
     var sc = t.console || {};
-    var scCard = function () {
-      if (sc.error) return h('div', { class: 'note bad' }, sc.error);
-      if (sc.off) return h('div', { class: 'note' }, sc.why || 'Search Console is not connected.');
-      if (!sc.totals) return null;
-      return h('div', { class: 'card' },
-        h('h2', null, 'Google search, ' + day(sc.startDate) + ' to ' + day(sc.endDate)),
-        h('p', null, plural(sc.totals.impressions, 'time', 'times') + ' shown in Google results, ' + plural(sc.totals.clicks, 'click', 'clicks') +
-          (sc.totals.impressions ? ', average position ' + sc.totals.position : '') + '.'),
-        sc.queries && sc.queries.length ? h('table', { class: 'h' },
-          h('thead', null, h('tr', null, ['What people searched', 'Shown', 'Clicks', 'Position'].map(function (x) { return h('th', null, x); }))),
-          h('tbody', null, sc.queries.map(function (q) {
-            return h('tr', null, h('td', null, q.key), h('td', null, String(q.impressions)), h('td', null, String(q.clicks)), h('td', null, String(q.position)));
-          }))) : h('p', { class: 'meta' }, 'No searches in this period yet.'));
-    };
-    if (t.none) return [scCard(), h('div', { class: 'note' }, 'No search phrases are set for this website yet, so there is no page report.')].filter(Boolean);
+    if (sc.error) return [h('div', { class: 'note bad' }, sc.error)];
+    if (sc.off) return [h('div', { class: 'note' }, sc.why || 'Search Console is not connected.')];
+    if (!sc.totals) return [h('p', { class: 'empty' }, 'No Search Console figures yet.')];
+    var els = [h('div', { class: 'card' },
+      h('h2', null, 'Google search, ' + day(sc.startDate) + ' to ' + day(sc.endDate)),
+      h('p', null, plural(sc.totals.impressions, 'time', 'times') + ' shown in Google results, ' + plural(sc.totals.clicks, 'click', 'clicks') +
+        (sc.totals.impressions ? ', average position ' + sc.totals.position : '') + '.'),
+      sc.queries && sc.queries.length ? h('table', { class: 'h' },
+        h('thead', null, h('tr', null, ['What people searched', 'Shown', 'Clicks', 'Position'].map(function (x) { return h('th', null, x); }))),
+        h('tbody', null, sc.queries.map(function (q) {
+          return h('tr', null, h('td', null, q.key), h('td', null, String(q.impressions)), h('td', null, String(q.clicks)), h('td', null, String(q.position)));
+        }))) : h('p', { class: 'meta' }, 'No searches in this period yet.'))];
+    var keys = Object.keys(sc.pages || {});
+    keys.sort(function (a, b) { return sc.pages[b].impressions - sc.pages[a].impressions || sc.pages[b].clicks - sc.pages[a].clicks; });
+    els.push(h('div', { class: 'card' },
+      h('h2', null, 'Pages in Google'),
+      keys.length ? h('table', { class: 'h' },
+        h('thead', null, h('tr', null, ['Page', 'Shown', 'Clicks', 'Position'].map(function (x) { return h('th', null, x); }))),
+        h('tbody', null, keys.slice(0, 50).map(function (k) {
+          var p = sc.pages[k];
+          return h('tr', null, h('td', null, /^\//.test(k) ? h('a', { href: siteUrl() + k, target: '_blank', rel: 'noopener' }, k === '/' ? 'Home' : k) : k),
+            h('td', null, String(p.impressions)), h('td', null, String(p.clicks)), h('td', null, String(p.position)));
+        }))) : h('p', { class: 'meta' }, 'No pages shown in this period yet.')));
+    return els;
+  }
+
+  function onPageView(t) {
+    if (t.none) return [h('div', { class: 'note' }, 'No search phrases are set for this website yet, so there is no page report.')];
     var pages = t.pages || [];
     var todo = pages.filter(function (p) { return p.problems.length; });
     var fine = pages.filter(function (p) { return !p.problems.length; });
     var els = [h('p', { class: 'meta' }, plural(pages.length, 'page', 'pages') + ' checked, ' + plural(todo.length, 'page', 'pages') + ' with something to look at. ' +
-      plural(t.eventPages || 0, 'event page', 'event pages') + ' too (each event\u2019s own page). As of the last site build' + (t.at ? ', ' + day(String(t.at).slice(0, 10)) : '') + '.')];
-    var scc = scCard();
-    if (scc) els.unshift(scc);
+      plural(t.eventPages || 0, 'event page', 'event pages') + ' too (each event’s own page). As of the last site build' + (t.at ? ', ' + day(String(t.at).slice(0, 10)) : '') + '.')];
+    var sc = t.console || {};
     var row = function (label, value, ok) {
-      return h('tr', null, h('th', null, label), h('td', { class: ok === false ? 'bad-text' : null }, value || '\u2013'));
+      return h('tr', null, h('th', null, label), h('td', { class: ok === false ? 'bad-text' : null }, value || '–'));
     };
     todo.concat(fine).forEach(function (p) {
       var has = function (w) { return p.problems.every(function (x) { return x.indexOf(w) < 0; }); };
@@ -3684,6 +3711,84 @@ export const CLIENT_JS = String.raw`
           sc.pages ? row('In Google', sc.pages[p.url] ? plural(sc.pages[p.url].impressions, 'time', 'times') + ' shown, ' + plural(sc.pages[p.url].clicks, 'click', 'clicks') + ', position ' + sc.pages[p.url].position : 'Not shown in this period') : null)),
         p.problems.length ? h('ul', { class: 'seo-probs' }, p.problems.map(function (x) { return h('li', null, x); }))
           : h('p', { class: 'meta' }, 'All fine.')));
+    });
+    return els;
+  }
+
+  // Inbound links (SEO step 5, 26 Nov): the Link partners tab (admin/links.js; checked each
+  // Monday by link-check.yml). Status, notes and email are stale-checked edits of one cell.
+  async function loadLinks() {
+    S.linksLoading = true;
+    var r = await api('/admin/api/links');
+    S.linksLoading = false;
+    S.links = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'seo') render();
+  }
+
+  async function saveLink(p, field, value) {
+    var r = await api('/admin/api/link-edit', { id: p.id, field: field, value: value, expected: p['_' + field] });
+    if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); if (r.status === 409) S.links = null; render(); return; }
+    p['_' + field] = r.json.value; p[field] = field === 'status' ? (r.json.value || 'To ask') : r.json.value;
+    if (field === 'status' && r.json.value === 'Asked' && !p.asked_at) p.asked_at = S.state && S.state.today || '';
+    if (S.linkEdit) delete S.linkEdit[p.id + field];
+    toast(r.json.message || 'Saved');
+    render();
+  }
+
+  async function linkCheckNow() {
+    S.linkChecking = true; render();
+    var r = await api('/admin/api/link-check-now', {});
+    S.linkChecking = false;
+    toast(r.ok ? r.json.message : (r.json.error || ('HTTP ' + r.status)), !r.ok);
+    render();
+  }
+
+  var LINK_BADGE = { 'To ask': 'warn', Asked: 'info', Linking: 'ok', 'Link gone': 'bad' };
+
+  function linksView() {
+    var t = S.links;
+    if (!t) {
+      if (!S.linksLoading) loadLinks();
+      return [h('p', { class: 'loading' }, 'Loading link partners…')];
+    }
+    if (t.error) return [errorNote(t, 'Inbound links')];
+    var check = h('button', { class: 'btn', disabled: S.linkChecking ? 'disabled' : null, onclick: linkCheckNow }, S.linkChecking ? 'Starting…' : 'Check now');
+    if (!t.made) return [h('div', { class: 'note' }, 'The Link partners list isn’t made yet: Check now makes it and checks every website (about two minutes).'), check];
+    S.linkEdit = S.linkEdit || {};
+    var c = t.counts || {};
+    var last = t.partners.map(function (p) { return p.last_checked; }).filter(Boolean).sort().pop();
+    var els = [h('p', { class: 'meta' }, t.statuses.filter(function (k) { return c[k]; }).map(function (k) { return c[k] + ' ' + k.toLowerCase(); }).join(' · ') +
+      '. ' + (last ? 'Last checked ' + day(last) + '; ' : '') + 'checked each Monday morning.'), h('div', { class: 'actions' }, check)];
+    t.partners.forEach(function (p) {
+      var edit = function (field, label, multi) {
+        var k = p.id + field;
+        if (S.linkEdit[k] === undefined) {
+          return h('button', { class: 'btn link', onclick: function () { S.linkEdit[k] = p[field]; render(); } }, label);
+        }
+        return h('div', { class: 'link-edit' },
+          h(multi ? 'textarea' : 'input', { class: 'box', rows: multi ? '2' : null, value: S.linkEdit[k], 'aria-label': label,
+            oninput: function (e) { S.linkEdit[k] = e.target.value; } }, multi ? S.linkEdit[k] : null),
+          h('button', { class: 'btn', onclick: function () { saveLink(p, field, S.linkEdit[k]); } }, 'Save'),
+          h('button', { class: 'btn link', onclick: function () { delete S.linkEdit[k]; render(); } }, 'Cancel'));
+      };
+      var found = p.status === 'Linking' || p.link_found_at;
+      els.push(h('div', { class: 'card link-card' },
+        h('h2', null, p.url ? h('a', { href: p.url, target: '_blank', rel: 'noopener' }, p.name) : p.name,
+          ' ', h('span', { class: 'badge ' + (LINK_BADGE[p.status] || '') }, p.status === 'Linking' ? '✓ Linking' : p.status)),
+        h('p', { class: 'meta' }, [p.type, p.url ? p.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '') : 'no website address yet'].filter(Boolean).join(' · ')),
+        !p.url ? null : h('p', null, found && p.link_found_at ? ['Link found on: ', h('a', { href: p.link_found_at, target: '_blank', rel: 'noopener' }, p.link_found_at.replace(/^https?:\/\/(www\.)?/, ''))] : (p.check || 'Not checked yet'),
+          p.last_checked ? ' · checked ' + day(p.last_checked) : ''),
+        p.asked_at ? h('p', { class: 'meta' }, 'Asked ' + day(p.asked_at)) : null,
+        p.notes ? h('p', { class: 'meta' }, 'Notes: ' + p.notes) : null,
+        p.email ? h('p', { class: 'meta' }, 'Email: ' + p.email) : null,
+        h('div', { class: 'actions' },
+          h('label', { class: 'meta' }, 'Status ',
+            h('select', { 'aria-label': 'Status for ' + p.name, onchange: function (e) { saveLink(p, 'status', e.target.value); } },
+              t.statuses.map(function (st) { return h('option', { value: st, selected: st === p.status ? 'selected' : null }, st); }))),
+          S.linkEdit[p.id + 'notes'] === undefined ? edit('notes', p.notes ? 'Edit notes' : 'Add notes', true) : null,
+          S.linkEdit[p.id + 'email'] === undefined ? edit('email', p.email ? 'Change email' : 'Add email') : null),
+        S.linkEdit[p.id + 'notes'] !== undefined ? edit('notes', 'Notes', true) : null,
+        S.linkEdit[p.id + 'email'] !== undefined ? edit('email', 'Email') : null));
     });
     return els;
   }

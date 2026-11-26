@@ -1,0 +1,49 @@
+name: Check inbound links
+
+# Inbound links (SEO step 5, 26 Nov 2026; scripts/linkcheck): reads each Link partners tab row's
+# website and records whether, and where, it links to this site (columns link_found_at,
+# last_checked, check; status moves to Linking / Link gone only). Makes the tab from
+# lib/linkpartners.json the first time. Sends nothing. GitHub's runners can read outside sites,
+# so the check runs here rather than in a cloud session. The panel's Check now sends
+# repository_dispatch "link-check". The log shows partner ids and counts only.
+on:
+  repository_dispatch:
+    types: [link-check]
+  schedule:
+    - cron: '37 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      site:
+        description: 'Site (lenches or harvington)'
+        required: false
+        default: 'lenches'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: link-check-${{ github.event.client_payload.site || github.event.inputs.site || 'lenches' }}
+  cancel-in-progress: false
+
+env:
+  # Which site this run is for (lib/site.js): the dispatch payload's or Run workflow's `site`,
+  # else the Lenches (schedules). The Sheet is that site's site.json sheetId.
+  SITE: ${{ github.event.client_payload.site || github.event.inputs.site || 'lenches' }}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GOOGLE_SA_KEY: ${{ secrets.GOOGLE_SA_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Check links
+        run: node scripts/linkcheck/index.js
