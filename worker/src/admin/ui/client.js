@@ -80,7 +80,7 @@ export const CLIENT_JS = String.raw`
   // Health has no menu entry (28 Oct): the top bar's Diagnostic and Watchdog open it, as does Summary's Site health.
   // A reminder of what each page holds, shown at its top (wording agreed with Jon 26 Oct).
   var INTROS = {
-    seo: 'How the site does in Google: Search Console’s figures, each page’s set-up (On-page SEO) and which other websites link to us (Inbound links).',
+    seo: 'How the site does in Google: where we rank for each search phrase (Rankings), Search Console’s figures, each page’s set-up (On-page SEO) and which other websites link to us (Inbound links).',
     draft: 'The next newsletter as it would be built now from what is approved. It updates after each approval and every 3 hours. Once the issue is built on Thursday, this shows it exactly as built. Edit text lets you change entries\' wording and links here.',
     visitors: 'How many people use the website: page views and visits by day and by month, and the most viewed pages. Counts only: nobody can be identified.',
     stats: 'How each newsletter did: how many it went to, bounces, and anonymous opens and link clicks. Counts are totals only: nobody can see who opened or clicked.',
@@ -112,6 +112,11 @@ export const CLIENT_JS = String.raw`
       ['Status', 'To ask (not asked yet), Asked (you asked; the day is noted), Linking (a link was found), Link gone (a link we had is no longer there), Declined, Not now. The check only ever sets Linking or Link gone; Declined and Not now stay as you set them.'],
       ['Notes and email', 'your own notes and the address to ask, kept in the Sheet only (never on the site).'],
       ['Draft request', 'shown once a partner has an email address: Holly drafts the fixed link request (asking for a link with the words \u201cThe Lenches Website\u201d) into Replies, where it waits for your Approve. Once it has gone, the next check marks them Asked.'],
+      ['Rankings', 'from Ahrefs Rank Tracker (your company account): where this site comes in Google’s results for each search phrase, checked on a phone and on a computer from the place each phrase is tracked from (e.g. Evesham). 1 = top of the page; 11 = top of page 2. Unlike Search Console’s average, this is the actual place in the results.'],
+      ['Change', 'against a week ago: ▲ moved up, ▼ moved down, New = not in the top 100 a week ago.'],
+      ['Not in top 100', 'Google doesn’t show this site in its first 100 results for that phrase.'],
+      ['Top 10', 'opens Google’s first ten results for that phrase as Rank Tracker last saw them, with ours highlighted, so you can see who is above us.'],
+      ['Phrases', 'are added or removed in Ahrefs (Rank Tracker → Add keywords), not here. Figures are kept for 12 hours, so a change in Ahrefs shows here by the next day.'],
       ['Draft chaser', 'shown 21 days after the request went if no link has been found: one short follow-up on the same email thread. Only one chaser is sent.']],
     summary: [
       'Each box is one screen in short. Tap its heading to open that screen.',
@@ -3644,15 +3649,16 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'seo') render();
   }
 
-  // Three sub-pages (Jon, 26 Nov): Search Console, On-page SEO, Inbound links.
+  // Four sub-pages (Jon, 26 Nov): Rankings (first), Search Console, On-page SEO, Inbound links.
   function seoView() {
-    var cur = S.seoTab === 'onpage' || S.seoTab === 'links' ? S.seoTab : 'console';
+    var cur = ['onpage', 'links', 'console'].indexOf(S.seoTab) >= 0 ? S.seoTab : 'ranks';
     var tab = function (key, label) {
       return h('button', { class: 'btn' + (cur === key ? '' : ' link'), 'aria-pressed': cur === key ? 'true' : 'false',
         onclick: function () { S.seoTab = key; render(); } }, label);
     };
-    var tabs = h('div', { class: 'actions seo-tabs' }, tab('console', 'Search Console'), tab('onpage', 'On-page SEO'), tab('links', 'Inbound links'));
+    var tabs = h('div', { class: 'actions seo-tabs' }, tab('ranks', 'Rankings'), tab('console', 'Search Console'), tab('onpage', 'On-page SEO'), tab('links', 'Inbound links'));
     if (cur === 'links') return [tabs].concat(linksView());
+    if (cur === 'ranks') return [tabs].concat(ranksView());
     var t = S.seoRep;
     if (!t) {
       if (!S.seoLoading) loadSeo();
@@ -3660,6 +3666,89 @@ export const CLIENT_JS = String.raw`
     }
     if (t.error) return [tabs, errorNote(t, 'SEO')];
     return [tabs].concat(cur === 'onpage' ? onPageView(t) : consoleView(t));
+  }
+
+  // Rankings (26 Nov, Jon): Ahrefs Rank Tracker's real positions (admin/rankings.js), phone and
+  // computer, against a week ago; Top 10 opens a phrase's first page of results.
+  async function loadRanks() {
+    S.ranksLoading = true;
+    var r = await api('/admin/api/rankings');
+    S.ranksLoading = false;
+    S.ranks = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'seo') render();
+  }
+
+  async function loadSerp(kw, device) {
+    var k = device + '|' + kw;
+    S.serps = S.serps || {};
+    S.serpOpen = k;
+    if (S.serps[k]) { render(); return; }
+    S.serps[k] = { loading: true }; render();
+    var r = await api('/admin/api/rankings?serp=' + encodeURIComponent(kw) + '&device=' + device);
+    S.serps[k] = r.ok ? r.json : { error: r.json.error || ('HTTP ' + r.status) };
+    if (S.view === 'seo') render();
+  }
+
+  function rankCell(d) {
+    if (!d) return h('td', { class: 'meta' }, '–');
+    var now = d.position, was = d.prev;
+    var move = !now ? (was ? h('span', { class: 'bad-text' }, ' ▼ was ' + was) : null)
+      : !was ? h('span', { class: 'rank-up' }, ' New')
+      : was > now ? h('span', { class: 'rank-up' }, ' ▲' + (was - now))
+      : was < now ? h('span', { class: 'bad-text' }, ' ▼' + (now - was)) : null;
+    return h('td', { class: 'rank' }, now ? h('b', null, String(now)) : h('span', { class: 'meta' }, 'Not in top 100'), move);
+  }
+
+  function serpBox(k) {
+    var s = S.serps && S.serps[k];
+    if (!s) return null;
+    if (s.loading) return h('p', { class: 'loading' }, 'Loading the top 10…');
+    if (s.error) return h('div', { class: 'note bad' }, s.error);
+    var ours = s.positions.some(function (p) { return p.ours; });
+    return h('div', { class: 'serp' },
+      h('p', { class: 'meta' }, 'Google’s top 10 on a ' + (s.device === 'mobile' ? 'phone' : 'computer') + (s.location ? ', from ' + s.location : '') + (ours ? '' : '. We’re not in it.')),
+      h('ol', { class: 'serp-list' }, s.positions.map(function (p) {
+        return h('li', { class: p.ours ? 'ours' : null, value: String(p.position) },
+          h('a', { href: p.url, target: '_blank', rel: 'noopener' }, p.title || p.url),
+          h('span', { class: 'meta' }, ' ' + p.url.replace(/^https?:\/\//, '').replace(/\/$/, '') + (p.type && p.type !== 'organic' ? ' · ' + p.type.replace(/_/g, ' ') : '')));
+      })));
+  }
+
+  function ranksView() {
+    var t = S.ranks;
+    if (!t) {
+      if (!S.ranksLoading) loadRanks();
+      return [h('p', { class: 'loading' }, 'Loading rankings from Ahrefs…')];
+    }
+    if (t.error) return [errorNote(t, 'Rankings')];
+    if (t.off) return [h('div', { class: 'note' }, t.why)];
+    var kws = t.keywords || [];
+    if (!kws.length) return [h('p', { class: 'empty' }, 'Ahrefs hasn’t checked the phrases yet: its first check can take a day after they are added.')];
+    var top = function (dev) { return kws.filter(function (k) { return k[dev] && k[dev].position && k[dev].position <= 10; }).length; };
+    var els = [h('p', { class: 'meta' }, plural(kws.length, 'search phrase', 'search phrases') + ': ' + top('mobile') + ' on the first page of Google on a phone, ' + top('desktop') +
+      ' on a computer. Compared with ' + day(t.compared) + (t.updated ? '; Ahrefs last checked ' + day(String(t.updated).slice(0, 10)) : '') + '.')];
+    var rows = [];
+    kws.forEach(function (k) {
+      var page = (k.mobile && k.mobile.page) || (k.desktop && k.desktop.page) || '';
+      var btn = function (dev, label) {
+        var key = dev + '|' + k.keyword;
+        return h('button', { class: 'btn link', 'aria-pressed': S.serpOpen === key ? 'true' : 'false',
+          onclick: function () { if (S.serpOpen === key) { S.serpOpen = ''; render(); } else loadSerp(k.keyword, dev); } }, label);
+      };
+      rows.push(h('tr', null,
+        h('td', null, k.keyword, k.location ? h('div', { class: 'meta' }, k.location) : null),
+        rankCell(k.mobile), rankCell(k.desktop),
+        h('td', null, page ? (/^\//.test(page) ? h('a', { href: siteUrl() + page, target: '_blank', rel: 'noopener' }, page === '/' ? 'Home' : page) : page) : h('span', { class: 'meta' }, '–')),
+        h('td', null, k.volume == null ? '–' : String(k.volume)),
+        h('td', { class: 'nowrap' }, btn('mobile', 'Phone'), ' ', btn('desktop', 'Computer'))));
+      var open = S.serpOpen && S.serpOpen.split('|').slice(1).join('|') === k.keyword ? S.serpOpen : '';
+      if (open) rows.push(h('tr', { class: 'serp-row' }, h('td', { colspan: '6' }, serpBox(open))));
+    });
+    els.push(h('div', { class: 'card' }, h('div', { class: 'table-scroll' }, h('table', { class: 'h ranks' },
+      h('thead', null, h('tr', null, ['Search phrase', 'Phone', 'Computer', 'Our page', 'Searches a month', 'Top 10'].map(function (x) { return h('th', null, x); }))),
+      h('tbody', null, rows)))));
+    els.push(h('p', { class: 'meta' }, 'From Ahrefs Rank Tracker (' + (t.project && t.project.name || 'project') + '). Ahrefs API units used for this view: ' + (t.units || 0) + '.'));
+    return els;
   }
 
   function consoleView(t) {

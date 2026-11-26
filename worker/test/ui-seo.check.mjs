@@ -49,6 +49,22 @@ const links = linkPartners({ headers: LH, rows: [
   { id: 'arch', name: 'ARCH Benefice', type: 'Church', url: 'https://www.archbenefice.org.uk/', status: 'To ask', last_checked: '2026-11-30', check: 'No link found', email: 'office@arch.example' },
   { id: 'visit', name: 'Visit Evesham', type: 'Directory', url: '', status: '', check: 'No website address yet', notes: 'Website address to find' },
 ] }, [], '2026-11-30');
+// Rankings (Ahrefs Rank Tracker, admin/rankings.js shape).
+const R = (m, mp, d, dp, page, vol) => ({ location: 'Evesham', volume: vol, updated: '2026-11-25T04:00:00Z',
+  mobile: { position: m, prev: mp, page }, desktop: { position: d, prev: dp, page } });
+const ranks = { project: { id: 2, name: 'Thelenches', url: 'https://thelenches.org.uk/' }, date: '2026-11-26', compared: '2026-11-19',
+  updated: '2026-11-25T04:00:00Z', units: 100, keywords: [
+    { keyword: 'the Lenches', ...R(1, 1, 1, 2, '/', 90) },
+    { keyword: 'Lenches bin collection', ...R(2, 3, 3, 3, '/living-here/bins/', 10) },
+    { keyword: 'Lenches church services', ...R(4, null, 5, 7, '/living-here/churches/', 0) },
+    { keyword: 'events near Evesham', ...R(14, 11, 18, 18, '/events/', 320) },
+    { keyword: 'pubs near Evesham', ...R(null, 40, null, null, '', 600) },
+  ] };
+const serp = { keyword: 'Lenches bin collection', device: 'mobile', location: 'Evesham', units: 30, positions: [
+  { position: 1, url: 'https://www.wychavon.gov.uk/bins', title: 'Bin collections | Wychavon District Council', type: 'organic', ours: false },
+  { position: 2, url: 'https://thelenches.org.uk/living-here/bins/', title: 'Bin collection days — the Lenches', type: 'organic', ours: true },
+  { position: 3, url: 'https://www.facebook.com/groups/lenches', title: 'Lenches Community | Facebook', type: 'organic', ours: false },
+] };
 const edits = [];
 const asks = [];
 const server = http.createServer(async (req, res) => {
@@ -62,6 +78,7 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/admin/api/summary') return send(summary);
   if (url.pathname === '/admin/api/seo') return send(report);
   if (url.pathname === '/admin/api/links') return send(links);
+  if (url.pathname === '/admin/api/rankings') return send(url.searchParams.get('serp') ? { ...serp, keyword: url.searchParams.get('serp'), device: url.searchParams.get('device') } : ranks);
   if (url.pathname === '/admin/api/link-ask') {
     const b = JSON.parse(await new Promise((r) => { let d = ''; req.on('data', (c) => { d += c; }); req.on('end', () => r(d)); }));
     asks.push(b.id);
@@ -87,10 +104,25 @@ try {
     if (name === 'phone') await page.locator('button.menu-btn, button[aria-label="Menu"]').first().click().catch(() => {});
     await page.locator('nav.side button', { hasText: /^SEO$/ }).click();
     const main = page.locator('.main');
-    // Search Console (the first sub-page).
-    await main.locator('text=Pages in Google').waitFor();
+    // Rankings (the first sub-page): best first, moves against a week ago, a phrase's top 10.
+    await main.locator('table.ranks').waitFor();
     let text = await main.innerText();
     assert.match(text, /^How the site does in Google/m);
+    assert.match(text, /5 search phrases: 3 on the first page of Google on a phone, 3 on a computer\. Compared with Thu 19 Nov; Ahrefs last checked Wed 25 Nov\./);
+    assert.match(text, /Lenches bin collection\s+Evesham\s+2 ▲1\s+3\s/);
+    assert.match(text, /Lenches church services\s+Evesham\s+4 New\s+5 ▲2/);
+    assert.match(text, /events near Evesham\s+Evesham\s+14 ▼3/);
+    assert.match(text, /pubs near Evesham\s+Evesham\s+Not in top 100 ▼ was 40\s+Not in top 100/);
+    await main.locator('tr', { hasText: 'Lenches bin collection' }).locator('button', { hasText: 'Phone' }).click();
+    await main.locator('.serp-list li.ours').waitFor();
+    text = await main.innerText();
+    assert.match(text, /Google’s top 10 on a phone, from Evesham/);
+    assert.match(text, /Bin collections \| Wychavon District Council www\.wychavon\.gov\.uk\/bins/);
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `seo-ranks-${name}.png`), fullPage: true });
+    // Search Console.
+    await main.locator('button', { hasText: 'Search Console' }).click();
+    await main.locator('text=Pages in Google').waitFor();
+    text = await main.innerText();
     assert.match(text, /Google search, Tue 27 Oct to Mon 23 Nov/);
     assert.match(text, /900 times shown in Google results, 40 clicks, average position 12\.3/);
     assert.match(text, /lenches bin collection\s+60\s+5\s+3\.2/);

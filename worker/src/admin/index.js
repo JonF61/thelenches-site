@@ -115,6 +115,10 @@
 //   GET  /admin/api/seo             SEO (seo.js): the shown site's seo-report.json (build checks of
 //                                   each page's search phrase, titles and descriptions; 26 Nov 2026)
 //                                   and `console`: Search Console's last 28 days (seo.js searchConsole).
+//   GET  /admin/api/rankings        SEO → Rankings (rankings.js, 26 Nov 2026): Ahrefs Rank Tracker's
+//                                   positions for the shown site's tracked phrases, phone and computer,
+//                                   now and a week ago; ?serp=<phrase>&device=mobile|desktop gives that
+//                                   phrase's top 10 (read-only; secret AHREFS_API_KEY)
 //   GET  /admin/api/site-visitors   Site visitors (sitestats.js): saved days and months from the
 //                                   Visitors tab, plus today so far from Cloudflare.
 //   GET  /admin/api/nlstats?i=DATE  Newsletter stats (nlstats.js): sent issues with sent, bounced,
@@ -164,6 +168,7 @@
 // (Check email now, Refresh draft, Check now for Rimmer).
 
 import { seoReportFile, searchConsole } from './seo.js';
+import { rankings, rankSerp } from './rankings.js';
 import { LINK_TAB, planLinkEdit, linkPartners, planLinkAsk } from './links.mjs';
 import { ACTIONS, decide, github, dispatch } from '../core.js';
 import { DEFAULT_SITE, knownSite, siteEnv, siteList, siteConfig, siteIds } from '../sites.js';
@@ -1197,6 +1202,11 @@ export async function handleAdmin(request, rawEnv) {
       if (path === '/admin/api/seo') {
         const [report, consoleData] = await Promise.all([seoReportFile(env), searchConsole(env)]);
         return json({ ...report, console: consoleData });
+      }
+      if (path === '/admin/api/rankings') {
+        const kw = url.searchParams.get('serp');
+        if (kw !== null) return json(await rankSerp(env, String(kw).slice(0, 200), String(url.searchParams.get('device') || 'mobile')));
+        return json(await rankings(env));
       }
       if (path === '/admin/api/nlstats') {
         const [issues, sends, dns] = await Promise.all([readTable(env, 'Issues'), readTable(env, 'Sends'), readTable(env, 'Do Not Send')]);
