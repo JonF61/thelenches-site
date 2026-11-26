@@ -42,6 +42,14 @@ const summary = {
   lastSent: null,
 };
 
+const { linkPartners } = await import('../src/admin/links.js');
+const LH = ['id', 'name', 'type', 'url', 'status', 'link_found_at', 'last_checked', 'check', 'notes', 'email', 'asked_at'];
+const links = linkPartners({ headers: LH, rows: [
+  { id: 'rous-lench', name: 'Rous Lench village website', type: 'Village website', url: 'https://rouslench.com/', status: 'Linking', link_found_at: 'https://rouslench.com/', last_checked: '2026-11-30', check: 'Links to us' },
+  { id: 'arch', name: 'ARCH Benefice', type: 'Church', url: 'https://www.archbenefice.org.uk/', status: 'To ask', last_checked: '2026-11-30', check: 'No link found' },
+  { id: 'visit', name: 'Visit Evesham', type: 'Directory', url: '', status: '', check: 'No website address yet', notes: 'Website address to find' },
+] });
+const edits = [];
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   const send = (body, type = 'application/json', status = 200) => { res.writeHead(status, { 'content-type': type }); res.end(typeof body === 'string' ? body : JSON.stringify(body)); };
@@ -52,6 +60,12 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/admin/api/state') return send(stateData());
   if (url.pathname === '/admin/api/summary') return send(summary);
   if (url.pathname === '/admin/api/seo') return send(report);
+  if (url.pathname === '/admin/api/links') return send(links);
+  if (url.pathname === '/admin/api/link-edit') {
+    const b = JSON.parse(await new Promise((r) => { let d = ''; req.on('data', (c) => { d += c; }); req.on('end', () => r(d)); }));
+    edits.push(b);
+    return send({ ok: true, value: b.value, message: 'Saved.' });
+  }
   return send({ error: 'nf' }, 'application/json', 404);
 });
 await new Promise((r) => server.listen(0, r));
@@ -67,22 +81,51 @@ try {
     if (name === 'phone') await page.locator('button.menu-btn, button[aria-label="Menu"]').first().click().catch(() => {});
     await page.locator('nav.side button', { hasText: /^SEO$/ }).click();
     const main = page.locator('.main');
-    await main.locator('.seo-probs').first().waitFor();
-    const text = await main.innerText();
-    assert.match(text, /^How each page is set up for Google/m);
-    assert.match(text, /2 pages checked, 1 page with something to look at\. 33 event pages too/);
-    assert.match(text, /Search phrase not in the main heading/);
-    assert.match(text, /All fine\./);
+    // Search Console (the first sub-page).
+    await main.locator('text=Pages in Google').waitFor();
+    let text = await main.innerText();
+    assert.match(text, /^How the site does in Google/m);
     assert.match(text, /Google search, Tue 27 Oct to Mon 23 Nov/);
     assert.match(text, /900 times shown in Google results, 40 clicks, average position 12\.3/);
     assert.match(text, /lenches bin collection\s+60\s+5\s+3\.2/);
+    assert.match(text, /\/bins\/\s+120\s+9\s+4\.5/);
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `seo-console-${name}.png`), fullPage: true });
+    // On-page SEO.
+    await main.locator('button', { hasText: 'On-page SEO' }).click();
+    await main.locator('.seo-probs').first().waitFor();
+    text = await main.innerText();
+    assert.match(text, /2 pages checked, 1 page with something to look at\. 33 event pages too/);
+    assert.match(text, /Search phrase not in the main heading/);
+    assert.match(text, /All fine\./);
     assert.match(text, /120 times shown, 9 clicks, position 4\.5/);
     assert.match(text, /Not shown in this period/);
-    // The page with something to look at comes first.
     assert.equal(await main.locator('.card h2 a').first().innerText(), '/bins/');
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `seo-onpage-${name}.png`), fullPage: true });
+    // Inbound links: to ask first, then linking; status change and notes save.
+    await main.locator('button', { hasText: 'Inbound links' }).click();
+    await main.locator('.link-card').first().waitFor();
+    text = await main.innerText();
+    assert.match(text, /2 to ask · 1 linking\. Last checked Mon 30 Nov; checked each Monday morning\./);
+    assert.match(text, /✓ Linking/);
+    assert.match(text, /Link found on: rouslench\.com\//);
+    assert.match(text, /No link found · checked Mon 30 Nov/);
+    assert.match(text, /no website address yet/);
+    const names = await main.locator('.link-card h2').allInnerTexts();
+    assert.match(names[names.length - 1], /Rous Lench/, 'linking partners after those to ask');
+    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `seo-links-${name}.png`), fullPage: true });
+    await main.locator('select[aria-label="Status for ARCH Benefice"]').selectOption('Asked');
+    await main.locator('.link-card', { hasText: 'ARCH Benefice' }).locator('.badge', { hasText: 'Asked' }).waitFor();
+    const e1 = edits[edits.length - 1];
+    assert.deepEqual([e1.id, e1.field, e1.value, e1.expected], ['arch', 'status', 'Asked', 'To ask']);
+    const visit = main.locator('.link-card', { hasText: 'Visit Evesham' });
+    await visit.locator('button', { hasText: 'Edit notes' }).click();
+    await visit.locator('textarea').fill('Try their contact form');
+    await visit.locator('button', { hasText: 'Save' }).click();
+    await visit.locator('text=Notes: Try their contact form').waitFor();
+    const e2 = edits[edits.length - 1];
+    assert.deepEqual([e2.id, e2.field, e2.value, e2.expected], ['visit', 'notes', 'Try their contact form', 'Website address to find']);
     const wide = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     assert.equal(wide, false, 'no sideways scroll');
-    if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `seo-${name}.png`), fullPage: true });
     assert.deepEqual(errors, []);
     await page.close();
   }
