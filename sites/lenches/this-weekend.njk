@@ -1,9 +1,10 @@
 ---
 layout: base.njk
 title: This weekend
+heading: "This weekend near Evesham"
 permalink: /events/this-weekend/
 description: "What's on this weekend in the Lenches and nearby villages near Evesham: Friday evening to Sunday, with times, places and links. Updated every day."
-seoTitle: "What's on this weekend near Evesham — the Lenches and nearby villages"
+seoTitle: "This weekend near Evesham — what's on in the Lenches"
 ---
 {#- This weekend (SEO step 4, 26 Nov 2026): the shared src/_includes/pages/weekend.njk. -#}
 {%- set wkDates = (whatson.events | merge(pipeline.events) | upcoming) | weekendRange -%}

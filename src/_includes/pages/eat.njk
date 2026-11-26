@@ -19,7 +19,7 @@
 </style>
 <main class="container">
   <div class="page-head">
-    <h1>Where to eat</h1>
+    <h1>{{ heading or "Where to eat" }}</h1>
     <p class="page-intro">{{ eat.intro }}</p>
     {% if site.suggestUrl and site.turnstileSiteKey %}<p class="small">{{ suggestLead | safe }}</p>{% endif %}
   </div>

@@ -11,7 +11,7 @@
 {%- set wk = all | weekendRange -%}
 <main class="container">
   <div class="page-head">
-    <h1>This weekend</h1>
+    <h1>{{ heading or "This weekend" }}</h1>
     <p class="page-intro">{{ pageIntro | safe }}</p>
   </div>
   <p class="wk-actions"><a class="btn btn-outline" href="{{ '/events/' | url }}">All events &rarr;</a></p>
