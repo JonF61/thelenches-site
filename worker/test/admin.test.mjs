@@ -63,6 +63,7 @@ const ALLOWED = {
   'https://www.googleapis.com/auth/spreadsheets': 'own',
   'https://www.googleapis.com/auth/drive': 'own',
   'https://www.googleapis.com/auth/drive.readonly': 'own',
+  'https://www.googleapis.com/auth/webmasters.readonly': 'own', // Search Console, read-only (SEO screen, 26 Nov 2026)
 };
 
 // A small fake Google Sheet + GitHub + Access certs behind global fetch.
