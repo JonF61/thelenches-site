@@ -348,6 +348,18 @@ module.exports = async function (eleventyConfig) {
   eleventyConfig.addFilter("eventPast", (e) => EP.isPast(e, today()));
   // '' or 'past', for front matter (a computed "false" would be a truthy string).
   eleventyConfig.addFilter("eventPastFlag", (e) => (EP.isPast(e, today()) ? "past" : ""));
+  // Shared events have a page on both sites (26 Nov 2026, Jon): each copy tells Google the main one
+  // is on the site the item came from (a hand-written item's _site, a published item's "from", set by
+  // scripts/publish for the other Sheet's rows), when that site has event pages; else this page.
+  eleventyConfig.addFilter("eventCanonical", (e) => {
+    const from = (e && (e._site || e.from)) || "";
+    const SITES = require("./lib/site.js");
+    if (!from || from === SITES.SITE) return "";
+    let cfg;
+    try { cfg = SITES.siteConfigFor(from); } catch { return ""; }
+    if (!cfg || cfg.eventPages !== true || !cfg.url) return "";
+    return `${String(cfg.url).replace(/\/$/, "")}${EP.eventPath(e)}`;
+  });
   // Search-result description: date, time and place, then the start of the body (about 155 characters).
   eleventyConfig.addFilter("eventDescription", (e) => {
     const when = [fmt(e.date, { weekday: "long", day: "numeric", month: "long", year: "numeric" }).replace(",", ""), EP.timeText(e)].filter(Boolean).join(", ");

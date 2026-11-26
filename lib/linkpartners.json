@@ -186,5 +186,119 @@
       "url": "",
       "notes": "Ask the admins; can't be checked automatically"
     }
+  ],
+  "harvington": [
+    {
+      "id": "harvington-pc",
+      "name": "Harvington Parish Council",
+      "type": "Parish council",
+      "url": "https://harvington-pc.gov.uk/",
+      "listed_page": "Council",
+      "listed_url": "https://harvingtonvillage.org.uk/living-here/council/"
+    },
+    {
+      "id": "norton-lenchwick-pc",
+      "name": "Norton and Lenchwick Parish Council",
+      "type": "Parish council",
+      "url": "https://nortonlenchwick-pc.gov.uk/",
+      "listed_page": "Council",
+      "listed_url": "https://harvingtonvillage.org.uk/living-here/council/"
+    },
+    {
+      "id": "arch",
+      "name": "ARCH Benefice",
+      "type": "Church",
+      "url": "https://www.archbenefice.org.uk/",
+      "listed_page": "Churches",
+      "listed_url": "https://harvingtonvillage.org.uk/churches/"
+    },
+    {
+      "id": "harvington-baptist",
+      "name": "Harvington Baptist Church",
+      "type": "Church",
+      "url": "https://www.harvingtonbaptistchurch.org.uk/",
+      "listed_page": "Churches",
+      "listed_url": "https://harvingtonvillage.org.uk/churches/"
+    },
+    {
+      "id": "harvington-first-school",
+      "name": "Harvington CofE First School",
+      "type": "School",
+      "url": "https://www.harvingtonfirstschool.co.uk/",
+      "listed_page": "Schools",
+      "listed_url": "https://harvingtonvillage.org.uk/living-here/schools/"
+    },
+    {
+      "id": "harvington-youth",
+      "name": "Harvington Youth Project",
+      "type": "Group we list",
+      "url": "https://www.harvington-youth.org.uk/"
+    },
+    {
+      "id": "harvington-guides",
+      "name": "Harvington Guides",
+      "type": "Club we list",
+      "url": "http://harvingtonguides.org.uk/"
+    },
+    {
+      "id": "evesham-u3a",
+      "name": "Evesham U3A",
+      "type": "Club we list",
+      "url": "https://evesham.u3asite.uk/"
+    },
+    {
+      "id": "vale-and-spa",
+      "name": "Vale & Spa magazine",
+      "type": "Media",
+      "url": "https://www.valeandspa.co.uk/"
+    },
+    {
+      "id": "lenches-website",
+      "name": "The Lenches Website",
+      "type": "Our other website",
+      "url": "https://thelenches.org.uk/"
+    },
+    {
+      "id": "visit-evesham",
+      "name": "Visit Evesham",
+      "type": "Directory",
+      "url": "",
+      "notes": "Website address to find"
+    },
+    {
+      "id": "wychavon-directory",
+      "name": "Wychavon community directory",
+      "type": "Directory",
+      "url": "",
+      "notes": "Website address to find"
+    },
+    {
+      "id": "worcs-directory",
+      "name": "Worcestershire community directory",
+      "type": "Directory",
+      "url": "",
+      "notes": "Website address to find"
+    },
+    {
+      "id": "evesham-journal",
+      "name": "Evesham Journal and Worcester News (What's On)",
+      "type": "Media",
+      "url": "",
+      "notes": "Website address to find"
+    },
+    {
+      "id": "bbc-hw",
+      "name": "BBC Hereford & Worcester community events",
+      "type": "Media",
+      "url": "",
+      "notes": "Website address to find"
+    },
+    {
+      "id": "harvington-community-fb",
+      "name": "Harvington (Near Evesham) Community Facebook group",
+      "type": "Facebook",
+      "url": "",
+      "notes": "Not ours: ask the admins to pin a post; can't be checked automatically"
+    }
   ]
 }

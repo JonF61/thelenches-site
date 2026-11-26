@@ -7,6 +7,9 @@ search: false
 noindex: true
 eleventyExcludeFromCollections: true
 ---
+{#- An event's own page goes 30 days after the event (SEO step 1, 26 Nov 2026): its old address comes
+    here, so send /events/<anything>/ straight back to the Events page. -#}
+<script>if (/^\/events\/[^/]+\/?$/.test(location.pathname)) location.replace('/events/');</script>
 <main class="container">
   <section>
     <h1>Page not found</h1>

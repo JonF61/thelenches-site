@@ -273,6 +273,11 @@
       "waiting": "Ahrefs first check (about a day)",
       "added": "2026-11-26",
       "kryten": true
+    },
+    {
+      "task": "Event pages main copy (26 Nov): after the next publish run, check sites/lenches/_data/pipeline.json items that came from the Harvington Sheet carry \"from\": \"harvington\" (and vice versa), and that their Lenches event page points its canonical tag at harvingtonvillage.org.uk. Harvington link partners: run the link check for Harvington (link-check.yml, site harvington) to make its Link partners tab.",
+      "added": "2026-11-26",
+      "kryten": true
     }
   ]
 }

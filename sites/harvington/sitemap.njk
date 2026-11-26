@@ -5,9 +5,9 @@ eleventyExcludeFromCollections: true
 <?xml version="1.0" encoding="utf-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 {#- No <lastmod>: every build gave every page the build date, which teaches Google to ignore it. -#}
-{%- for item in collections.all %}
+{%- for item in collections.all %}{% if not item.data.pastEvent %}
   <url>
     <loc>{{ site.url }}{{ item.url }}</loc>
   </url>
-{%- endfor %}
+{%- endif %}{%- endfor %}
 </urlset>
