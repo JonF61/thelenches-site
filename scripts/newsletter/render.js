@@ -8,13 +8,15 @@
 'use strict';
 
 const crypto = require('crypto');
-const { anchorUrl, calendarUrl, googleCalendarLink } = require('../../lib/anchors');
+const { anchorUrl, eventPageUrl, calendarUrl, googleCalendarLink } = require('../../lib/anchors');
 const { siteConfig } = require('../../lib/site');
 const { mapUrl } = require('../../lib/planning');
 
 // The site's own name, address, contributions address and colours (site.json; Harvington stage 5a,
 // 16 Nov 2026). The Lenches' issue is unchanged: these are its old fixed values.
 const CFG = siteConfig();
+// Event titles link to their own pages on a site with "eventPages" (SEO step 1, 26 Nov 2026).
+const EVENT_PAGES = CFG.eventPages === true;
 const SITE = String(CFG.url || 'https://thelenches.org.uk').replace(/\/+$/, '');
 const DOMAIN = String(CFG.domain || 'thelenches.org.uk');
 const NAME = String(CFG.newsletterName || 'The Lenches Newsletter');
@@ -288,12 +290,16 @@ function eventCard(ev) {
   const meta = ev.meta ? `<div style="font-family:${SANS};font-size:12px;color:${C.muted};margin-top:2px;">${esc(ev.meta)}</div>` : '';
   const body = ev.body ? `<div style="margin-top:4px;"${fieldAttr('body')}>${para(ev.body)}</div>` : '';
   const img = ev.image
-    ? `<tr><td colspan="2" style="padding:0 12px 12px;">${imageRow(ev.image, 528, anchorUrl('event', ev))}</td></tr>`
+    ? `<tr><td colspan="2" style="padding:0 12px 12px;">${imageRow(ev.image, 528, eventPageUrl(ev))}</td></tr>`
     : '';
   const titleStyle = `font-family:${SANS};font-weight:bold;font-size:15px;`;
+  // The title links to the event's own page where the site has them (SEO step 1, 26 Nov 2026),
+  // in the title's own colour so the card looks as before.
+  const page = EVENT_PAGES ? eventPageUrl(ev) : '';
+  const titleText = page ? `<a href="${esc(page)}" style="color:${C.ink};text-decoration:none;">${esc(ev.title)}</a>` : esc(ev.title);
   const title = ev.lenches
-    ? titleWithBadge(esc(ev.title), `${titleStyle}color:${C.ink};`)
-    : `<div style="${titleStyle}">${esc(ev.title)}</div>`;
+    ? titleWithBadge(titleText, `${titleStyle}color:${C.ink};`)
+    : `<div style="${titleStyle}">${titleText}</div>`;
   return `<tr><td class="px" style="padding:10px 24px 0;">`
     + `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${C.card};"${entryAttrs(ev, 'Event')}>`
     + `<tr><td width="62" valign="top" style="padding:12px 0 12px 12px;">${tile}</td>`
@@ -303,7 +309,7 @@ function eventCard(ev) {
 
 function storyBlock(it, titleSize, kind) {
   const meta = it.meta ? `<div style="font-family:${SANS};font-size:12px;color:${C.muted};">${esc(it.meta)}</div>` : '';
-  const img = it.image ? `<div style="margin-top:8px;">${imageRow(it.image, 552, anchorUrl(kind, it))}</div>` : '';
+  const img = it.image ? `<div style="margin-top:8px;">${imageRow(it.image, 552, kind === 'event' ? eventPageUrl(it) : anchorUrl(kind, it))}</div>` : '';
   return `<tr><td class="px" style="padding:12px 24px 0;font-family:${SERIF};font-size:14px;line-height:1.55;color:${C.ink};"${entryAttrs(it, kind === 'news' ? 'News' : 'Notice')}>`
     + `<div style="font-weight:bold;font-size:${titleSize}px;">${esc(it.title)}</div>${meta}`
     + (it.body ? `<div style="margin-top:4px;"${fieldAttr('body')}>${para(it.body)}</div>` : '')

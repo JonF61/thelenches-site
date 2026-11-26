@@ -9,7 +9,7 @@ const assert = require('assert');
 const { SITE } = require('../lib/site');
 const { select, shortenBody, LONG_BODY } = require('./newsletter/select');
 const { render } = require('./newsletter/render');
-const { anchorUrl } = require('../lib/anchors');
+const { anchorUrl, eventPageUrl } = require('../lib/anchors');
 
 const sentence = 'The hall is now fully open and groups can return when they are able. ';
 const long = sentence.repeat(14).trim();
@@ -31,7 +31,7 @@ const n = m.notices.find((x) => x.title === notice.title);
 const e = m.events.find((x) => x.title === ev.title);
 const s = m.events.find((x) => x.title === short.title);
 assert.strictEqual(n.more, anchorUrl('notice', notice));
-assert.strictEqual(e.more, anchorUrl('event', ev));
+assert.strictEqual(e.more, eventPageUrl(ev)); // the event's own page where the site has them (SEO step 1)
 assert.ok(!('more' in s) && s.body === 'From 7pm.', 'short item unchanged');
 assert.ok(n.body.length < long.length);
 

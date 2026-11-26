@@ -311,7 +311,7 @@ module.exports = async function (eleventyConfig) {
       return e.title && !seen.has(id) && seen.add(id);
     }).map((e) => {
       const img = imageOf(e, photos);
-      return schema.eventSchema(e, { siteUrl: site.url, id: slugify("ev-" + e.date + "-" + e.title), image: (img && img.url) || site.ogImage, area: site.name });
+      return schema.eventSchema(e, { siteUrl: site.url, url: eventUrl(e, site.url), image: (img && img.url) || site.ogImage, area: site.name });
     });
     return schema.ldJson({ "@context": "https://schema.org", "@graph": list });
   });
@@ -324,8 +324,37 @@ module.exports = async function (eleventyConfig) {
   // Prefilled Google Calendar page for an event (Events page, beside the .ics download; 5 Nov 2026).
   eleventyConfig.addFilter("googleCal", (e, siteUrl) => {
     const { googleCalendarUrl } = require("./lib/ics.js");
-    const id = require("./lib/anchors.js").slug("ev-" + e.date + "-" + e.title);
-    return googleCalendarUrl(e, { url: `${siteUrl}/events/#${id}` });
+    return googleCalendarUrl(e, { url: eventUrl(e, siteUrl) });
+  });
+
+  // A page per event (SEO step 1, 26 Nov 2026; lib/eventpage.js), on a site whose site.json has
+  // "eventPages": true. eventUrl: the page, else the Events-page anchor as before.
+  const EP = require("./lib/eventpage.js");
+  const EVENT_PAGES = require("./lib/site.js").siteConfig().eventPages === true;
+  function eventUrl(e, siteUrl) {
+    if (EVENT_PAGES) return `${siteUrl}${EP.eventPath(e)}`;
+    return `${siteUrl}/events/#${require("./lib/anchors.js").slug("ev-" + e.date + "-" + e.title)}`;
+  }
+  eleventyConfig.addFilter("eventPath", (e) => (EVENT_PAGES ? EP.eventPath(e) : ""));
+  eleventyConfig.addFilter("eventPlace", (e) => EP.placeLine(e));
+  eleventyConfig.addFilter("eventTime", (e) => EP.timeText(e));
+  eleventyConfig.addFilter("eventPast", (e) => EP.isPast(e, today()));
+  // '' or 'past', for front matter (a computed "false" would be a truthy string).
+  eleventyConfig.addFilter("eventPastFlag", (e) => (EP.isPast(e, today()) ? "past" : ""));
+  // Search-result description: date, time and place, then the start of the body (about 155 characters).
+  eleventyConfig.addFilter("eventDescription", (e) => {
+    const when = [fmt(e.date, { weekday: "long", day: "numeric", month: "long", year: "numeric" }).replace(",", ""), EP.timeText(e)].filter(Boolean).join(", ");
+    const lead = `${when}. ${EP.placeLine(e) ? EP.placeLine(e) + ". " : ""}`;
+    let body = String(e.body || "").replace(/\s+/g, " ").trim();
+    const room = Math.max(40, 158 - lead.length);
+    if (body.length > room) body = body.slice(0, body.lastIndexOf(" ", room - 1)).replace(/[.,;:]$/, "") + "…";
+    return (lead + body).replace(/"/g, "'");
+  });
+  eleventyConfig.addFilter("moreEvents", (e, events, n = 3) => EP.moreEvents(e, events, today(), n));
+  eleventyConfig.addFilter("eventLd", (e, photos, site) => {
+    const img = eleventyConfig.getFilter("eventImage")(e, photos);
+    return schema.ldJson({ "@context": "https://schema.org", ...schema.eventSchema(e, {
+      siteUrl: site.url, url: eventUrl(e, site.url), image: (img && img.url) || site.ogImage, area: site.name }) });
   });
 
   // Drop pipeline notices past their expiry date (between publish runs)

@@ -1,0 +1,19 @@
+---
+layout: base.njk
+pagination:
+  data: eventPages
+  size: 1
+  alias: ev
+  addAllPagesToCollections: true
+permalink: "{{ ev | eventPath }}"
+search: false
+eleventyComputed:
+  title: "{{ ev.title }}"
+  seoTitle: "{{ ev.title }}, {{ ev.date | shortDate }} — events near Evesham"
+  description: "{{ ev | eventDescription }}"
+  noindex: "{{ ev | eventPastFlag }}"
+  pastEvent: "{{ ev | eventPastFlag }}"
+---
+{#- A page per event (SEO step 1, 26 Nov 2026): the shared src/_includes/pages/event.njk. -#}
+{%- set pageSentence -%}It's one of the things on across the villages on our <a href="{{ '/events/' | url }}">Events page</a>, and every Thursday's free <a href="{{ '/newsletter/' | url }}">Lenches Newsletter</a> lists what's coming up.{%- endset -%}
+{%- include "pages/event.njk" %}

@@ -1,0 +1,20 @@
+{
+  "_help": "Venue addresses for the Events pages' schema.org Event data and each event's own page (SEO step 3, 26 Nov 2026). An event's venue is the part of its title after \" — \"; it matches an entry's name or one of its aliases (case, apostrophes, \"the\" and punctuation ignored). Every address was looked up online on 26 Nov 2026 (charity register, food hygiene ratings, parish council, diocese). An unknown venue simply gets no street address. Add an entry when a new venue turns up; never guess a postcode.",
+  "venues": [
+    { "name": "The Lenches Club", "aliases": ["Lenches Club", "Lenches Sports and Recreation Club", "Lenches Sports and Rec Club"], "street": "Ab Lench Road", "locality": "Church Lench", "postcode": "WR11 4UQ" },
+    { "name": "Church Lench Village Hall", "street": "Main Street", "locality": "Church Lench", "postcode": "WR11 4UE" },
+    { "name": "Church Lench First School", "aliases": ["Church Lench CofE First School"], "street": "Main Street", "locality": "Church Lench", "postcode": "WR11 4UE" },
+    { "name": "All Saints Church, Church Lench", "aliases": ["All Saints, Church Lench", "All Saints Church"], "street": "Main Street", "locality": "Church Lench", "postcode": "WR11 4UE" },
+    { "name": "Rous Lench Village Hall", "street": "The Green", "locality": "Rous Lench", "postcode": "WR11 4UN" },
+    { "name": "St Peter's Church, Rous Lench", "aliases": ["St Peter's, Rous Lench"], "street": "Radford Road", "locality": "Rous Lench", "postcode": "WR11 4UN" },
+    { "name": "Harvington Village Hall", "street": "Village Street", "locality": "Harvington", "postcode": "WR11 8NQ" },
+    { "name": "Harvington First School", "aliases": ["Harvington CofE First School"], "street": "Village Street", "locality": "Harvington", "postcode": "WR11 8NQ" },
+    { "name": "St James's Church, Harvington", "aliases": ["St James' Church, Harvington", "St James Church, Harvington", "St James's Church Harvington", "St James' Harvington"], "street": "Village Street", "locality": "Harvington", "postcode": "WR11 8NQ" },
+    { "name": "Coach and Horses, Harvington", "aliases": ["Coach and Horses", "Coach & Horses, Harvington"], "street": "Station Road", "locality": "Harvington", "postcode": "WR11 8NJ" },
+    { "name": "Norton Village Hall", "aliases": ["Norton and Lenchwick Parish Hall"], "street": "Byrd Row", "locality": "Norton", "postcode": "WR11 4TF" },
+    { "name": "St Egwin's Church, Norton", "aliases": ["St Egwin's, Norton", "St Egwin's Norton"], "street": "Evesham Road", "locality": "Norton", "postcode": "WR11 4TL" },
+    { "name": "Abbots Morton Village Hall", "street": "Off Village Street", "locality": "Abbots Morton", "postcodeNote": "No postcode: sources disagree (WR7 4NA, WR7 4LT); street from Jon, 26 Nov 2026" },
+    { "name": "Bishampton Villages Hall", "aliases": ["Bishampton Village Hall"], "street": "Broad Lane", "locality": "Bishampton", "postcode": "WR10 2LY" },
+    { "name": "The Vale Golf & Country Club", "aliases": ["The Vale Golf and Country Club", "The Vale"], "street": "Hill Furze Road", "locality": "Bishampton", "postcode": "WR10 2LZ" }
+  ]
+}
