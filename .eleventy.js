@@ -335,6 +335,13 @@ module.exports = async function (eleventyConfig) {
     if (EVENT_PAGES) return `${siteUrl}${EP.eventPath(e)}`;
     return `${siteUrl}/events/#${require("./lib/anchors.js").slug("ev-" + e.date + "-" + e.title)}`;
   }
+  // This weekend page (SEO step 4, 26 Nov 2026; lib/weekend.js). The list argument is ignored by
+  // weekendRange (it takes only today) so templates can chain it from the event list.
+  const WK = require("./lib/weekend.js");
+  eleventyConfig.addFilter("weekendGroups", (events) => WK.weekendGroups(events, today()));
+  eleventyConfig.addFilter("weekendList", (events) => WK.weekendEvents(events, today()));
+  eleventyConfig.addFilter("weekendRange", () => WK.weekendFor(today()));
+  eleventyConfig.addFilter("dayMonth", (iso) => fmt(iso, { day: "numeric", month: "long" }));
   eleventyConfig.addFilter("eventPath", (e) => (EVENT_PAGES ? EP.eventPath(e) : ""));
   eleventyConfig.addFilter("eventPlace", (e) => EP.placeLine(e));
   eleventyConfig.addFilter("eventTime", (e) => EP.timeText(e));

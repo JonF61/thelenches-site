@@ -1,0 +1,42 @@
+{#- This weekend (SEO step 4, 26 Nov 2026; lib/weekend.js): one-off events from Friday evening to
+    Sunday, Monday to Thursday the coming weekend. Each site's sites/<site>/this-weekend.njk sets its
+    wording (pageIntro, emptyNote, submitNote), then includes this. -#}
+{%- include "event-card-css.njk" %}
+<style>
+  .wk-actions{margin:.2rem 0 1.2rem}
+  .wk-actions .btn{padding:.45rem 1rem}
+</style>
+{%- set all = whatson.events | merge(pipeline.events) | upcoming -%}
+{%- set groups = all | weekendGroups -%}
+{%- set wk = all | weekendRange -%}
+<main class="container">
+  <div class="page-head">
+    <h1>This weekend</h1>
+    <p class="page-intro">{{ pageIntro | safe }}</p>
+  </div>
+  <p class="wk-actions"><a class="btn btn-outline" href="{{ '/events/' | url }}">All events &rarr;</a></p>
+
+  {% if groups.length %}
+  <script type="application/ld+json">{{ (all | weekendList) | eventsLd(photos, site) | safe }}</script>
+  {% for g in groups %}
+  <section class="month">
+    <h2 class="list-label">{{ g.label }}</h2>
+    {% for e in g.items %}
+    {% include "event-card.njk" %}
+    {% endfor %}
+  </section>
+  {% endfor %}
+  {% else %}
+  <p class="lead">{{ emptyNote | safe }}</p>
+  {% if all.length %}
+  <section class="month">
+    <h2 class="list-label">Coming up next</h2>
+    {% for e in all %}{% if loop.index <= 5 %}
+    {% include "event-card.njk" %}
+    {% endif %}{% endfor %}
+  </section>
+  {% endif %}
+  {% endif %}
+
+  <div class="notice submit-note">{{ submitNote | safe }}</div>
+</main>
