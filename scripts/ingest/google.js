@@ -439,7 +439,7 @@ async function readTable(tab) {
 
 // Another site's tab (Harvington stage 4b), read-only: rows keyed by header, each with _site
 // and _row. Never cached as this site's headers, and there is no matching write: cross-site
-// reads only ever look. Used by publish (items for both sites) and ingest (repeat check).
+// reads only ever look (bar updateOtherRow, below, for Rimmer's twin findings). Used by publish (items for both sites) and ingest (repeat check).
 async function readOtherTable(site, tab) {
   const { siteConfigFor } = require('../../lib/site');
   const id = String(siteConfigFor(site).sheetId || '').trim();
@@ -452,6 +452,29 @@ async function readOtherTable(site, tab) {
     headers.forEach((h, c) => { if (h) obj[h] = r[c] ?? ''; });
     return obj;
   });
+}
+
+// The one cross-site write (26 Nov 2026, Jon): Rimmer's fix on one site closes the same finding on
+// the other site's Rimmer tab. Only the named fields of one row, and only while every `expect`
+// field still holds that value (stale check); returns false (nothing written) otherwise.
+async function updateOtherRow(site, tab, rowNumber, fields, expect = {}) {
+  const { siteConfigFor } = require('../../lib/site');
+  const id = String(siteConfigFor(site).sheetId || '').trim();
+  if (!id || !Number.isInteger(rowNumber) || rowNumber < 2) return false;
+  const res = await sheets().spreadsheets.values.batchGet({ spreadsheetId: id, ranges: [`'${tab}'!A1:ZZ1`, `'${tab}'!A${rowNumber}:ZZ${rowNumber}`] });
+  const [head, cur] = (res.data.valueRanges || []).map((v) => (v.values || [])[0] || []);
+  const headers = (head || []).map((h) => String(h).trim());
+  for (const [k, v] of Object.entries(expect)) {
+    const c = headers.indexOf(k);
+    if (c < 0 || String((cur || [])[c] ?? '') !== String(v ?? '')) return false;
+  }
+  const data = Object.entries(fields).filter(([k]) => headers.includes(k)).map(([k, v]) => ({
+    range: `'${tab}'!${colLetter(headers.indexOf(k))}${rowNumber}`,
+    values: [[v === undefined || v === null ? '' : v]],
+  }));
+  if (!data.length) return false;
+  await sheets().spreadsheets.values.batchUpdate({ spreadsheetId: id, requestBody: { valueInputOption: 'RAW', data } });
+  return true;
 }
 
 // Settings tab: sources in A:C, key/value settings in E:F.
@@ -568,6 +591,7 @@ module.exports = {
   setSheetsClient: (c) => { sheetsClient = c; Object.keys(headerCache).forEach((k) => delete headerCache[k]); }, // offline tests
   listMessageIds,
   readOtherTable,
+  updateOtherRow,
   searchMessageIds,
   searchAllMessageIds,
   sendAsAddresses,

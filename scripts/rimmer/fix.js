@@ -437,6 +437,54 @@ function writeRepoChange(src, field, oldValue, newValue, root = ROOT) {
   return writeItemField(src, field, newValue, root);
 }
 
+/* ------------------------------------------------------- twins -- */
+// Both sites' newsletters are checked (26 Nov 2026, Jon): a fix to a shared entry applied from one
+// site's finding also closes the same finding on the other site, which otherwise stayed open on
+// that site's panel. A twin is an open finding (no fix being asked for, proposed or applied) on the
+// same scope and issue, whose quoted words were in the old text and are gone from the new, and whose
+// place or problem names the entry: every word of what it is (the title before " — "), and the
+// whole title too when the quoted words are also in another entry (two road closures with the same
+// dates, say). `rivals` are the other entries' texts.
+const TWIN_BUSY = ['asked', 'proposed', 'applying'];
+function twinsOf(row, entryTitle, others, rivals = []) {
+  const oldT = flat(row.fix_old);
+  const newT = flat(row.fix_new);
+  const full = String(entryTitle || '').replace(/\(pending row \d+\)/i, '');
+  const what = [...words(full.split(/\s+[—–-]\s+/)[0])];
+  const all = [...words(full)];
+  if (!what.length) return [];
+  const rivalT = rivals.map(flat);
+  return others.filter((o) => {
+    if (str(o.status) !== 'open' || TWIN_BUSY.includes(str(o.fix_status))) return false;
+    if (str(o.scope) !== str(row.scope) || str(o.target) !== str(row.target)) return false;
+    const q = flat(o.quote).trim();
+    if (q.length < 8 || !oldT.includes(q) || newT.includes(q)) return false;
+    const about = words(`${str(o.where)} ${str(o.problem)}`);
+    const need = rivalT.some((t) => t.includes(q)) ? all : what;
+    return need.every((w) => about.has(w));
+  });
+}
+
+async function closeTwins(row, entryTitle, { g, rivals = [] }) {
+  if (!g.readOtherTable || !g.updateOtherRow) return 0;
+  let n = 0;
+  for (const site of SITES.filter((x) => x !== SITE)) {
+    try {
+      const twins = twinsOf(row, entryTitle, await g.readOtherTable(site, TAB), rivals);
+      for (const t of twins) {
+        const ok = await g.updateOtherRow(site, TAB, t._row,
+          { status: 'fixed', fixed_at: ukStamp(Date.now()), fix_reason: `Fixed from the same finding on the ${SITE} website.` },
+          { id: t.id, status: 'open', fix_status: str(t.fix_status) });
+        if (ok) n += 1;
+      }
+    } catch (e) {
+      console.log(`Rimmer fix: could not close the same finding on the ${site} website (${e && e.message ? e.message : 'error'}).`);
+    }
+  }
+  if (n) console.log(`Rimmer fix: closed ${n} matching finding(s) on the other website.`);
+  return n;
+}
+
 /* ------------------------------------------------------------- run -- */
 
 function output(k, v) {
@@ -471,9 +519,11 @@ async function apply(id, { g, root = ROOT }) {
     console.log(`Rimmer fix ${id}: not applied (${why}).`);
     return { ok: false, reason: why };
   };
+  let entryTitle = '';
   if (key.startsWith('p:')) {
     const target = (await g.readTable('Pending')).find((r) => str(r.id) === key.slice(2));
     if (!target) return fail('the submission is no longer in Pending');
+    entryTitle = str(target.title);
     const type = typeOf(field);
     if (type === 'text' && PENDING_FIELDS[field]) {
       const col = PENDING_FIELDS[field];
@@ -490,6 +540,7 @@ async function apply(id, { g, root = ROOT }) {
   } else {
     const src = sources({ root }).find((s) => s.key === key);
     if (!src || src.kind === 'pending') return fail('the entry no longer exists');
+    entryTitle = str(src.entry && (src.entry.title || src.entry.what || src.entry.name));
     const now = valueOf(src, field);
     if (now === null || now !== String(row.fix_old ?? '')) return fail('it has changed since Holly looked: tap Fix again');
     try { writeRepoChange(src, field, now, String(row.fix_new ?? ''), root); } catch (e) { return fail(e.message); }
@@ -498,6 +549,11 @@ async function apply(id, { g, root = ROOT }) {
     if (src.kind === 'eat' || src.kind === 'trades') output('worker', 'true');
   }
   await g.updateRow(TAB, row._row, { status: 'fixed', fix_status: 'applied', fixed_at: ukStamp(Date.now()) });
+  let rivals = [];
+  try {
+    rivals = sources({ root, pending: await g.readTable('Pending') }).filter((x) => x.key !== key).map(entryText);
+  } catch { rivals = []; }
+  await closeTwins(row, entryTitle, { g, rivals });
   console.log(`Rimmer fix ${id}: applied (${KIND_WORDS[key.split(':')[0]]}, ${typeOf(field)}).`);
   return { ok: true };
 }
@@ -563,5 +619,5 @@ if (require.main === module) {
 
 module.exports = {
   sources, candidates, fixRequest, checkProposal, fixFields, draftFix, newFacts, dateMentioned, linkKnown, editDistance, valueOf, typeOf,
-  writeRepoField, writeRepoChange, removeArrayEntry, propose, apply, applyMany, SYSTEM, TOOL, PENDING_FIELDS, PENDING_LINKS,
+  writeRepoField, writeRepoChange, removeArrayEntry, propose, apply, applyMany, twinsOf, closeTwins, SYSTEM, TOOL, PENDING_FIELDS, PENDING_LINKS,
 };
