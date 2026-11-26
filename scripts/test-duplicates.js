@@ -183,6 +183,10 @@ async function testLive() {
   const groups = live.due(pending, [ack, { ...ack, message_id: 'a2' }], published);
   ok(groups.length === 1 && groups[0].messageId === 'a1', 'only live-able, un-newslettered, acknowledged items from after the switch-on');
   ok(!live.due(pending, [], published).length, 'no sent acknowledgement: nothing');
+  const now = Date.parse('2026-11-26T17:00:00Z');
+  ok(live.ackedRecently({ sent_at: '2026-11-26 16:11' }, now), 'ack sent an hour ago: recent');
+  ok(!live.ackedRecently({ sent_at: '2026-11-25 16:59' }, now), 'ack sent over a day ago: not recent');
+  ok(!live.ackedRecently({}, now), 'no sent_at: not recent');
   const body = live.bodyFor(ack, groups[0].items);
   const url = 'https://thelenches.org.uk/events/#ev-2026-11-20-quiz-rous-lench';
   ok(body.startsWith('Hi Nadine,') && body.includes(`Good news: "Quiz — Rous Lench" is now on the website: ${url}`)
@@ -209,6 +213,12 @@ async function testLive() {
     ok(row && row.reply_id === 'a1-live-1' && row.status === 'awaiting' && row.thread_id === 't1', 'Replies row on the ack thread, awaiting Jon');
     ok(tables.Pending[0].live_notified_at, 'item marked');
     ok(await live.run({ fetchPage }) === 0, 'never twice');
+    // Jon, 26 Nov 2026: an acknowledgement sent within a day means no second email, item marked skipped.
+    tables.Pending = pending.map((r) => ({ ...r }));
+    tables.Replies = [{ ...ack, sent_at: live.londonDateTimeForTest(Date.now() - 3600000) }];
+    calls = 0;
+    ok(await live.run({ fetchPage }) === 0 && calls === 0, 'recent acknowledgement: no email, no page check');
+    ok(/^skipped: acknowledged /.test(tables.Pending[0].live_notified_at) && !tables.Replies.some((r) => r.type === 'live'), 'item marked skipped');
     tables.Pending = tables.Pending.map(({ live_notified_at, ...r }) => r); // eslint-disable-line camelcase
     ok(await live.run({ fetchPage }) === 0, 'no live_notified_at column: nothing sent');
   } finally {
