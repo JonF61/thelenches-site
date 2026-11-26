@@ -267,11 +267,6 @@
       "task": "SEO steps 1-3 follow-up (PR 533, 26 Nov): open a few live event pages and check Search Console's Events report over the next week (addresses, offers, no new warnings); find the postcodes for Abbots Morton Village Hall (sources disagree: WR7 4NA / WR7 4LT) and St Peter's Church, Abbots Morton, and add them to lib/venues.json once confirmed.",
       "kryten": true,
       "added": "2026-11-26"
-    },
-    {
-      "task": "SEO screen Search Console (PR for step 7 part 2, 26 Nov): after the Worker deploys, open the panel's SEO screen and check the Google search card shows figures (not 'not a user of this website's Search Console property'); if it errors, check the property type in Search Console.",
-      "kryten": true,
-      "added": "2026-11-26"
     }
   ]
 }
