@@ -32,6 +32,9 @@ cards:
   <section class="intro">
     <p class="intro-head">What's happening in Harvington, Norton and Lenchwick</p>
     <p class="intro-news">Get it all by email, free, every Thursday morning: <a href="{{ '/newsletter/' | url }}">join the newsletter</a>.</p>
+    {#- This weekend line (SEO step 4, 26 Nov 2026; lib/weekend.js), as on the Lenches home page. -#}
+    {%- set wkCount = (whatson.events | merge(pipeline.events) | upcoming | weekendList) | length %}
+    <p class="intro-news">{% if wkCount %}{{ wkCount }} {{ "event" if wkCount == 1 else "events" }} on this weekend: <a href="{{ '/events/this-weekend/' | url }}">see what's on</a>.{% else %}<a href="{{ '/events/this-weekend/' | url }}">What's on this weekend</a>{% endif %}</p>
     <p class="muted">We gather it from village groups, the parish council and neighbours, and check it as carefully as we can.</p>
   </section>
   {#- Welcome note (wording approved by Jon 17 Nov 2026), full width above the cards; stays until Jon asks for it to go. -#}

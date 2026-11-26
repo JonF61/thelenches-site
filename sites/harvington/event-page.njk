@@ -1,0 +1,19 @@
+---
+layout: base.njk
+pagination:
+  data: eventPages
+  size: 1
+  alias: ev
+  addAllPagesToCollections: true
+permalink: "{{ ev | eventPath }}"
+search: false
+eleventyComputed:
+  title: "{{ ev.title }}"
+  seoTitle: "{{ ev.title }}, {{ ev.date | shortDate }} — what's on in Harvington"
+  description: "{{ ev | eventDescription }}"
+  noindex: "{{ ev | eventPastFlag }}"
+  pastEvent: "{{ ev | eventPastFlag }}"
+---
+{#- A page per event (SEO steps 1-3 for Harvington, 26 Nov 2026): the shared src/_includes/pages/event.njk. -#}
+{%- set pageSentence -%}It's one of the things on in and around Harvington on our <a href="{{ '/events/' | url }}">Events page</a>, and every Thursday's free <a href="{{ '/newsletter/' | url }}">Harvington Newsletter</a> lists what's coming up.{%- endset -%}
+{%- include "pages/event.njk" %}
