@@ -95,7 +95,7 @@ function shortenBody(body) {
 }
 function shortened(item, kind) {
   const body = shortenBody(item.body);
-  const more = body && anchors.anchorUrl(kind, item);
+  const more = body && (kind === 'event' ? anchors.eventPageUrl(item) : anchors.anchorUrl(kind, item));
   return more ? { ...item, body, more } : item;
 }
 

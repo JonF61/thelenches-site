@@ -1,0 +1,59 @@
+{#- One event's own page (SEO step 1, 26 Nov 2026; lib/eventpage.js), shared by every site with
+    "eventPages": true. Each site's sites/<site>/event-page.njk paginates over eventPages and sets
+    its wording (pageSentence), then includes this. Past events keep their page for 30 days with
+    a "This event has finished" box, a faded card and no calendar links. -#}
+{%- include "event-card-css.njk" %}
+<style>
+  .ev-when{margin:.35rem 0 0;font-size:1.05rem;color:var(--muted,#555)}
+  .ev-back{margin:0 0 .6rem;font-size:.95rem}
+  .ev-back a{text-decoration:none}
+  .ev-done{background:#fdeee0;border-left:4px solid #c8641c;color:#7a3a0c;padding:.7rem 1rem;border-radius:4px;margin:0 0 1rem;font-weight:600}
+  .ev-past .ev-main{opacity:.6}
+  .ev-more h2{margin-top:1.6rem}
+  .ev-more .item-card h3{margin:0;font-size:1.02rem}
+  .ev-more .item-card p{margin:.2rem 0 0}
+</style>
+{% set past = ev | eventPast %}
+{% set d = ev.date | dateParts %}
+{% set img = ev | eventImage(photos) %}
+{% set when = ev | eventTime %}
+{% set place = ev | eventPlace %}
+<script type="application/ld+json">{{ ev | eventLd(photos, site) | safe }}</script>
+<main class="container{% if past %} ev-past{% endif %}">
+  <p class="ev-back"><a href="{{ '/events/' | url }}">&larr; All events</a></p>
+  <div class="page-head">
+    <h1>{{ ev.title | escape }}</h1>
+    <p class="ev-when">{{ ev.date | longDate | replace(",", "") }}{% if ev.endDate and ev.endDate != ev.date %} to {{ ev.endDate | longDate | replace(",", "") }}{% endif %}{% if when %} &middot; {{ when }}{% endif %}{% if place %} &middot; {{ place | escape }}{% endif %}</p>
+  </div>
+
+  {% if past %}<div class="ev-done">This event has finished.</div>{% endif %}
+
+  <div class="item-card ev-main"{% set ek = ev | entryKey %}{% if ek %} data-entry="{{ ek }}" data-label="Event: {{ ev.title | escape }}"{% endif %}>
+    <div class="date" data-pagefind-ignore><span class="dow">{{ d.dow }}</span><span class="day">{{ d.day }}</span><span class="mon">{{ d.mon }}</span></div>
+    <div class="item-body">
+      {% if img %}<figure class="ev-img"><a href="{{ img.url | url }}" data-viewer aria-label="View full image"><img src="{{ img.url | url }}" alt="{{ img.alt | escape }}"></a>{% if img.credit %}<figcaption class="img-credit small mut">{% if img.creditUrl %}<a href="{{ img.creditUrl | escape }}" target="_blank" rel="noopener">{{ img.credit | escape }}</a>{% else %}{{ img.credit | escape }}{% endif %}</figcaption>{% endif %}</figure>{% else %}{{ ev | tileSvg | safe }}{% endif %}
+      {% for p in ev.body | paras %}<p data-field="body">{{ p | escape }}{% if loop.last and ev.link %} <a href="{{ ev.link.url | escape }}" target="_blank" rel="noopener" data-field="link">{{ ev.link.text | escape }} &rarr;</a>{% endif %}{% if loop.last and ev.link2 %} <a href="{{ ev.link2.url | escape }}" target="_blank" rel="noopener" data-field="link2">{{ ev.link2.text | escape }} &rarr;</a>{% endif %}</p>{% endfor %}
+      {% if not past %}<p class="cal-add" data-pagefind-ignore><svg class="cal-ico" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false"><rect x="3.5" y="5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4M12 12.5v5M9.5 15h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Add to:</span><a href="{{ ev | googleCal(site.url) | escape }}" target="_blank" rel="noopener">Google Calendar</a><span class="cal-sep" aria-hidden="true">&middot;</span><a href="{{ ('/calendar/' + (('ev-' + ev.date + '-' + ev.title) | slugify) + '.ics') | url }}" download>Other calendar</a></p>{% endif %}
+    </div>
+  </div>
+
+  <p>{{ pageSentence | safe }}</p>
+
+  {% set more = ev | moreEvents(eventPages, 3) %}
+  {% if more.length %}
+  <section class="ev-more">
+    <h2 class="list-label">More events coming up nearby</h2>
+    {% for m in more %}{% set md = m.date | dateParts %}{% set mt = m | eventTime %}{% set mp = m | eventPlace %}
+    <div class="item-card">
+      <div class="date"><span class="dow">{{ md.dow }}</span><span class="day">{{ md.day }}</span><span class="mon">{{ md.mon }}</span></div>
+      <div class="item-body">
+        <h3><a href="{{ m | eventPath | url }}">{{ m.title | escape }}</a></h3>
+        <p class="small mut">{% if mt %}{{ mt }}{% endif %}{% if mt and mp %} &middot; {% endif %}{{ mp | escape }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <p class="ev-back"><a href="{{ '/events/' | url }}">&larr; All events</a></p>
+</main>

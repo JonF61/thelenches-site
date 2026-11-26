@@ -5,9 +5,10 @@ eleventyExcludeFromCollections: true
 <?xml version="1.0" encoding="utf-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 {#- No <lastmod>: every build gave every page the build date, which teaches Google to ignore it. -#}
-{%- for item in collections.all %}
+{#- Past events' own pages (kept 30 days, noindex) are left out (SEO step 1, 26 Nov 2026). -#}
+{%- for item in collections.all %}{% if not item.data.pastEvent %}
   <url>
     <loc>{{ site.url }}{{ item.url }}</loc>
   </url>
-{%- endfor %}
+{%- endif %}{% endfor %}
 </urlset>
