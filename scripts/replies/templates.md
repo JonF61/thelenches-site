@@ -164,6 +164,26 @@ This is what it shows at the moment:
 
 Could you check it's right? If you'd like anything changed or added, such as what you do, the areas you cover or your website, just reply to this email. If you'd rather not be listed, let me know and we'll take it off.
 
+## link_request
+I help look after thelenches.org.uk, the free community website and weekly newsletter for Church, Rous, Ab, Atch and Sheriffs Lench near Evesham. It lists what's on across the villages, local news, road closures, bin days and local clubs and groups.
+
+{listed_line}
+
+Would you be happy to add a link to us from your website, perhaps on a links or community page? If it helps, something like:
+
+The Lenches Website (https://thelenches.org.uk/): events, news and local information for the Lenches villages near Evesham.
+
+It helps local people find what's going on, and it helps the site show up in Google.
+
+And if you ever have news or events to share, just reply to this email and we'll put them on the website and in the newsletter.
+
+## link_request_listed
+{organisation} is listed on our {page} page:
+{page_url}
+
+## link_chase
+Just following up my email about a link to thelenches.org.uk from your website. If it's not something you can do, that's absolutely fine, and there's no need to reply.
+
 ## signature
 Best wishes,
 Holly

@@ -14,7 +14,7 @@ const fs = require('fs');
 const path = require('path');
 
 const TAB = 'Link partners';
-const HEADERS = ['id', 'name', 'type', 'url', 'status', 'link_found_at', 'last_checked', 'check', 'notes', 'email', 'asked_at'];
+const HEADERS = ['id', 'name', 'type', 'url', 'status', 'link_found_at', 'last_checked', 'check', 'notes', 'email', 'asked_at', 'listed_page', 'listed_url'];
 const STATUSES = ['To ask', 'Asked', 'Linking', 'Link gone', 'Declined', 'Not now'];
 const MAX_PAGES = 6;
 const TIMEOUT_MS = 20000;
@@ -94,22 +94,29 @@ const CHECK_WORDS = {
   facebook: 'Facebook: check by hand',
 };
 
-// Jon's status after a check (only two automatic moves).
-function nextStatus(status, result) {
+// Jon's status after a check (only three automatic moves; requestSent: the day Holly's link
+// request went, from Replies).
+function nextStatus(status, result, requestSent = '') {
   const s = str(status) || 'To ask';
+  if (result !== 'linking' && requestSent && s === 'To ask') return 'Asked';
   if (result === 'linking' && ['To ask', 'Asked', 'Link gone'].includes(s)) return 'Linking';
   if (result === 'none' && s === 'Linking') return 'Link gone';
   return str(status) || 'To ask';
 }
 
 // The cells to write for one row (only those that change), or null.
-function rowUpdate(row, check, today) {
+function rowUpdate(row, check, today, { requestSent = '', seed = null } = {}) {
+  const status = nextStatus(row.status, check.result, requestSent);
   const want = {
-    status: nextStatus(row.status, check.result),
+    status,
     link_found_at: check.result === 'linking' ? check.at : (check.result === 'none' ? '' : str(row.link_found_at)),
     last_checked: today,
     check: CHECK_WORDS[check.result] || check.result,
   };
+  if (status === 'Asked' && str(row.status) !== 'Asked' && !str(row.asked_at)) want.asked_at = requestSent;
+  // Where we list them (for the request's "listed on our … page" line): from the starting list,
+  // only into blank cells.
+  for (const k of ['listed_page', 'listed_url']) if (seed && seed[k] && !str(row[k])) want[k] = seed[k];
   const out = {};
   for (const [k, v] of Object.entries(want)) if (str(row[k]) !== v) out[k] = v;
   return Object.keys(out).length ? out : null;
@@ -117,7 +124,7 @@ function rowUpdate(row, check, today) {
 
 function seedRows(site) {
   const file = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'lib', 'linkpartners.json'), 'utf8'));
-  return (file[site] || []).map((p) => ({ id: p.id, name: p.name, type: p.type || '', url: p.url || '', status: 'To ask', notes: p.notes || '' }));
+  return (file[site] || []).map((p) => ({ id: p.id, name: p.name, type: p.type || '', url: p.url || '', status: 'To ask', notes: p.notes || '', listed_page: p.listed_page || '', listed_url: p.listed_url || '' }));
 }
 
 async function main() {
@@ -134,6 +141,9 @@ async function main() {
   }
   for (const h of HEADERS) await g.ensureColumn(TAB, h);
   const rows = await g.readTable(TAB);
+  const replyRows = await g.readTable('Replies');
+  const R = await import(require('url').pathToFileURL(path.join(__dirname, '..', '..', 'worker', 'src', 'admin', 'links.mjs')).href);
+  const seeds = Object.fromEntries(seedRows(SITE).map((p) => [p.id, p]));
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
   const counts = {};
   let changed = 0;
@@ -141,7 +151,7 @@ async function main() {
     if (!str(row.id) && !str(row.name)) continue;
     const check = await checkSite(row.url, domains);
     counts[check.result] = (counts[check.result] || 0) + 1;
-    const upd = rowUpdate(row, check, today);
+    const upd = rowUpdate(row, check, today, { requestSent: R.requestsFor(str(row.id), replyRows).requestSent, seed: seeds[str(row.id)] });
     if (upd) { await g.updateRow(TAB, row._row, upd); changed += 1; }
     if (upd && upd.status && upd.status !== str(row.status)) console.log(`${str(row.id) || `row ${row._row}`}: ${str(row.status) || 'To ask'} -> ${upd.status}`);
   }

@@ -62,6 +62,9 @@ export const ACTIONS = {
   // brief (admin/outreach.mjs planContactEmail). The id is a hash of their address; the
   // brief rides in reason. The draft then waits for Jon's send / edit / skip.
   contactmail: ['Draft email', 'Draft requested', 'approve'],
+  // Inbound links (admin panel only, 26 Nov): Holly's fixed-wording link request or chaser to one
+  // Link partners row (admin/links.mjs). The id is the partner's id in that tab.
+  linkask: ['Draft link request', 'Draft requested', 'approve'],
   // Holly's weekly lessons (scripts/lessons): Approve / Reject links in the lessons email.
   lesson_ok: ['Approve lesson', 'Lesson approved', 'approve'],
   lesson_no: ['Reject lesson', 'Lesson rejected', 'reject'],
@@ -79,7 +82,7 @@ export const ACTIONS = {
 };
 
 // Never valid in a signed email link (index.js /a).
-export const PANEL_ONLY = ['nlquiet', 'nltest', 'contactmail', 'done', 'merge', 'replace', 'sug_ok', 'sug_no', 'rfix', 'rfix_ok', 'rfix_all', 'entryedit'];
+export const PANEL_ONLY = ['nlquiet', 'nltest', 'contactmail', 'linkask', 'done', 'merge', 'replace', 'sug_ok', 'sug_no', 'rfix', 'rfix_ok', 'rfix_all', 'entryedit'];
 
 export const FEEDBACK_ACTIONS = ['fb_approve', 'fb_reject', 'fb_postpone', 'fb_done', 'fb_send', 'fb_edit', 'fb_skip'];
 
@@ -189,7 +192,7 @@ export function dispatchFor(p, reason = '', body = '') {
 }
 
 // One decision (approve, reject, trust, send, skip, edit, redraft, close, nlsend, nlbuild, nlquiet, nltest,
-// the reader feedback fb_* actions, nudge, orgcheck, contactmail, lesson_ok / lesson_no, sug_ok / sug_no, rfix / rfix_ok / rfix_all and entryedit) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
+// the reader feedback fb_* actions, nudge, orgcheck, contactmail, linkask, lesson_ok / lesson_no, sug_ok / sug_no, rfix / rfix_ok / rfix_all and entryedit) to GitHub. True when GitHub accepted it. Single use and every safeguard are downstream.
 export async function decide(env, p, reason = '', body = '') {
   const [eventType, payload] = dispatchFor(p, reason, body);
   return dispatch(env, eventType, payload, 2);

@@ -123,6 +123,8 @@
 //   GET  /admin/api/links           SEO → Inbound links (links.js): the shown site's Link partners tab
 //   POST /admin/api/link-edit       { id, field: status|notes|email, value, expected }: one stale-checked
 //                                   cell (status Asked also writes asked_at)
+//   POST /admin/api/link-ask        { id }: Draft request / Draft chaser (links.mjs planLinkAsk) through
+//                                   decide() (action linkask, id = the partner id); fixed wording
 //   POST /admin/api/link-check-now  fires link-check.yml (repository_dispatch "link-check"); reads
 //                                   partners' websites and fills the check columns, sends nothing
 //   POST /admin/api/ingest-now      Submissions' Check email now (3 Nov): fires the usual ingest run
@@ -162,7 +164,7 @@
 // (Check email now, Refresh draft, Check now for Rimmer).
 
 import { seoReportFile, searchConsole } from './seo.js';
-import { LINK_TAB, planLinkEdit, linkPartners } from './links.js';
+import { LINK_TAB, planLinkEdit, linkPartners, planLinkAsk } from './links.mjs';
 import { ACTIONS, decide, github, dispatch } from '../core.js';
 import { DEFAULT_SITE, knownSite, siteEnv, siteList, siteConfig, siteIds } from '../sites.js';
 import { verifyAccess } from './access.js';
@@ -927,6 +929,21 @@ async function doAutonomyIgnore(env, body) {
 
 // Rimmer: Dismiss, Send to Kryten, or Fix… / Apply / Discard on one finding (rimmer.js plans
 // each as one stale-checked write; Fix… and Apply then go through decide()).
+// SEO → Inbound links: Draft request / Draft chaser. Holly's fixed wording (scripts/outreach/
+// linkask.js) waits in Replies for Jon's Approve.
+async function doLinkAsk(env, body) {
+  const id = String(body.id ?? '');
+  const [{ rows }, replies] = await Promise.all([readOptional(env, LINK_TAB), readTable(env, 'Replies')]);
+  const matches = rows.filter((r) => id && String(r.id ?? '') === id);
+  if (matches.length > 1) return json({ ok: false, error: 'More than one partner with this id' }, 409);
+  const plan = planLinkAsk(matches[0], replies.rows, ukToday());
+  if (plan.error) return json({ ok: false, ...plan }, plan.status);
+  if (!(await decide(env, { a: 'linkask', i: id }))) {
+    return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
+  }
+  return json({ ok: true, kind: plan.kind, message: `${plan.kind === 'chase' ? 'Chaser' : 'Request'} requested. It appears under Replies in a minute or two.` });
+}
+
 // SEO → Inbound links: one stale-checked cell of a Link partners row (links.js planLinkEdit).
 async function doLinkEdit(env, body) {
   const id = String(body.id ?? '');
@@ -1173,7 +1190,10 @@ export async function handleAdmin(request, rawEnv) {
       if (path === '/admin/api/history') return json(await submissionsHistory(env));
       if (path === '/admin/api/summary') return json(await summary(env, lenv));
       if (path === '/admin/api/site-visitors') return json(await visitorHistory(env));
-      if (path === '/admin/api/links') return json(linkPartners(await readOptional(env, LINK_TAB)));
+      if (path === '/admin/api/links') {
+        const [tab, replies] = await Promise.all([readOptional(env, LINK_TAB), readTable(env, 'Replies')]);
+        return json(linkPartners(tab, replies.rows, ukToday()));
+      }
       if (path === '/admin/api/seo') {
         const [report, consoleData] = await Promise.all([seoReportFile(env), searchConsole(env)]);
         return json({ ...report, console: consoleData });
@@ -1234,6 +1254,7 @@ export async function handleAdmin(request, rawEnv) {
       if (path === '/admin/api/auto-hold') return await doAutoHold(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(lenv, body);
       if (path === '/admin/api/link-edit') return await doLinkEdit(env, body);
+      if (path === '/admin/api/link-ask') return await doLinkAsk(env, body);
       if (path === '/admin/api/link-check-now') {
         if (!(await dispatch(env, 'link-check', { by: 'panel' }, 2))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);
         return json({ ok: true, message: 'Checking partners\u2019 websites: reload this page in about two minutes.' });

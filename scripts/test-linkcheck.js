@@ -42,3 +42,13 @@ assert.deepStrictEqual(L.rowUpdate({ status: 'Asked' }, { result: 'linking', at:
   assert.deepStrictEqual(new Set(seed.map((r) => r.id)).size, seed.length, 'ids unique');
   console.log('test-linkcheck: all passed');
 })().catch((e) => { console.error(e); process.exit(1); });
+
+// Asked when Holly's request was sent; where we list them, into blank cells only.
+assert.strictEqual(L.nextStatus('To ask', 'none', '2026-11-27'), 'Asked');
+assert.strictEqual(L.nextStatus('To ask', 'linking', '2026-11-27'), 'Linking');
+assert.strictEqual(L.nextStatus('Not now', 'none', '2026-11-27'), 'Not now');
+const seed = { listed_page: 'Churches', listed_url: 'https://thelenches.org.uk/churches/' };
+assert.deepStrictEqual(L.rowUpdate({ status: 'To ask', last_checked: '2026-11-30', check: 'No link found' }, { result: 'none', at: '' }, '2026-11-30', { requestSent: '2026-11-27', seed }),
+  { status: 'Asked', asked_at: '2026-11-27', listed_page: 'Churches', listed_url: 'https://thelenches.org.uk/churches/' });
+assert.strictEqual(L.rowUpdate({ status: 'To ask', last_checked: '2026-11-30', check: 'No link found', listed_page: 'Mine', listed_url: 'x' }, { result: 'none', at: '' }, '2026-11-30', { seed }), null, 'never over a value');
+console.log('test-linkcheck: request and listing checks passed');

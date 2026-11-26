@@ -110,7 +110,9 @@ export const CLIENT_JS = String.raw`
       'These are suggestions, not errors: ask Kryten to change a title or description.',
       ['Inbound links', 'websites we would like to link to us (Link partners in the Sheet). Each Monday the check reads every partner’s website (home page and its links, community or what’s-on pages) for a link to this site; Check now runs it straight away.'],
       ['Status', 'To ask (not asked yet), Asked (you asked; the day is noted), Linking (a link was found), Link gone (a link we had is no longer there), Declined, Not now. The check only ever sets Linking or Link gone; Declined and Not now stay as you set them.'],
-      ['Notes and email', 'your own notes and the address to ask, kept in the Sheet only (never on the site).']],
+      ['Notes and email', 'your own notes and the address to ask, kept in the Sheet only (never on the site).'],
+      ['Draft request', 'shown once a partner has an email address: Holly drafts the fixed link request (asking for a link with the words \u201cThe Lenches Website\u201d) into Replies, where it waits for your Approve. Once it has gone, the next check marks them Asked.'],
+      ['Draft chaser', 'shown 21 days after the request went if no link has been found: one short follow-up on the same email thread. Only one chaser is sent.']],
     summary: [
       'Each box is one screen in short. Tap its heading to open that screen.',
       ['Subscribers (top bar)', 'how many people this website\'s newsletter would go to if it were sent now: active subscribers, each address once, leaving out anyone on Do Not Send. Updates each time the panel loads or you tap Reload.'],
@@ -3743,6 +3745,27 @@ export const CLIENT_JS = String.raw`
     render();
   }
 
+  async function linkAskDraft(p) {
+    S.linkAsking = p.id; render();
+    var r = await api('/admin/api/link-ask', { id: p.id });
+    S.linkAsking = '';
+    if (!r.ok) { toast(r.json.error || ('HTTP ' + r.status), true); render(); return; }
+    p.request = Object.assign({}, p.request, { waiting: true });
+    p.ask = { why: 'Not drafted: a draft to them is already waiting for you (Replies)' };
+    toast(r.json.message || 'Draft requested');
+    render();
+  }
+
+  // The request line on a card: waiting in Replies, sent, chased.
+  function linkRequestLine(p) {
+    var q = p.request || {};
+    var bits = [];
+    if (q.requestSent) bits.push('Request sent ' + day(q.requestSent));
+    if (q.chaseSent) bits.push('chaser sent ' + day(q.chaseSent));
+    if (q.waiting) bits.push((q.requestSent ? 'Chaser' : 'Request') + ' waiting for you in Replies');
+    return bits.length ? h('p', { class: 'meta' }, bits.join(' · ')) : null;
+  }
+
   var LINK_BADGE = { 'To ask': 'warn', Asked: 'info', Linking: 'ok', 'Link gone': 'bad' };
 
   function linksView() {
@@ -3778,13 +3801,16 @@ export const CLIENT_JS = String.raw`
         h('p', { class: 'meta' }, [p.type, p.url ? p.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '') : 'no website address yet'].filter(Boolean).join(' · ')),
         !p.url ? null : h('p', null, found && p.link_found_at ? ['Link found on: ', h('a', { href: p.link_found_at, target: '_blank', rel: 'noopener' }, p.link_found_at.replace(/^https?:\/\/(www\.)?/, ''))] : (p.check || 'Not checked yet'),
           p.last_checked ? ' · checked ' + day(p.last_checked) : ''),
-        p.asked_at ? h('p', { class: 'meta' }, 'Asked ' + day(p.asked_at)) : null,
+        p.asked_at && !(p.request && p.request.requestSent) ? h('p', { class: 'meta' }, 'Asked ' + day(p.asked_at)) : null,
+        linkRequestLine(p),
         p.notes ? h('p', { class: 'meta' }, 'Notes: ' + p.notes) : null,
         p.email ? h('p', { class: 'meta' }, 'Email: ' + p.email) : null,
         h('div', { class: 'actions' },
           h('label', { class: 'meta' }, 'Status ',
             h('select', { 'aria-label': 'Status for ' + p.name, onchange: function (e) { saveLink(p, 'status', e.target.value); } },
               t.statuses.map(function (st) { return h('option', { value: st, selected: st === p.status ? 'selected' : null }, st); }))),
+          p.ask && p.ask.kind ? h('button', { class: 'btn', disabled: S.linkAsking === p.id ? 'disabled' : null, onclick: function () { linkAskDraft(p); } },
+            S.linkAsking === p.id ? 'Asking Holly…' : p.ask.kind === 'chase' ? 'Draft chaser' : 'Draft request') : null,
           S.linkEdit[p.id + 'notes'] === undefined ? edit('notes', p.notes ? 'Edit notes' : 'Add notes', true) : null,
           S.linkEdit[p.id + 'email'] === undefined ? edit('email', p.email ? 'Change email' : 'Add email') : null),
         S.linkEdit[p.id + 'notes'] !== undefined ? edit('notes', 'Notes', true) : null,

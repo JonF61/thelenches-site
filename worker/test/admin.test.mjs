@@ -951,7 +951,7 @@ test('Newsletter draft: Rebuild and Test send map to nlquiet / nltest, panel onl
   assert.deepEqual(dispatchFor({ a: 'nlquiet', i: '2026-10-29' }), ['newsletter', { action: 'build', issue_date: '2026-10-29', rebuild: true, step: 'build' }]);
   assert.deepEqual(dispatchFor({ a: 'nltest', i: '2026-10-29' }), ['newsletter', { action: 'build', issue_date: '2026-10-29', step: 'preview' }]);
   assert.equal(validPayload({ a: 'nltest', i: 'abc' }), false);
-  assert.deepEqual(PANEL_ONLY, ['nlquiet', 'nltest', 'contactmail', 'done', 'merge', 'replace', 'sug_ok', 'sug_no', 'rfix', 'rfix_ok', 'rfix_all', 'entryedit']);
+  assert.deepEqual(PANEL_ONLY, ['nlquiet', 'nltest', 'contactmail', 'linkask', 'done', 'merge', 'replace', 'sug_ok', 'sug_no', 'rfix', 'rfix_ok', 'rfix_all', 'entryedit']);
 });
 
 test("Replace with the organiser's version: an already-listed item only, never official or the same sender, panel only", async () => {
