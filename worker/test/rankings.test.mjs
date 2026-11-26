@@ -48,6 +48,7 @@ test('rankings: phone and computer merged, best first, week-ago compare, cached'
   assert.deepEqual(d.keywords[1].mobile, { position: null, prev: 40, page: '' });
   assert.equal(d.updated, '2026-11-25T04:00:00Z');
   assert.equal(d.units, 100);
+  assert.equal(d.checked, 1, 'a phrase with no serp_updated is not checked yet');
   const n = seen.length;
   await rankings(env, { now });
   assert.equal(seen.length, n, 'cached');

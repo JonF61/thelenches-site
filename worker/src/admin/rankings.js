@@ -97,8 +97,11 @@ export async function rankings(env, { now = new Date() } = {}) {
       });
       const best = (r) => Math.min(...DEVICES.map((d) => (r[d] && r[d].position) || 999));
       const keywords = [...rows.values()].sort((a, b) => best(a) - best(b) || a.keyword.localeCompare(b.keyword));
+      // Phrases Ahrefs hasn't checked yet (just added) have no serp_updated: they read as unchecked, not
+      // as "not in the top 100", and an overview with none checked is kept only an hour.
       data = {
         project: { id: project.id, name: project.name, url: project.url }, date, compared, keywords,
+        checked: keywords.filter((k) => k.updated).length,
         updated: keywords.map((k) => k.updated).filter(Boolean).sort().pop() || '',
         units: project.units + res.reduce((n, r) => n + r.units, 0), fetchedAt: now.toISOString(),
       };
@@ -106,7 +109,7 @@ export async function rankings(env, { now = new Date() } = {}) {
   } catch (e) {
     data = { error: `Ahrefs: ${e.message}` };
   }
-  if (!data.error) cache.set(`overview:${host}`, { at: Date.now(), data });
+  if (!data.error) cache.set(`overview:${host}`, { at: data.keywords && !data.checked ? Date.now() - OVERVIEW_TTL + 3600000 : Date.now(), data });
   return data;
 }
 

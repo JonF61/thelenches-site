@@ -53,12 +53,13 @@ const links = linkPartners({ headers: LH, rows: [
 const R = (m, mp, d, dp, page, vol) => ({ location: 'Evesham', volume: vol, updated: '2026-11-25T04:00:00Z',
   mobile: { position: m, prev: mp, page }, desktop: { position: d, prev: dp, page } });
 const ranks = { project: { id: 2, name: 'Thelenches', url: 'https://thelenches.org.uk/' }, date: '2026-11-26', compared: '2026-11-19',
-  updated: '2026-11-25T04:00:00Z', units: 100, keywords: [
+  updated: '2026-11-25T04:00:00Z', units: 100, checked: 5, keywords: [
     { keyword: 'the Lenches', ...R(1, 1, 1, 2, '/', 90) },
     { keyword: 'Lenches bin collection', ...R(2, 3, 3, 3, '/living-here/bins/', 10) },
     { keyword: 'Lenches church services', ...R(4, null, 5, 7, '/living-here/churches/', 0) },
     { keyword: 'events near Evesham', ...R(14, 11, 18, 18, '/events/', 320) },
     { keyword: 'pubs near Evesham', ...R(null, 40, null, null, '', 600) },
+    { keyword: 'Lenches GP', location: 'Evesham', volume: 0, updated: '', mobile: { position: null, prev: null, page: '' }, desktop: { position: null, prev: null, page: '' } },
   ] };
 const serp = { keyword: 'Lenches bin collection', device: 'mobile', location: 'Evesham', units: 30, positions: [
   { position: 1, url: 'https://www.wychavon.gov.uk/bins', title: 'Bin collections | Wychavon District Council', type: 'organic', ours: false },
@@ -108,10 +109,11 @@ try {
     await main.locator('table.ranks').waitFor();
     let text = await main.innerText();
     assert.match(text, /^How the site does in Google/m);
-    assert.match(text, /5 search phrases: 3 on the first page of Google on a phone, 3 on a computer\. Compared with Thu 19 Nov; Ahrefs last checked Wed 25 Nov\./);
+    assert.match(text, /6 search phrases: 3 on the first page of Google on a phone, 3 on a computer\. Compared with Thu 19 Nov; Ahrefs last checked Wed 25 Nov\./);
     assert.match(text, /Lenches bin collection\s+Evesham\s+2 ▲1\s+3\s/);
     assert.match(text, /Lenches church services\s+Evesham\s+4 New\s+5 ▲2/);
     assert.match(text, /events near Evesham\s+Evesham\s+14 ▼3/);
+    assert.match(text, /Lenches GP\s+Evesham\s+Not checked yet\s+Not checked yet\s+–/);
     assert.match(text, /pubs near Evesham\s+Evesham\s+Not in top 100 ▼ was 40\s+Not in top 100/);
     await main.locator('tr', { hasText: 'Lenches bin collection' }).locator('button', { hasText: 'Phone' }).click();
     await main.locator('.serp-list li.ours').waitFor();

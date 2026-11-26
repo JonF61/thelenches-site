@@ -3689,7 +3689,8 @@ export const CLIENT_JS = String.raw`
     if (S.view === 'seo') render();
   }
 
-  function rankCell(d) {
+  function rankCell(d, checked) {
+    if (!checked) return h('td', { class: 'meta' }, 'Not checked yet');
     if (!d) return h('td', { class: 'meta' }, '–');
     var now = d.position, was = d.prev;
     var move = !now ? (was ? h('span', { class: 'bad-text' }, ' ▼ was ' + was) : null)
@@ -3724,8 +3725,10 @@ export const CLIENT_JS = String.raw`
     if (t.off) return [h('div', { class: 'note' }, t.why)];
     var kws = t.keywords || [];
     if (!kws.length) return [h('p', { class: 'empty' }, 'Ahrefs hasn’t checked the phrases yet: its first check can take a day after they are added.')];
+    var els0 = null;
+    if (!t.checked) els0 = h('div', { class: 'note' }, 'Ahrefs hasn’t checked these phrases yet. Its first check is usually within a day of adding them; positions show here after that.');
     var top = function (dev) { return kws.filter(function (k) { return k[dev] && k[dev].position && k[dev].position <= 10; }).length; };
-    var els = [h('p', { class: 'meta' }, plural(kws.length, 'search phrase', 'search phrases') + ': ' + top('mobile') + ' on the first page of Google on a phone, ' + top('desktop') +
+    var els = els0 ? [els0] : [h('p', { class: 'meta' }, plural(kws.length, 'search phrase', 'search phrases') + ': ' + top('mobile') + ' on the first page of Google on a phone, ' + top('desktop') +
       ' on a computer. Compared with ' + day(t.compared) + (t.updated ? '; Ahrefs last checked ' + day(String(t.updated).slice(0, 10)) : '') + '.')];
     var rows = [];
     kws.forEach(function (k) {
@@ -3737,9 +3740,9 @@ export const CLIENT_JS = String.raw`
       };
       rows.push(h('tr', null,
         h('td', null, k.keyword, k.location ? h('div', { class: 'meta' }, k.location) : null),
-        rankCell(k.mobile), rankCell(k.desktop),
+        rankCell(k.mobile, !!k.updated), rankCell(k.desktop, !!k.updated),
         h('td', null, page ? (/^\//.test(page) ? h('a', { href: siteUrl() + page, target: '_blank', rel: 'noopener' }, page === '/' ? 'Home' : page) : page) : h('span', { class: 'meta' }, '–')),
-        h('td', null, k.volume == null ? '–' : String(k.volume)),
+        h('td', null, k.volume == null || !k.updated ? '–' : String(k.volume)),
         h('td', { class: 'nowrap' }, btn('mobile', 'Phone'), ' ', btn('desktop', 'Computer'))));
       var open = S.serpOpen && S.serpOpen.split('|').slice(1).join('|') === k.keyword ? S.serpOpen : '';
       if (open) rows.push(h('tr', { class: 'serp-row' }, h('td', { colspan: '6' }, serpBox(open))));
