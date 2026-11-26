@@ -204,6 +204,43 @@ async function wider() {
   assert.match(fix.SYSTEM, /"remove"/);
 }
 
+// Twins (26 Nov 2026): a fix closes the same finding on the other site, real cases from 25 Nov.
+async function twins() {
+  const row = { scope: 'newsletter', target: '2026-11-26',
+    fix_old: 'Atch Lench Road in Church Lench will be closed between Atch Lench Road and Leys Road from Monday 1 December to Tuesday 9 December for Openreach works.',
+    fix_new: 'Atch Lench Road in Church Lench will be closed between Atch Lench Road and Leys Road from Tuesday 1 December to Wednesday 9 December for Openreach works.' };
+  const base = { status: 'open', fix_status: 'cannot', scope: 'newsletter', target: '2026-11-26' };
+  const other = [
+    { ...base, _row: 7, id: 'h7', where: 'Bins and roads, Road closure — Atch Lench Road, Church Lench', quote: 'from Monday 1 December to Tuesday 9 December', problem: 'Wrong weekday.' },
+    { ...base, _row: 8, id: 'h8', where: 'Bins and roads, Road closure — Atch Lench Road, Church Lench', quote: 'closed between Atch Lench Road and Leys Road', problem: 'Names itself.' },
+    { ...base, _row: 9, id: 'h9', where: 'Bins and roads, Road closure — Farm Lane, Church Lench', quote: 'from Monday 1 December to Tuesday 9 December', problem: 'Wrong weekday.' },
+    { ...base, _row: 10, id: 'h10', target: '2026-11-19', where: 'Road closure — Atch Lench Road, Church Lench', quote: 'from Monday 1 December to Tuesday 9 December' },
+    { ...base, _row: 11, id: 'h11', status: 'dismissed', where: 'Road closure — Atch Lench Road, Church Lench', quote: 'from Monday 1 December to Tuesday 9 December' },
+    { ...base, _row: 12, id: 'h12', fix_status: 'proposed', where: 'Road closure — Atch Lench Road, Church Lench', quote: 'from Monday 1 December to Tuesday 9 December' },
+  ];
+  const rival = ['Farm Lane in Church Lench will be closed from Monday 1 December to Tuesday 9 December for Openreach works.'];
+  const title = 'Road closure — Atch Lench Road, Church Lench';
+  // Same words in another entry (Farm Lane): the whole title must be named, so only row 7.
+  assert.deepEqual(fix.twinsOf(row, title, other, rival).map((o) => o.id), ['h7']);
+  // Words still in the new text (row 8), other issue, dismissed or a fix in hand: never.
+  // No rival: what it is ("Road closure") is enough, so Farm Lane's finding would match too.
+  assert.deepEqual(fix.twinsOf(row, title, other, []).map((o) => o.id), ['h7', 'h9']);
+  // A hand-written event named by what it is only.
+  const fayre = { scope: 'newsletter', target: '2026-11-26', fix_old: 'Donations between 2 and 26 November.', fix_new: 'Donations until Thursday 26 November.' };
+  const ft = [{ ...base, _row: 3, id: 'f', where: 'Coming up – Christmas Fayre (Sat 28 Nov)', quote: 'between 2 and 26 November', problem: 'x' }];
+  assert.equal(fix.twinsOf(fayre, 'Christmas Fayre — Church Lench Village Hall', ft).length, 1);
+  assert.equal(fix.twinsOf(fayre, '', ft).length, 0);
+  // closeTwins writes only through the stale-checked other-site update.
+  const calls = [];
+  const g = { readOtherTable: async () => other, updateOtherRow: async (site, tab, r, f, expect) => { calls.push({ site, r, f, expect }); return true; } };
+  assert.equal(await fix.closeTwins(row, title, { g, rivals: rival }), 1);
+  assert.equal(calls[0].r, 7);
+  assert.equal(calls[0].f.status, 'fixed');
+  assert.deepEqual(calls[0].expect, { id: 'h7', status: 'open', fix_status: 'cannot' });
+  // A failing other Sheet never stops the fix.
+  assert.equal(await fix.closeTwins(row, title, { g: { readOtherTable: async () => { throw new Error('x'); }, updateOtherRow: async () => true } }), 0);
+}
+
 (async () => {
   current = 'K1-n2';
   assert.equal((await fix.propose('K1-n2', { g, client, root })).ok, true);
@@ -265,6 +302,7 @@ async function wider() {
   assert.throws(() => fix.writeRepoField(regs, 'time', '7.15pm', '8pm', root), /changed since/);
 
   await wider();
+  await twins();
   fs.rmSync(root, { recursive: true, force: true });
   console.log('rimmer fix: all tests passed');
 })().catch((e) => { console.error(e); process.exit(1); });
