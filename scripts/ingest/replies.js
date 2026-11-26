@@ -2103,12 +2103,15 @@ function exposesTeam(text) {
 // Gmail thread of the check it follows: that check's sent message, or null (not a chaser, or
 // no sent check found).
 async function chaseThread(row) {
-  const m = String(row.policy_codes || '').match(/\borg_chase_([a-z0-9-]+)/);
+  // A chaser goes on its first email's thread: org_chase_<id> after org_check_<id>, and
+  // link_chase_<id> after link_request_<id> (Inbound links, 26 Nov).
+  const m = String(row.policy_codes || '').match(/\b(org|link)_chase_([a-z0-9-]+)/);
   if (!m) return null;
+  const first = m[1] === 'link' ? `link_request_${m[2]}` : `org_check_${m[2]}`;
   const to = String(row.to || '').trim().toLowerCase();
   const check = (await g.readTable('Replies'))
     .filter((r) => r.status === 'sent' && r.sent_gmail_id && String(r.to || '').trim().toLowerCase() === to
-      && String(r.policy_codes || '').split(/[\s,;|]+/).includes(`org_check_${m[1]}`))
+      && String(r.policy_codes || '').split(/[\s,;|]+/).includes(first))
     .sort((a, b) => String(b.sent_at).localeCompare(String(a.sent_at)))[0];
   if (!check) return null;
   const msg = await g.getMessage(check.sent_gmail_id);

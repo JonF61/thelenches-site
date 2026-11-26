@@ -1,30 +1,190 @@
 {
   "_note": "Starting list for the Link partners tab (SEO step 5, 26 Nov 2026). scripts/linkcheck copies it into a site's Sheet only when that tab is new; after that the Sheet is the list. Public websites only: never an email address or a person's name here (the repo is public).",
   "lenches": [
-    { "id": "south-lenches-pc", "name": "South Lenches Parish Council", "type": "Parish council", "url": "https://www.southlenchesparishcouncil.org/" },
-    { "id": "rous-lench-pc", "name": "Rous Lench Parish Council", "type": "Parish council", "url": "https://www.rouslenchparishcouncil.gov.uk/" },
-    { "id": "rous-lench", "name": "Rous Lench village website", "type": "Village website", "url": "https://rouslench.com/" },
-    { "id": "arch-benefice", "name": "ARCH Benefice", "type": "Church", "url": "https://www.archbenefice.org.uk/" },
-    { "id": "lenches-theatre", "name": "Lenches Theatre", "type": "Group we list", "url": "https://lenchestheatre.co.uk/" },
-    { "id": "church-lench-school", "name": "Church Lench CofE First School", "type": "School", "url": "https://www.churchlench.worcs.sch.uk/" },
-    { "id": "lenches-cricket", "name": "Lenches Cricket Club", "type": "Club we list", "url": "https://lenchescc.play-cricket.com/" },
-    { "id": "lenches-tennis", "name": "The Lenches Tennis Club", "type": "Club we list", "url": "https://clubspark.lta.org.uk/TheLenchesTennisClub" },
-    { "id": "harvington-website", "name": "The Harvington Website", "type": "Our other website", "url": "https://harvingtonvillage.org.uk/" },
-    { "id": "harvington-guides", "name": "Harvington Guides", "type": "Club we list", "url": "http://harvingtonguides.org.uk/" },
-    { "id": "evesham-u3a", "name": "Evesham U3A", "type": "Club we list", "url": "https://evesham.u3asite.uk/" },
-    { "id": "tai-chi", "name": "Tai Chi Worcestershire", "type": "Class we list", "url": "https://taichiworcestershire.com/" },
-    { "id": "bond-yoga", "name": "Bond Yoga", "type": "Class we list", "url": "https://bondyoga.co.uk/" },
-    { "id": "encompass-coaching", "name": "Encompass Coaching", "type": "Class we list", "url": "https://www.encompasscoaching.co.uk/" },
-    { "id": "stress-to-strengths", "name": "From Stress to Strengths", "type": "Class we list", "url": "https://fromstresstostrengths.co.uk/" },
-    { "id": "vale-and-spa", "name": "Vale & Spa magazine", "type": "Media", "url": "https://www.valeandspa.co.uk/" },
-    { "id": "visit-evesham", "name": "Visit Evesham", "type": "Directory", "url": "", "notes": "Website address to find" },
-    { "id": "pershore-tc", "name": "Pershore Town Council community pages", "type": "Directory", "url": "", "notes": "Website address to find" },
-    { "id": "alcester-tc", "name": "Alcester Town Council", "type": "Directory", "url": "", "notes": "Website address to find" },
-    { "id": "wychavon-directory", "name": "Wychavon community directory", "type": "Directory", "url": "", "notes": "Website address to find" },
-    { "id": "worcs-directory", "name": "Worcestershire community directory", "type": "Directory", "url": "", "notes": "Website address to find" },
-    { "id": "evesham-journal", "name": "Evesham Journal and Worcester News (What's On)", "type": "Media", "url": "", "notes": "Website address to find" },
-    { "id": "bbc-hw", "name": "BBC Hereford & Worcester community events", "type": "Media", "url": "", "notes": "Website address to find" },
-    { "id": "lenches-community-fb", "name": "Lenches Community Facebook group", "type": "Facebook", "url": "", "notes": "Ask the admins to pin a post; can't be checked automatically" },
-    { "id": "evesham-fb", "name": "Evesham noticeboard Facebook groups", "type": "Facebook", "url": "", "notes": "Ask the admins; can't be checked automatically" }
+    {
+      "id": "south-lenches-pc",
+      "name": "South Lenches Parish Council",
+      "type": "Parish council",
+      "url": "https://www.southlenchesparishcouncil.org/",
+      "listed_page": "Parish councils",
+      "listed_url": "https://thelenches.org.uk/living-here/council/"
+    },
+    {
+      "id": "rous-lench-pc",
+      "name": "Rous Lench Parish Council",
+      "type": "Parish council",
+      "url": "https://www.rouslenchparishcouncil.gov.uk/",
+      "listed_page": "Parish councils",
+      "listed_url": "https://thelenches.org.uk/living-here/council/"
+    },
+    {
+      "id": "rous-lench",
+      "name": "Rous Lench village website",
+      "type": "Village website",
+      "url": "https://rouslench.com/"
+    },
+    {
+      "id": "arch-benefice",
+      "name": "ARCH Benefice",
+      "type": "Church",
+      "url": "https://www.archbenefice.org.uk/",
+      "listed_page": "Churches",
+      "listed_url": "https://thelenches.org.uk/churches/"
+    },
+    {
+      "id": "lenches-theatre",
+      "name": "Lenches Theatre",
+      "type": "Group we list",
+      "url": "https://lenchestheatre.co.uk/",
+      "listed_page": "Groups & Clubs",
+      "listed_url": "https://thelenches.org.uk/groups/"
+    },
+    {
+      "id": "church-lench-school",
+      "name": "Church Lench CofE First School",
+      "type": "School",
+      "url": "https://www.churchlench.worcs.sch.uk/",
+      "listed_page": "Schools",
+      "listed_url": "https://thelenches.org.uk/living-here/schools/"
+    },
+    {
+      "id": "lenches-cricket",
+      "name": "Lenches Cricket Club",
+      "type": "Club we list",
+      "url": "https://lenchescc.play-cricket.com/",
+      "listed_page": "Groups & Clubs",
+      "listed_url": "https://thelenches.org.uk/groups/"
+    },
+    {
+      "id": "lenches-tennis",
+      "name": "The Lenches Tennis Club",
+      "type": "Club we list",
+      "url": "https://clubspark.lta.org.uk/TheLenchesTennisClub",
+      "listed_page": "Groups & Clubs",
+      "listed_url": "https://thelenches.org.uk/groups/"
+    },
+    {
+      "id": "harvington-website",
+      "name": "The Harvington Website",
+      "type": "Our other website",
+      "url": "https://harvingtonvillage.org.uk/"
+    },
+    {
+      "id": "harvington-guides",
+      "name": "Harvington Guides",
+      "type": "Club we list",
+      "url": "http://harvingtonguides.org.uk/",
+      "listed_page": "Regular activities",
+      "listed_url": "https://thelenches.org.uk/regulars/"
+    },
+    {
+      "id": "evesham-u3a",
+      "name": "Evesham U3A",
+      "type": "Club we list",
+      "url": "https://evesham.u3asite.uk/",
+      "listed_page": "Regular activities",
+      "listed_url": "https://thelenches.org.uk/regulars/"
+    },
+    {
+      "id": "tai-chi",
+      "name": "Tai Chi Worcestershire",
+      "type": "Class we list",
+      "url": "https://taichiworcestershire.com/",
+      "listed_page": "Regular activities",
+      "listed_url": "https://thelenches.org.uk/regulars/"
+    },
+    {
+      "id": "bond-yoga",
+      "name": "Bond Yoga",
+      "type": "Class we list",
+      "url": "https://bondyoga.co.uk/",
+      "listed_page": "Regular activities",
+      "listed_url": "https://thelenches.org.uk/regulars/"
+    },
+    {
+      "id": "encompass-coaching",
+      "name": "Encompass Coaching",
+      "type": "Class we list",
+      "url": "https://www.encompasscoaching.co.uk/",
+      "listed_page": "Regular activities",
+      "listed_url": "https://thelenches.org.uk/regulars/"
+    },
+    {
+      "id": "stress-to-strengths",
+      "name": "From Stress to Strengths",
+      "type": "Class we list",
+      "url": "https://fromstresstostrengths.co.uk/",
+      "listed_page": "Regular activities",
+      "listed_url": "https://thelenches.org.uk/regulars/"
+    },
+    {
+      "id": "vale-and-spa",
+      "name": "Vale & Spa magazine",
+      "type": "Media",
+      "url": "https://www.valeandspa.co.uk/"
+    },
+    {
+      "id": "visit-evesham",
+      "name": "Visit Evesham",
+      "type": "Directory",
+      "url": "",
+      "notes": "Website address to find"
+    },
+    {
+      "id": "pershore-tc",
+      "name": "Pershore Town Council community pages",
+      "type": "Directory",
+      "url": "",
+      "notes": "Website address to find"
+    },
+    {
+      "id": "alcester-tc",
+      "name": "Alcester Town Council",
+      "type": "Directory",
+      "url": "",
+      "notes": "Website address to find"
+    },
+    {
+      "id": "wychavon-directory",
+      "name": "Wychavon community directory",
+      "type": "Directory",
+      "url": "",
+      "notes": "Website address to find"
+    },
+    {
+      "id": "worcs-directory",
+      "name": "Worcestershire community directory",
+      "type": "Directory",
+      "url": "",
+      "notes": "Website address to find"
+    },
+    {
+      "id": "evesham-journal",
+      "name": "Evesham Journal and Worcester News (What's On)",
+      "type": "Media",
+      "url": "",
+      "notes": "Website address to find"
+    },
+    {
+      "id": "bbc-hw",
+      "name": "BBC Hereford & Worcester community events",
+      "type": "Media",
+      "url": "",
+      "notes": "Website address to find"
+    },
+    {
+      "id": "lenches-community-fb",
+      "name": "Lenches Community Facebook group",
+      "type": "Facebook",
+      "url": "",
+      "notes": "Ask the admins to pin a post; can't be checked automatically"
+    },
+    {
+      "id": "evesham-fb",
+      "name": "Evesham noticeboard Facebook groups",
+      "type": "Facebook",
+      "url": "",
+      "notes": "Ask the admins; can't be checked automatically"
+    }
   ]
 }

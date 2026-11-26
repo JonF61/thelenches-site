@@ -34,6 +34,8 @@
 //                     REASON is Jon's brief. Holly drafts an email from it (scripts/outreach/
 //                     contactmail.js) as an awaiting Replies row and a card is emailed to Jon.
 //                     Nothing is sent.
+//   linkask           Draft request / chaser (admin panel SEO > Inbound links, 26 Nov): ID = the Link
+//                     partners row id; scripts/outreach/linkask.js drafts fixed wording as an awaiting row.
 //   orgcheck          Draft check / Draft chaser (admin panel Contacts > Organisations, 27 Oct):
 //                     ID is an organisation's slug in contacts.json `outreach`. Holly's fixed
 //                     check (or chaser) email is drafted (scripts/outreach/orgs.js) as an
@@ -70,6 +72,7 @@ const readerFeedback = require('../readerfeedback');
 const outreach = require('../outreach');
 const orgs = require('../outreach/orgs');
 const contactMail = require('../outreach/contactmail');
+const linkAsk = require('../outreach/linkask');
 const lessons = require('../lessons');
 const dupes = require('../ingest/duplicates');
 const fs = require('fs');
@@ -336,7 +339,7 @@ async function main() {
   const typed = payloadText();
   if (!/^[A-Za-z0-9_-]{1,100}$/.test(id)) throw new Error(`Bad id "${id}"`);
   // Holly's lessons and recent corrections, for any draft this action leads to.
-  if (!['send', 'skip', 'close', 'edit', 'lesson_ok', 'lesson_no', 'orgcheck', 'done', 'merge', 'replace'].includes(action)) await replies.primeLearning();
+  if (!['send', 'skip', 'close', 'edit', 'lesson_ok', 'lesson_no', 'orgcheck', 'linkask', 'done', 'merge', 'replace'].includes(action)) await replies.primeLearning();
 
   if (ITEM_ACTIONS.includes(action)) {
     return decideItem(id, action, action === 'reject' ? String(typed.reason).replace(/[\u0000-\u001f]+/g, ' ').trim().slice(0, 300) : '');
@@ -367,12 +370,13 @@ async function main() {
   }
   if (action === 'close') return replies.closeOwed(id);
   if (action === 'lesson_ok' || action === 'lesson_no') return lessons.decide(id, action);
-  if (action === 'nudge' || action === 'orgcheck' || action === 'contactmail') {
+  if (action === 'nudge' || action === 'orgcheck' || action === 'contactmail' || action === 'linkask') {
     const fresh = action === 'nudge' ? await outreach.draftNudge(id)
-      : action === 'contactmail' ? await contactMail.draftContactEmail(id, reason) : await orgs.draftOrgCheck(id);
+      : action === 'contactmail' ? await contactMail.draftContactEmail(id, reason)
+        : action === 'linkask' ? await linkAsk.draftLinkAsk(id) : await orgs.draftOrgCheck(id);
     if (!fresh || fresh.status !== 'awaiting') return undefined;
     const { settings } = await g.readSettings();
-    const title = action === 'nudge' ? 'Outreach draft' : action === 'contactmail' ? 'Email draft' : 'Organisation check draft';
+    const title = action === 'nudge' ? 'Outreach draft' : action === 'contactmail' ? 'Email draft' : action === 'linkask' ? 'Link request draft' : 'Organisation check draft';
     // The draft is saved either way; a failed card only fails the run (GitHub emails Jon)
     // and the next ingestion run's action email shows the draft.
     try {

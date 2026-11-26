@@ -42,14 +42,15 @@ const summary = {
   lastSent: null,
 };
 
-const { linkPartners } = await import('../src/admin/links.js');
+const { linkPartners } = await import('../src/admin/links.mjs');
 const LH = ['id', 'name', 'type', 'url', 'status', 'link_found_at', 'last_checked', 'check', 'notes', 'email', 'asked_at'];
 const links = linkPartners({ headers: LH, rows: [
   { id: 'rous-lench', name: 'Rous Lench village website', type: 'Village website', url: 'https://rouslench.com/', status: 'Linking', link_found_at: 'https://rouslench.com/', last_checked: '2026-11-30', check: 'Links to us' },
-  { id: 'arch', name: 'ARCH Benefice', type: 'Church', url: 'https://www.archbenefice.org.uk/', status: 'To ask', last_checked: '2026-11-30', check: 'No link found' },
+  { id: 'arch', name: 'ARCH Benefice', type: 'Church', url: 'https://www.archbenefice.org.uk/', status: 'To ask', last_checked: '2026-11-30', check: 'No link found', email: 'office@arch.example' },
   { id: 'visit', name: 'Visit Evesham', type: 'Directory', url: '', status: '', check: 'No website address yet', notes: 'Website address to find' },
-] });
+] }, [], '2026-11-30');
 const edits = [];
+const asks = [];
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
   const send = (body, type = 'application/json', status = 200) => { res.writeHead(status, { 'content-type': type }); res.end(typeof body === 'string' ? body : JSON.stringify(body)); };
@@ -61,6 +62,11 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/admin/api/summary') return send(summary);
   if (url.pathname === '/admin/api/seo') return send(report);
   if (url.pathname === '/admin/api/links') return send(links);
+  if (url.pathname === '/admin/api/link-ask') {
+    const b = JSON.parse(await new Promise((r) => { let d = ''; req.on('data', (c) => { d += c; }); req.on('end', () => r(d)); }));
+    asks.push(b.id);
+    return send({ ok: true, kind: 'request', message: 'Request requested. It appears under Replies in a minute or two.' });
+  }
   if (url.pathname === '/admin/api/link-edit') {
     const b = JSON.parse(await new Promise((r) => { let d = ''; req.on('data', (c) => { d += c; }); req.on('end', () => r(d)); }));
     edits.push(b);
@@ -117,6 +123,13 @@ try {
     await main.locator('.link-card', { hasText: 'ARCH Benefice' }).locator('.badge', { hasText: 'Asked' }).waitFor();
     const e1 = edits[edits.length - 1];
     assert.deepEqual([e1.id, e1.field, e1.value, e1.expected], ['arch', 'status', 'Asked', 'To ask']);
+    // Draft request only where there is an email address.
+    assert.equal(await main.locator('.link-card', { hasText: 'Visit Evesham' }).locator('button', { hasText: 'Draft request' }).count(), 0);
+    const arch = main.locator('.link-card', { hasText: 'ARCH Benefice' });
+    await arch.locator('button', { hasText: 'Draft request' }).click();
+    await arch.locator('text=Request waiting for you in Replies').waitFor();
+    assert.equal(asks[asks.length - 1], 'arch');
+    assert.equal(await arch.locator('button', { hasText: 'Draft request' }).count(), 0);
     const visit = main.locator('.link-card', { hasText: 'Visit Evesham' });
     await visit.locator('button', { hasText: 'Edit notes' }).click();
     await visit.locator('textarea').fill('Try their contact form');
