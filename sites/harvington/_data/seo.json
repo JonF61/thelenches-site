@@ -1,0 +1,29 @@
+{
+  "_help": "SEO (26 Nov 2026; list approved by Jon): each page's main search phrase, by page address, as in sites/lenches/_data/seo.json. Phrases name Harvington rather than \"near Evesham\" so the two sites don't compete for the same searches. lib/seo.js checks each appears in the page's search title, description and main heading and writes the build's seo-report.json for the panel's SEO screen. The same phrases are tracked in Ahrefs Rank Tracker (Rankings). \"skip\": pages that need no search phrase.",
+  "keywords": {
+    "/": "Harvington village",
+    "/events/": "what's on in Harvington",
+    "/regulars/": "classes in Harvington",
+    "/notices/": "Harvington news",
+    "/living-here/roads/": "road closures Harvington",
+    "/bins/": "Harvington bin collection",
+    "/churches/": "Harvington church",
+    "/groups/": "Harvington clubs",
+    "/halls/": "Harvington village hall",
+    "/living-here/": "living in Harvington",
+    "/living-here/council/": "Harvington parish council",
+    "/living-here/planning/": "Harvington planning applications",
+    "/living-here/schools/": "Harvington school",
+    "/living-here/health/": "Harvington doctors",
+    "/living-here/getting-around/": "buses Harvington to Evesham",
+    "/living-here/eat/": "pubs in Harvington",
+    "/living-here/trades/": "Harvington local trades",
+    "/living-here/what-to-do/": "Harvington emergency contacts",
+    "/newsletter/": "Harvington newsletter",
+    "/contact/": "contact the Harvington website"
+  },
+  "skip": [
+    "/privacy/",
+    "/search/"
+  ]
+}
