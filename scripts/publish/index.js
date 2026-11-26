@@ -291,6 +291,8 @@ async function main() {
       roadsWanted.push({ road: name, village, coords: parseCoords(row.road_coords) || coordsFromUrl(url) });
     }
     item.expires = expires;
+    // The other site's item (26 Nov 2026): its event page there is the main copy (eventCanonical).
+    if (row._site) item.from = row._site;
     if (list === 'notices') {
       item.added = start;
       if (isOfficial(row)) item.official = true;

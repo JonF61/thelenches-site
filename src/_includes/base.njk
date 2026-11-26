@@ -16,7 +16,7 @@
   {% set pageImageAlt = ogImageAlt or site.ogImageAlt %}
   <title>{{ pageTitle | safe }}</title>
   {% if pageDesc %}<meta name="description" content="{{ pageDesc }}">{% endif %}
-  <link rel="canonical" href="{{ site.url }}{{ page.url }}">
+  <link rel="canonical" href="{{ canonicalUrl or (site.url + page.url) }}">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="{{ site.brand or "The Lenches" }} Website">
