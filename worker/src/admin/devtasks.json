@@ -269,13 +269,8 @@
       "added": "2026-11-26"
     },
     {
-      "task": "SEO → Rankings (Ahrefs Rank Tracker, built 26 Nov): once Ahrefs has checked the 22 Lenches phrases, check the panel shows real positions and the Top 10 opens, and note the API units a view costs. Harvington: its 20 phrases are in its Ahrefs project too (Evesham); check its Rankings as well.",
+      "task": "SEO → Rankings (Ahrefs Rank Tracker, built 26 Nov): at 18:07 on 26 Nov Ahrefs had checked 1 of 22 Lenches phrases and 0 of 20 Harvington ones, so no positions or top 10 yet. Once its first full check is done, run `k.py rankings` (and --site harvington, plus a phrase for its top 10) and check real positions show. Views cost 0 Ahrefs units (Rank Tracker reads come back as 0 units).",
       "waiting": "Ahrefs first check (about a day)",
-      "added": "2026-11-26",
-      "kryten": true
-    },
-    {
-      "task": "Event pages main copy (26 Nov): after the next publish run, check sites/lenches/_data/pipeline.json items that came from the Harvington Sheet carry \"from\": \"harvington\" (and vice versa), and that their Lenches event page points its canonical tag at harvingtonvillage.org.uk. Harvington link partners: run the link check for Harvington (link-check.yml, site harvington) to make its Link partners tab.",
       "added": "2026-11-26",
       "kryten": true
     }
