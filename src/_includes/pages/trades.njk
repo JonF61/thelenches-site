@@ -48,6 +48,8 @@
     </div>
   </section>
   {% endfor %}
+  {#- Last checked line (SEO step 6, 26 Nov 2026): the yearly listing checks (orgoutreach.mjs). -#}
+  <p class="small mut">We ask each business to check its entry once a year. Spotted something out of date? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
   {% if site.suggestUrl and site.turnstileSiteKey %}{% set suggestKind = "trades" %}{% include "suggest-form.njk" %}{% else %}
   <p class="tr-note small">{{ tellUs | safe }}</p>{% endif %}
 </main>
