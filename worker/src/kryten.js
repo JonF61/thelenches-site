@@ -12,7 +12,8 @@
 //           at most 50 cells, never the Kryten log, and every write first adds a Kryten log
 //           row (run = "kryten endpoint") so it can be undone
 //   draft   (18 Nov, Jon) ask Holly for a draft without the panel: { kind: "contactmail",
-//           email, brief } or { kind: "nudge", email }, with optional site. The same checks
+//           email, brief }, { kind: "nudge", email } or { kind: "linkask", id } (a Link partners
+//           row's Draft request or chaser; 26 Nov), with optional site. The same checks
 //           and decide() as the panel's Draft email / Draft nudge (admin/index.js
 //           krytenDraft); the draft waits in Replies for Jon's Approve. Nothing is sent.
 //   rankings (26 Nov, Jon) read-only: the panel's SEO → Rankings data (admin/rankings.js, Ahrefs

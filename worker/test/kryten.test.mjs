@@ -142,7 +142,7 @@ test('/k draft: token, kinds and sites', async () => {
   for (const kind of ['', 'send', 'approve', 'nlsend', 'orgcheck']) {
     const r = await call({ op: 'draft', kind, email: 'a@b.c', brief: 'x' });
     assert.equal(r.status, 400, kind);
-    assert.match((await r.json()).error, /kind must be contactmail or nudge/);
+    assert.match((await r.json()).error, /kind must be contactmail or nudge or linkask/);
   }
   assert.equal((await call({ op: 'draft', kind: 'contactmail', site: 'nowhere' })).status, 400);
   const bad = await call({ op: 'nope' });
