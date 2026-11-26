@@ -16,7 +16,8 @@ assert.strictEqual(EP.venueOf(ev("Concert — St James' Church, Harvington", '')
 assert.strictEqual(EP.venueOf(ev('Quiz — Lenches Club', '')).postcode, 'WR11 4UQ');
 assert.strictEqual(EP.venueOf(ev('Wreaths — The Vale Golf and Country Club', '')).postcode, 'WR10 2LZ');
 assert.strictEqual(EP.venueOf(ev('Party — Somewhere Else', '')), null);
-for (const v of require('../lib/venues.json').venues) assert.match(v.postcode, /^WR\d{1,2} \d[A-Z]{2}$/, v.name);
+for (const v of require('../lib/venues.json').venues) if (v.postcode !== undefined) assert.match(v.postcode, /^WR\d{1,2} \d[A-Z]{2}$/, v.name);
+assert.strictEqual(EP.venueOf(ev('Quiz — Abbots Morton Village Hall', '')).street, 'Off Village Street');
 
 // Place line: a Lench with its distance, another village "near Evesham", a town by name.
 assert.strictEqual(EP.placeLine(ev('Fayre — Church Lench Village Hall', '')), 'Church Lench Village Hall, about 5 miles north of Evesham');

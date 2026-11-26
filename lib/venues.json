@@ -13,6 +13,7 @@
     { "name": "Coach and Horses, Harvington", "aliases": ["Coach and Horses", "Coach & Horses, Harvington"], "street": "Station Road", "locality": "Harvington", "postcode": "WR11 8NJ" },
     { "name": "Norton Village Hall", "aliases": ["Norton and Lenchwick Parish Hall"], "street": "Byrd Row", "locality": "Norton", "postcode": "WR11 4TF" },
     { "name": "St Egwin's Church, Norton", "aliases": ["St Egwin's, Norton", "St Egwin's Norton"], "street": "Evesham Road", "locality": "Norton", "postcode": "WR11 4TL" },
+    { "name": "Abbots Morton Village Hall", "street": "Off Village Street", "locality": "Abbots Morton", "postcodeNote": "No postcode: sources disagree (WR7 4NA, WR7 4LT); street from Jon, 26 Nov 2026" },
     { "name": "Bishampton Villages Hall", "aliases": ["Bishampton Village Hall"], "street": "Broad Lane", "locality": "Bishampton", "postcode": "WR10 2LY" },
     { "name": "The Vale Golf & Country Club", "aliases": ["The Vale Golf and Country Club", "The Vale"], "street": "Hill Furze Road", "locality": "Bishampton", "postcode": "WR10 2LZ" }
   ]
