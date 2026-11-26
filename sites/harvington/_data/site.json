@@ -194,5 +194,6 @@
       "title": "Search",
       "url": "/search/"
     }
-  ]
+  ],
+  "neighbour": { "name": "The Lenches Website", "url": "https://thelenches.org.uk/" }
 }
