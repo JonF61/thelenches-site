@@ -6,7 +6,8 @@
 // Run by live-notice.yml after every site build (and on a schedule as a fallback).
 //   Which items: Pending rows approved or auto, from email (not feeds), decided or received on or
 //   after LIVE_FROM, not yet in any newsletter (newsletter_count 0), live_notified_at blank, and
-//   whose acknowledgement (Replies type ack or clarify) was sent. Several items from one email
+//   whose acknowledgement (Replies type ack or clarify) was sent more than RECENT_ACK_HOURS ago
+//   (a more recent one: marked skipped, no email). Several items from one email
 //   go in one message.
 //   Live: the item is in sites/<site>/_data/pipeline.json (this checkout is the latest main) AND a fresh
 //   copy of its page (/events/ or /notices/, cache-busted) has its anchor. The Pages cache can lag
@@ -35,6 +36,10 @@ const CHECKS = Number(process.env.LIVE_CHECKS || 6);
 const WAIT_MS = Number(process.env.LIVE_WAIT_MS || 60000);
 const GIVE_UP_DAYS = 3;
 const ACK_TYPES = ['ack', 'clarify'];
+// Jon, 26 Nov 2026: no "now on the website" email when the acknowledgement went within this many
+// hours, so a sender never gets two emails close together (the ack waits for his tap, which often
+// comes just before the item goes live). The item is marked as skipped and never emailed later.
+const RECENT_ACK_HOURS = 24;
 
 const str = (v) => (v === undefined || v === null ? '' : String(v).trim());
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -77,6 +82,12 @@ function due(pending, repliesRows, published) {
     groups.get(m).items.push({ row, pub });
   }
   return [...groups.values()];
+}
+
+// True when the acknowledgement was sent within RECENT_ACK_HOURS of now (pure). sent_at is UK time.
+function ackedRecently(ack, now) {
+  const sent = str(ack && ack.sent_at);
+  return !!sent && sent >= londonDateTime(now - RECENT_ACK_HOURS * 3600000);
 }
 
 // "Hi Nadine," from the acknowledgement's first line, else the plain greeting (pure).
@@ -125,6 +136,12 @@ async function run({ fetchPage = defaultFetch, now = Date.now() } = {}) {
   }
   const pipeline = JSON.parse(fs.readFileSync(PIPELINE, 'utf8'));
   let groups = due(pending, repliesRows, publishedById(pipeline));
+  const recent = groups.filter((gr) => ackedRecently(gr.ack, now));
+  for (const gr of recent) {
+    for (const i of gr.items) await g.updateRow('Pending', i.row._row, { [COLUMN]: `skipped: acknowledged ${str(gr.ack.sent_at)}` });
+  }
+  if (recent.length) console.log(`Skipped ${recent.length} message(s): acknowledgement sent within ${RECENT_ACK_HOURS} hours.`);
+  groups = groups.filter((gr) => !recent.includes(gr));
   if (!groups.length) { console.log('No items waiting for a "now live" email.'); return 0; }
 
   // Wait until every waiting item shows on a fresh copy of its page, or the checks run out.
@@ -179,7 +196,7 @@ async function run({ fetchPage = defaultFetch, now = Date.now() } = {}) {
   return queued;
 }
 
-module.exports = { run, due, publishedById, bodyFor, greetingFrom, shownAnchors, LIVE_FROM, COLUMN };
+module.exports = { run, due, ackedRecently, londonDateTimeForTest: londonDateTime, RECENT_ACK_HOURS, publishedById, bodyFor, greetingFrom, shownAnchors, LIVE_FROM, COLUMN };
 
 if (require.main === module) {
   run().catch((err) => {
