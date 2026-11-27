@@ -4,9 +4,20 @@ name: Newsletter sign-up (web form)
 #   action "send"     the form saved a Sign-ups row: email the confirmation link
 #   action "confirm"  the reader pressed the link's button: add them to Subscribers
 # The payload is a Sign-ups row id, never an address: this repo's Actions logs are public.
+#   Run workflow     (27 Nov 2026, Jon) a one-off reminder to one unconfirmed row: action
+#                    "resend" with a fresh link (scripts/signup). Inputs: the row id and site.
 on:
   repository_dispatch:
     types: [signup]
+  workflow_dispatch:
+    inputs:
+      id:
+        description: 'Sign-ups row id to remind (e.g. su-20261030-abcdef)'
+        required: true
+      site:
+        description: 'Site: lenches or harvington'
+        required: true
+        default: lenches
 
 permissions:
   contents: read
@@ -40,5 +51,5 @@ jobs:
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           APPROVAL_SIGNING_KEY: ${{ secrets.APPROVAL_SIGNING_KEY }}
           WORKER_URL: https://approvals.lenches.workers.dev
-          ACTION: ${{ github.event.client_payload.action }}
-          SIGNUP_ID: ${{ github.event.client_payload.id }}
+          ACTION: ${{ github.event.client_payload.action || (github.event.inputs.id && 'resend') }}
+          SIGNUP_ID: ${{ github.event.client_payload.id || github.event.inputs.id }}

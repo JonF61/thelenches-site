@@ -257,6 +257,10 @@
       "task": "After the Wednesday 2 Dec weekly planning run, check planning.json check.problems is empty on both sites and the new week was added (scripts/planning now reads Wychavon with curl).",
       "added": "2026-11-27",
       "kryten": true
+    },
+    {
+      "task": "Sign-up reminders (27 Nov): four unconfirmed sign-ups (Lenches rows 5, 9, 14; Harvington row 10) were sent one 'Still want …?' reminder by signup.yml Run workflow. Over the next week check which confirmed (status subscribed) and that the rest are wiped at 30 days.",
+      "kryten": true
     }
   ]
 }

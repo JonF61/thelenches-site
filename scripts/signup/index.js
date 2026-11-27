@@ -8,6 +8,11 @@
 //   confirm  the reader pressed the button behind that link. applyListRequest
 //            (scripts/ingest/subscriptions.js) adds them to Subscribers, refusing anyone on
 //            Do Not Send or with another Subscribers status ("held", Jon emailed).
+//   resend   (27 Nov 2026, Jon; manual only, signup.yml Run workflow) a one-off reminder to a
+//            row still "sent" (first email 2+ days ago): "Still want …?" with a fresh signed link
+//            that lasts LINK_DAYS but never past the KEEP_DAYS wipe, so the privacy page's
+//            30 days still hold; the email says the last day it works. Status stays "sent",
+//            result "reminder sent"; a row already reminded is never sent a second one.
 // Each run also wipes the address from rows never confirmed within KEEP_DAYS ("expired"),
 // as the privacy page promises. Rows are found by id only, so a replayed dispatch does
 // nothing once the row has moved on. Never logs an address: this repo's Actions logs are public.
@@ -80,6 +85,26 @@ function confirmEmail(url) {
   };
 }
 
+// The day a link stops working, for the email: 'Saturday 28 November' (UK).
+function lastDay(ms) {
+  return new Intl.DateTimeFormat('en-GB', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long' }).format(ms - 1);
+}
+
+// The one-off reminder (wording approved by Jon, 27 Nov 2026; "works until" so the link
+// never outlives the 30-day wipe).
+function reminderEmail(url, untilMs) {
+  const paras = [
+    'Hello,',
+    `A few weeks ago someone, hopefully you, asked to get ${NEWSLETTER} at this address, but the confirmation link wasn't used, so you're not on the list yet. It's free and comes out every Thursday morning.`,
+    `This link works until ${lastDay(untilMs)}. If you'd rather not, just ignore this email and you won't hear from us again.`,
+  ];
+  return {
+    subject: `Still want ${NEWSLETTER}?`,
+    html: emailHtml(paras.slice(0, 2), { text: 'Yes, add me to the list', url }, paras.slice(2)),
+    text: `${paras[0]}\n\n${paras[1]}\n\nYes, add me to the list:\n${url}\n\n${paras[2]}\n\n${DOMAIN}\n`,
+  };
+}
+
 function alreadyEmail() {
   const paras = [
     'Hello,',
@@ -116,7 +141,7 @@ async function tidy(deps, rows, ms) {
 }
 
 async function run({ action, id, ms = Date.now() }, deps = { g, applyListRequest, signToken }) {
-  if (!['send', 'confirm'].includes(action)) throw new Error('ACTION must be send or confirm');
+  if (!['send', 'confirm', 'resend'].includes(action)) throw new Error('ACTION must be send, confirm or resend');
   if (!/^su-\d{8}-[a-z0-9]{6}$/.test(id)) throw new Error('SIGNUP_ID is missing or malformed');
   await deps.g.ensureTab(TAB, HEADERS);
   const rows = await deps.g.readTable(TAB);
@@ -161,6 +186,28 @@ async function run({ action, id, ms = Date.now() }, deps = { g, applyListRequest
     return 'sent';
   }
 
+  if (action === 'resend') {
+    if (status !== 'sent' || !email) { console.log(`Row is "${status}", not awaiting confirmation. Nothing to do.`); return 'skipped'; }
+    if (lc(row.result) === 'reminder sent') { console.log('A reminder was sent already. Nothing to do.'); return 'skipped'; }
+    if (ageDays(row.sent_at, ms) < 2) { console.log('The first email went under 2 days ago. Nothing to do.'); return 'skipped'; }
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(str(row.requested));
+    const wipe = m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) + KEEP_DAYS * 86400000 : 0;
+    const until = Math.min(ms + LINK_DAYS * 86400000, wipe);
+    if (until - ms < 12 * 3600000) { console.log('Under 12 hours before the address is wiped. Nothing sent.'); return 'too-late'; }
+    const [subscribers, dns] = await Promise.all([deps.g.readTable('Subscribers'), deps.g.readTable('Do Not Send')]);
+    const active = (r) => !('status' in r) || !str(r.status) || lc(r.status) === 'active';
+    if (dns.some((r) => lc(r.email) === email) || subscribers.some((r) => lc(r.email) === email && active(r))) {
+      console.log('On Do Not Send or already subscribed. Nothing sent.');
+      return 'skipped';
+    }
+    if (deps.signToken === signToken && !linksEnabled()) throw new Error('APPROVAL_SIGNING_KEY and WORKER_URL are needed for the link');
+    const url = deps.signToken({ a: 'signup', i: id, e: Math.floor(until / 1000) }, '/s');
+    await deps.g.sendMail({ to: email, ...reminderEmail(url, until), from: FROM, fromName, headers: { 'Auto-Submitted': 'auto-generated' } });
+    await deps.g.updateRow(TAB, row._row, { sent_at: now, result: 'reminder sent' });
+    console.log('Reminder sent.');
+    return 'reminded';
+  }
+
   // confirm
   if (status !== 'sent' || !email) { console.log(`Row is "${status}", not awaiting confirmation. Nothing to do.`); return 'skipped'; }
   if (ageDays(row.sent_at, ms) > LINK_DAYS + 1) {
@@ -180,7 +227,7 @@ async function run({ action, id, ms = Date.now() }, deps = { g, applyListRequest
   return done;
 }
 
-module.exports = { run, confirmEmail, alreadyEmail, heldEmail, emailHtml, stamp, ageDays, TAB, HEADERS, LINK_DAYS, KEEP_DAYS };
+module.exports = { run, confirmEmail, reminderEmail, alreadyEmail, heldEmail, emailHtml, stamp, ageDays, TAB, HEADERS, LINK_DAYS, KEEP_DAYS };
 
 if (require.main === module) {
   run({ action: str(process.env.ACTION), id: str(process.env.SIGNUP_ID) }).catch((err) => {
