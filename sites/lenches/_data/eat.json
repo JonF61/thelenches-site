@@ -28,7 +28,13 @@
       "garden": true,
       "serves": ["sunday"],
       "lat": 52.12537,
-      "lng": -2.05172
+      "lng": -2.05172,
+      "image": {
+        "url": "/images/eat/the-anchor-inn.jpg",
+        "alt": "The Anchor Inn, Wyre Piddle",
+        "credit": "Philip Halling, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/7569429"
+      }
     },
     {
       "id": "bishampton-village-store-cafe",
@@ -65,7 +71,13 @@
       "rooms": true,
       "highlight": "Restaurant and conservatory, with a shaded patio for summer",
       "lat": 52.19305,
-      "lng": -2.03095
+      "lng": -2.03095,
+      "image": {
+        "url": "/images/eat/boot-inn.jpg",
+        "alt": "Boot Inn, Flyford Flavell",
+        "credit": "Mike Dodman, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/7852473"
+      }
     },
     {
       "id": "bulls-head",
@@ -131,7 +143,13 @@
         "url": "https://clivesofcropthorne.co.uk/"
       },
       "lat": 52.10056,
-      "lng": -2.01557
+      "lng": -2.01557,
+      "image": {
+        "url": "/images/eat/clive-s-of-cropthorne.jpg",
+        "alt": "Clive's of Cropthorne, Cropthorne",
+        "credit": "Mike Dodman, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/7824115"
+      }
     },
     {
       "id": "mysuru",
@@ -266,7 +284,13 @@
       },
       "serves": ["breakfast", "lunch"],
       "lat": 52.11342,
-      "lng": -1.95932
+      "lng": -1.95932,
+      "image": {
+        "url": "/images/eat/chadbury-farm-shop-cafe.jpg",
+        "alt": "Chadbury Farm Shop & Café, Chadbury, between Norton and Evesham",
+        "credit": "Mike Dodman, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/7821494"
+      }
     },
     {
       "id": "coach-and-horses",
@@ -283,7 +307,13 @@
       "garden": true,
       "serves": ["lunch", "sunday"],
       "lat": 52.13932,
-      "lng": -1.91891
+      "lng": -1.91891,
+      "image": {
+        "url": "/images/eat/coach-and-horses.jpg",
+        "alt": "Coach and Horses, Harvington",
+        "credit": "Jonathan Thacker, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/7849460"
+      }
     },
     {
       "id": "golden-cross",
@@ -301,7 +331,13 @@
       "children": true,
       "serves": ["evening"],
       "lat": 52.14267,
-      "lng": -1.92445
+      "lng": -1.92445,
+      "image": {
+        "url": "/images/eat/golden-cross.jpg",
+        "alt": "Golden Cross, Village Street, Harvington",
+        "credit": "Philip Halling, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/1786468"
+      }
     },
     {
       "id": "hillers-garden-cafe",
@@ -317,7 +353,13 @@
       },
       "serves": ["lunch", "coffee"],
       "lat": 52.18348,
-      "lng": -1.90356
+      "lng": -1.90356,
+      "image": {
+        "url": "/images/eat/hillers-garden-cafe.jpg",
+        "alt": "Hillers Garden Café, Dunnington, near Salford Priors",
+        "credit": "Eirian Evans, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/5912427"
+      }
     },
     {
       "id": "karma-salford-hall",
@@ -335,7 +377,13 @@
       "rooms": true,
       "highlight": "Historic hall hotel; dinner menu includes Indian dishes",
       "lat": 52.15054,
-      "lng": -1.90182
+      "lng": -1.90182,
+      "image": {
+        "url": "/images/eat/karma-salford-hall.jpg",
+        "alt": "Karma Salford Hall, Abbots Salford",
+        "credit": "Philip Halling, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/8034086"
+      }
     },
     {
       "id": "norton-grange",
@@ -357,7 +405,13 @@
       "stepfree": true,
       "highlight": "Sunday carvery, kids’ play area, quiz nights and live music",
       "lat": 52.12868,
-      "lng": -1.93872
+      "lng": -1.93872,
+      "image": {
+        "url": "/images/eat/norton-grange.jpg",
+        "alt": "Norton Grange, Norton",
+        "credit": "Philip Halling, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/6802495"
+      }
     },
     {
       "id": "apple-barn-restaurant",
@@ -482,7 +536,13 @@
       "food": "Breakfast and snacks",
       "serves": ["breakfast", "coffee"],
       "lat": 52.06499,
-      "lng": -1.89549
+      "lng": -1.89549,
+      "image": {
+        "url": "/images/eat/wayside-farm-shop-tearoom.jpg",
+        "alt": "Wayside Farm Shop & Tearoom, Wickhamford",
+        "credit": "David Smith, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/8210693"
+      }
     },
     {
       "id": "the-wood-norton",

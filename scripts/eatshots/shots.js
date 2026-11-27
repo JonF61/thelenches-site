@@ -45,6 +45,25 @@ async function closeBanner(page) {
   return false;
 }
 
+async function bodyText(page) {
+  return page.evaluate(() => (document.body ? document.body.innerText : '')).catch(() => '');
+}
+
+// Close pop-ups (offers, newsletter boxes) with their own close buttons.
+async function closePopups(page) {
+  const sel = '[aria-label*="close" i], [title*="close" i], .close, .modal-close, .popup-close, .pum-close, button.mfp-close';
+  for (const el of await page.$$(sel).catch(() => [])) {
+    if (await el.isVisible().catch(() => false)) { await el.click({ timeout: 1500 }).catch(() => {}); await page.waitForTimeout(500); }
+  }
+  for (const b of await page.$$('button, a').catch(() => [])) {
+    const t = ((await b.innerText().catch(() => '')) || '').trim();
+    if (/^(×|✕|x|close|no thanks|maybe later)$/i.test(t) && (await b.isVisible().catch(() => false))) {
+      await b.click({ timeout: 1500 }).catch(() => {});
+      await page.waitForTimeout(500);
+    }
+  }
+}
+
 (async () => {
   fs.mkdirSync(OUT, { recursive: true });
   fs.mkdirSync(TXT, { recursive: true });
@@ -55,7 +74,16 @@ async function closeBanner(page) {
     try {
       await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 }).catch(() => page.waitForTimeout(5000));
       await page.waitForTimeout(2500);
+      // Some hosts show a "please wait" page first: wait (never answer it) up to 25 seconds for the real page.
+      for (let i = 0; i < 10 && /being verified|checking your browser|please wait/i.test(await bodyText(page)); i++) await page.waitForTimeout(2500);
       const closed = await closeBanner(page);
+      await closePopups(page);
+      // Scroll down and back so lazy-loaded pictures appear.
+      await page.evaluate(async () => {
+        for (let y = 0; y < 2400; y += 400) { window.scrollTo(0, y); await new Promise((r) => setTimeout(r, 250)); }
+        window.scrollTo(0, 0);
+      }).catch(() => {});
+      await page.waitForTimeout(1500);
       const png = await page.screenshot();
       await sharp(png).resize(800, 500).jpeg({ quality: 78, mozjpeg: true }).toFile(path.join(OUT, `${id}.jpg`));
       const text = await page.evaluate(() => (document.body ? document.body.innerText : ''));
