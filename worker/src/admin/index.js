@@ -125,6 +125,8 @@
 //                                   and anonymous opens and clicks; for one issue, opens by day and
 //                                   hour and the most-clicked links (totals only, never per person)
 //   GET  /admin/api/links           SEO → Inbound links (links.js): the shown site's Link partners tab
+//   POST /admin/api/signup-reviewed { id }: a failed sign-up (Sign-ups status review) -> reviewed,
+//                                   stale-checked (27 Nov 2026).
 //   POST /admin/api/link-edit       { id, field: status|notes|email, value, expected }: one stale-checked
 //                                   cell (status Asked also writes asked_at)
 //   POST /admin/api/link-ask        { id }: Draft request / Draft chaser (links.mjs planLinkAsk) through
@@ -220,6 +222,7 @@ import { entryInfo, saveEntry, entryStatus, draftEditPage } from './entryedit.js
 import { recentRuns, buildStatus } from './runs.js';
 import {
   nextIssue, failingRuns, subscriberChanges, subscriberCount, lastSentDate, comingWeek, comingUpFile, devTasks, claudeSpend,
+  failedSignups,
 } from './summary.js';
 import { visitors } from './visitors.js';
 import { visitorHistory } from './sitestats.js';
@@ -630,11 +633,11 @@ async function outreach(env) {
 async function summary(env, lenv = env) {
   const today = ukToday();
   const main = isMain(env);
-  const [issues, pending, subs, dns, lessons, contacts, replies, orgTab, runs, coming, seen, sends, usage, feedbackTab] = await settled([
+  const [issues, pending, subs, dns, lessons, contacts, replies, orgTab, runs, coming, seen, sends, usage, feedbackTab, signups] = await settled([
     readTable(env, 'Issues'), readTable(env, 'Pending'), readTable(env, 'Subscribers'), readTable(env, 'Do Not Send'),
     readLessons(lenv), readTable(env, CONTACTS_TAB), readTable(env, 'Replies'), readOrgTab(env), recentRuns(env, 50), comingUpFile(env),
     visitors(env), readTable(env, 'Sends'),
-    readTable(env, 'Claude usage'), readTable(env, ITEM_TAB),
+    readTable(env, 'Claude usage'), readTable(env, ITEM_TAB), readTable(env, 'Sign-ups'),
   ]);
   // Claude spend for every site (4c-2): the API key is shared, so the card gives each site's
   // month and the total. The site shown is the one just read; the others' tabs are read here.
@@ -671,6 +674,8 @@ async function summary(env, lenv = env) {
     lessons: lessons.error ? fail(lessons) : lessonRows(lessons).rows.filter((r) => r.status.toLowerCase() === 'proposed').map((r) => ({ id: r.id, lesson: r.lesson })),
     lessonsNeedYou: lessons.error ? null : lessonRows(lessons).rows.filter(lessonNeedsYou).length,
     devTasks: devTasks(),
+    // Sign-ups that didn't go through, for Jon to review (no tab yet = none).
+    failedSignups: signups.error ? [] : failedSignups(signups.rows),
     // Items that published themselves after a veto window and await Jon's audit (a count).
     autoAudit: feedbackTab.error ? 0 : feedbackTab.rows.filter((r) => String(r.outcome || '').trim() === 'window').length,
     // Claude API spend (lib/claudeusage.js); no tab yet = no figures yet, not an error.
@@ -1266,6 +1271,13 @@ export async function handleAdmin(request, rawEnv) {
       if (path === '/admin/api/auto-hold') return await doAutoHold(env, body);
       if (path === '/admin/api/photo-file') return await doFileOp(lenv, body);
       if (path === '/admin/api/link-edit') return await doLinkEdit(env, body);
+      if (path === '/admin/api/signup-reviewed') {
+        const id = String(body.id ?? '');
+        if (!/^su-\d{8}-[a-z0-9]{6}$/.test(id)) return json({ ok: false, error: 'Not a sign-up id' }, 400);
+        const r = await checkedWrite(env, { tab: 'Sign-ups', keyCol: 'id', key: id, field: 'status', expected: 'review', value: 'reviewed' });
+        if (!r.ok) return json(r, r.status);
+        return json({ ok: true, message: 'Marked reviewed.' });
+      }
       if (path === '/admin/api/link-ask') return await doLinkAsk(env, body);
       if (path === '/admin/api/link-check-now') {
         if (!(await dispatch(env, 'link-check', { by: 'panel' }, 2))) return json({ ok: false, error: 'GitHub did not accept the request. Try again in a few minutes.' }, 502);

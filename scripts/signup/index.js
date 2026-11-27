@@ -13,6 +13,11 @@
 //            that lasts LINK_DAYS but never past the KEEP_DAYS wipe, so the privacy page's
 //            30 days still hold; the email says the last day it works. Status stays "sent",
 //            result "reminder sent"; a row already reminded is never sent a second one.
+//   alert    (27 Nov 2026, Jon) the Worker refused a sign-up, or the page reported a failure,
+//            with an address: a Sign-ups row "review" (result = why). Unless the address has
+//            since gone through (a later new/sent/subscribed/already row, or active in
+//            Subscribers: then "reviewed", nothing sent), Jon gets one email at once; the
+//            panel's Summary lists it until he taps Reviewed.
 // Each run also wipes the address from rows never confirmed within KEEP_DAYS ("expired"),
 // as the privacy page promises. Rows are found by id only, so a replayed dispatch does
 // nothing once the row has moved on. Never logs an address: this repo's Actions logs are public.
@@ -118,6 +123,21 @@ function alreadyEmail() {
   };
 }
 
+// To Jon only (private mail, so the address may appear): a sign-up that didn't go through.
+function failedEmail(email, row) {
+  const text = `Someone tried to join ${NEWSLETTER} on the website, but it didn't go through.\n\n`
+    + `Address: ${email}\nWhen: ${str(row.requested)}\n${str(row.result) || 'Didn\'t go through.'}\n\n`
+    + 'They may well try again; this email is only sent once per address a day. If they don\'t get on the list, '
+    + 'you could add them to Subscribers by hand, reply to them, or ask Kryten to send them a confirmation link. '
+    + 'When you have dealt with it, tap Reviewed on the panel\'s Summary.\n\n'
+    + `Sign-ups tab, row ${row._row} (id ${row.id}). Sheet: ${SHEET_URL}\n`;
+  return {
+    subject: `Sign-up didn't go through: please check (${shortName(SITE)})`,
+    text,
+    html: `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#2b2b2b;">${esc(text).replace(/\n/g, '<br>')}</div>`,
+  };
+}
+
 // To Jon only (private mail, so the address may appear).
 function heldEmail(email, row, why) {
   const text = `A newsletter sign-up from the website has been held: ${why}.\n\n`
@@ -135,13 +155,13 @@ function heldEmail(email, row, why) {
 /* ------------------------------------------------------------------ run -- */
 
 async function tidy(deps, rows, ms) {
-  const old = rows.filter((r) => str(r.email) && ['new', 'sent', 'failed'].includes(lc(r.status)) && ageDays(r.requested, ms) > KEEP_DAYS);
+  const old = rows.filter((r) => str(r.email) && ['new', 'sent', 'failed', 'review', 'reviewed'].includes(lc(r.status)) && ageDays(r.requested, ms) > KEEP_DAYS);
   for (const r of old) await deps.g.updateRow(TAB, r._row, { email: '', status: 'expired' });
   return old.length;
 }
 
 async function run({ action, id, ms = Date.now() }, deps = { g, applyListRequest, signToken }) {
-  if (!['send', 'confirm', 'resend'].includes(action)) throw new Error('ACTION must be send, confirm or resend');
+  if (!['send', 'confirm', 'resend', 'alert'].includes(action)) throw new Error('ACTION must be send, confirm, resend or alert');
   if (!/^su-\d{8}-[a-z0-9]{6}$/.test(id)) throw new Error('SIGNUP_ID is missing or malformed');
   await deps.g.ensureTab(TAB, HEADERS);
   const rows = await deps.g.readTable(TAB);
@@ -159,6 +179,24 @@ async function run({ action, id, ms = Date.now() }, deps = { g, applyListRequest
     const m = heldEmail(email, row, why);
     await deps.g.sendMail({ to: process.env.ALERT_TO || process.env.GMAIL_USER, ...m, fromName });
   };
+
+  if (action === 'alert') {
+    if (status !== 'review' || !email) { console.log(`Row is "${status}", not a failed sign-up to review. Nothing to do.`); return 'skipped'; }
+    const subscribers = await deps.g.readTable('Subscribers');
+    const active = (r) => !('status' in r) || !str(r.status) || lc(r.status) === 'active';
+    const through = rows.some((r) => r !== row && lc(r.email) === email && ['new', 'sent', 'subscribed', 'already'].includes(lc(r.status))
+      && str(r.requested) >= str(row.requested))
+      || subscribers.some((r) => lc(r.email) === email && active(r));
+    if (through) {
+      await deps.g.updateRow(TAB, row._row, { status: 'reviewed', result: `${str(row.result)} · went through another way` });
+      console.log('Failed sign-up has since gone through. Nothing sent.');
+      return 'resolved';
+    }
+    const m = failedEmail(email, row);
+    await deps.g.sendMail({ to: process.env.ALERT_TO || process.env.GMAIL_USER, ...m, fromName });
+    console.log('Failed sign-up: Jon emailed.');
+    return 'alerted';
+  }
 
   if (action === 'send') {
     if (status !== 'new' || !email) { console.log(`Row is "${status}", not new. Nothing to do.`); return 'skipped'; }
@@ -227,7 +265,7 @@ async function run({ action, id, ms = Date.now() }, deps = { g, applyListRequest
   return done;
 }
 
-module.exports = { run, confirmEmail, reminderEmail, alreadyEmail, heldEmail, emailHtml, stamp, ageDays, TAB, HEADERS, LINK_DAYS, KEEP_DAYS };
+module.exports = { run, confirmEmail, reminderEmail, alreadyEmail, heldEmail, failedEmail, emailHtml, stamp, ageDays, TAB, HEADERS, LINK_DAYS, KEEP_DAYS };
 
 if (require.main === module) {
   run({ action: str(process.env.ACTION), id: str(process.env.SIGNUP_ID) }).catch((err) => {

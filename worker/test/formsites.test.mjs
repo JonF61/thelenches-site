@@ -261,7 +261,9 @@ test('an unknown origin is still refused when Turnstile fails or names another h
     withTurnstile(calls, answer);
     const res = await worker.fetch(post('/s', { email: 'x@example.org' }, 'null'), env());
     assert.equal(res.status, 403);
-    assert.equal(calls.appends.filter((a) => a.tab === 'Sign-ups').length, 0);
+    const su = calls.appends.filter((a) => a.tab === 'Sign-ups');
+    assert.equal(su.length, 1, 'one row, for Jon\'s review only');
+    assert.equal(su[0].rows[0][3], 'review');
     const fail = calls.appends.find((a) => a.tab === 'Form failures');
     assert.equal(fail.rows[0][4], 'origin');
     assert.equal(fail.rows[0][6], 'null', 'the sent origin is recorded');

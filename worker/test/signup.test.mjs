@@ -10,7 +10,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHmac } from 'node:crypto';
 
-import { handleSignup, validateSignup, SIGNUP_HEADERS, SIGNUP_THANKS } from '../src/signup.js';
+import { handleSignup, validateSignup, reviewAddress, SIGNUP_HEADERS, SIGNUP_THANKS } from '../src/signup.js';
 import { resetMemoryLimit } from '../src/feedback.js';
 import { FAIL_TAB, FAIL_HEADERS, browserOf } from '../src/formfail.js';
 import { resetTokenCache } from '../src/admin/google.js';
@@ -152,14 +152,15 @@ test('a failed dispatch marks the row failed, and a retry the same day is allowe
   const res = await handleSignup(post(good()), env());
   assert.equal(res.status, 502);
   assert.equal(tabs['Sign-ups'][1][3], 'failed');
+  assert.equal(tabs['Sign-ups'][2][3], 'review', 'flagged for Jon');
   globalThis.fetch = realFetch;
   const retry = await handleSignup(post(good()), env());
-  assert.equal(retry.status, 200);
-  assert.equal(tabs['Sign-ups'].length, 3);
+  assert.equal(retry.status, 200, 'the review row is not counted as today\'s try');
+  assert.equal(tabs['Sign-ups'].length, 4);
   assert.equal(calls.dispatches.length, 1);
 });
 
-test('honeypot, bad Turnstile, other origin and rate limit write no sign-up (failures are recorded)', async () => {
+test('honeypot, bad Turnstile, other origin and rate limit write no sign-up (failures are recorded; Jon alerted)', async () => {
   const tabs = {};
   const calls = fakeWorld(tabs);
   const hp = await handleSignup(post(good({ website: 'spam' })), env());
@@ -170,14 +171,32 @@ test('honeypot, bad Turnstile, other origin and rate limit write no sign-up (fai
   assert.equal(other.status, 403);
   const noJs = await handleSignup(post(good({ js: '', 'cf-turnstile-response': '' })), env());
   assert.match(await noJs.text(), /JavaScript/);
-  assert.equal(calls.appends.filter((a) => a.tab !== FAIL_TAB).length, 0);
   assert.deepEqual(tabs[FAIL_TAB].slice(1).map((r) => r[4]), ['robot', 'origin', 'nojs']);
-  assert.ok(!JSON.stringify(tabs[FAIL_TAB]).includes('@'), 'no address recorded');
-  assert.equal(calls.dispatches.length, 0);
+  assert.ok(!JSON.stringify(tabs[FAIL_TAB]).includes('@'), 'no address in Form failures');
+  // One review row for the address (the first refusal); same address again today: no more.
+  const su = tabs['Sign-ups'].slice(1);
+  assert.equal(su.length, 1, 'honeypot never flagged; one per address a day');
+  assert.deepEqual(su[0].slice(2, 4), ['reader@example.org', 'review']);
+  assert.match(su[0][6], /^Didn't go through: the robot check failed · /);
+  assert.equal(calls.dispatches.length, 1);
+  assert.deepEqual(calls.dispatches[0].client_payload, { action: 'alert', id: su[0][0] });
   resetMemoryLimit();
   for (let n = 0; n < 5; n += 1) await handleSignup(post(good({ email: `p${n}@example.org` }), { ip: '192.0.2.7' }), env());
   const limited = await handleSignup(post(good({ email: 'p9@example.org' }), { ip: '192.0.2.7' }), env());
   assert.equal(limited.status, 429);
+  assert.ok(tabs['Sign-ups'].some((r) => r[2] === 'p9@example.org' && r[3] === 'review' && /too many tries/.test(r[6])));
+});
+
+test('failed sign-ups: at most 20 flagged a day; no address or our own domain is never flagged', async () => {
+  const tabs = {};
+  const calls = fakeWorld(tabs);
+  for (let n = 0; n < 25; n += 1) await handleSignup(post(good({ email: `q${n}@example.org`, 'cf-turnstile-response': 'bad' })), env());
+  assert.equal(tabs['Sign-ups'].slice(1).filter((r) => r[3] === 'review').length, 20);
+  assert.equal(calls.dispatches.length, 20);
+  assert.equal(reviewAddress(''), '');
+  assert.equal(reviewAddress('not an address'), '');
+  assert.equal(reviewAddress('me@thelenches.org.uk'), '');
+  assert.equal(reviewAddress(' Typo@Gmail '), 'typo@gmail', 'a typo is still worth showing Jon');
 });
 
 test('the binding limiter is used when present', async () => {
@@ -249,7 +268,8 @@ test('a robot-check failure is recorded with site, stage, reason and browser, ne
   const [at, site, form, stage, reason, browser] = tabs[FAIL_TAB][1];
   assert.match(at, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/);
   assert.deepEqual([site, form, stage, reason, browser], ['harvington', 'signup', 'server', 'robot', 'Facebook app (iPhone)']);
-  assert.ok(!JSON.stringify(tabs).includes('reader@'), 'no address anywhere');
+  assert.ok(!JSON.stringify(tabs[FAIL_TAB]).includes('reader@'), 'no address in Form failures');
+  assert.equal(tabs['Sign-ups'][1][2], 'reader@example.org', 'the address is kept for Jon\'s review');
 });
 
 test('a page report (fail=1) adds one row, sends nothing and never uses up real tries', async () => {
@@ -259,8 +279,10 @@ test('a page report (fail=1) adds one row, sends nothing and never uses up real 
   const res = await handleSignup(post({ fail: '1', stage: 'page', reason: 'widget-600010', email: 'x@example.org' }), env({ SIGNUP_LIMITER: limiter }));
   assert.equal(res.status, 200);
   assert.equal(limiter.n, 0, 'the sign-up limiter is not touched');
-  assert.equal(calls.dispatches.length, 0);
-  assert.equal(tabs['Sign-ups'], undefined);
+  assert.equal(calls.dispatches.length, 1, 'an alert to Jon only');
+  assert.equal(calls.dispatches[0].client_payload.action, 'alert');
+  assert.deepEqual(tabs['Sign-ups'][1].slice(2, 4), ['x@example.org', 'review']);
+  assert.match(tabs['Sign-ups'][1][6], /in their browser \(widget-600010\)/);
   assert.deepEqual(tabs[FAIL_TAB][1].slice(1, 5), ['lenches', 'signup', 'page', 'widget-600010']);
   const odd = await handleSignup(post({ fail: '1', stage: 'page', reason: '<b>a@b.c</b>' }), env());
   assert.equal(odd.status, 200);

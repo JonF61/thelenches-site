@@ -3,6 +3,7 @@ name: Newsletter sign-up (web form)
 # Fired by the Cloudflare Worker's /s endpoint (repository_dispatch "signup"):
 #   action "send"     the form saved a Sign-ups row: email the confirmation link
 #   action "confirm"  the reader pressed the link's button: add them to Subscribers
+#   action "alert"    (27 Nov 2026) a failed sign-up with an address: email Jon to review it
 # The payload is a Sign-ups row id, never an address: this repo's Actions logs are public.
 #   Run workflow     (27 Nov 2026, Jon) a one-off reminder to one unconfirmed row: action
 #                    "resend" with a fresh link (scripts/signup). Inputs: the row id and site.

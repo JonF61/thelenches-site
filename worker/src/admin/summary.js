@@ -10,6 +10,8 @@
 //                       (counts only: no address ever reaches the page)
 //   comingWeek          events (and road works, not shown) in the next 7 days (the site's coming-up.json)
 //   devTasks            the repo's dev-tasks list (devtasks.json, kept by Kryten)
+//   failedSignups       sign-ups that didn't go through, with the address typed, for Jon to review
+//                       (Sign-ups rows "review"; 27 Nov 2026; behind Access, so the address may show)
 //   claudeSpend         Claude API spend this month and last, by job (the "Claude usage" tab,
 //                       written by lib/claudeusage.js after each run; dollars and counts only)
 
@@ -221,4 +223,15 @@ export async function comingUpFile(env) {
   } catch (e) {
     return { error: `${COMING_FILE}: ${e.message}` };
   }
+}
+
+// Sign-ups that didn't go through (status "review"), oldest first, leaving out any whose
+// address has since gone through (a later new/sent/subscribed/already row).
+export function failedSignups(rows) {
+  const ok = new Set(['new', 'sent', 'subscribed', 'already']);
+  return rows
+    .filter((r) => low(r.status) === 'review' && str(r.email))
+    .filter((r) => !rows.some((o) => o !== r && low(o.email) === low(r.email) && ok.has(low(o.status)) && str(o.requested) >= str(r.requested)))
+    .sort((a, b) => str(a.requested).localeCompare(str(b.requested)))
+    .map((r) => ({ id: str(r.id), email: str(r.email), requested: str(r.requested), why: str(r.result) }));
 }
