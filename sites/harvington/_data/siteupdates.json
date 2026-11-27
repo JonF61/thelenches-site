@@ -14,6 +14,13 @@
       "until": "2026-12-02",
       "link": "https://harvingtonvillage.org.uk/",
       "text": "harvingtonvillage.org.uk is the new website for Harvington, Norton and Lenchwick: what's on, local news, bins, church services and more."
+    },
+    {
+      "key": "church-pages-2026-12",
+      "from": "2026-12-03",
+      "until": "2026-12-09",
+      "link": "https://harvingtonvillage.org.uk/churches/",
+      "text": "St James, St Egwin's and the other ARCH Benefice churches now each have their own page: photos, a little history, what to see inside and the next services there."
     }
   ]
 }
