@@ -23,6 +23,7 @@
 .ea-pic{position:relative;margin:0 0 .7rem}
 .ea-pic img{display:block;width:100%;aspect-ratio:8/5;height:auto;object-fit:cover;object-position:top;border-radius:8px;border:1px solid #e3e3e3}
 .ea-pic figcaption{position:absolute;right:.4rem;bottom:.4rem;background:rgba(0,0,0,.6);color:#fff;font-size:.75rem;padding:.1rem .45rem;border-radius:4px}
+.ea-pic figcaption a{color:#fff}
 .ea-where{margin:0 0 .4rem;color:#555}
 .ea-hi{margin:0 0 .45rem;font-style:italic;color:#3d3d3d}
 .ea-tags{margin:0 0 .3rem}
@@ -85,7 +86,7 @@
       {%- set tags = [] -%}{%- for pair in SERVES -%}{%- if pair[0] in (p.serves or []) -%}{%- set _ = tags.push(pair[0]) -%}{%- endif -%}{%- endfor -%}{%- for pair in FEATURES -%}{%- if p[pair[0]] -%}{%- set _ = tags.push(pair[0]) -%}{%- endif -%}{%- endfor -%}
       {%- set miles = eat.from | milesBetween(p) if eat.from else null -%}
       <div class="card ea-card" data-tags="{{ tags | join(' ') }}"{% if miles %} data-miles="{{ miles }}" data-lat="{{ p.lat }}" data-lng="{{ p.lng }}" data-name="{{ p.name | escape }}"{% endif %}{% if p.id %} id="eat-{{ p.id }}" data-entry="e:{{ p.id }}" data-label="Where to eat: {{ p.name | escape }}"{% endif %}>
-        {% if p.image %}<figure class="ea-pic"><img src="{{ p.image.url | url }}" alt="{{ p.image.alt | escape }}" loading="lazy" width="800" height="500">{% if p.image.website %}<figcaption>From their website</figcaption>{% endif %}</figure>{% endif %}
+        {% if p.image %}<figure class="ea-pic"><img src="{{ p.image.url | url }}" alt="{{ p.image.alt | escape }}" loading="lazy" width="800" height="500">{% if p.image.website %}<figcaption>From their website</figcaption>{% elif p.image.credit %}<figcaption>Photo: {% if p.image.creditUrl %}<a href="{{ p.image.creditUrl }}" target="_blank" rel="noopener">{{ p.image.credit }}</a>{% else %}{{ p.image.credit }}{% endif %}</figcaption>{% endif %}</figure>{% endif %}
         <h3>{{ p.name }}</h3>
         {% set n = recommends.eat[p.id] %}{% if n %}<p class="rec-count">&#9733; Recommended by {{ n }} {{ "person" if n == 1 else "people" }}</p>{% endif %}
         <p class="ea-where" data-field="type where">{{ p.type }} &middot; {{ p.where }}</p>
@@ -102,7 +103,7 @@
   </section>
   {% endfor %}
   {#- Last checked line (SEO step 6, 26 Nov 2026): the yearly listing checks (orgoutreach.mjs). -#}
-  <p class="small mut">We ask each business to check its entry once a year. {% if eat.from %}Distances are in a straight line from {{ eat.from.point }}, so the drive is a little further. {% endif %}Pictures marked &ldquo;From their website&rdquo; show the front page of the place&rsquo;s own website. Spotted something out of date? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+  <p class="small mut">We ask each business to check its entry once a year. {% if eat.from %}Distances are in a straight line from {{ eat.from.point }}, so the drive is a little further. {% endif %}Pictures marked &ldquo;From their website&rdquo; show the front page of the place&rsquo;s own website; other photos are from <a href="https://www.geograph.org.uk/" target="_blank" rel="noopener">Geograph</a>, shared under the <a href="https://creativecommons.org/licenses/by-sa/2.0/" target="_blank" rel="noopener">CC BY-SA 2.0</a> licence by the photographer named on each. Spotted something out of date? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
   {% if site.suggestUrl and site.turnstileSiteKey %}{% set suggestKind = "eat" %}{% include "suggest-form.njk" %}{% else %}
   <p class="small mut">{{ tellUs | safe }}</p>{% endif %}
 </main>

@@ -26,8 +26,10 @@
       },
       "garden": true,
       "image": {
-        "url": "/images/photos/harvington-coach-and-horses-harvington.webp",
-        "alt": "The Coach and Horses, a cream-painted pub on Station Road, Harvington"
+        "url": "/images/eat/coach-and-horses.jpg",
+        "alt": "Coach and Horses, Station Road, Harvington",
+        "credit": "Jonathan Thacker, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/7849460"
       },
       "serves": ["lunch", "sunday"],
       "lat": 52.13932,
@@ -42,7 +44,13 @@
       "food": "Home-cooked meals made with local produce",
       "phone": "01386 870296",
       "lat": 52.13964,
-      "lng": -1.92876
+      "lng": -1.92876,
+      "image": {
+        "url": "/images/eat/ellenden-farm-shop-cafe.jpg",
+        "alt": "Ellenden Farm Shop Café, Evesham Road, Harvington",
+        "credit": "Jeff Gogarty, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/8401313"
+      }
     },
     {
       "id": "golden-cross",
@@ -60,7 +68,13 @@
       "children": true,
       "serves": ["evening"],
       "lat": 52.14267,
-      "lng": -1.92445
+      "lng": -1.92445,
+      "image": {
+        "url": "/images/eat/golden-cross.jpg",
+        "alt": "Golden Cross, Village Street, Harvington",
+        "credit": "Philip Halling, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/1786468"
+      }
     },
     {
       "id": "chadbury-farm-shop-cafe",
@@ -76,7 +90,13 @@
       },
       "serves": ["breakfast", "lunch"],
       "lat": 52.11342,
-      "lng": -1.95932
+      "lng": -1.95932,
+      "image": {
+        "url": "/images/eat/chadbury-farm-shop-cafe.jpg",
+        "alt": "Chadbury Farm Shop & Café, Chadbury, between Norton and Evesham",
+        "credit": "Mike Dodman, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/7821494"
+      }
     },
     {
       "id": "norton-grange",
@@ -98,7 +118,13 @@
       "stepfree": true,
       "highlight": "Sunday carvery, kids’ play area, quiz nights and live music",
       "lat": 52.12868,
-      "lng": -1.93872
+      "lng": -1.93872,
+      "image": {
+        "url": "/images/eat/norton-grange.jpg",
+        "alt": "Norton Grange, Norton",
+        "credit": "Philip Halling, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/6802495"
+      }
     },
     {
       "id": "hillers-garden-cafe",
@@ -114,7 +140,13 @@
       },
       "serves": ["lunch", "coffee"],
       "lat": 52.18348,
-      "lng": -1.90356
+      "lng": -1.90356,
+      "image": {
+        "url": "/images/eat/hillers-garden-cafe.jpg",
+        "alt": "Hillers Garden Café, Dunnington, near Salford Priors",
+        "credit": "Eirian Evans, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/5912427"
+      }
     },
     {
       "id": "karma-salford-hall",
@@ -132,7 +164,13 @@
       "rooms": true,
       "highlight": "Historic hall hotel; dinner menu includes Indian dishes",
       "lat": 52.15054,
-      "lng": -1.90182
+      "lng": -1.90182,
+      "image": {
+        "url": "/images/eat/karma-salford-hall.jpg",
+        "alt": "Karma Salford Hall, Abbots Salford",
+        "credit": "Philip Halling, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/8034086"
+      }
     }
   ]
 }
