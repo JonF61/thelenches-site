@@ -136,19 +136,6 @@
       }
     },
     {
-      "id": "1a1fe24eefebb56b-5",
-      "title": "Carol Service — St Egwin's Church, Norton",
-      "body": "Carol service at St Egwin's Church, Norton, on Sunday 13 December at 3pm, with the Vale Connection ladies choir.",
-      "date": "2026-12-13",
-      "village": "Norton",
-      "expires": "2026-12-13",
-      "from": "harvington",
-      "link": {
-        "text": "Email Caroline",
-        "url": "mailto:cj.norton@ymail.com"
-      }
-    },
-    {
       "id": "1a17d10d5d56383f-6",
       "title": "Children's Christmas Party — The Vale Golf & Country Club",
       "body": "A Christmas party for children with Santa at The Vale Golf and Country Club, Bishampton. Sunday 13 December, 11am-2.30pm, £20 per child. Booking via the club's website.",
@@ -162,6 +149,19 @@
       "image": {
         "url": "/images/items/1a17d10d5d56383f-6.webp",
         "alt": "Santa with children and adults celebrating with confetti at a Christmas party"
+      }
+    },
+    {
+      "id": "1a1fe24eefebb56b-5",
+      "title": "St Egwin's Carol Service — St Egwin's Church, Norton",
+      "body": "Readings and carols at St Egwin's Church, Norton, on Sunday 13 December at 3pm. The Vale Connections ladies choir will sing two or three pieces during the service.",
+      "date": "2026-12-13",
+      "village": "Norton",
+      "expires": "2026-12-13",
+      "from": "harvington",
+      "link": {
+        "text": "Email Caroline",
+        "url": "mailto:cj.norton@ymail.com"
       }
     },
     {
