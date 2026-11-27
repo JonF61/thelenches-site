@@ -1,0 +1,52 @@
+name: Where to eat pictures
+
+# Where to eat website pictures (27 Nov 2026, Jon; scripts/eatshots/shots.js): on a Kryten branch,
+# screenshots each Where to eat venue's own website (not Facebook) and commits 800x500 JPEGs to
+# scripts/eatshots/candidates/ and the pages' text to scripts/eatshots/text/ on that same branch, for
+# Kryten to check before any picture goes on a site. Manual only; refuses main. Sends and publishes nothing.
+on:
+  workflow_dispatch:
+    inputs:
+      ids:
+        description: Only these entries (ids, comma separated; blank = all)
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: eat-shots-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  shots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Refuse main
+        if: github.ref_name == 'main'
+        run: |
+          echo "Run this on a Kryten branch, never main."
+          exit 1
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Install Playwright outside the project
+        run: |
+          npm install --prefix /tmp/pw --no-audit --no-fund playwright@1.49.1
+          /tmp/pw/node_modules/.bin/playwright install --with-deps chromium
+      - name: Take the pictures
+        env:
+          PLAYWRIGHT_PATH: /tmp/pw/node_modules/playwright
+          EAT_IDS: ${{ github.event.inputs.ids }}
+        run: node scripts/eatshots/shots.js
+      - name: Commit the pictures to this branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898333+github-actions[bot]@users.noreply.github.com"
+          git add scripts/eatshots
+          git commit -m "Where to eat website pictures (run ${{ github.run_id }})" || echo "Nothing new"
+          git push origin HEAD:${{ github.ref_name }}
