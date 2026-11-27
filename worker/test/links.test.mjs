@@ -46,7 +46,34 @@ test('planLinkAsk: request, then one chaser 21 days on, never past Linking/Decli
   assert.deepEqual(planLinkAsk({ ...partner, status: 'Asked' }, req, '2026-12-18'), { kind: 'chase' });
   assert.match(planLinkAsk({ ...partner, status: 'Link gone' }, [...req, sent('link_chase_arch', '2026-12-19')], '2027-02-01').error, /chased 2026-12-19/);
   assert.deepEqual(requestsFor('arch', [...req, { policy_codes: 'link_request_other', status: 'sent', sent_at: '2026-11-01' }]),
-    { waiting: false, requestSent: '2026-11-27', chaseSent: '', viaOther: false });
+    { waiting: false, requestSent: '2026-11-27', requestSentAt: '2026-11-27 10:00', chaseSent: '', viaOther: false });
+});
+
+test('planLinkAsk: no chaser once emails have gone back and forth since the request', async () => {
+  const { theirMail, talkSince, ukEpoch } = await import('../src/admin/links.mjs');
+  const asked = { ...partner, status: 'Asked' };
+  const req = [sent('link_request_arch', '2026-11-27')];
+  const reply = (to, at) => ({ type: 'answer', status: 'sent', to, created_at: at, policy_codes: '' });
+  // Holly answered them (their address, or a colleague at their own domain) after the request.
+  for (const to of ['office@arch.example', 'Clerk <clerk@arch.example>']) {
+    const p = planLinkAsk(asked, [...req, reply(to, '2026-11-29 09:00')], '2026-12-20');
+    assert.equal(p.status, 409);
+    assert.match(p.error, /emailing them since the request \(latest 2026-11-29\)/);
+  }
+  // Before the request, someone else, or a shared free-mail domain: no effect.
+  assert.deepEqual(planLinkAsk(asked, [...req, reply('office@arch.example', '2026-11-20 09:00')], '2026-12-20'), { kind: 'chase' });
+  assert.deepEqual(planLinkAsk(asked, [...req, reply('someone@else.example', '2026-11-29 09:00')], '2026-12-20'), { kind: 'chase' });
+  const gm = { ...asked, email: 'arch@gmail.com' };
+  const greq = [{ ...req[0], to: 'arch@gmail.com' }];
+  assert.deepEqual(planLinkAsk(gm, [...greq, reply('other@gmail.com', '2026-11-29 09:00')], '2026-12-20'), { kind: 'chase' });
+  // Gmail's live check (heard) blocks too; a first request is never blocked.
+  assert.equal(planLinkAsk(asked, req, '2026-12-20', '', { heard: '2026-12-01 10:00' }).status, 409);
+  assert.deepEqual(planLinkAsk(partner, [reply('office@arch.example', '2026-11-29 09:00')], '2026-11-30'), { kind: 'request' });
+  assert.equal(talkSince('arch', 'office@arch.example', req, ''), '');
+  assert.equal(theirMail('office@arch.example').query, 'from:office@arch.example to:office@arch.example from:@arch.example to:@arch.example');
+  assert.equal(theirMail('arch@gmail.com').query, 'from:arch@gmail.com to:arch@gmail.com');
+  assert.equal(ukEpoch('2026-11-27 08:58'), Date.UTC(2026, 10, 27, 8, 58) / 1000, 'GMT in winter');
+  assert.equal(ukEpoch('2026-07-01 10:00'), Date.UTC(2026, 6, 1, 9, 0) / 1000, 'BST in summer');
 });
 
 test('linkPartners: each card says what Draft request would do', () => {
@@ -58,7 +85,7 @@ test('linkPartners: each card says what Draft request would do', () => {
 test('one request for both sites (27 Nov): counts on the other site, whose chaser goes from the first', () => {
   const sent = [{ policy_codes: 'link_request_arch-benefice link_request_arch@harvington', status: 'sent', sent_at: '2026-11-27 10:00' }];
   const r = requestsFor('arch', sent, 'harvington');
-  assert.deepStrictEqual(r, { waiting: false, requestSent: '2026-11-27', chaseSent: '', viaOther: true });
+  assert.deepStrictEqual(r, { waiting: false, requestSent: '2026-11-27', requestSentAt: '2026-11-27 10:00', chaseSent: '', viaOther: true });
   assert.strictEqual(requestsFor('arch', sent, '').requestSent, '', 'without the site, another site\'s code never counts');
   const row = { id: 'arch', email: 'a@b.example', status: 'Asked' };
   assert.match(planLinkAsk(row, sent, '2027-01-01', 'harvington').error, /other site/);

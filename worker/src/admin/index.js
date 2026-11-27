@@ -171,7 +171,7 @@
 
 import { seoReportFile, searchConsole } from './seo.js';
 import { rankings, rankSerp } from './rankings.js';
-import { LINK_TAB, planLinkEdit, linkPartners, planLinkAsk, bothReplies } from './links.mjs';
+import { LINK_TAB, planLinkEdit, linkPartners, planLinkAsk, bothReplies, requestsFor, theirMail, ukEpoch } from './links.mjs';
 import { ACTIONS, decide, github, dispatch } from '../core.js';
 import { DEFAULT_SITE, knownSite, siteEnv, siteList, siteConfig, siteIds } from '../sites.js';
 import { verifyAccess } from './access.js';
@@ -959,6 +959,21 @@ async function doLinkAsk(env, body) {
   if (matches.length > 1) return json({ ok: false, error: 'More than one partner with this id' }, 409);
   const plan = planLinkAsk(matches[0], replies, ukToday(), env.SITE || DEFAULT_SITE);
   if (plan.error) return json({ ok: false, ...plan }, plan.status);
+  if (plan.kind === 'chase') {
+    // No chaser while emails are going back and forth (27 Nov 2026, Jon): any mail from or to
+    // them in Gmail since the request (2 minutes' grace for the request itself) stops it.
+    const { requestSentAt } = requestsFor(id, replies, env.SITE || DEFAULT_SITE);
+    const after = ukEpoch(requestSentAt);
+    let heard = '';
+    try {
+      if (after && (await gmailAny(env, `{${theirMail(matches[0].email).query}} after:${after + 120}`))) heard = ukToday();
+    } catch (e) {
+      return json({ ok: false, error: `Not drafted: Gmail could not be checked for emails with them (${e.message}). Try again later.` }, 502);
+    }
+    if (heard) {
+      return json({ ok: false, error: 'Not drafted: Gmail shows emails with them since your request. Carry on in that thread, or mark them Declined or Not now' }, 409);
+    }
+  }
   if (!(await decide(env, { a: 'linkask', i: id }))) {
     return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
   }
