@@ -108,7 +108,7 @@ export const CLIENT_JS = String.raw`
       ['No other page links to it', 'Google finds pages by following links; a page nothing links to is hard to find.'],
       ['Google search', 'from Search Console, the last 28 days ending 3 days ago (Google runs behind): how often pages were shown in results, how often clicked, and the average position (1 = top).'],
       'These are suggestions, not errors: ask Kryten to change a title or description.',
-      ['Inbound links', 'websites we would like to link to us (Link partners in the Sheet). Each Monday the check reads every partner’s website (home page and its links, community or what’s-on pages) for a link to this site; Check now runs it straight away.'],
+      ['Inbound links', 'websites we would like to link to us (Link partners in the Sheet). Each Monday the check reads every partner’s website (home page and its links, community or what’s-on pages) for a link to this site; Check now runs it straight away. Partners are grouped, those needing you first (ready to ask, chaser due, a draft waiting in Replies, link gone, or an address missing), then asked, linking, not asked yet, and declined or not now.'],
       ['Status', 'To ask (not asked yet), Asked (you asked; the day is noted), Linking (a link was found), Link gone (a link we had is no longer there), Declined, Not now. The check only ever sets Linking or Link gone; Declined and Not now stay as you set them.'],
       ['Notes and email', 'your own notes and the address to ask, kept in the Sheet only (never on the site).'],
       ['Draft request', 'shown once a partner has an email address: Holly drafts the fixed link request (asking for a link with the words \u201cThe Lenches Website\u201d) into Replies, where it waits for your Approve. Once it has gone, the next check marks them Asked.'],
@@ -3849,17 +3849,45 @@ export const CLIENT_JS = String.raw`
     render();
   }
 
-  // The request line on a card: waiting in Replies, sent, chased.
+  // The request line on a row: waiting in Replies, sent, chased.
   function linkRequestLine(p) {
     var q = p.request || {};
     var bits = [];
     if (q.requestSent) bits.push('Request sent ' + day(q.requestSent));
     if (q.chaseSent) bits.push('chaser sent ' + day(q.chaseSent));
     if (q.waiting) bits.push((q.requestSent ? 'Chaser' : 'Request') + ' waiting for you in Replies');
-    return bits.length ? h('p', { class: 'meta' }, bits.join(' · ')) : null;
+    return bits.join(' · ');
   }
 
   var LINK_BADGE = { 'To ask': 'warn', Asked: 'info', Linking: 'ok', 'Link gone': 'bad' };
+
+  // Why a partner needs Jon now ('' = it doesn't). 27 Nov, Jon: those needing attention at the top.
+  function linkNeeds(p) {
+    var q = p.request || {};
+    if (p.status === 'Link gone') return 'Link gone: ask them to put it back';
+    if (q.waiting) return 'Draft waiting for you in Replies';
+    if (p.ask && p.ask.kind === 'chase') return 'Chaser due';
+    if (p.ask && p.ask.kind === 'request') return 'Ready to ask';
+    if (p.status === 'To ask' && !p.url) return 'Add their website address (in the Sheet)';
+    if (p.status === 'To ask' && !p.email) return 'Add their email to ask them';
+    return '';
+  }
+
+  // Sections, those needing attention first (27 Nov, Jon).
+  var LINK_GROUPS = [
+    { key: 'needs', title: 'Needs you' },
+    { key: 'asked', title: 'Asked: waiting for them' },
+    { key: 'linking', title: 'Linking to us' },
+    { key: 'later', title: 'Not asked yet' },
+    { key: 'closed', title: 'Declined or not now' },
+  ];
+  function linkGroup(p) {
+    if (linkNeeds(p)) return 'needs';
+    if (p.status === 'Asked') return 'asked';
+    if (p.status === 'Linking') return 'linking';
+    if (p.status === 'Declined' || p.status === 'Not now') return 'closed';
+    return 'later';
+  }
 
   function linksView() {
     var t = S.links;
@@ -3873,9 +3901,9 @@ export const CLIENT_JS = String.raw`
     S.linkEdit = S.linkEdit || {};
     var c = t.counts || {};
     var last = t.partners.map(function (p) { return p.last_checked; }).filter(Boolean).sort().pop();
-    var els = [h('p', { class: 'meta' }, t.statuses.filter(function (k) { return c[k]; }).map(function (k) { return c[k] + ' ' + k.toLowerCase(); }).join(' · ') +
-      '. ' + (last ? 'Last checked ' + day(last) + '; ' : '') + 'checked each Monday morning.'), h('div', { class: 'actions' }, check)];
-    t.partners.forEach(function (p) {
+    var els = [h('div', { class: 'link-top' }, h('p', { class: 'meta' }, t.statuses.filter(function (k) { return c[k]; }).map(function (k) { return c[k] + ' ' + k.toLowerCase(); }).join(' · ') +
+      '. ' + (last ? 'Last checked ' + day(last) + '; ' : '') + 'checked each Monday morning.'), check)];
+    var rows = function (p) {
       var edit = function (field, label, multi) {
         var k = p.id + field;
         if (S.linkEdit[k] === undefined) {
@@ -3888,26 +3916,41 @@ export const CLIENT_JS = String.raw`
           h('button', { class: 'btn link', onclick: function () { delete S.linkEdit[k]; render(); } }, 'Cancel'));
       };
       var found = p.status === 'Linking' || p.link_found_at;
-      els.push(h('div', { class: 'card link-card' },
-        h('h2', null, p.url ? h('a', { href: p.url, target: '_blank', rel: 'noopener' }, p.name) : p.name,
-          ' ', h('span', { class: 'badge ' + (LINK_BADGE[p.status] || '') }, p.status === 'Linking' ? '✓ Linking' : p.status)),
-        h('p', { class: 'meta' }, [p.type, p.url ? p.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '') : 'no website address yet'].filter(Boolean).join(' · ')),
-        !p.url ? null : h('p', null, found && p.link_found_at ? ['Link found on: ', h('a', { href: p.link_found_at, target: '_blank', rel: 'noopener' }, p.link_found_at.replace(/^https?:\/\/(www\.)?/, ''))] : (p.check || 'Not checked yet'),
-          p.last_checked ? ' · checked ' + day(p.last_checked) : ''),
-        p.asked_at && !(p.request && p.request.requestSent) ? h('p', { class: 'meta' }, 'Asked ' + day(p.asked_at)) : null,
-        linkRequestLine(p),
-        p.notes ? h('p', { class: 'meta' }, 'Notes: ' + p.notes) : null,
-        p.email ? h('p', { class: 'meta' }, 'Email: ' + p.email) : null,
-        h('div', { class: 'actions' },
-          h('label', { class: 'meta' }, 'Status ',
-            h('select', { 'aria-label': 'Status for ' + p.name, onchange: function (e) { saveLink(p, 'status', e.target.value); } },
-              t.statuses.map(function (st) { return h('option', { value: st, selected: st === p.status ? 'selected' : null }, st); }))),
+      var sep = function () { return h('span', { class: 'lr-sep', 'aria-hidden': 'true' }, ' · '); };
+      var bits = [];
+      var add = function (x, cls) { if (!x) return; if (bits.length) bits.push(sep()); bits.push(h('span', { class: cls || null }, x)); };
+      var why = linkNeeds(p);
+      add(why, 'lr-why');
+      add(p.type);
+      add(p.url ? p.url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '') : 'no website address yet');
+      if (p.url) {
+        add(found && p.link_found_at ? ['Link found on: ', h('a', { href: p.link_found_at, target: '_blank', rel: 'noopener' }, p.link_found_at.replace(/^https?:\/\/(www\.)?/, ''))] : (p.check || 'Not checked yet'));
+        if (p.last_checked) add('checked ' + day(p.last_checked));
+      }
+      if (p.asked_at && !(p.request && p.request.requestSent)) add('Asked ' + day(p.asked_at));
+      add(linkRequestLine(p));
+      if (p.email) add('Email: ' + p.email);
+      if (p.notes) add('Notes: ' + p.notes, 'lr-notes');
+      return h('div', { class: 'link-card link-row' },
+        h('div', { class: 'lr-main' },
+          h('h3', null, p.url ? h('a', { href: p.url, target: '_blank', rel: 'noopener' }, p.name) : p.name,
+            ' ', h('span', { class: 'badge ' + (LINK_BADGE[p.status] || '') }, p.status === 'Linking' ? '✓ Linking' : p.status)),
+          h('span', { class: 'meta lr-meta' }, bits)),
+        h('div', { class: 'lr-act' },
           p.ask && p.ask.kind ? h('button', { class: 'btn', disabled: S.linkAsking === p.id ? 'disabled' : null, onclick: function () { linkAskDraft(p); } },
             S.linkAsking === p.id ? 'Asking Holly…' : p.ask.kind === 'chase' ? 'Draft chaser' : 'Draft request') : null,
+          h('select', { 'aria-label': 'Status for ' + p.name, title: 'Status', onchange: function (e) { saveLink(p, 'status', e.target.value); } },
+            t.statuses.map(function (st) { return h('option', { value: st, selected: st === p.status ? 'selected' : null }, st); })),
           S.linkEdit[p.id + 'notes'] === undefined ? edit('notes', p.notes ? 'Edit notes' : 'Add notes', true) : null,
           S.linkEdit[p.id + 'email'] === undefined ? edit('email', p.email ? 'Change email' : 'Add email') : null),
         S.linkEdit[p.id + 'notes'] !== undefined ? edit('notes', 'Notes', true) : null,
-        S.linkEdit[p.id + 'email'] !== undefined ? edit('email', 'Email') : null));
+        S.linkEdit[p.id + 'email'] !== undefined ? edit('email', 'Email') : null);
+    };
+    LINK_GROUPS.forEach(function (g) {
+      var list = t.partners.filter(function (p) { return linkGroup(p) === g.key; });
+      if (!list.length) return;
+      els.push(h('div', { class: 'card link-group' + (g.key === 'needs' ? ' needs' : '') },
+        h('h2', null, g.title + ' (' + list.length + ')'), list.map(rows)));
     });
     return els;
   }

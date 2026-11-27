@@ -150,7 +150,9 @@ try {
     assert.match(text, /Link found on: rouslench\.com\//);
     assert.match(text, /No link found · checked Mon 30 Nov/);
     assert.match(text, /no website address yet/);
-    const names = await main.locator('.link-card h2').allInnerTexts();
+    assert.match(text, /Needs you \(2\)[\s\S]*Ready to ask[\s\S]*Linking to us \(1\)/, 'needing attention first');
+    assert.match(text, /Add their website address/);
+    const names = await main.locator('.link-card h3').allInnerTexts();
     assert.match(names[names.length - 1], /Rous Lench/, 'linking partners after those to ask');
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, `seo-links-${name}.png`), fullPage: true });
     await main.locator('select[aria-label="Status for ARCH Benefice"]').selectOption('Asked');
