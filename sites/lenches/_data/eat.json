@@ -51,7 +51,13 @@
       "note": "Village shop and post office",
       "serves": ["coffee"],
       "lat": 52.16036,
-      "lng": -2.01766
+      "lng": -2.01766,
+      "image": {
+        "url": "/images/eat/bishampton-village-store-cafe.jpg",
+        "alt": "The Bishampton village sign at the start of Main Street (a photo of the village, not the shop)",
+        "credit": "Roy Hughes, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/6946444"
+      }
     },
     {
       "id": "boot-inn",
