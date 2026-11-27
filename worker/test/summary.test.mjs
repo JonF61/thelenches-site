@@ -118,3 +118,16 @@ test('subscriberCount: unique active addresses not on Do Not Send', () => {
   assert.equal(subscriberCount(subs, [{ email: 'C@x.org' }]), 2);
   assert.equal(subscriberCount([], []), 0);
 });
+
+test('failedSignups: review rows oldest first, leaving out any that later went through', async () => {
+  const { failedSignups } = await import('../src/admin/summary.js');
+  const rows = [
+    { id: 'su-20261127-bbbbbb', requested: '2026-11-27 10:00', email: 'b@example.org', status: 'review', result: "Didn't go through: x" },
+    { id: 'su-20261127-aaaaaa', requested: '2026-11-27 09:00', email: 'a@example.org', status: 'review', result: "Didn't go through: y" },
+    { id: 'su-20261127-cccccc', requested: '2026-11-27 09:30', email: 'c@example.org', status: 'review', result: '' },
+    { id: 'su-20261127-c2c2c2', requested: '2026-11-27 09:31', email: 'C@example.org', status: 'sent' },
+    { id: 'su-20261127-dddddd', requested: '2026-11-27 09:30', email: 'd@example.org', status: 'reviewed' },
+  ];
+  assert.deepEqual(failedSignups(rows).map((r) => r.id), ['su-20261127-aaaaaa', 'su-20261127-bbbbbb']);
+  assert.deepEqual(Object.keys(failedSignups(rows)[0]), ['id', 'email', 'requested', 'why']);
+});

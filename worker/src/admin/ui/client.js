@@ -120,6 +120,7 @@ export const CLIENT_JS = String.raw`
       ['Draft chaser', 'shown 21 days after the request went if no link has been found: one short follow-up on the same email thread. Only one chaser is sent.']],
     summary: [
       'Each box is one screen in short. Tap its heading to open that screen.',
+      ['Sign-ups that didn\'t go through', 'someone typed an address in the newsletter sign-up form but it was refused or failed in their browser (why and which browser are shown). You get an email straight away too. Check the address, then add them to Subscribers by hand, reply to them, or ask Kryten to send them a confirmation link; tap Reviewed when done. One that later went through by itself drops off the list.'],
       ['Subscribers (top bar)', 'how many people this website\'s newsletter would go to if it were sent now: active subscribers, each address once, leaving out anyone on Do Not Send. Updates each time the panel loads or you tap Reload.'],
       ['Website buttons (top bar)', 'which website the panel is showing: its name and colour. Everything you see and every tap is for that website alone (its own Sheet, submissions, replies and contacts); Holly lessons are shared. The panel remembers your choice; each browser tab keeps the website it opened with.'],
       ['No action needed on…', 'the screens with nothing waiting for you.'],
@@ -4563,6 +4564,17 @@ export const CLIENT_JS = String.raw`
 
   // One section: a heading that opens its screen (go, a URL, or nothing), then lines,
   // or "Nothing waiting". max: lines shown before "and N more".
+  async function reviewSignup(r, btn) {
+    if (btn) btn.disabled = true;
+    var res = await api('/admin/api/signup-reviewed', { id: r.id });
+    if (!res.ok) {
+      if (btn) btn.disabled = false;
+      alert(res.json.error || 'Could not save');
+      return;
+    }
+    S.done['signup:' + r.id] = 'Reviewed';
+    render();
+  }
   function sumCard(title, open, lines, opts) {
     var o = opts || {};
     var list = (lines || []).filter(Boolean);
@@ -4634,6 +4646,15 @@ export const CLIENT_JS = String.raw`
     }
     var hTop = all && all.failing && all.failing.error ? errorNote(all.failing, 'GitHub runs') : (!sm ? loadingNote(sm) : null);
     els.push(sumCard('Site health', go('health'), health, { top: hTop, empty: 'All clear: watchdog, diagnostic' + (all ? ' and automatic jobs' : '') + ' are fine' }));
+
+    // Sign-ups that didn't go through, with the address typed (27 Nov, Jon: review asap).
+    var fsu = all && Array.isArray(all.failedSignups) ? all.failedSignups.filter(function (r) { return !S.done['signup:' + r.id]; }) : [];
+    if (fsu.length) {
+      els.push(sumCard('Sign-ups that didn\'t go through (' + fsu.length + ')', null, fsu.map(function (r) {
+        return [line(str(r.email), [when(r.requested), str(r.why).replace(/^Didn't go through: /, '')].filter(Boolean).join(' · '), [['Check', 'warn']]),
+          ' ', h('button', { class: 'btn', onclick: function (e) { reviewSignup(r, e.target); } }, 'Reviewed')];
+      }), { max: 10, more: true }));
+    }
 
     // Screens that need action; any with nothing waiting go in one "No action needed" box.
     var clear = [];

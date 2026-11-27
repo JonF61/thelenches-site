@@ -163,6 +163,31 @@ const previews = {};
   assert.strictEqual(await signup.run({ action: 'resend', id: RID, ms: NOV27 }, w.deps), 'too-late');
   assert.strictEqual(w.sent.length, 0);
 
+  // alert (27 Nov): a failed sign-up with an address emails Jon once, unless it has since gone through.
+  process.env.GMAIL_USER = 'team@example.org';
+  const AID = 'su-20261127-fail01';
+  const failed = { id: AID, requested: '2026-11-27 09:00', email: 'fb@example.org', status: 'review', result: "Didn't go through: the robot check failed · Facebook app (iPhone)" };
+  w = world({ signups: [{ ...failed }] });
+  assert.strictEqual(await signup.run({ action: 'alert', id: AID, ms: NOV27 }, w.deps), 'alerted');
+  assert.strictEqual(w.sent.length, 1);
+  assert.strictEqual(w.sent[0].to, 'team@example.org', 'to Jon only');
+  assert.strictEqual(w.sent[0].subject, "Sign-up didn't go through: please check (Lenches)");
+  assert.match(w.sent[0].text, /Address: fb@example\.org/);
+  assert.match(w.sent[0].text, /the robot check failed · Facebook app \(iPhone\)/);
+  assert.match(w.sent[0].text, /tap Reviewed on the panel's Summary/);
+  previews.failed = w.sent[0];
+  assert.strictEqual(await signup.run({ action: 'alert', id: ID, ms: NOV27 }, world({ signups: [{ id: ID, requested: '2026-10-27 10:00', email: 'x@example.org', status: 'sent' }] }).deps), 'skipped', 'only review rows');
+  w = world({ signups: [{ ...failed }, { id: 'su-20261127-ok0001', requested: '2026-11-27 09:01', email: 'fb@example.org', status: 'sent' }] });
+  assert.strictEqual(await signup.run({ action: 'alert', id: AID, ms: NOV27 }, w.deps), 'resolved');
+  assert.strictEqual(w.sent.length, 0);
+  assert.strictEqual(w.tabs['Sign-ups'][0].status, 'reviewed');
+  w = world({ signups: [{ ...failed }], subscribers: [{ email: 'fb@example.org', status: 'active' }] });
+  assert.strictEqual(await signup.run({ action: 'alert', id: AID, ms: NOV27 }, w.deps), 'resolved');
+  // Review rows are wiped at 30 days like any unconfirmed address.
+  w = world({ signups: [{ ...failed, requested: '2026-10-20 09:00' }, { id: ID, requested: '2026-11-27 09:00', email: 'y@example.org', status: 'new' }] });
+  await signup.run({ action: 'alert', id: ID, ms: NOV27 }, w.deps);
+  assert.deepEqual([w.tabs['Sign-ups'][0].email, w.tabs['Sign-ups'][0].status], ['', 'expired']);
+
   assert.ok(!logs.some((l) => l.includes('@')), 'no address in any log line');
 
   const out = path.join(process.env.PREVIEW_DIR || require('os').tmpdir(), 'signup-previews');
