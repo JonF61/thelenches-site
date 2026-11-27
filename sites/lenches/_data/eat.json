@@ -71,7 +71,12 @@
       "garden": true,
       "fire": true,
       "rooms": true,
-      "highlight": "Guest house dating from the 1500s; beer garden and free parking"
+      "highlight": "Guest house dating from the 1500s; beer garden and free parking",
+      "image": {
+        "url": "/images/eat/bulls-head.jpg",
+        "alt": "Front page of the Bulls Head website",
+        "website": true
+      }
     },
     {
       "id": "chequers-inn",
@@ -90,7 +95,12 @@
       "garden": true,
       "fire": true,
       "rooms": true,
-      "highlight": "Inglenook fireplaces, beams and a beer garden with country views"
+      "highlight": "Inglenook fireplaces, beams and a beer garden with country views",
+      "image": {
+        "url": "/images/eat/chequers-inn.jpg",
+        "alt": "Front page of the Chequers Inn website",
+        "website": true
+      }
     },
     {
       "id": "clive-s-of-cropthorne",
@@ -119,7 +129,12 @@
       "food": "Eat in or takeaway",
       "serves": ["evening", "takeaway"],
       "veggie": true,
-      "highlight": "Starters, curries, biryanis and seafood; eat in or take away"
+      "highlight": "Starters, curries, biryanis and seafood; eat in or take away",
+      "image": {
+        "url": "/images/eat/mysuru.jpg",
+        "alt": "Front page of the Mysuru website",
+        "website": true
+      }
     },
     {
       "id": "old-bull-inn",
@@ -137,7 +152,12 @@
       "dogs": true,
       "serves": ["lunch", "evening", "coffee", "afternoon-tea"],
       "fire": true,
-      "highlight": "400 years old, with open beams and inglenook fireplaces"
+      "highlight": "400 years old, with open beams and inglenook fireplaces",
+      "image": {
+        "url": "/images/eat/old-bull-inn.jpg",
+        "alt": "Front page of the Old Bull Inn website",
+        "website": true
+      }
     },
     {
       "id": "old-chestnut-tree",
@@ -154,7 +174,12 @@
       "children": true,
       "dogs": true,
       "fire": true,
-      "highlight": "Log fire in the bar; kitchen open Tuesday to Sunday"
+      "highlight": "Log fire in the bar; kitchen open Tuesday to Sunday",
+      "image": {
+        "url": "/images/eat/old-chestnut-tree.jpg",
+        "alt": "Front page of the Old Chestnut Tree website",
+        "website": true
+      }
     },
     {
       "id": "the-ounce-at-the-dolphin",
@@ -172,7 +197,12 @@
       "serves": ["evening", "sunday"],
       "children": true,
       "veggie": true,
-      "highlight": "Village steakhouse with a vegetarian roast and children’s roast on Sundays"
+      "highlight": "Village steakhouse with a vegetarian roast and children’s roast on Sundays",
+      "image": {
+        "url": "/images/eat/the-ounce-at-the-dolphin.jpg",
+        "alt": "Front page of the The Dolphin Steakhouse website",
+        "website": true
+      }
     },
     {
       "id": "the-pantry-at-rush-farm",
@@ -187,7 +217,12 @@
       },
       "serves": ["breakfast", "lunch", "coffee"],
       "dogs": true,
-      "highlight": "Organic farm shop café: cakes, breakfast rolls and seasonal lunches"
+      "highlight": "Organic farm shop café: cakes, breakfast rolls and seasonal lunches",
+      "image": {
+        "url": "/images/eat/the-pantry-at-rush-farm.jpg",
+        "alt": "Front page of the The Pantry at Rush Farm website",
+        "website": true
+      }
     },
     {
       "id": "chadbury-farm-shop-cafe",
@@ -296,7 +331,12 @@
         "url": "https://www.bluediamond.gg/restaurant/apple-barn-restaurant-evesham"
       },
       "note": "No dogs",
-      "serves": ["breakfast", "lunch", "sunday"]
+      "serves": ["breakfast", "lunch", "sunday"],
+      "image": {
+        "url": "/images/eat/apple-barn-restaurant.jpg",
+        "alt": "Front page of the Apple Barn Restaurant website",
+        "website": true
+      }
     },
     {
       "id": "the-fleece-inn",
@@ -316,7 +356,12 @@
       "stepfree": true,
       "fire": true,
       "rooms": true,
-      "highlight": "600-year-old National Trust pub; Good Pub Guide Top Ten Country Pubs"
+      "highlight": "600-year-old National Trust pub; Good Pub Guide Top Ten Country Pubs",
+      "image": {
+        "url": "/images/eat/the-fleece-inn.jpg",
+        "alt": "Front page of the The Fleece Inn website",
+        "website": true
+      }
     },
     {
       "id": "ivy-inn",
@@ -330,7 +375,12 @@
         "text": "theivyinn.co.uk",
         "url": "https://www.theivyinn.co.uk"
       },
-      "serves": ["evening", "sunday", "takeaway"]
+      "serves": ["evening", "sunday", "takeaway"],
+      "image": {
+        "url": "/images/eat/ivy-inn.jpg",
+        "alt": "Front page of the Ivy Inn website",
+        "website": true
+      }
     },
     {
       "id": "regal-cinema",
@@ -344,7 +394,12 @@
         "text": "theregal.ac",
         "url": "https://theregal.ac/"
       },
-      "serves": ["coffee", "evening"]
+      "serves": ["coffee", "evening"],
+      "image": {
+        "url": "/images/eat/regal-cinema.jpg",
+        "alt": "Front page of the Regal Cinema website",
+        "website": true
+      }
     },
     {
       "id": "thai-emerald",
@@ -357,7 +412,12 @@
         "text": "thai-emerald.co.uk",
         "url": "https://www.thai-emerald.co.uk/evesham"
       },
-      "serves": ["lunch", "evening", "takeaway"]
+      "serves": ["lunch", "evening", "takeaway"],
+      "image": {
+        "url": "/images/eat/thai-emerald.jpg",
+        "alt": "Front page of the Thai Emerald website",
+        "website": true
+      }
     },
     {
       "id": "wayside-farm-shop-tearoom",
@@ -388,7 +448,12 @@
       "garden": true,
       "veggie": true,
       "rooms": true,
-      "highlight": "Fleur de Lys restaurant by Glynn Purnell; afternoon tea overlooking the gardens"
+      "highlight": "Fleur de Lys restaurant by Glynn Purnell; afternoon tea overlooking the gardens",
+      "image": {
+        "url": "/images/eat/the-wood-norton.jpg",
+        "alt": "Front page of the The Wood Norton website",
+        "website": true
+      }
     },
     {
       "id": "angel-inn",
@@ -406,7 +471,12 @@
       "veggie": true,
       "stepfree": true,
       "rooms": true,
-      "highlight": "Riverside gardens on the Avon; Sunday roasts"
+      "highlight": "Riverside gardens on the Avon; Sunday roasts",
+      "image": {
+        "url": "/images/eat/angel-inn.jpg",
+        "alt": "Front page of the Angel Inn website",
+        "website": true
+      }
     }
   ]
 }
