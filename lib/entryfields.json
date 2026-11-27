@@ -5,7 +5,7 @@
     "notices": { "label": "Notice", "text": ["body"], "links": ["link", "link2"] },
     "pending": { "label": "Submission", "text": ["body"], "links": ["link", "link2"] },
     "regulars": { "label": "Regular activity", "text": ["frequency", "time", "where", "note", "about", "runBy", "forWho", "cost", "booking", "bring", "phone", "email"], "links": [] },
-    "eat": { "label": "Where to eat", "text": ["type", "where", "food", "note", "phone"], "links": [] },
+    "eat": { "label": "Where to eat", "text": ["type", "where", "highlight", "food", "note", "phone"], "links": [] },
     "trades": { "label": "Local trades", "text": ["what", "covers", "base", "contact", "phone", "phone2", "email", "other"], "links": [] }
   },
   "required": ["body"],

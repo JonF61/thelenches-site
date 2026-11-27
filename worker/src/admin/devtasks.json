@@ -275,6 +275,16 @@
       "task": "Church pages (27 Nov): add an interior photo of St Peter's, Abbots Morton (Wikimedia refused the download; e.g. Commons 'Interior of Abbots Morton church - geograph 8413095', Philip Halling, CC BY-SA 2.0, credited) or one of our own, in both sites' images/photos and lib/churches.json.",
       "added": "2026-11-27",
       "kryten": true
+    },
+    {
+      "task": "Where to eat, next steps (Jon, 27 Nov: work in progress; built: filters, tags, highlights, 14 website pictures): pictures for the 8 places whose websites blocked the screenshot or showed a pop-up (Boot Inn, Clive's, Chadbury, Hillers, Wayside, Coach and Horses, Karma Salford Hall, Norton Grange) and the 3 Facebook-only ones; distance from the Lenches and a map; more places in Pershore and Evesham; add the new questions (dogs, garden, Sunday roast, step-free) to the yearly listing check; tags for Ellenden Farm Shop (Harvington).",
+      "kryten": true,
+      "added": "2026-11-27"
+    },
+    {
+      "task": "Plan doc Build history entry for the Where to eat improvements (27 Nov, PRs 584 and the follow-up), put off to save tokens.",
+      "kryten": true,
+      "added": "2026-11-27"
     }
   ]
 }
