@@ -26,6 +26,9 @@ function places() {
       seen.set(p.id, url);
     }
   }
+  // Places not listed yet (a Kryten branch's scripts/eatshots/extra.json: [{id, url}]), to check before adding.
+  const extra = path.join(__dirname, 'extra.json');
+  if (fs.existsSync(extra)) for (const e of JSON.parse(fs.readFileSync(extra, 'utf8'))) if (!seen.has(e.id)) seen.set(e.id, e.url);
   const only = (process.env.EAT_IDS || '').split(',').map((s) => s.trim()).filter(Boolean);
   return [...seen].filter(([id]) => !only.length || only.includes(id));
 }
