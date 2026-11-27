@@ -169,7 +169,7 @@
 
 import { seoReportFile, searchConsole } from './seo.js';
 import { rankings, rankSerp } from './rankings.js';
-import { LINK_TAB, planLinkEdit, linkPartners, planLinkAsk } from './links.mjs';
+import { LINK_TAB, planLinkEdit, linkPartners, planLinkAsk, bothReplies } from './links.mjs';
 import { ACTIONS, decide, github, dispatch } from '../core.js';
 import { DEFAULT_SITE, knownSite, siteEnv, siteList, siteConfig, siteIds } from '../sites.js';
 import { verifyAccess } from './access.js';
@@ -936,14 +936,23 @@ async function doAutonomyIgnore(env, body) {
 
 // Rimmer: Dismiss, Send to Kryten, or Fix… / Apply / Discard on one finding (rimmer.js plans
 // each as one stale-checked write; Fix… and Apply then go through decide()).
+// This site's Replies plus every other site's (read-only; a Sheet that can't be read adds
+// nothing), so a link request sent from one site for both counts on each (links.mjs requestsFor).
+async function linkReplies(env) {
+  const site = env.SITE || DEFAULT_SITE;
+  const [own, ...others] = await Promise.all([readTable(env, 'Replies'),
+    ...siteIds().filter((id) => id !== site).map((id) => readTable(siteEnv(env, id), 'Replies').catch(() => ({ rows: [] })))]);
+  return bothReplies(own.rows, others.map((o) => o.rows || []));
+}
+
 // SEO → Inbound links: Draft request / Draft chaser. Holly's fixed wording (scripts/outreach/
 // linkask.js) waits in Replies for Jon's Approve.
 async function doLinkAsk(env, body) {
   const id = String(body.id ?? '');
-  const [{ rows }, replies] = await Promise.all([readOptional(env, LINK_TAB), readTable(env, 'Replies')]);
+  const [{ rows }, replies] = await Promise.all([readOptional(env, LINK_TAB), linkReplies(env)]);
   const matches = rows.filter((r) => id && String(r.id ?? '') === id);
   if (matches.length > 1) return json({ ok: false, error: 'More than one partner with this id' }, 409);
-  const plan = planLinkAsk(matches[0], replies.rows, ukToday());
+  const plan = planLinkAsk(matches[0], replies, ukToday(), env.SITE || DEFAULT_SITE);
   if (plan.error) return json({ ok: false, ...plan }, plan.status);
   if (!(await decide(env, { a: 'linkask', i: id }))) {
     return json({ ok: false, error: 'GitHub did not accept the request. Nothing has changed; try again in a few minutes.' }, 502);
@@ -1198,8 +1207,8 @@ export async function handleAdmin(request, rawEnv) {
       if (path === '/admin/api/summary') return json(await summary(env, lenv));
       if (path === '/admin/api/site-visitors') return json(await visitorHistory(env));
       if (path === '/admin/api/links') {
-        const [tab, replies] = await Promise.all([readOptional(env, LINK_TAB), readTable(env, 'Replies')]);
-        return json(linkPartners(tab, replies.rows, ukToday()));
+        const [tab, replies] = await Promise.all([readOptional(env, LINK_TAB), linkReplies(env)]);
+        return json(linkPartners(tab, replies, ukToday(), env.SITE || DEFAULT_SITE));
       }
       if (path === '/admin/api/seo') {
         const [report, consoleData] = await Promise.all([seoReportFile(env), searchConsole(env)]);

@@ -1,7 +1,7 @@
 // worker/test/links.test.mjs: SEO → Inbound links (admin/links.js).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { planLinkEdit, linkPartners, LINK_STATUSES } from '../src/admin/links.mjs';
+import { planLinkEdit, linkPartners, LINK_STATUSES, requestsFor, planLinkAsk, bothReplies } from '../src/admin/links.mjs';
 
 const row = { id: 'arch', name: 'ARCH', status: 'To ask', notes: '', email: '' };
 
@@ -32,7 +32,6 @@ test('linkPartners: order, counts, blank status reads To ask, missing tab', () =
   assert.equal(linkPartners({ headers: [], rows: [] }).made, false);
 });
 
-import { planLinkAsk, requestsFor } from '../src/admin/links.mjs';
 
 const partner = { id: 'arch', name: 'ARCH', status: 'To ask', email: 'office@arch.example' };
 const sent = (code, day) => ({ policy_codes: code, status: 'sent', sent_at: `${day} 10:00`, to: 'office@arch.example' });
@@ -47,11 +46,22 @@ test('planLinkAsk: request, then one chaser 21 days on, never past Linking/Decli
   assert.deepEqual(planLinkAsk({ ...partner, status: 'Asked' }, req, '2026-12-18'), { kind: 'chase' });
   assert.match(planLinkAsk({ ...partner, status: 'Link gone' }, [...req, sent('link_chase_arch', '2026-12-19')], '2027-02-01').error, /chased 2026-12-19/);
   assert.deepEqual(requestsFor('arch', [...req, { policy_codes: 'link_request_other', status: 'sent', sent_at: '2026-11-01' }]),
-    { waiting: false, requestSent: '2026-11-27', chaseSent: '' });
+    { waiting: false, requestSent: '2026-11-27', chaseSent: '', viaOther: false });
 });
 
 test('linkPartners: each card says what Draft request would do', () => {
   const t = linkPartners({ headers: ['id'], rows: [partner, { id: 'x', name: 'X', status: '' }] }, [], '2026-11-26');
   assert.deepEqual(t.partners.find((p) => p.id === 'arch').ask, { kind: 'request' });
   assert.match(t.partners.find((p) => p.id === 'x').ask.why, /email address/);
+});
+
+test('one request for both sites (27 Nov): counts on the other site, whose chaser goes from the first', () => {
+  const sent = [{ policy_codes: 'link_request_arch-benefice link_request_arch@harvington', status: 'sent', sent_at: '2026-11-27 10:00' }];
+  const r = requestsFor('arch', sent, 'harvington');
+  assert.deepStrictEqual(r, { waiting: false, requestSent: '2026-11-27', chaseSent: '', viaOther: true });
+  assert.strictEqual(requestsFor('arch', sent, '').requestSent, '', 'without the site, another site\'s code never counts');
+  const row = { id: 'arch', email: 'a@b.example', status: 'Asked' };
+  assert.match(planLinkAsk(row, sent, '2027-01-01', 'harvington').error, /other site/);
+  assert.strictEqual(planLinkAsk({ ...row, id: 'arch-benefice' }, sent, '2027-01-01', 'lenches').kind, 'chase');
+  assert.deepStrictEqual(bothReplies([1], [[2], [3]]), [1, 2, 3]);
 });

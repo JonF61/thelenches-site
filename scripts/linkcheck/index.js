@@ -141,8 +141,11 @@ async function main() {
   }
   for (const h of HEADERS) await g.ensureColumn(TAB, h);
   const rows = await g.readTable(TAB);
-  const replyRows = await g.readTable('Replies');
   const R = await import(require('url').pathToFileURL(path.join(__dirname, '..', '..', 'worker', 'src', 'admin', 'links.mjs')).href);
+  // This Sheet's Replies plus the other sites' (read-only): one request can cover both sites.
+  const { otherSites } = require('../../lib/site');
+  const others = await Promise.all(otherSites().map((s) => g.readOtherTable(s, 'Replies').catch(() => [])));
+  const replyRows = R.bothReplies(await g.readTable('Replies'), others);
   const seeds = Object.fromEntries(seedRows(SITE).map((p) => [p.id, p]));
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
   const counts = {};
@@ -151,7 +154,7 @@ async function main() {
     if (!str(row.id) && !str(row.name)) continue;
     const check = await checkSite(row.url, domains);
     counts[check.result] = (counts[check.result] || 0) + 1;
-    const upd = rowUpdate(row, check, today, { requestSent: R.requestsFor(str(row.id), replyRows).requestSent, seed: seeds[str(row.id)] });
+    const upd = rowUpdate(row, check, today, { requestSent: R.requestsFor(str(row.id), replyRows, SITE).requestSent, seed: seeds[str(row.id)] });
     if (upd) { await g.updateRow(TAB, row._row, upd); changed += 1; }
     if (upd && upd.status && upd.status !== str(row.status)) console.log(`${str(row.id) || `row ${row._row}`}: ${str(row.status) || 'To ask'} -> ${upd.status}`);
   }

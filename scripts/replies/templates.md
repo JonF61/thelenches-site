@@ -194,11 +194,54 @@ And if you ever have news or events to share, just reply to this email and we'll
 {organisation} is listed on our {page} page:
 {page_url}
 
+## link_request_known
+I'm getting in touch about the Lenches Website (thelenches.org.uk).
+
+{listed_line}
+
+Would you be happy to add a link to us from your website, perhaps on a links or community page? If it helps, something like:
+
+The Lenches Website (https://thelenches.org.uk/): events, news and local information for the Lenches villages near Evesham.
+
+It helps local people find what's going on, and it helps the site show up in Google.
+
+## link_request_known_harvington
+I'm getting in touch about the Harvington Website (harvingtonvillage.org.uk).
+
+{listed_line}
+
+Would you be happy to add a link to us from your website, perhaps on a links or community page? If it helps, something like:
+
+The Harvington Website (https://harvingtonvillage.org.uk/): events, news and local information for Harvington, Norton and Lenchwick.
+
+It helps local people find what's going on, and it helps the site show up in Google.
+
+## link_request_both
+I'm getting in touch about our two community websites, the Lenches Website (thelenches.org.uk) and the Harvington Website (harvingtonvillage.org.uk).
+
+{listed_line}
+
+Would you be happy to add links to them from your website, perhaps on a links or community page? If it helps, something like:
+
+The Lenches Website (https://thelenches.org.uk/): events, news and local information for the Lenches villages near Evesham.
+
+The Harvington Website (https://harvingtonvillage.org.uk/): events, news and local information for Harvington, Norton and Lenchwick.
+
+It helps local people find what's going on, and it helps both sites show up in Google.
+
+## link_request_listed_both
+{organisation} is listed on both websites:
+{page_url}
+{page_url2}
+
 ## link_chase
 Just following up my email about a link to thelenches.org.uk from your website. If it's not something you can do, that's absolutely fine, and there's no need to reply.
 
 ## link_chase_harvington
 Just following up my email about a link to harvingtonvillage.org.uk from your website. If it's not something you can do, that's absolutely fine, and there's no need to reply.
+
+## link_chase_both
+Just following up my email about links to thelenches.org.uk and harvingtonvillage.org.uk from your website. If it's not something you can do, that's absolutely fine, and there's no need to reply.
 
 ## signature
 Best wishes,
