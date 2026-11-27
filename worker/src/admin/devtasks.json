@@ -21,7 +21,7 @@
       "kryten": true
     },
     {
-      "task": "Read the Form failures tab on both Sheets (/k, tab \"Form failures\", add site harvington) a few days after PR for sign-up failure records: what stage, reason and browser the Harvington sign-up failures show (e.g. Turnstile failing in the Facebook app), then propose a fix to Jon.",
+      "task": "Facebook app sign-ups (27 Nov fix: an unknown Origin such as \"null\" is accepted when Turnstile's answer names one of our sites): over the next week, check the Sign-ups tabs get Facebook app sign-ups and the Form failures tabs show no more 'origin' rows from it; any that remain now show the origin sent (column G).",
       "added": "2026-11-23",
       "kryten": true
     },

@@ -7,16 +7,27 @@
 // (e.g. "Facebook app (iPhone)"). Never the address, the IP or the full user agent.
 // Failures in the Worker are recorded by signup.js; failures in the page are reported by
 // signup-form.njk with a small POST /s carrying fail=1 (see handleSignup).
+// 27 Nov 2026: an `origin` column (added at the end of an older tab) holds the Origin header
+// the browser sent, cut to its scheme and host (or "null"), to show what a refused browser
+// such as the Facebook app sends. A site address, never anything about the reader.
 import { getValues, appendValues, sheetGids, addTab, writeCells } from './admin/google.js';
 import { tableFrom } from './admin/sheet.js';
 import { londonStamp } from './feedback.js';
 
 export const FAIL_TAB = 'Form failures';
-export const FAIL_HEADERS = ['at', 'site', 'form', 'stage', 'reason', 'browser'];
+export const FAIL_HEADERS = ['at', 'site', 'form', 'stage', 'reason', 'browser', 'origin'];
 const DAY_CAP = 200; // rows a day in all; a flood of reports stops there
 
 // A reason or stage as sent: lower-case letters, digits, - and _ only, at most 40.
 export const code = (v) => String(v ?? '').toLowerCase().replace(/[^a-z0-9_-]+/g, '').slice(0, 40);
+
+// The Origin header as recorded: "null", "(none)", or scheme://host[:port], at most 80.
+export function originNote(v) {
+  if (v === null || v === undefined || v === '') return '(none)';
+  const s = String(v).trim();
+  if (s === 'null') return 'null';
+  try { const u = new URL(s); return `${u.protocol}//${u.host}`.slice(0, 80); } catch { return '(unreadable)'; }
+}
 
 // "Facebook app (iPhone)", "Safari (Mac)", "Chrome (Android)" … from the user agent.
 export function browserOf(ua) {
@@ -42,15 +53,19 @@ async function ensureTab(env) {
 }
 
 // Adds one row. Never throws: a failure to record must not change what the reader sees.
-export async function recordFailure(env, { form = 'signup', stage, reason, ua, ms = Date.now() }) {
+export async function recordFailure(env, { form = 'signup', stage, reason, ua, origin, ms = Date.now() }) {
   try {
     await ensureTab(env);
-    const { headers, rows } = tableFrom(await getValues(env, `'${FAIL_TAB}'!A1:F`));
+    const { headers, rows } = tableFrom(await getValues(env, `'${FAIL_TAB}'!A1:G`));
+    if (!headers.includes('origin')) { // a tab made before 27 Nov: add the header at the end
+      await writeCells(env, [{ range: `'${FAIL_TAB}'!${String.fromCharCode(65 + headers.length)}1`, values: [['origin']] }]);
+      headers.push('origin');
+    }
     const today = londonStamp(ms).slice(0, 10);
     if (rows.filter((r) => String(r.at || '').startsWith(today)).length >= DAY_CAP) return false;
     const row = {
       at: londonStamp(ms), site: String(env.SITE || 'lenches'), form: code(form),
-      stage: code(stage), reason: code(reason) || 'unknown', browser: browserOf(ua),
+      stage: code(stage), reason: code(reason) || 'unknown', browser: browserOf(ua), origin: originNote(origin),
     };
     await appendValues(env, FAIL_TAB, [headers.map((h) => (row[h] === undefined ? '' : row[h]))]);
     return true;

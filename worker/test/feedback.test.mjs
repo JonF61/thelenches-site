@@ -219,7 +219,10 @@ test('POST /f: refused before Turnstile when invalid, from another site, or too 
   assert.match((await r.json()).message, /write your message/);
   r = await worker.fetch(post(good(), { origin: 'https://evil.example' }), env());
   assert.equal(r.status, 403);
-  assert.equal(calls.turnstile.length, 0);
+  // 27 Nov: an unknown origin's Turnstile answer is asked for once (formsite.js), and
+  // refused because it names none of our sites; nothing is saved.
+  assert.equal(calls.turnstile.length, 1);
+  assert.equal(calls.appends.length, 0);
 
   for (let i = 0; i < 5; i += 1) assert.equal((await worker.fetch(post(good(), { ip: "7.7.7.7" }), env())).status, 200);
   r = await worker.fetch(post(good(), { ip: '7.7.7.7' }), env());

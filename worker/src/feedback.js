@@ -31,7 +31,7 @@ const DAILY_CAP = 100;             // rows a day in all; a flood waits for tomor
 // Fallback limit when the FEEDBACK_LIMITER binding is missing (per Worker instance only).
 const MEMORY_LIMIT = 5;
 const MEMORY_WINDOW_MS = 10 * 60 * 1000;
-const TURNSTILE_VERIFY = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+export const TURNSTILE_VERIFY = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 export const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]{1,64}@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/;
 const TZ = 'Europe/London';
 
@@ -97,6 +97,8 @@ export function validateFeedback(fields, origin) {
 
 // Cloudflare Turnstile. Returns true only for a token Cloudflare confirms.
 export async function verifyTurnstile(env, token, ip, fetchImpl = fetch) {
+  // Already checked by formsite.js (an unrecognised origin whose check passed on our site).
+  if (env && env.TURNSTILE_OK === true) return true;
   const secret = String(env.TURNSTILE_SECRET || '');
   const response = String(token || '');
   if (!secret || !response || response.length > 2048) return false;
@@ -248,7 +250,8 @@ export async function handleFeedback(request, env, { fetchImpl = fetch, now = Da
   }
   const js = fields.js === '1';
   let back = '';
-  try { back = new URL(fields.page_url).origin === origin ? fields.page_url : ''; } catch { back = ''; }
+  const pageOrigin = env.FORM_SITE_ORIGIN || origin; // formsite.js: the site's own address
+  try { back = new URL(fields.page_url).origin === pageOrigin ? fields.page_url : ''; } catch { back = ''; }
   back = back || String(env.SITE_URL || '');
   const fail = (status, message) => reply(env, js, { ok: false, status, message, back });
 
@@ -259,7 +262,7 @@ export async function handleFeedback(request, env, { fetchImpl = fetch, now = Da
   const thanks = 'Thank you, we\'ve got your message.';
   if (fields.website.trim()) return reply(env, js, { ok: true, message: thanks, back });
 
-  const v = validateFeedback(fields, origin);
+  const v = validateFeedback(fields, pageOrigin);
   if (!v.ok) return fail(400, v.error);
 
   if (!(await verifyTurnstile(env, fields['cf-turnstile-response'], ip, fetchImpl))) {

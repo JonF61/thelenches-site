@@ -278,3 +278,11 @@ test('a Sheet error while recording never changes the reader\'s answer', async (
   assert.match((await res.json()).message, /robot/);
   globalThis.fetch = realFetch;
 });
+
+test('originNote keeps only the scheme and host', async () => {
+  const { originNote } = await import('../src/formfail.js');
+  assert.equal(originNote(null), '(none)');
+  assert.equal(originNote('null'), 'null');
+  assert.equal(originNote('https://www.thelenches.org.uk/path?x=1'), 'https://www.thelenches.org.uk');
+  assert.equal(originNote('rubbish'), '(unreadable)');
+});

@@ -65,6 +65,7 @@ import { handleSuggest, handleSuggestConfirm } from './listingsuggest.js';
 import { logVisitors } from './admin/sitestats.js';
 import { runAutoWindow } from './admin/autorun.js';
 import { readSettingsPairs } from './admin/sheet.js';
+import { formRequestEnv } from './formsite.js';
 import { SITES, siteEnv, siteIds, hasAnalytics, siteConfig, siteFromRequest, publicEnv, siteWords } from './sites.js';
 
 const enc = new TextEncoder();
@@ -690,20 +691,20 @@ export default {
     if (url.pathname === '/u') return handleUnsubscribe(request, env);
     // Public forms (Harvington stage 7): the site is the one the form was posted from
     // (sites.js siteFromRequest); a signed link's own site comes from its token instead.
-    if (url.pathname === '/f') return handleFeedback(request, publicEnv(env, siteFromRequest(request)));
+    if (url.pathname === '/f') return handleFeedback(request, await formRequestEnv(request, env));
     // Anonymous newsletter counts (track.js): public, never behind Cloudflare Access.
     if (url.pathname === '/c') return handleClick(request, env);
     if (url.pathname === '/o') return handleOpen(request, env);
     if (url.pathname === '/s') {
-      return url.searchParams.has('t') ? handleSignupConfirm(request, env) : handleSignup(request, publicEnv(env, siteFromRequest(request)));
+      return url.searchParams.has('t') ? handleSignupConfirm(request, env) : handleSignup(request, await formRequestEnv(request, env));
     }
     if (url.pathname === '/r') {
-      return url.searchParams.has('t') ? handleRecommendConfirm(request, env) : handleRecommend(request, publicEnv(env, siteFromRequest(request)));
+      return url.searchParams.has('t') ? handleRecommendConfirm(request, env) : handleRecommend(request, await formRequestEnv(request, env));
     }
     if (url.pathname === '/sg') {
       return url.searchParams.has('t')
         ? handleSuggestConfirm(request, env, { verifyToken, page, esc, invalidPage, failedPage })
-        : handleSuggest(request, publicEnv(env, siteFromRequest(request)));
+        : handleSuggest(request, await formRequestEnv(request, env));
     }
     if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) return handleAdmin(request, env);
     // Kryten's quick Sheet access (kryten.js): its own bearer secret, never behind Access.
