@@ -117,7 +117,7 @@ export const CLIENT_JS = String.raw`
       ['Not in top 100', 'Google doesn’t show this site in its first 100 results for that phrase.'],
       ['Top 10', 'opens Google’s first ten results for that phrase as Rank Tracker last saw them, with ours highlighted, so you can see who is above us.'],
       ['Phrases', 'are added or removed in Ahrefs (Rank Tracker → Add keywords), not here. Figures are kept for 12 hours, so a change in Ahrefs shows here by the next day.'],
-      ['Draft chaser', 'shown 21 days after the request went if no link has been found: one short follow-up on the same email thread. Only one chaser is sent.']],
+      ['Draft chaser', 'shown 21 days after the request went if no link has been found: one short follow-up on the same email thread. Only one chaser is sent. Never once emails have gone back and forth with them since the request (any mail from or to their address, or anyone at their own domain, in Gmail or Replies): then carry on in that thread, or mark them Declined or Not now.']],
     summary: [
       'Each box is one screen in short. Tap its heading to open that screen.',
       ['Sign-ups that didn\'t go through', 'someone typed an address in the newsletter sign-up form but it was refused or failed in their browser (why and which browser are shown). You get an email straight away too. Check the address, then add them to Subscribers by hand, reply to them, or ask Kryten to send them a confirmation link; tap Reviewed when done. One that later went through by itself drops off the list.'],

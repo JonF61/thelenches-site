@@ -2,6 +2,8 @@
 // site's "Link partners" tab (made and checked each Monday by scripts/linkcheck, link-check.yml).
 // Jon changes a partner's status, notes or email here, each a stale-checked write of one cell;
 // the check fills link_found_at, last_checked and check. Read and written on the shown site's Sheet.
+import { FREE_MAIL } from './orgoutreach.mjs';
+
 export const LINK_TAB = 'Link partners';
 export const LINK_STATUSES = ['To ask', 'Asked', 'Linking', 'Link gone', 'Declined', 'Not now'];
 const FIELDS = ['status', 'notes', 'email'];
@@ -50,7 +52,8 @@ const codesOf = (r) => String(r.policy_codes || '').split(/[\s,;|]+/).filter(Boo
 const dayOf = (s) => str(s).slice(0, 10);
 const addDays = (d, n) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
 
-// The request / chaser Replies rows for one partner -> { waiting, requestSent, chaseSent, viaOther }.
+// The request / chaser Replies rows for one partner -> { waiting, requestSent, requestSentAt
+// (UK "YYYY-MM-DD HH:MM"), chaseSent, viaOther }.
 // Both sites (27 Nov, Jon): one email can ask a partner the two sites share (same address, e.g.
 // ARCH) for links to both. It is a Replies row on the site that drafted it, whose policy_codes
 // also carry the other site's partner as link_request_<id>@<site> (link_chase_<id>@<site>). So
@@ -62,11 +65,13 @@ export function requestsFor(id, replies, site = '') {
   const mine = (replies || []).filter((r) => codesOf(r).some((c) => own(c) || other(c)));
   const sentRows = (kind) => mine.filter((r) => codesOf(r).some((c) => c === `link_${kind}_${id}` || c === `link_${kind}_${id}@${site}`)
     && (str(r.status) === 'sent' || str(r.sent_at)));
-  const last = (rows) => rows.map((r) => dayOf(r.sent_at) || dayOf(r.created_at)).sort().pop() || '';
+  const lastAt = (rows) => rows.map((r) => str(r.sent_at) || str(r.created_at)).sort().pop() || '';
+  const last = (rows) => dayOf(lastAt(rows));
   const requests = sentRows('request');
   return {
     waiting: mine.some((r) => str(r.status) === 'awaiting'),
     requestSent: last(requests),
+    requestSentAt: lastAt(requests).slice(0, 16),
     chaseSent: last(sentRows('chase')),
     viaOther: requests.length > 0 && requests.every((r) => !codesOf(r).includes(`link_request_${id}`)),
   };
@@ -75,8 +80,45 @@ export function requestsFor(id, replies, site = '') {
 // This Sheet's Replies plus another site's, for requestsFor / planLinkAsk.
 export const bothReplies = (own, others = []) => [...(own || []), ...others.flat()];
 
+// No chaser while emails are going back and forth (27 Nov 2026, Jon: never chase by accident
+// after they've replied or asked something). Their own address, plus their domain unless it is
+// free mail, as Gmail search terms and as a matcher for Replies rows.
+const addrOf = (v) => (str(v).match(/[^\s<>,;"]+@[^\s<>,;"]+/) || [''])[0].toLowerCase();
+export function theirMail(email) {
+  const a = addrOf(email);
+  const d = a.split('@')[1] || '';
+  const dom = d && !FREE_MAIL.has(d) ? d : '';
+  return {
+    matches: (v) => { const x = addrOf(v); return !!x && (x === a || (!!dom && x.endsWith(`@${dom}`))); },
+    query: [a, dom && `@${dom}`].filter(Boolean).map((t) => `from:${t} to:${t}`).join(' '),
+  };
+}
+
+// The latest day of a Replies row with them since the request (Holly answering their email,
+// or any other draft to them; the link rows themselves left out), or ''.
+export function talkSince(id, email, replies, sinceAt) {
+  if (!sinceAt || !EMAIL.test(str(email))) return '';
+  const { matches } = theirMail(email);
+  return (replies || [])
+    .filter((r) => matches(r.to) && !codesOf(r).some((c) => c.startsWith(`link_request_${id}`) || c.startsWith(`link_chase_${id}`)))
+    .map((r) => str(r.created_at).slice(0, 16))
+    .filter((t) => t > sinceAt).sort().pop()?.slice(0, 10) || '';
+}
+
+// A UK "YYYY-MM-DD HH:MM" as Unix seconds (for a Gmail after: search), or 0.
+export function ukEpoch(stamp) {
+  const m = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/.exec(str(stamp));
+  if (!m) return 0;
+  const asUtc = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+    .formatToParts(asUtc).map((x) => [x.type, x.value]));
+  const offset = ((+p.hour * 60 + +p.minute) - (+m[4] * 60 + +m[5]) + 1440) % 1440; // UK minus UTC, minutes
+  return Math.floor((asUtc - (offset > 720 ? offset - 1440 : offset) * 60000) / 1000);
+}
+
 // Draft request / Draft chaser for one partner row -> { kind: 'request' | 'chase' } or { error, status }.
-export function planLinkAsk(row, replies, today, site = '') {
+// heard: the latest day Gmail shows mail with them since the request (the panel's live check), or ''.
+export function planLinkAsk(row, replies, today, site = '', { heard = '' } = {}) {
   if (!row) return { error: 'No such partner: reload the page', status: 404 };
   const id = str(row.id);
   const status = str(row.status) || 'To ask';
@@ -88,6 +130,10 @@ export function planLinkAsk(row, replies, today, site = '') {
   if (!r.requestSent) return { kind: 'request' };
   if (r.viaOther) return { error: 'Not drafted: asked from the other site with one email for both; any chaser goes from there', status: 409 };
   if (r.chaseSent) return { error: `Not drafted: asked ${r.requestSent} and chased ${r.chaseSent}`, status: 409 };
+  const talk = [talkSince(id, row.email, replies, r.requestSentAt), dayOf(heard)].filter(Boolean).sort().pop();
+  if (talk) {
+    return { error: `Not drafted: you've been emailing them since the request (latest ${talk}). Carry on in that thread, or mark them Declined or Not now`, status: 409 };
+  }
   const due = addDays(r.requestSent, LINK_CHASE_DAYS);
   if (today < due) return { error: `Not drafted: asked ${r.requestSent}; a chaser is due from ${due}`, status: 409 };
   return { kind: 'chase' };
