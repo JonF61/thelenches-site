@@ -82,6 +82,7 @@ assert.match(bc.body, /links to thelenches\.org\.uk and harvingtonvillage\.org\.
   assert.strictEqual(await draftLinkAsk('nomail'), null);
   assert.strictEqual(await draftLinkAsk('missing'), null);
   assert.match(fresh.body, /I help look after/, 'never written to: the full introduction');
+  assert.match(fresh.body, /rather we didn't/, 'a first email keeps the opt-out line');
 
   // Known through Gmail, and the same address on the other site: one email for both.
   tabs['Link partners'].push({ _row: 4, id: 'pc', name: 'Parish Council', status: 'To ask', email: 'Clerk@pc.example' });
@@ -113,6 +114,7 @@ assert.match(bc.body, /links to thelenches\.org\.uk and harvingtonvillage\.org\.
   assert.strictEqual(kt.policy_codes, 'link_request_theatre');
   assert.match(kt.body, /I'm getting in touch about/);
   assert.match(kt.notes, /written to them before/);
+  assert.doesNotMatch(kt.body, /rather we didn't/, 'no opt-out line to someone we know');
   // A Gmail failure counts as not known.
   g.searchMessageIds = async () => { throw new Error('down'); };
   tabs['Link partners'].push({ _row: 6, id: 'new', name: 'New', status: 'To ask', email: 'n@new.example' });

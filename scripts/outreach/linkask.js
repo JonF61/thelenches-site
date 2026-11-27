@@ -137,7 +137,7 @@ async function draftLinkAsk(id) {
   const known = plan.kind === 'request' && await knownTo(to, {
     replyRows: allReplies, contactRows: [...contacts, ...otherTabs.flatMap((t) => t[2])],
   });
-  const { subject, body } = linkEmail(row, plan.kind, { optout: !replies.emailedBefore(rows, to), known, twin });
+  const { subject, body } = linkEmail(row, plan.kind, { optout: !known && !replies.emailedBefore(allReplies, to), known, twin });
   const codes = [`link_${plan.kind}_${id}`];
   if (twin) codes.push(`link_${plan.kind}_${str(twin.row.id)}@${twin.site}`);
   const fresh = {
