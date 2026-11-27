@@ -254,11 +254,6 @@
       "added": "2026-11-26"
     },
     {
-      "task": "Add a Build history entry to the Plan doc for the planning feed's switch to curl (27 Nov: Wychavon's firewall refused Node's fetch; Claude Docs connector unavailable in the failed-runs routine).",
-      "added": "2026-11-27",
-      "kryten": true
-    },
-    {
       "task": "After the Wednesday 2 Dec weekly planning run, check planning.json check.problems is empty on both sites and the new week was added (scripts/planning now reads Wychavon with curl).",
       "added": "2026-11-27",
       "kryten": true
