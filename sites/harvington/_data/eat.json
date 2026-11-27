@@ -1,8 +1,9 @@
 {
-  "intro": "Pubs, cafés and other places to eat in Harvington, Norton and Lenchwick, and a few a short drive away. Opening times change, so check with the place itself before you set off.",
+  "intro": "Pubs, cafés and other places to eat in Harvington, Norton and Lenchwick, in Evesham and a short drive away. Opening times change, so check with the place itself before you set off.",
   "areas": [
     "Harvington",
     "Norton and Lenchwick",
+    "Evesham",
     "A short drive away"
   ],
   "from": {
@@ -50,7 +51,17 @@
         "alt": "Ellenden Farm Shop Café, Evesham Road, Harvington",
         "credit": "Jeff Gogarty, CC BY-SA 2.0",
         "creditUrl": "https://www.geograph.org.uk/photo/8401313"
-      }
+      },
+      "website": {
+        "text": "ellendenfarmshop.co.uk",
+        "url": "https://www.ellendenfarmshop.co.uk/"
+      },
+      "highlight": "Breakfast, lunch and a view of the Vale; wood burner on colder days",
+      "serves": ["breakfast", "lunch", "afternoon-tea", "coffee"],
+      "garden": true,
+      "dogs": true,
+      "fire": true,
+      "note": "Book afternoon tea at least 48 hours ahead"
     },
     {
       "id": "golden-cross",
@@ -127,6 +138,548 @@
       }
     },
     {
+      "id": "apple-barn-restaurant",
+      "name": "Apple Barn Restaurant",
+      "area": "Evesham",
+      "where": "Evesham Garden Centre",
+      "type": "Garden centre café",
+      "phone": "01386 761333",
+      "website": {
+        "text": "bluediamond.gg",
+        "url": "https://www.bluediamond.gg/restaurant/apple-barn-restaurant-evesham"
+      },
+      "note": "No dogs",
+      "serves": ["breakfast", "lunch", "sunday"],
+      "image": {
+        "url": "/images/eat/apple-barn-restaurant.jpg",
+        "alt": "Front page of the Apple Barn Restaurant website",
+        "website": true
+      },
+      "lat": 52.11602,
+      "lng": -1.93792
+    },
+    {
+      "id": "the-bear",
+      "name": "The Bear",
+      "area": "Evesham",
+      "where": "Port Street, Evesham",
+      "type": "Pub",
+      "website": {
+        "text": "thebearevesham.co.uk",
+        "url": "https://www.thebearevesham.co.uk/"
+      },
+      "highlight": "Town-centre pub opposite the Regal Cinema; real ales and fresh coffee",
+      "serves": ["coffee"],
+      "lat": 52.09091,
+      "lng": -1.93959,
+      "image": {
+        "url": "/images/eat/the-bear.jpg",
+        "alt": "Front page of the The Bear website",
+        "website": true
+      }
+    },
+    {
+      "id": "buongiorno-cafe",
+      "name": "Buongiorno Café",
+      "area": "Evesham",
+      "where": "Bridge Street, Evesham",
+      "type": "Italian café",
+      "food": "Coffee, breakfast and lunch",
+      "website": {
+        "text": "buongiornocafe.co.uk",
+        "url": "https://buongiornocafe.co.uk/"
+      },
+      "highlight": "Award-winning Italian café",
+      "serves": ["breakfast", "lunch", "coffee"],
+      "lat": 52.09181,
+      "lng": -1.94472,
+      "image": {
+        "url": "/images/eat/buongiorno-cafe.jpg",
+        "alt": "Front page of the Buongiorno Café website",
+        "website": true
+      }
+    },
+    {
+      "id": "chillis",
+      "name": "Chillis",
+      "area": "Evesham",
+      "where": "High Street, Evesham",
+      "type": "Indian takeaway",
+      "phone": "01386 442621",
+      "website": {
+        "text": "chillisevesham.co.uk",
+        "url": "https://www.chillisevesham.co.uk/"
+      },
+      "serves": ["takeaway"],
+      "lat": 52.09513,
+      "lng": -1.94649,
+      "image": {
+        "url": "/images/eat/chillis.jpg",
+        "alt": "Front page of the Chillis website",
+        "website": true
+      }
+    },
+    {
+      "id": "evesham-balti",
+      "name": "Evesham Balti",
+      "area": "Evesham",
+      "where": "Waterside, Evesham",
+      "type": "Bangladeshi restaurant and takeaway",
+      "food": "Evening meals, seven days a week",
+      "phone": "01386 421253",
+      "website": {
+        "text": "eveshambalti.co.uk",
+        "url": "https://eveshambalti.co.uk/"
+      },
+      "serves": ["evening", "takeaway"],
+      "lat": 52.09066,
+      "lng": -1.94232,
+      "image": {
+        "url": "/images/eat/evesham-balti.jpg",
+        "alt": "Front page of the Evesham Balti website",
+        "website": true
+      }
+    },
+    {
+      "id": "the-fleece-inn",
+      "name": "The Fleece Inn",
+      "area": "Evesham",
+      "where": "Bretforton",
+      "type": "Historic pub (National Trust)",
+      "phone": "01386 831173",
+      "website": {
+        "text": "thefleeceinn.co.uk",
+        "url": "https://thefleeceinn.co.uk"
+      },
+      "serves": ["breakfast", "lunch", "evening", "sunday", "takeaway"],
+      "dogs": true,
+      "garden": true,
+      "veggie": true,
+      "stepfree": true,
+      "fire": true,
+      "rooms": true,
+      "highlight": "600-year-old National Trust pub; Good Pub Guide Top Ten Country Pubs",
+      "image": {
+        "url": "/images/eat/the-fleece-inn.jpg",
+        "alt": "Front page of the The Fleece Inn website",
+        "website": true
+      },
+      "lat": 52.09218,
+      "lng": -1.86543
+    },
+    {
+      "id": "ivy-inn",
+      "name": "Ivy Inn",
+      "area": "Evesham",
+      "where": "North Littleton",
+      "type": "Pub",
+      "food": "Food and takeaway",
+      "phone": "01386 834841",
+      "website": {
+        "text": "theivyinn.co.uk",
+        "url": "https://www.theivyinn.co.uk"
+      },
+      "serves": ["evening", "sunday", "takeaway"],
+      "image": {
+        "url": "/images/eat/ivy-inn.jpg",
+        "alt": "Front page of the Ivy Inn website",
+        "website": true
+      },
+      "lat": 52.12407,
+      "lng": -1.88151
+    },
+    {
+      "id": "jelly-pickle-jam-tea-shop",
+      "name": "Jelly Pickle Jam Tea Shop",
+      "area": "Evesham",
+      "where": "Vine Mews, Evesham",
+      "type": "Tea shop",
+      "website": {
+        "text": "jellypicklejam.co.uk",
+        "url": "https://jellypicklejam.co.uk/"
+      },
+      "serves": ["coffee"],
+      "lat": 52.0921,
+      "lng": -1.94942,
+      "image": {
+        "url": "/images/eat/jelly-pickle-jam-tea-shop.jpg",
+        "alt": "Vine Mews, Evesham, where the tea shop is (a photo of the mews, not the shop)",
+        "credit": "Pauline E, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/2040491"
+      }
+    },
+    {
+      "id": "karma",
+      "name": "Karma",
+      "area": "Evesham",
+      "where": "Port Street, Evesham",
+      "type": "Indian restaurant and takeaway",
+      "food": "Evening meals",
+      "website": {
+        "text": "karmaevesham.co.uk",
+        "url": "https://karmaevesham.co.uk/"
+      },
+      "serves": ["evening", "takeaway"],
+      "veggie": true,
+      "lat": 52.09111,
+      "lng": -1.94094,
+      "image": {
+        "url": "/images/eat/karma.jpg",
+        "alt": "Port Street, Evesham, where Karma is (a photo of the street, not the restaurant)",
+        "credit": "Stephen McKay, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/7149357"
+      }
+    },
+    {
+      "id": "the-mint-house",
+      "name": "The Mint House",
+      "area": "Evesham",
+      "where": "Waterside, Evesham",
+      "type": "Indian restaurant",
+      "food": "Evening meals; order online for takeaway",
+      "phone": "01386 339844",
+      "website": {
+        "text": "minthouseevesham.com",
+        "url": "https://minthouseevesham.com/"
+      },
+      "serves": ["evening", "takeaway"],
+      "veggie": true,
+      "lat": 52.091,
+      "lng": -1.942,
+      "image": {
+        "url": "/images/eat/the-mint-house.jpg",
+        "alt": "Front page of the The Mint House website",
+        "website": true
+      }
+    },
+    {
+      "id": "the-old-swanne-inne",
+      "name": "The Old Swanne Inne",
+      "area": "Evesham",
+      "where": "High Street, Evesham",
+      "type": "Pub (Wetherspoon)",
+      "food": "Breakfast from 8am to noon every day, then meals all day",
+      "phone": "01386 442650",
+      "website": {
+        "text": "jdwetherspoon.com",
+        "url": "https://www.jdwetherspoon.com/pubs/the-old-swanne-inne-evesham/"
+      },
+      "note": "Under-18s welcome between 8am and 9pm",
+      "serves": ["breakfast", "lunch", "evening"],
+      "garden": true,
+      "stepfree": true,
+      "lat": 52.0943,
+      "lng": -1.94629,
+      "image": {
+        "url": "/images/eat/the-old-swanne-inne.jpg",
+        "alt": "Front page of the The Old Swanne Inne website",
+        "website": true
+      }
+    },
+    {
+      "id": "orto-lounge",
+      "name": "Orto Lounge",
+      "area": "Evesham",
+      "where": "Market Place, Evesham",
+      "type": "Café bar",
+      "food": "Breakfast, brunch, lunch and dinner",
+      "phone": "01386 424081",
+      "website": {
+        "text": "thelounges.co.uk",
+        "url": "https://thelounges.co.uk/orto/"
+      },
+      "highlight": "All-day café bar with a terrace; children’s, gluten-free and vegan menus",
+      "serves": ["breakfast", "lunch", "evening", "coffee"],
+      "garden": true,
+      "dogs": true,
+      "children": true,
+      "veggie": true,
+      "stepfree": true,
+      "lat": 52.09198,
+      "lng": -1.94736,
+      "image": {
+        "url": "/images/eat/orto-lounge.jpg",
+        "alt": "Front page of the Orto Lounge website",
+        "website": true
+      }
+    },
+    {
+      "id": "regal-cinema",
+      "name": "Regal Cinema",
+      "area": "Evesham",
+      "where": "Port Street",
+      "type": "Café and wine bar",
+      "food": "Coffee shop by day, wine bar in the evening",
+      "phone": "01386 421007",
+      "website": {
+        "text": "theregal.ac",
+        "url": "https://theregal.ac/"
+      },
+      "serves": ["coffee", "evening"],
+      "image": {
+        "url": "/images/eat/regal-cinema.jpg",
+        "alt": "Front page of the Regal Cinema website",
+        "website": true
+      },
+      "lat": 52.09097,
+      "lng": -1.93995
+    },
+    {
+      "id": "saffron-lounge",
+      "name": "Saffron Lounge",
+      "area": "Evesham",
+      "where": "High Street, Evesham",
+      "type": "Indian restaurant",
+      "website": {
+        "text": "saffronloungeevesham.co.uk",
+        "url": "https://saffronloungeevesham.co.uk/"
+      },
+      "highlight": "In a Grade II listed building on the High Street",
+      "lat": 52.0935,
+      "lng": -1.94649,
+      "image": {
+        "url": "/images/eat/saffron-lounge.jpg",
+        "alt": "High Street, Evesham, where Saffron Lounge is (a photo of the street, not the restaurant)",
+        "credit": "Steve Daniels, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/6614984"
+      }
+    },
+    {
+      "id": "thai-emerald",
+      "name": "Thai Emerald",
+      "area": "Evesham",
+      "where": "High Street, Evesham",
+      "type": "Thai restaurant",
+      "phone": "01386 49788",
+      "website": {
+        "text": "thai-emerald.co.uk",
+        "url": "https://www.thai-emerald.co.uk/evesham"
+      },
+      "serves": ["lunch", "evening", "takeaway"],
+      "image": {
+        "url": "/images/eat/thai-emerald.jpg",
+        "alt": "Front page of the Thai Emerald website",
+        "website": true
+      },
+      "lat": 52.09528,
+      "lng": -1.94639
+    },
+    {
+      "id": "wayside-farm-shop-tearoom",
+      "name": "Wayside Farm Shop & Tearoom",
+      "area": "Evesham",
+      "where": "Wickhamford",
+      "type": "Farm shop tearoom",
+      "website": {
+        "text": "waysidefarmshop.co.uk",
+        "url": "https://www.waysidefarmshop.co.uk"
+      },
+      "food": "Breakfast and snacks",
+      "serves": ["breakfast", "coffee"],
+      "lat": 52.06499,
+      "lng": -1.89549,
+      "image": {
+        "url": "/images/eat/wayside-farm-shop-tearoom.jpg",
+        "alt": "Wayside Farm Shop & Tearoom, Wickhamford",
+        "credit": "David Smith, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/8210693"
+      }
+    },
+    {
+      "id": "the-wood-norton",
+      "name": "The Wood Norton",
+      "area": "Evesham",
+      "where": "Wood Norton, between Evesham and Fladbury",
+      "type": "Hotel restaurant and bar",
+      "food": "Restaurant and afternoon tea, open to non-residents",
+      "phone": "01386 765611",
+      "website": {
+        "text": "thewoodnorton.com",
+        "url": "https://www.thewoodnorton.com"
+      },
+      "serves": ["lunch", "evening", "afternoon-tea"],
+      "garden": true,
+      "veggie": true,
+      "rooms": true,
+      "highlight": "Fleur de Lys restaurant by Glynn Purnell; afternoon tea overlooking the gardens",
+      "image": {
+        "url": "/images/eat/the-wood-norton.jpg",
+        "alt": "Front page of the The Wood Norton website",
+        "website": true
+      },
+      "lat": 52.12213,
+      "lng": -1.97661
+    },
+    {
+      "id": "the-anchor-inn",
+      "name": "The Anchor Inn",
+      "area": "A short drive away",
+      "where": "Wyre Piddle",
+      "type": "Pub",
+      "food": "Sunday lunches",
+      "website": {
+        "text": "Facebook page",
+        "url": "https://www.facebook.com/p/The-Anchor-Inn-61574418183415/"
+      },
+      "note": "Terraced garden above the River Avon",
+      "garden": true,
+      "serves": ["sunday"],
+      "lat": 52.12537,
+      "lng": -2.05172,
+      "image": {
+        "url": "/images/eat/the-anchor-inn.jpg",
+        "alt": "The Anchor Inn, Wyre Piddle",
+        "credit": "Philip Halling, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/7569429"
+      }
+    },
+    {
+      "id": "bishampton-village-store-cafe",
+      "name": "Bishampton Village Store & Café",
+      "area": "A short drive away",
+      "where": "Bishampton",
+      "type": "Village shop café",
+      "food": "Coffee and cake",
+      "phone": "01386 462873",
+      "website": {
+        "text": "Facebook page",
+        "url": "https://www.facebook.com/bishamptonvillagestore"
+      },
+      "note": "Village shop and post office",
+      "serves": ["coffee"],
+      "lat": 52.16036,
+      "lng": -2.01766,
+      "image": {
+        "url": "/images/eat/bishampton-village-store-cafe.jpg",
+        "alt": "The Bishampton village sign at the start of Main Street (a photo of the village, not the shop)",
+        "credit": "Roy Hughes, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/6946444"
+      }
+    },
+    {
+      "id": "boot-inn",
+      "name": "Boot Inn",
+      "area": "A short drive away",
+      "where": "Flyford Flavell",
+      "type": "Pub and restaurant",
+      "food": "Restaurant; also has rooms",
+      "phone": "01386 462658",
+      "website": {
+        "text": "thebootinn.com",
+        "url": "https://www.thebootinn.com/"
+      },
+      "serves": ["lunch", "evening"],
+      "children": true,
+      "garden": true,
+      "rooms": true,
+      "highlight": "Restaurant and conservatory, with a shaded patio for summer",
+      "lat": 52.19305,
+      "lng": -2.03095,
+      "image": {
+        "url": "/images/eat/boot-inn.jpg",
+        "alt": "Boot Inn, Flyford Flavell",
+        "credit": "Mike Dodman, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/7852473"
+      }
+    },
+    {
+      "id": "bulls-head",
+      "name": "Bulls Head",
+      "area": "A short drive away",
+      "where": "Inkberrow",
+      "type": "Pub",
+      "food": "Home-cooked food; also has rooms",
+      "phone": "01386 792233",
+      "website": {
+        "text": "bullsheadinkberrow.com",
+        "url": "https://bullsheadinkberrow.com/"
+      },
+      "serves": ["breakfast", "lunch", "evening", "sunday"],
+      "garden": true,
+      "fire": true,
+      "rooms": true,
+      "highlight": "Guest house dating from the 1500s; beer garden and free parking",
+      "image": {
+        "url": "/images/eat/bulls-head.jpg",
+        "alt": "Front page of the Bulls Head website",
+        "website": true
+      },
+      "lat": 52.21387,
+      "lng": -1.98063
+    },
+    {
+      "id": "chequers-inn",
+      "name": "Chequers Inn",
+      "area": "A short drive away",
+      "where": "Fladbury",
+      "type": "Pub",
+      "food": "Lunch and evening meals; booking advised",
+      "phone": "01386 861854",
+      "website": {
+        "text": "thechequersinnfladbury.co.uk",
+        "url": "https://www.thechequersinnfladbury.co.uk"
+      },
+      "serves": ["lunch", "evening", "sunday"],
+      "children": true,
+      "garden": true,
+      "fire": true,
+      "rooms": true,
+      "highlight": "Inglenook fireplaces, beams and a beer garden with country views",
+      "image": {
+        "url": "/images/eat/chequers-inn.jpg",
+        "alt": "Front page of the Chequers Inn website",
+        "website": true
+      },
+      "lat": 52.11324,
+      "lng": -2.00728
+    },
+    {
+      "id": "clive-s-of-cropthorne",
+      "name": "Clive's of Cropthorne",
+      "area": "A short drive away",
+      "where": "Cropthorne",
+      "type": "Farm shop and café",
+      "food": "Breakfast and lunch, Tuesday to Sunday",
+      "phone": "01386 860439",
+      "website": {
+        "text": "clivesofcropthorne.co.uk",
+        "url": "https://clivesofcropthorne.co.uk/"
+      },
+      "lat": 52.10056,
+      "lng": -2.01557,
+      "image": {
+        "url": "/images/eat/clive-s-of-cropthorne.jpg",
+        "alt": "Clive's of Cropthorne, Cropthorne",
+        "credit": "Mike Dodman, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/7824115"
+      }
+    },
+    {
+      "id": "the-ounce-at-the-dolphin",
+      "name": "The Dolphin Steakhouse",
+      "area": "A short drive away",
+      "where": "Bishampton",
+      "type": "Pub",
+      "note": "Community owned",
+      "phone": "01386 462927",
+      "website": {
+        "text": "thedolphinsteakhouse.co.uk",
+        "url": "https://thedolphinsteakhouse.co.uk/"
+      },
+      "food": "Steak restaurant",
+      "serves": ["evening", "sunday"],
+      "children": true,
+      "veggie": true,
+      "highlight": "Village steakhouse with a vegetarian roast and children’s roast on Sundays",
+      "image": {
+        "url": "/images/eat/the-ounce-at-the-dolphin.jpg",
+        "alt": "Front page of the The Dolphin Steakhouse website",
+        "website": true
+      },
+      "lat": 52.16138,
+      "lng": -2.01676
+    },
+    {
       "id": "hillers-garden-cafe",
       "name": "Hillers Garden Café",
       "area": "A short drive away",
@@ -171,6 +724,55 @@
         "credit": "Philip Halling, CC BY-SA 2.0",
         "creditUrl": "https://www.geograph.org.uk/photo/8034086"
       }
+    },
+    {
+      "id": "old-bull-inn",
+      "name": "Old Bull Inn",
+      "area": "A short drive away",
+      "where": "Inkberrow",
+      "type": "Pub",
+      "food": "Food every day",
+      "phone": "01386 792428",
+      "website": {
+        "text": "oldbullinkberrow.co.uk",
+        "url": "https://www.oldbullinkberrow.co.uk/"
+      },
+      "note": "16th-century pub on the village green",
+      "dogs": true,
+      "serves": ["lunch", "evening", "coffee", "afternoon-tea"],
+      "fire": true,
+      "highlight": "400 years old, with open beams and inglenook fireplaces",
+      "image": {
+        "url": "/images/eat/old-bull-inn.jpg",
+        "alt": "Front page of the Old Bull Inn website",
+        "website": true
+      },
+      "lat": 52.21364,
+      "lng": -1.97943
+    },
+    {
+      "id": "old-chestnut-tree",
+      "name": "Old Chestnut Tree",
+      "area": "A short drive away",
+      "where": "Manor Road, Lower Moor",
+      "type": "Pub",
+      "phone": "01386 860380",
+      "website": {
+        "text": "theoldchestnuttreeinn.com",
+        "url": "https://theoldchestnuttreeinn.com/"
+      },
+      "serves": ["lunch", "evening", "sunday"],
+      "children": true,
+      "dogs": true,
+      "fire": true,
+      "highlight": "Log fire in the bar; kitchen open Tuesday to Sunday",
+      "image": {
+        "url": "/images/eat/old-chestnut-tree.jpg",
+        "alt": "Front page of the Old Chestnut Tree website",
+        "website": true
+      },
+      "lat": 52.12329,
+      "lng": -2.02983
     }
   ]
 }
