@@ -19,16 +19,26 @@ const { SITES, ROOT, siteConfigFor } = require('../../lib/site');
 
 const UA = 'Mozilla/5.0 (compatible; community-website-planning-feed/1.0)';
 
+// 27 Nov 2026 (Jon): Wychavon's firewall (Sucuri) now answers Node's fetch with HTTP 307 even from
+// the cloud session, while curl reads the page normally, so the list page and its PDFs are read
+// with curl (installed on GitHub's runners and in cloud sessions). Standing rule: if a site we read
+// refuses Node's fetch but curl reads it normally, switch that fetch to curl (CLAUDE.md).
+function curlGet(url) {
+  try {
+    return execFileSync('curl', ['-sS', '-f', '-L', '--max-time', '60', '-A', UA, url],
+      { maxBuffer: 50 * 1024 * 1024 });
+  } catch (e) {
+    const m = /error: (\d{3})/.exec(String(e.stderr || ''));
+    throw new Error(m ? `HTTP ${m[1]} for ${url}` : `curl failed for ${url}`);
+  }
+}
+
 async function fetchText(url) {
-  const res = await fetch(url, { headers: { 'user-agent': UA } });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
-  return res.text();
+  return curlGet(url).toString('utf8');
 }
 
 async function fetchPdfText(url) {
-  const res = await fetch(url, { headers: { 'user-agent': UA } });
-  if (!res.ok) throw new Error(`HTTP ${res.status} for the PDF`);
-  const buf = Buffer.from(await res.arrayBuffer());
+  const buf = curlGet(url);
   if (buf.slice(0, 5).toString() !== '%PDF-') throw new Error('Not a PDF');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'planning-'));
   const file = path.join(dir, 'list.pdf');

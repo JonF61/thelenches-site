@@ -2,10 +2,8 @@
   "_help": "Written by scripts/planning (planning.yml): Wychavon weekly planning lists for this site's parishes (site.json planningParishes), newest week first, 8 weeks. Reference, location, proposal, type, date, decision and link only; tree works left out. Don't edit by hand.",
   "source": "https://www.wychavon.gov.uk/planning/other-planning-services/planning-weekly-list",
   "check": {
-    "at": "2026-11-26",
-    "problems": [
-      "Wychavon's weekly list page could not be read (HTTP 307)"
-    ]
+    "at": "2026-11-27",
+    "problems": []
   },
   "weeks": [
     {

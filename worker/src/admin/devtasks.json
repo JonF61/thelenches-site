@@ -252,6 +252,16 @@
       "task": "SEO steps 1-3 follow-up (PR 533, 26 Nov): open a few live event pages and check Search Console's Events report over the next week (addresses, offers, no new warnings); find the postcodes for Abbots Morton Village Hall (sources disagree: WR7 4NA / WR7 4LT) and St Peter's Church, Abbots Morton, and add them to lib/venues.json once confirmed.",
       "kryten": true,
       "added": "2026-11-26"
+    },
+    {
+      "task": "Add a Build history entry to the Plan doc for the planning feed's switch to curl (27 Nov: Wychavon's firewall refused Node's fetch; Claude Docs connector unavailable in the failed-runs routine).",
+      "added": "2026-11-27",
+      "kryten": true
+    },
+    {
+      "task": "After the Wednesday 2 Dec weekly planning run, check planning.json check.problems is empty on both sites and the new week was added (scripts/planning now reads Wychavon with curl).",
+      "added": "2026-11-27",
+      "kryten": true
     }
   ]
 }
