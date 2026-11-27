@@ -24,12 +24,19 @@ export function planLinkEdit(row, body, today) {
   return { field, expected: String(body.expected ?? ''), value, also };
 }
 
+// A request has gone but the Sheet still says To ask (the Monday check moves it to Asked):
+// show it as Asked straight away (27 Nov, Jon: three asked that morning showed as not asked).
+function shownStatus(r, q) {
+  const st = str(r.status) || 'To ask';
+  return st === 'To ask' && q.requestSent ? 'Asked' : st;
+}
+
 // The tab for the panel: partners in a useful order (to ask first, then asked, link gone,
 // linking, declined / not now), with counts per status.
 export function linkPartners({ headers, rows }, replies = [], today = '', site = '') {
   const order = { 'To ask': 0, '': 0, 'Link gone': 1, Asked: 2, Linking: 3, 'Not now': 4, Declined: 5 };
   const list = (rows || []).filter((r) => str(r.id) || str(r.name)).map((r) => ({
-    id: str(r.id), name: str(r.name), type: str(r.type), url: str(r.url), status: str(r.status) || 'To ask',
+    id: str(r.id), name: str(r.name), type: str(r.type), url: str(r.url), status: shownStatus(r, requestsFor(str(r.id), replies, site)),
     link_found_at: str(r.link_found_at), last_checked: str(r.last_checked), check: str(r.check),
     notes: str(r.notes), email: str(r.email), asked_at: str(r.asked_at), _status: str(r.status), _notes: str(r.notes), _email: str(r.email),
     listed_page: str(r.listed_page), listed_url: str(r.listed_url),

@@ -92,3 +92,12 @@ test('one request for both sites (27 Nov): counts on the other site, whose chase
   assert.strictEqual(planLinkAsk({ ...row, id: 'arch-benefice' }, sent, '2027-01-01', 'lenches').kind, 'chase');
   assert.deepStrictEqual(bothReplies([1], [[2], [3]]), [1, 2, 3]);
 });
+
+test('a sent request shows as Asked before the Monday check writes it (27 Nov)', () => {
+  const sent = [{ policy_codes: 'link_request_arch', status: 'sent', sent_at: '2026-11-27 09:20' }];
+  const t = linkPartners({ headers: ['id'], rows: [{ id: 'arch', name: 'ARCH', status: 'To ask', email: 'a@b.example' }, { id: 'y', name: 'Y', status: 'To ask' }] }, sent, '2026-11-27');
+  const p = t.partners.find((x) => x.id === 'arch');
+  assert.equal(p.status, 'Asked');
+  assert.equal(p._status, 'To ask', 'edits still checked against the Sheet');
+  assert.deepEqual(t.counts, { 'To ask': 1, Asked: 1 });
+});
