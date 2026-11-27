@@ -77,6 +77,14 @@ module.exports = async function (eleventyConfig) {
     );
 
   // Drop finished events, sort the rest soonest-first
+  // Where to eat (27 Nov 2026, Jon): straight-line miles between two points, to the nearest half mile.
+  eleventyConfig.addFilter("milesBetween", (a, b) => {
+    if (!a || !b || a.lat == null || b.lat == null) return null;
+    const r = (x) => (x * Math.PI) / 180;
+    const h = Math.sin(r(b.lat - a.lat) / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(r(b.lng - a.lng) / 2) ** 2;
+    const miles = 3958.8 * 2 * Math.asin(Math.sqrt(h));
+    return Math.max(0.5, Math.round(miles * 2) / 2);
+  });
   eleventyConfig.addFilter("upcoming", (events) => {
     const now = today();
     return (events || [])

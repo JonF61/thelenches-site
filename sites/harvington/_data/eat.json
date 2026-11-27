@@ -5,6 +5,12 @@
     "Norton and Lenchwick",
     "A short drive away"
   ],
+  "from": {
+    "name": "Harvington",
+    "point": "the middle of Harvington",
+    "lat": 52.13869,
+    "lng": -1.9198
+  },
   "places": [
     {
       "id": "coach-and-horses",
@@ -23,7 +29,9 @@
         "url": "/images/photos/harvington-coach-and-horses-harvington.webp",
         "alt": "The Coach and Horses, a cream-painted pub on Station Road, Harvington"
       },
-      "serves": ["lunch", "sunday"]
+      "serves": ["lunch", "sunday"],
+      "lat": 52.13932,
+      "lng": -1.91891
     },
     {
       "id": "ellenden-farm-shop-cafe",
@@ -32,7 +40,9 @@
       "where": "Evesham Road, Harvington",
       "type": "Farm shop café",
       "food": "Home-cooked meals made with local produce",
-      "phone": "01386 870296"
+      "phone": "01386 870296",
+      "lat": 52.13964,
+      "lng": -1.92876
     },
     {
       "id": "golden-cross",
@@ -48,7 +58,9 @@
       },
       "garden": true,
       "children": true,
-      "serves": ["evening"]
+      "serves": ["evening"],
+      "lat": 52.14267,
+      "lng": -1.92445
     },
     {
       "id": "chadbury-farm-shop-cafe",
@@ -62,7 +74,9 @@
         "text": "chadburyfarmshopandcafe.co.uk",
         "url": "https://www.chadburyfarmshopandcafe.co.uk/"
       },
-      "serves": ["breakfast", "lunch"]
+      "serves": ["breakfast", "lunch"],
+      "lat": 52.11342,
+      "lng": -1.95932
     },
     {
       "id": "norton-grange",
@@ -82,7 +96,9 @@
       "children": true,
       "veggie": true,
       "stepfree": true,
-      "highlight": "Sunday carvery, kids’ play area, quiz nights and live music"
+      "highlight": "Sunday carvery, kids’ play area, quiz nights and live music",
+      "lat": 52.12868,
+      "lng": -1.93872
     },
     {
       "id": "hillers-garden-cafe",
@@ -96,7 +112,9 @@
         "text": "hillers.co.uk",
         "url": "https://hillers.co.uk/"
       },
-      "serves": ["lunch", "coffee"]
+      "serves": ["lunch", "coffee"],
+      "lat": 52.18348,
+      "lng": -1.90356
     },
     {
       "id": "karma-salford-hall",
@@ -112,7 +130,9 @@
       },
       "serves": ["breakfast", "lunch", "evening", "afternoon-tea"],
       "rooms": true,
-      "highlight": "Historic hall hotel; dinner menu includes Indian dishes"
+      "highlight": "Historic hall hotel; dinner menu includes Indian dishes",
+      "lat": 52.15054,
+      "lng": -1.90182
     }
   ]
 }

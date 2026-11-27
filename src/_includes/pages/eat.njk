@@ -37,7 +37,20 @@
 .rec-help{margin:.3rem 0 0;color:#555}.rec-status{margin:.3rem 0 0}.rec-status.bad{color:#a12a1f}.rec-status.ok{color:#2f4a22}
 .card[id]{scroll-margin-top:1rem}
 .card:target{outline:3px solid #c8860b;outline-offset:2px}
+.ea-card[hidden],.ea-area[hidden],.ea-jump[hidden],#ea-near[hidden],.ea-order[hidden],.ea-filter[hidden]{display:none}
+.ea-miles{margin:0 0 .4rem;font-weight:600;color:#3F5233}
+.ea-miles a{font-weight:400;margin-left:.3rem}
+.ea-order{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;margin:.2rem 0 1rem}
+.ea-order span{font-weight:600}
+.ea-order button{padding:.3rem .75rem;border:1px solid #c8b48a;border-radius:999px;background:#fff;color:#7a4a06;font:inherit;font-size:.92rem;font-weight:600;cursor:pointer}
+.ea-order button[aria-pressed="true"]{background:#7a4a06;border-color:#7a4a06;color:#fff}
+#ea-map{height:420px;border-radius:var(--radius,10px);border:1px solid #dfe6d8;margin:0 0 .4rem}
+.ea-mapnote{margin:0 0 1rem;font-size:.85rem;color:#555}
+.ea-pin{background:#3F5233;color:#fff;border:2px solid #fff;border-radius:50%;width:14px;height:14px;box-shadow:0 0 0 1px rgba(0,0,0,.3)}
+.ea-home{background:#c8860b;border:2px solid #fff;border-radius:3px;width:16px;height:16px;box-shadow:0 0 0 1px rgba(0,0,0,.3)}
+@media(max-width:600px){ #ea-map{height:300px} }
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" integrity="sha512-Zcn6bjR/8RZbLEpLIeOwNtzREBAJnUKESxces60Mpoj+2okopSAcSUIUOseddDm0cxnGQzxIR7vJgsLZbdLE3w==" crossorigin="anonymous" referrerpolicy="no-referrer">
 <main class="container">
   <div class="page-head">
     <h1>{{ heading or "Where to eat" }}</h1>
@@ -54,7 +67,15 @@
     <p class="ea-count" aria-live="polite"><span id="ea-count">Showing all {{ eat.places.length }} places.</span><button type="button" class="ea-clear" id="ea-clear" hidden>Show all</button></p>
   </div>
   {% endif %}
+  {% if eat.from %}
+  <div id="ea-maparea" hidden>
+    <div id="ea-map" role="region" aria-label="Map of places to eat"></div>
+    <p class="ea-mapnote">Tap a pin for its name. The square marks {{ eat.from.point }}. The map shows only places that match the buttons above.</p>
+  </div>
+  <div class="ea-order" id="ea-order" hidden><span>Order:</span><button type="button" data-order="area" aria-pressed="true">By area</button><button type="button" data-order="near" aria-pressed="false">Nearest first</button></div>
+  {% endif %}
   <ul class="ea-jump" aria-label="Jump to an area">{% for a in eat.areas %}<li><a href="#{{ a | slugify }}">{{ a }}</a></li>{% endfor %}</ul>
+  <div class="ea-grid" id="ea-near" hidden></div>
   <p class="ea-none" id="ea-none">Nothing matches all of those. Try taking one away.</p>
   {% for a in eat.areas %}
   <section id="{{ a | slugify }}" class="ea-area">
@@ -62,11 +83,13 @@
     <div class="ea-grid">
     {% for p in eat.places %}{% if p.area == a %}
       {%- set tags = [] -%}{%- for pair in SERVES -%}{%- if pair[0] in (p.serves or []) -%}{%- set _ = tags.push(pair[0]) -%}{%- endif -%}{%- endfor -%}{%- for pair in FEATURES -%}{%- if p[pair[0]] -%}{%- set _ = tags.push(pair[0]) -%}{%- endif -%}{%- endfor -%}
-      <div class="card ea-card" data-tags="{{ tags | join(' ') }}"{% if p.id %} id="eat-{{ p.id }}" data-entry="e:{{ p.id }}" data-label="Where to eat: {{ p.name | escape }}"{% endif %}>
+      {%- set miles = eat.from | milesBetween(p) if eat.from else null -%}
+      <div class="card ea-card" data-tags="{{ tags | join(' ') }}"{% if miles %} data-miles="{{ miles }}" data-lat="{{ p.lat }}" data-lng="{{ p.lng }}" data-name="{{ p.name | escape }}"{% endif %}{% if p.id %} id="eat-{{ p.id }}" data-entry="e:{{ p.id }}" data-label="Where to eat: {{ p.name | escape }}"{% endif %}>
         {% if p.image %}<figure class="ea-pic"><img src="{{ p.image.url | url }}" alt="{{ p.image.alt | escape }}" loading="lazy" width="800" height="500">{% if p.image.website %}<figcaption>From their website</figcaption>{% endif %}</figure>{% endif %}
         <h3>{{ p.name }}</h3>
         {% set n = recommends.eat[p.id] %}{% if n %}<p class="rec-count">&#9733; Recommended by {{ n }} {{ "person" if n == 1 else "people" }}</p>{% endif %}
         <p class="ea-where" data-field="type where">{{ p.type }} &middot; {{ p.where }}</p>
+        {% if miles %}<p class="ea-miles">About {{ miles }} mile{{ "" if miles == 1 else "s" }} from {{ eat.from.name }}<a class="small" href="https://www.google.com/maps/dir/?api=1&amp;destination={{ p.lat }},{{ p.lng }}" target="_blank" rel="noopener">Directions</a></p>{% endif %}
         {% if p.highlight %}<p class="ea-hi" data-field="highlight">{{ p.highlight }}</p>{% endif %}
         {% if p.food %}<p class="mt0" data-field="food">{{ p.food }}</p>{% endif %}
         {% if tags.length %}<p class="ea-tags">{% for pair in SERVES %}{% if pair[0] in tags %}<span class="ea-tag serve">{{ pair[1] }}</span>{% endif %}{% endfor %}{% for pair in FEATURES %}{% if pair[0] in tags %}<span class="ea-tag">{{ pair[1] }}</span>{% endif %}{% endfor %}</p>{% endif %}
@@ -79,27 +102,65 @@
   </section>
   {% endfor %}
   {#- Last checked line (SEO step 6, 26 Nov 2026): the yearly listing checks (orgoutreach.mjs). -#}
-  <p class="small mut">We ask each business to check its entry once a year. Pictures marked &ldquo;From their website&rdquo; show the front page of the place&rsquo;s own website. Spotted something out of date? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+  <p class="small mut">We ask each business to check its entry once a year. {% if eat.from %}Distances are in a straight line from {{ eat.from.point }}, so the drive is a little further. {% endif %}Pictures marked &ldquo;From their website&rdquo; show the front page of the place&rsquo;s own website. Spotted something out of date? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
   {% if site.suggestUrl and site.turnstileSiteKey %}{% set suggestKind = "eat" %}{% include "suggest-form.njk" %}{% else %}
   <p class="small mut">{{ tellUs | safe }}</p>{% endif %}
 </main>
-{% if chips.length %}
+{% if eat.from %}<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" integrity="sha512-BwHfrr4c9kmRkLw6iXFdzcdWV/PGkVgiIyIWLLlTSXzWQzxuSg4DiQUCpauz/EWjgk5TYQqX/kvn9pG1NpYfqg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>{% endif %}
 <script>
 (function(){
-  var box=document.getElementById('ea-filter');if(!box)return;box.hidden=false;
-  var chips=[].slice.call(box.querySelectorAll('.ea-chip')),cards=[].slice.call(document.querySelectorAll('.ea-card')),
-      areas=[].slice.call(document.querySelectorAll('.ea-area')),count=document.getElementById('ea-count'),
-      clear=document.getElementById('ea-clear'),none=document.getElementById('ea-none'),total=cards.length;
+  var cards=[].slice.call(document.querySelectorAll('.ea-card')),areas=[].slice.call(document.querySelectorAll('.ea-area')),
+      jump=document.querySelector('.ea-jump'),near=document.getElementById('ea-near'),none=document.getElementById('ea-none'),
+      box=document.getElementById('ea-filter'),total=cards.length,chips=[],count,clear;
+  // Each card remembers where it lives, so "By area" can put it back.
+  cards.forEach(function(c){c._home=c.parentNode;c._next=c.nextElementSibling;});
+  var markers=[],map=null,homePt=null;
+  {% if eat.from %}var FROM={lat:{{ eat.from.lat }},lng:{{ eat.from.lng }},name:{{ eat.from.point | dump | safe }}};{% else %}var FROM=null;{% endif %}
+  function want(){return chips.filter(function(c){return c.getAttribute('aria-pressed')==='true'}).map(function(c){return c.dataset.tag});}
   function apply(){
-    var want=chips.filter(function(c){return c.getAttribute('aria-pressed')==='true'}).map(function(c){return c.dataset.tag}),shown=0;
-    cards.forEach(function(card){var t=(card.dataset.tags||'').split(' ');var ok=want.every(function(w){return t.indexOf(w)>-1});card.hidden=!ok;if(ok)shown++;});
-    areas.forEach(function(a){a.hidden=!a.querySelector('.ea-card:not([hidden])')});
-    count.textContent=want.length?('Showing '+shown+' of '+total+' places.'):('Showing all '+total+' places.');
-    clear.hidden=!want.length;none.style.display=(want.length&&!shown)?'block':'none';
+    var w=want(),shown=0;
+    cards.forEach(function(card){var t=(card.dataset.tags||'').split(' ');var ok=w.every(function(x){return t.indexOf(x)>-1});card.hidden=!ok;if(ok)shown++;});
+    areas.forEach(function(a){a.hidden=nearOn()||!a.querySelector('.ea-card:not([hidden])')});
+    if(count){count.textContent=w.length?('Showing '+shown+' of '+total+' places.'):('Showing all '+total+' places.');clear.hidden=!w.length;}
+    none.style.display=(w.length&&!shown)?'block':'none';
+    if(map){var b=[];markers.forEach(function(m){var on=!m.card.hidden;if(on){m.addTo(map);b.push(m.getLatLng());}else map.removeLayer(m);});
+      if(b.length){b.push(homePt);map.fitBounds(b,{padding:[18,18],maxZoom:13});}}
   }
-  chips.forEach(function(c){c.addEventListener('click',function(){c.setAttribute('aria-pressed',c.getAttribute('aria-pressed')==='true'?'false':'true');apply();})});
-  clear.addEventListener('click',function(){chips.forEach(function(c){c.setAttribute('aria-pressed','false')});apply();});
+  if(box){
+    box.hidden=false;chips=[].slice.call(box.querySelectorAll('.ea-chip'));count=document.getElementById('ea-count');clear=document.getElementById('ea-clear');
+    chips.forEach(function(c){c.addEventListener('click',function(){c.setAttribute('aria-pressed',c.getAttribute('aria-pressed')==='true'?'false':'true');apply();})});
+    clear.addEventListener('click',function(){chips.forEach(function(c){c.setAttribute('aria-pressed','false')});apply();});
+  }
+  // Order: by area (as written) or nearest first (one list, by distance).
+  var order=document.getElementById('ea-order'),obtn=order?[].slice.call(order.querySelectorAll('button')):[];
+  function nearOn(){return !!(near&&!near.hidden);}
+  if(order&&near){
+    order.hidden=false;
+    obtn.forEach(function(b){b.addEventListener('click',function(){
+      var n=b.dataset.order==='near';obtn.forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});
+      if(n){cards.slice().sort(function(a,b){return (parseFloat(a.dataset.miles)||99)-(parseFloat(b.dataset.miles)||99)}).forEach(function(c){near.appendChild(c)});}
+      else{cards.forEach(function(c){c._home.insertBefore(c,c._next&&c._next.parentNode===c._home?c._next:null)});}
+      near.hidden=!n;if(jump)jump.hidden=n;apply();
+    })});
+  }
+  // Map: one pin per place, the square for the starting point; pins follow the buttons.
+  var area=document.getElementById('ea-maparea');
+  if(area&&FROM&&window.L){
+    area.hidden=false;
+    map=L.map('ea-map',{scrollWheelZoom:false,dragging:!L.Browser.mobile,zoomSnap:0.25});
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+    homePt=L.latLng(FROM.lat,FROM.lng);
+    L.marker(homePt,{icon:L.divIcon({className:'ea-home',iconSize:[16,16]}),title:FROM.name,keyboard:false}).bindTooltip(FROM.name).addTo(map);
+    function esc(s){return String(s).replace(/[&<>"']/g,function(c){return '&#'+c.charCodeAt(0)+';'})}
+    cards.forEach(function(c){
+      if(!c.dataset.lat)return;
+      var m=L.marker([+c.dataset.lat,+c.dataset.lng],{icon:L.divIcon({className:'ea-pin',iconSize:[14,14]}),title:c.dataset.name});
+      m.bindPopup('<strong>'+esc(c.dataset.name)+'</strong><br>About '+esc(c.dataset.miles)+' miles away<br><a href="#'+c.id+'">See its entry</a>');
+      m.card=c;markers.push(m);
+    });
+    map.invalidateSize();
+  }
+  apply();
 })();
 </script>
-{% endif %}
 {% include "recommend.njk" %}

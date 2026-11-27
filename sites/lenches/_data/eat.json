@@ -6,6 +6,12 @@
     "Evesham",
     "Pershore"
   ],
+  "from": {
+    "name": "the Lenches",
+    "point": "Church Lench",
+    "lat": 52.1594,
+    "lng": -1.96289
+  },
   "places": [
     {
       "id": "the-anchor-inn",
@@ -20,7 +26,9 @@
       },
       "note": "Terraced garden above the River Avon",
       "garden": true,
-      "serves": ["sunday"]
+      "serves": ["sunday"],
+      "lat": 52.12537,
+      "lng": -2.05172
     },
     {
       "id": "bishampton-village-store-cafe",
@@ -35,7 +43,9 @@
         "url": "https://www.facebook.com/bishamptonvillagestore"
       },
       "note": "Village shop and post office",
-      "serves": ["coffee"]
+      "serves": ["coffee"],
+      "lat": 52.16036,
+      "lng": -2.01766
     },
     {
       "id": "boot-inn",
@@ -53,7 +63,9 @@
       "children": true,
       "garden": true,
       "rooms": true,
-      "highlight": "Restaurant and conservatory, with a shaded patio for summer"
+      "highlight": "Restaurant and conservatory, with a shaded patio for summer",
+      "lat": 52.19305,
+      "lng": -2.03095
     },
     {
       "id": "bulls-head",
@@ -76,7 +88,9 @@
         "url": "/images/eat/bulls-head.jpg",
         "alt": "Front page of the Bulls Head website",
         "website": true
-      }
+      },
+      "lat": 52.21387,
+      "lng": -1.98063
     },
     {
       "id": "chequers-inn",
@@ -100,7 +114,9 @@
         "url": "/images/eat/chequers-inn.jpg",
         "alt": "Front page of the Chequers Inn website",
         "website": true
-      }
+      },
+      "lat": 52.11324,
+      "lng": -2.00728
     },
     {
       "id": "clive-s-of-cropthorne",
@@ -113,7 +129,9 @@
       "website": {
         "text": "clivesofcropthorne.co.uk",
         "url": "https://clivesofcropthorne.co.uk/"
-      }
+      },
+      "lat": 52.10056,
+      "lng": -2.01557
     },
     {
       "id": "mysuru",
@@ -134,7 +152,9 @@
         "url": "/images/eat/mysuru.jpg",
         "alt": "Front page of the Mysuru website",
         "website": true
-      }
+      },
+      "lat": 52.20304,
+      "lng": -2.02923
     },
     {
       "id": "old-bull-inn",
@@ -157,7 +177,9 @@
         "url": "/images/eat/old-bull-inn.jpg",
         "alt": "Front page of the Old Bull Inn website",
         "website": true
-      }
+      },
+      "lat": 52.21364,
+      "lng": -1.97943
     },
     {
       "id": "old-chestnut-tree",
@@ -179,7 +201,9 @@
         "url": "/images/eat/old-chestnut-tree.jpg",
         "alt": "Front page of the Old Chestnut Tree website",
         "website": true
-      }
+      },
+      "lat": 52.12329,
+      "lng": -2.02983
     },
     {
       "id": "the-ounce-at-the-dolphin",
@@ -202,7 +226,9 @@
         "url": "/images/eat/the-ounce-at-the-dolphin.jpg",
         "alt": "Front page of the The Dolphin Steakhouse website",
         "website": true
-      }
+      },
+      "lat": 52.16138,
+      "lng": -2.01676
     },
     {
       "id": "the-pantry-at-rush-farm",
@@ -222,7 +248,9 @@
         "url": "/images/eat/the-pantry-at-rush-farm.jpg",
         "alt": "Front page of the The Pantry at Rush Farm website",
         "website": true
-      }
+      },
+      "lat": 52.2332,
+      "lng": -2.00525
     },
     {
       "id": "chadbury-farm-shop-cafe",
@@ -236,7 +264,9 @@
         "text": "chadburyfarmshopandcafe.co.uk",
         "url": "https://www.chadburyfarmshopandcafe.co.uk/"
       },
-      "serves": ["breakfast", "lunch"]
+      "serves": ["breakfast", "lunch"],
+      "lat": 52.11342,
+      "lng": -1.95932
     },
     {
       "id": "coach-and-horses",
@@ -251,7 +281,9 @@
         "url": "https://coachandhorsesharvington.co.uk/"
       },
       "garden": true,
-      "serves": ["lunch", "sunday"]
+      "serves": ["lunch", "sunday"],
+      "lat": 52.13932,
+      "lng": -1.91891
     },
     {
       "id": "golden-cross",
@@ -267,7 +299,9 @@
       },
       "garden": true,
       "children": true,
-      "serves": ["evening"]
+      "serves": ["evening"],
+      "lat": 52.14267,
+      "lng": -1.92445
     },
     {
       "id": "hillers-garden-cafe",
@@ -281,7 +315,9 @@
         "text": "hillers.co.uk",
         "url": "https://hillers.co.uk/"
       },
-      "serves": ["lunch", "coffee"]
+      "serves": ["lunch", "coffee"],
+      "lat": 52.18348,
+      "lng": -1.90356
     },
     {
       "id": "karma-salford-hall",
@@ -297,7 +333,9 @@
       },
       "serves": ["breakfast", "lunch", "evening", "afternoon-tea"],
       "rooms": true,
-      "highlight": "Historic hall hotel; dinner menu includes Indian dishes"
+      "highlight": "Historic hall hotel; dinner menu includes Indian dishes",
+      "lat": 52.15054,
+      "lng": -1.90182
     },
     {
       "id": "norton-grange",
@@ -317,7 +355,9 @@
       "children": true,
       "veggie": true,
       "stepfree": true,
-      "highlight": "Sunday carvery, kids’ play area, quiz nights and live music"
+      "highlight": "Sunday carvery, kids’ play area, quiz nights and live music",
+      "lat": 52.12868,
+      "lng": -1.93872
     },
     {
       "id": "apple-barn-restaurant",
@@ -336,7 +376,9 @@
         "url": "/images/eat/apple-barn-restaurant.jpg",
         "alt": "Front page of the Apple Barn Restaurant website",
         "website": true
-      }
+      },
+      "lat": 52.11602,
+      "lng": -1.93792
     },
     {
       "id": "the-fleece-inn",
@@ -361,7 +403,9 @@
         "url": "/images/eat/the-fleece-inn.jpg",
         "alt": "Front page of the The Fleece Inn website",
         "website": true
-      }
+      },
+      "lat": 52.09218,
+      "lng": -1.86543
     },
     {
       "id": "ivy-inn",
@@ -380,7 +424,9 @@
         "url": "/images/eat/ivy-inn.jpg",
         "alt": "Front page of the Ivy Inn website",
         "website": true
-      }
+      },
+      "lat": 52.12407,
+      "lng": -1.88151
     },
     {
       "id": "regal-cinema",
@@ -399,7 +445,9 @@
         "url": "/images/eat/regal-cinema.jpg",
         "alt": "Front page of the Regal Cinema website",
         "website": true
-      }
+      },
+      "lat": 52.09097,
+      "lng": -1.93995
     },
     {
       "id": "thai-emerald",
@@ -417,7 +465,9 @@
         "url": "/images/eat/thai-emerald.jpg",
         "alt": "Front page of the Thai Emerald website",
         "website": true
-      }
+      },
+      "lat": 52.09528,
+      "lng": -1.94639
     },
     {
       "id": "wayside-farm-shop-tearoom",
@@ -430,7 +480,9 @@
         "url": "https://www.waysidefarmshop.co.uk"
       },
       "food": "Breakfast and snacks",
-      "serves": ["breakfast", "coffee"]
+      "serves": ["breakfast", "coffee"],
+      "lat": 52.06499,
+      "lng": -1.89549
     },
     {
       "id": "the-wood-norton",
@@ -453,7 +505,9 @@
         "url": "/images/eat/the-wood-norton.jpg",
         "alt": "Front page of the The Wood Norton website",
         "website": true
-      }
+      },
+      "lat": 52.12213,
+      "lng": -1.97661
     },
     {
       "id": "angel-inn",
@@ -476,7 +530,9 @@
         "url": "/images/eat/angel-inn.jpg",
         "alt": "Front page of the Angel Inn website",
         "website": true
-      }
+      },
+      "lat": 52.11029,
+      "lng": -2.07441
     }
   ]
 }
