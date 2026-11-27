@@ -41,16 +41,16 @@
     "lenches-club": { "name": "The Lenches Club", "email": "lenchesclubmail@gmail.com", "phone": "01386 870221", "url": "https://thelenchesclub.co.uk/" },
     "church-lench-hall": { "name": "Church Lench Village Hall", "email": "clvillagehallbookings@gmail.com" },
     "rous-lench-hall": { "name": "Rous Lench Village Hall", "email": "info@rouslench.com", "phone": "01386 896155", "url": "https://rouslench.com/" },
-    "south-lenches-pc": { "name": "South Lenches Parish Council", "council": "south-lenches" },
-    "rous-lench-pc": { "name": "Rous Lench Parish Council", "council": "rous-lench" },
-    "first-school": { "name": "Church Lench CofE First School", "school": "Church Lench CofE First School" },
-    "preschool": { "name": "The Lenches Pre-school", "school": "The Lenches Pre-school" },
+    "south-lenches-pc": { "name": "South Lenches Parish Council", "council": "south-lenches", "url": "https://www.southlenchesparishcouncil.org/" },
+    "rous-lench-pc": { "name": "Rous Lench Parish Council", "council": "rous-lench", "url": "https://www.rouslenchparishcouncil.gov.uk/" },
+    "first-school": { "name": "Church Lench CofE First School", "school": "Church Lench CofE First School", "url": "https://www.churchlench.worcs.sch.uk/" },
+    "preschool": { "name": "The Lenches Pre-school", "school": "The Lenches Pre-school", "url": "https://www.thelenchespreschool.org.uk/" },
     "tennis": { "name": "Lenches Tennis Club", "email": "lenchestc@gmail.com", "url": "https://clubspark.lta.org.uk/TheLenchesTennisClub" },
     "cricket": { "name": "Lenches Cricket Club", "email": "cricket.lenches@googlemail.com", "url": "https://lenchescc.play-cricket.com/" },
     "glads": { "name": "GLADS (amateur dramatics)", "facebook": "https://www.facebook.com/gladslenches", "see": "/groups/#glads" },
     "walking": { "name": "The Lenches Walking Group", "person": "Pete Marston", "email": "petemarston@msn.com", "phone": "01386 872717", "see": "/groups/#walking" },
     "orchard": { "name": "Yates Community Orchard", "person": "Jonathan Hazlewood", "email": "jbpmh1013@gmail.com", "see": "/groups/#orchard" },
-    "amphitheatre": { "name": "Lenches Amphitheatre", "url": "https://lenchestheatre.co.uk/" },
+    "amphitheatre": { "name": "Lenches Amphitheatre", "email": "info@lenchestheatre.co.uk", "url": "https://lenchestheatre.co.uk/" },
     "website": { "name": "Newsletter / website", "siteEmail": true }
   }
 }
