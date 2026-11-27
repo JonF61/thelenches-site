@@ -52,3 +52,17 @@ assert.deepStrictEqual(L.rowUpdate({ status: 'To ask', last_checked: '2026-11-30
   { status: 'Asked', asked_at: '2026-11-27', listed_page: 'Churches', listed_url: 'https://thelenches.org.uk/churches/' });
 assert.strictEqual(L.rowUpdate({ status: 'To ask', last_checked: '2026-11-30', check: 'No link found', listed_page: 'Mine', listed_url: 'x' }, { result: 'none', at: '' }, '2026-11-30', { seed }), null, 'never over a value');
 console.log('test-linkcheck: request and listing checks passed');
+
+// Email finder (27 Nov): only to-ask / link-gone partners with a blank email and a non-Facebook site; once only.
+(async () => {
+  const row = { status: 'To ask', email: '', url: 'https://club.example.org/', notes: '' };
+  assert.ok(L.wantsEmail(row));
+  assert.ok(!L.wantsEmail({ ...row, email: 'a@b.org' }));
+  assert.ok(!L.wantsEmail({ ...row, status: 'Linking' }));
+  assert.ok(!L.wantsEmail({ ...row, url: 'https://www.facebook.com/groups/x' }));
+  assert.ok(!L.wantsEmail({ ...row, notes: `x; ${L.FOUND_NOTE}` }), 'never looked up again once found (an address Jon clears stays cleared)');
+  const deps = { findEmail: async () => 'info@club.example.org' };
+  assert.deepStrictEqual(await L.emailUpdate({ ...row, notes: 'Cricket' }, deps), { email: 'info@club.example.org', notes: `Cricket; ${L.FOUND_NOTE}` });
+  assert.strictEqual(await L.emailUpdate(row, { findEmail: async () => '' }), null);
+  console.log('test-linkcheck: email finder passed');
+})().catch((e) => { console.error(e); process.exit(1); });

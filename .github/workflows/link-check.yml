@@ -5,7 +5,9 @@ name: Check inbound links
 # last_checked, check; status moves to Linking / Link gone only). Makes the tab from
 # lib/linkpartners.json the first time. Sends nothing. GitHub's runners can read outside sites,
 # so the check runs here rather than in a cloud session. The panel's Check now sends
-# repository_dispatch "link-check". The log shows partner ids and counts only.
+# repository_dispatch "link-check". It also fills a blank email for a partner still to ask from
+# its own website (27 Nov 2026; never over a value, notes say so). The log shows partner ids and
+# counts only, never an address.
 on:
   repository_dispatch:
     types: [link-check]
