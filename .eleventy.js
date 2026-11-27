@@ -84,6 +84,20 @@ module.exports = async function (eleventyConfig) {
       .sort((a, b) => a.date.localeCompare(b.date));
   });
 
+  // One church's next services from the ARCH rota (services.json dates), for its own page (27 Nov 2026):
+  // [{ date, name, time, service, note }], soonest first, at most n.
+  eleventyConfig.addFilter("servicesAt", (dates, villages, n = 6) => {
+    const now = today();
+    const out = [];
+    for (const d of [...(dates || [])].sort((a, b) => a.date.localeCompare(b.date))) {
+      if (d.date < now) continue;
+      for (const s of d.services || []) {
+        if ((villages || []).includes(s.village)) out.push({ date: d.date, name: d.name, time: s.time, service: String(s.service || "").replace(/\s*@\s*\d+\s*$/, ""), note: s.note });
+      }
+    }
+    return out.slice(0, n);
+  });
+
   // Group an already-sorted event list by month: [{ label: "October 2026", items: [...] }]
   eleventyConfig.addFilter("byMonth", (events) => {
     const groups = [];

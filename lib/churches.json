@@ -1,0 +1,117 @@
+{
+  "_help": "The five ARCH Benefice churches' own pages (27 Nov 2026, Jon): /churches/<slug>/ on both sites. Each site writes its own wording in sites/<site>/churches/<slug>.njk (Jon: separate wording on each site, no canonical); this file holds the shared facts: the services.json village names whose services the page lists, photos (files in each site's images/photos/), and outside links. Read by src/_data/churchInfo.js and the shared include src/_includes/pages/church.njk.",
+  "churches": {
+    "all-saints-church-lench": {
+      "name": "All Saints' Church, Church Lench",
+      "villages": [
+        "Church Lench"
+      ],
+      "grade": "II*",
+      "arch": "https://archbenefice.org.uk/welcome/about-us/church-lench/all-saints-church-lench26849/",
+      "listing": "https://historicengland.org.uk/listing/the-list/list-entry/1301843",
+      "photos": [
+        {
+          "slug": "church-lench-all-saints-all-saints-church-lench",
+          "alt": "All Saints' Church, Church Lench: the stone tower with clock and pinnacles above the porch steps"
+        },
+        {
+          "slug": "church-lench-all-saints-all-saints-church-lench-east-window",
+          "alt": "The stained glass east window above the altar at All Saints', Church Lench"
+        },
+        {
+          "slug": "church-lench-all-saints-all-saints-church-lench-snow",
+          "alt": "The lychgate and tower of All Saints', Church Lench, in snow"
+        }
+      ]
+    },
+    "st-peters-rous-lench": {
+      "name": "St Peter's Church, Rous Lench",
+      "villages": [
+        "Rous Lench"
+      ],
+      "grade": "I",
+      "arch": "https://archbenefice.org.uk/welcome/about-us/rous-lench/st-peters-rous-lench72477/",
+      "listing": "https://historicengland.org.uk/listing/the-list/list-entry/1081652",
+      "photos": [
+        {
+          "slug": "rous-lench-st-peter-s-church-rous-lench-exterior-1",
+          "alt": "St Peter's Church, Rous Lench: rose window, bellcote and arched doorway in its churchyard"
+        },
+        {
+          "slug": "rous-lench-img-3120",
+          "alt": "The Norman south doorway of St Peter's, Rous Lench, with its ornate wooden door"
+        },
+        {
+          "slug": "rous-lench-st-peter-s-church-rous-lench-interior-1",
+          "alt": "Inside St Peter's, Rous Lench: Norman arches and pillars"
+        }
+      ]
+    },
+    "st-peters-abbots-morton": {
+      "name": "St Peter's Church, Abbots Morton",
+      "villages": [
+        "Abbots Morton"
+      ],
+      "grade": "I",
+      "arch": "https://archbenefice.org.uk/about-us/abbots-morton/st-peters",
+      "listing": "https://historicengland.org.uk/listing/the-list/list-entry/1350229",
+      "photos": [
+        {
+          "slug": "abbots-morton-st-peters-church",
+          "alt": "St Peter's Church, Abbots Morton: a path through autumn leaves to the church and its battlemented tower",
+          "credit": "Jeff Gogarty, CC BY-SA 2.0",
+          "creditUrl": "https://commons.wikimedia.org/wiki/File:St_Peter%27s_church,_Abbots_Morton_-_geograph.org.uk_-_5598112.jpg"
+        }
+      ]
+    },
+    "st-james-harvington": {
+      "name": "St James the Great, Harvington",
+      "villages": [
+        "Harvington"
+      ],
+      "grade": "I",
+      "arch": "https://archbenefice.org.uk/welcome/about-us/harvington/st-james-the-great-harvington/",
+      "listing": "https://historicengland.org.uk/listing/the-list/list-entry/1350000",
+      "photos": [
+        {
+          "slug": "harvington-st-james-church-harvington-and-churchyard-4",
+          "alt": "St James the Great, Harvington, with its green copper spire above the churchyard"
+        },
+        {
+          "slug": "harvington-st-james-church-harvington-nave",
+          "alt": "The nave of St James, Harvington, with pews leading to the altar and east window"
+        },
+        {
+          "slug": "harvington-st-james-church-harvington-stained-glass-window-3",
+          "alt": "The stained glass east window at St James, Harvington"
+        }
+      ]
+    },
+    "st-egwins-norton": {
+      "name": "St Egwin's Church, Norton",
+      "villages": [
+        "Norton",
+        "Norton & Lenchwick"
+      ],
+      "grade": "II*",
+      "arch": "",
+      "listing": "https://historicengland.org.uk/listing/the-list/list-entry/1166454",
+      "photos": [
+        {
+          "slug": "norton-and-lenchwick-st-egwin-s-church-norton-from-the-churchyard",
+          "alt": "St Egwin's Church, Norton, with its battlemented tower, seen across the churchyard",
+          "credit": "Caroline Green"
+        },
+        {
+          "slug": "norton-and-lenchwick-st-egwin-s-church-norton",
+          "alt": "St Egwin's, Norton: the north transept, arched window and tower"
+        },
+        {
+          "slug": "norton-and-lenchwick-st-egwin-s-church-norton-in-snow",
+          "alt": "The tower of St Egwin's, Norton, in snow",
+          "credit": "Caroline Green"
+        }
+      ]
+    }
+  }
+}

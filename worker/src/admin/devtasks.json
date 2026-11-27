@@ -265,6 +265,11 @@
     {
       "task": "Failed sign-ups to Jon (27 Nov): after the first real one, check the Sign-ups row says 'review' with a plain reason, Jon got the 'Sign-up didn't go through' email, and the Summary card's Reviewed button works.",
       "kryten": true
+    },
+    {
+      "task": "Church pages (27 Nov): add an interior photo of St Peter's, Abbots Morton (Wikimedia refused the download; e.g. Commons 'Interior of Abbots Morton church - geograph 8413095', Philip Halling, CC BY-SA 2.0, credited) or one of our own, in both sites' images/photos and lib/churches.json.",
+      "added": "2026-11-27",
+      "kryten": true
     }
   ]
 }
