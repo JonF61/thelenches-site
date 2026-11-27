@@ -1,0 +1,53 @@
+{#- Shared page for one ARCH Benefice church (27 Nov 2026, Jon). Each site's sites/<site>/churches/<slug>.njk sets front
+    matter `church` (a key of lib/churches.json) and its own wording (churchIntro, churchAbout, servicesIntro), then
+    includes this. Photos and links come from lib/churches.json; service times from the services rota (services.json). -#}
+{%- set c = churchInfo[church] -%}
+<main class="container">
+
+  <div class="page-head">
+    <p class="small muted mt0"><a href="/churches/">Churches</a> &rsaquo;</p>
+    <h1>{{ heading or c.name }}</h1>
+    {{ churchIntro | safe }}
+  </div>
+
+  <div class="gallery gallery-strip">
+  {%- for p in c.photos %}
+    <figure>
+      <a href="/images/photos/{{ p.slug }}.{{ p.ext or 'webp' }}" data-viewer data-caption="{{ p.alt | escape }}"><img src="/images/photos/{{ p.slug }}.{{ p.ext or 'webp' }}" alt="{{ p.alt | escape }}" loading="{{ 'eager' if loop.first else 'lazy' }}"></a>
+      {%- if p.credit %}<figcaption class="small muted">Photo: {% if p.creditUrl %}<a href="{{ p.creditUrl }}" target="_blank" rel="noopener">{{ p.credit }}</a>{% else %}{{ p.credit }}{% endif %}</figcaption>{% endif %}
+    </figure>
+  {%- endfor %}
+  </div>
+
+  <section id="about">
+    {{ churchAbout | safe }}
+  </section>
+
+  <section id="services">
+    <h2>Next services here</h2>
+    {{ servicesIntro | safe }}
+    {%- set svc = services.dates | servicesAt(c.villages, 6) %}
+    {%- if svc.length %}
+    <ul>
+      {%- for s in svc %}
+      <li><strong>{{ s.date | longDate }}, {{ s.time }}</strong>: {{ s.service }}{% if s.note %} <span class="small muted">({{ s.note }})</span>{% endif %}</li>
+      {%- endfor %}
+    </ul>
+    {%- else %}
+    <p>No services here are listed for the coming weeks yet.</p>
+    {%- endif %}
+    <p>The place and time of services change from week to week: <a href="/churches/#services">see every church's service times</a>.</p>
+  </section>
+
+  <section id="find-out-more">
+    <h2>Find out more</h2>
+    <ul>
+      {%- if c.arch %}
+      <li><a href="{{ c.arch }}" target="_blank" rel="noopener">The church on the ARCH Benefice website</a></li>
+      {%- endif %}
+      <li><a href="{{ c.listing }}" target="_blank" rel="noopener">Historic England listing (Grade {{ c.grade }})</a></li>
+      <li><a href="/churches/">All the churches and service times</a></li>
+    </ul>
+  </section>
+
+</main>
