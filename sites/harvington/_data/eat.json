@@ -22,7 +22,8 @@
       "image": {
         "url": "/images/photos/harvington-coach-and-horses-harvington.webp",
         "alt": "The Coach and Horses, a cream-painted pub on Station Road, Harvington"
-      }
+      },
+      "serves": ["lunch", "sunday"]
     },
     {
       "id": "ellenden-farm-shop-cafe",
@@ -46,7 +47,8 @@
         "url": "https://www.facebook.com/p/The-golden-cross-inn-61581420455473/"
       },
       "garden": true,
-      "children": true
+      "children": true,
+      "serves": ["evening"]
     },
     {
       "id": "chadbury-farm-shop-cafe",
@@ -59,7 +61,8 @@
       "website": {
         "text": "chadburyfarmshopandcafe.co.uk",
         "url": "https://www.chadburyfarmshopandcafe.co.uk/"
-      }
+      },
+      "serves": ["breakfast", "lunch"]
     },
     {
       "id": "norton-grange",
@@ -73,7 +76,13 @@
       "website": {
         "text": "nortongrangepub.co.uk",
         "url": "https://www.nortongrangepub.co.uk"
-      }
+      },
+      "serves": ["lunch", "evening", "sunday"],
+      "dogs": true,
+      "children": true,
+      "veggie": true,
+      "stepfree": true,
+      "highlight": "Sunday carvery, kids’ play area, quiz nights and live music"
     },
     {
       "id": "hillers-garden-cafe",
@@ -86,7 +95,8 @@
       "website": {
         "text": "hillers.co.uk",
         "url": "https://hillers.co.uk/"
-      }
+      },
+      "serves": ["lunch", "coffee"]
     },
     {
       "id": "karma-salford-hall",
@@ -99,7 +109,10 @@
       "website": {
         "text": "karmagroup.com",
         "url": "https://karmagroup.com/find-destination/karma-resorts/karma-salford-hall/"
-      }
+      },
+      "serves": ["breakfast", "lunch", "evening", "afternoon-tea"],
+      "rooms": true,
+      "highlight": "Historic hall hotel; dinner menu includes Indian dishes"
     }
   ]
 }

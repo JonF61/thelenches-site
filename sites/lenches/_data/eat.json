@@ -19,7 +19,8 @@
         "url": "https://www.facebook.com/p/The-Anchor-Inn-61574418183415/"
       },
       "note": "Terraced garden above the River Avon",
-      "garden": true
+      "garden": true,
+      "serves": ["sunday"]
     },
     {
       "id": "bishampton-village-store-cafe",
@@ -33,7 +34,8 @@
         "text": "Facebook page",
         "url": "https://www.facebook.com/bishamptonvillagestore"
       },
-      "note": "Village shop and post office"
+      "note": "Village shop and post office",
+      "serves": ["coffee"]
     },
     {
       "id": "boot-inn",
@@ -46,7 +48,12 @@
       "website": {
         "text": "thebootinn.com",
         "url": "https://www.thebootinn.com/"
-      }
+      },
+      "serves": ["lunch", "evening"],
+      "children": true,
+      "garden": true,
+      "rooms": true,
+      "highlight": "Restaurant and conservatory, with a shaded patio for summer"
     },
     {
       "id": "bulls-head",
@@ -59,7 +66,12 @@
       "website": {
         "text": "bullsheadinkberrow.com",
         "url": "https://bullsheadinkberrow.com/"
-      }
+      },
+      "serves": ["breakfast", "lunch", "evening", "sunday"],
+      "garden": true,
+      "fire": true,
+      "rooms": true,
+      "highlight": "Guest house dating from the 1500s; beer garden and free parking"
     },
     {
       "id": "chequers-inn",
@@ -72,7 +84,13 @@
       "website": {
         "text": "thechequersinnfladbury.co.uk",
         "url": "https://www.thechequersinnfladbury.co.uk"
-      }
+      },
+      "serves": ["lunch", "evening", "sunday"],
+      "children": true,
+      "garden": true,
+      "fire": true,
+      "rooms": true,
+      "highlight": "Inglenook fireplaces, beams and a beer garden with country views"
     },
     {
       "id": "clive-s-of-cropthorne",
@@ -98,7 +116,10 @@
         "text": "mysuru.co.uk",
         "url": "https://www.mysuru.co.uk"
       },
-      "food": "Eat in or takeaway"
+      "food": "Eat in or takeaway",
+      "serves": ["evening", "takeaway"],
+      "veggie": true,
+      "highlight": "Starters, curries, biryanis and seafood; eat in or take away"
     },
     {
       "id": "old-bull-inn",
@@ -113,7 +134,10 @@
         "url": "https://www.oldbullinkberrow.co.uk/"
       },
       "note": "16th-century pub on the village green",
-      "dogs": true
+      "dogs": true,
+      "serves": ["lunch", "evening", "coffee", "afternoon-tea"],
+      "fire": true,
+      "highlight": "400 years old, with open beams and inglenook fireplaces"
     },
     {
       "id": "old-chestnut-tree",
@@ -125,7 +149,12 @@
       "website": {
         "text": "theoldchestnuttreeinn.com",
         "url": "https://theoldchestnuttreeinn.com/"
-      }
+      },
+      "serves": ["lunch", "evening", "sunday"],
+      "children": true,
+      "dogs": true,
+      "fire": true,
+      "highlight": "Log fire in the bar; kitchen open Tuesday to Sunday"
     },
     {
       "id": "the-ounce-at-the-dolphin",
@@ -139,7 +168,11 @@
         "text": "thedolphinsteakhouse.co.uk",
         "url": "https://thedolphinsteakhouse.co.uk/"
       },
-      "food": "Steak restaurant"
+      "food": "Steak restaurant",
+      "serves": ["evening", "sunday"],
+      "children": true,
+      "veggie": true,
+      "highlight": "Village steakhouse with a vegetarian roast and children’s roast on Sundays"
     },
     {
       "id": "the-pantry-at-rush-farm",
@@ -151,7 +184,10 @@
       "website": {
         "text": "rush.farm",
         "url": "https://www.rush.farm/the-pantry"
-      }
+      },
+      "serves": ["breakfast", "lunch", "coffee"],
+      "dogs": true,
+      "highlight": "Organic farm shop café: cakes, breakfast rolls and seasonal lunches"
     },
     {
       "id": "chadbury-farm-shop-cafe",
@@ -164,7 +200,8 @@
       "website": {
         "text": "chadburyfarmshopandcafe.co.uk",
         "url": "https://www.chadburyfarmshopandcafe.co.uk/"
-      }
+      },
+      "serves": ["breakfast", "lunch"]
     },
     {
       "id": "coach-and-horses",
@@ -178,7 +215,8 @@
         "text": "coachandhorsesharvington.co.uk",
         "url": "https://coachandhorsesharvington.co.uk/"
       },
-      "garden": true
+      "garden": true,
+      "serves": ["lunch", "sunday"]
     },
     {
       "id": "golden-cross",
@@ -193,7 +231,8 @@
         "url": "https://www.facebook.com/p/The-golden-cross-inn-61581420455473/"
       },
       "garden": true,
-      "children": true
+      "children": true,
+      "serves": ["evening"]
     },
     {
       "id": "hillers-garden-cafe",
@@ -206,7 +245,8 @@
       "website": {
         "text": "hillers.co.uk",
         "url": "https://hillers.co.uk/"
-      }
+      },
+      "serves": ["lunch", "coffee"]
     },
     {
       "id": "karma-salford-hall",
@@ -219,7 +259,10 @@
       "website": {
         "text": "karmagroup.com",
         "url": "https://karmagroup.com/find-destination/karma-resorts/karma-salford-hall/"
-      }
+      },
+      "serves": ["breakfast", "lunch", "evening", "afternoon-tea"],
+      "rooms": true,
+      "highlight": "Historic hall hotel; dinner menu includes Indian dishes"
     },
     {
       "id": "norton-grange",
@@ -233,7 +276,13 @@
       "website": {
         "text": "nortongrangepub.co.uk",
         "url": "https://www.nortongrangepub.co.uk"
-      }
+      },
+      "serves": ["lunch", "evening", "sunday"],
+      "dogs": true,
+      "children": true,
+      "veggie": true,
+      "stepfree": true,
+      "highlight": "Sunday carvery, kids’ play area, quiz nights and live music"
     },
     {
       "id": "apple-barn-restaurant",
@@ -246,7 +295,8 @@
         "text": "bluediamond.gg",
         "url": "https://www.bluediamond.gg/restaurant/apple-barn-restaurant-evesham"
       },
-      "note": "No dogs"
+      "note": "No dogs",
+      "serves": ["breakfast", "lunch", "sunday"]
     },
     {
       "id": "the-fleece-inn",
@@ -258,7 +308,15 @@
       "website": {
         "text": "thefleeceinn.co.uk",
         "url": "https://thefleeceinn.co.uk"
-      }
+      },
+      "serves": ["breakfast", "lunch", "evening", "sunday", "takeaway"],
+      "dogs": true,
+      "garden": true,
+      "veggie": true,
+      "stepfree": true,
+      "fire": true,
+      "rooms": true,
+      "highlight": "600-year-old National Trust pub; Good Pub Guide Top Ten Country Pubs"
     },
     {
       "id": "ivy-inn",
@@ -271,7 +329,8 @@
       "website": {
         "text": "theivyinn.co.uk",
         "url": "https://www.theivyinn.co.uk"
-      }
+      },
+      "serves": ["evening", "sunday", "takeaway"]
     },
     {
       "id": "regal-cinema",
@@ -284,7 +343,8 @@
       "website": {
         "text": "theregal.ac",
         "url": "https://theregal.ac/"
-      }
+      },
+      "serves": ["coffee", "evening"]
     },
     {
       "id": "thai-emerald",
@@ -296,7 +356,8 @@
       "website": {
         "text": "thai-emerald.co.uk",
         "url": "https://www.thai-emerald.co.uk/evesham"
-      }
+      },
+      "serves": ["lunch", "evening", "takeaway"]
     },
     {
       "id": "wayside-farm-shop-tearoom",
@@ -308,7 +369,8 @@
         "text": "waysidefarmshop.co.uk",
         "url": "https://www.waysidefarmshop.co.uk"
       },
-      "food": "Breakfast and snacks"
+      "food": "Breakfast and snacks",
+      "serves": ["breakfast", "coffee"]
     },
     {
       "id": "the-wood-norton",
@@ -321,7 +383,12 @@
       "website": {
         "text": "thewoodnorton.com",
         "url": "https://www.thewoodnorton.com"
-      }
+      },
+      "serves": ["lunch", "evening", "afternoon-tea"],
+      "garden": true,
+      "veggie": true,
+      "rooms": true,
+      "highlight": "Fleur de Lys restaurant by Glynn Purnell; afternoon tea overlooking the gardens"
     },
     {
       "id": "angel-inn",
@@ -333,7 +400,13 @@
       "website": {
         "text": "angelpershore.co.uk",
         "url": "https://www.angelpershore.co.uk"
-      }
+      },
+      "serves": ["lunch", "evening", "sunday"],
+      "garden": true,
+      "veggie": true,
+      "stepfree": true,
+      "rooms": true,
+      "highlight": "Riverside gardens on the Avon; Sunday roasts"
     }
   ]
 }

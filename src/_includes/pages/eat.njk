@@ -1,16 +1,37 @@
 {#- Shared Where to eat page (Harvington stage 6c-2, 16 Nov 2026): each site's living-here/eat.njk sets its wording
-    (suggestLead: shown with the Suggest form; tellUs: the email line without it), then includes this; places from _data/eat.json. -#}
+    (suggestLead: shown with the Suggest form; tellUs: the email line without it), then includes this; places from _data/eat.json.
+    27 Nov 2026 (Jon: help people choose): optional per place `serves` (list of SERVES keys below), feature flags
+    (FEATURES below), `highlight` (one line of facts from their own website) and `image` {url, alt, website: true for a
+    picture of their website's front page}. "What are you after?" buttons filter the cards (all must match); without
+    script every card shows. A button appears only when at least one place has that tag. -#}
+{%- set SERVES = [["breakfast","Breakfast"],["lunch","Lunch"],["evening","Evening meals"],["sunday","Sunday roast"],["afternoon-tea","Afternoon tea"],["coffee","Coffee and cake"],["takeaway","Takeaway"]] -%}
+{%- set FEATURES = [["garden","Garden"],["dogs","Dogs welcome"],["children","Children welcome"],["veggie","Vegetarian or vegan choices"],["stepfree","Step-free access"],["fire","Open fire"],["rooms","Rooms to stay"]] -%}
 <style>
 .ea-jump{display:flex;flex-wrap:wrap;gap:.4rem;list-style:none;padding:0;margin:.5rem 0 1rem}
 .ea-jump a{display:inline-block;padding:.35rem .7rem;border-radius:999px;background:#fdf0dc;color:#7a4a06;text-decoration:none;font-weight:600}
+.ea-filter{background:#f6f8f3;border:1px solid #dfe6d8;border-radius:var(--radius,10px);padding:.8rem .9rem;margin:0 0 1.2rem}
+.ea-filter h2{font-size:1.05rem;margin:0 0 .5rem}
+.ea-chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:0 0 .4rem}
+.ea-chip{padding:.35rem .75rem;border:1px solid #b9c9ad;border-radius:999px;background:#fff;color:#2f4a22;font:inherit;font-size:.92rem;font-weight:600;cursor:pointer}
+.ea-chip[aria-pressed="true"]{background:#3F5233;border-color:#3F5233;color:#fff}
+.ea-chip[aria-pressed="true"]::before{content:"\2713\00a0"}
+.ea-count{margin:.3rem 0 0;font-size:.92rem;color:#555}
+.ea-clear{background:none;border:0;padding:0;margin-left:.4rem;color:#7a4a06;font:inherit;text-decoration:underline;cursor:pointer}
 .ea-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:.75rem}
-.ea-grid .card{margin:0}
+.ea-grid .card{margin:0;display:flex;flex-direction:column}
 .ea-grid h3{margin:0 0 .15rem}
+.ea-pic{position:relative;margin:0 0 .7rem}
+.ea-pic img{display:block;width:100%;aspect-ratio:8/5;height:auto;object-fit:cover;object-position:top;border-radius:8px;border:1px solid #e3e3e3}
+.ea-pic figcaption{position:absolute;right:.4rem;bottom:.4rem;background:rgba(0,0,0,.6);color:#fff;font-size:.75rem;padding:.1rem .45rem;border-radius:4px}
 .ea-where{margin:0 0 .4rem;color:#555}
+.ea-hi{margin:0 0 .45rem;font-style:italic;color:#3d3d3d}
+.ea-tags{margin:0 0 .3rem}
 .ea-tag{display:inline-block;background:#eef3ea;color:#2f4a22;font-size:.85rem;padding:.1rem .5rem;border-radius:6px;margin:0 .3rem .3rem 0}
+.ea-tag.serve{background:#fdf0dc;color:#7a4a06}
 .ea-links{margin:.4rem 0 0}
+.ea-none{display:none;padding:1rem;background:#fff8ec;border-radius:8px}
 .rec-count{margin:-.35rem 0 .45rem;font-weight:600;color:#7a4a06}
-.rec-btn{margin-top:.5rem;padding:.3rem .8rem;border:1px solid #c8b48a;border-radius:999px;background:#fff;color:#3F5233;font-weight:600;cursor:pointer}
+.rec-btn{margin-top:.5rem;padding:.3rem .8rem;border:1px solid #c8b48a;border-radius:999px;background:#fff;color:#3F5233;font-weight:600;cursor:pointer;align-self:flex-start}
 .rec-btn[aria-expanded="true"]{background:#eef3ea}
 .rec-form{margin-top:.5rem}.rec-row{display:flex;gap:.4rem}.rec-row input{flex:1;min-width:0;padding:.35rem .5rem}
 .rec-help{margin:.3rem 0 0;color:#555}.rec-status{margin:.3rem 0 0}.rec-status.bad{color:#a12a1f}.rec-status.ok{color:#2f4a22}
@@ -23,19 +44,32 @@
     <p class="page-intro">{{ eat.intro }}</p>
     {% if site.suggestUrl and site.turnstileSiteKey %}<p class="small">{{ suggestLead | safe }}</p>{% endif %}
   </div>
+  {%- set chips = [] -%}
+  {%- for pair in SERVES -%}{%- for p in eat.places -%}{%- if pair[0] in (p.serves or []) and not (pair in chips) -%}{%- set _ = chips.push(pair) -%}{%- endif -%}{%- endfor -%}{%- endfor -%}
+  {%- for pair in FEATURES -%}{%- for p in eat.places -%}{%- if p[pair[0]] and not (pair in chips) -%}{%- set _ = chips.push(pair) -%}{%- endif -%}{%- endfor -%}{%- endfor -%}
+  {% if chips.length %}
+  <div class="ea-filter" id="ea-filter" hidden>
+    <h2>What are you after?</h2>
+    <div class="ea-chips">{% for c in chips %}<button type="button" class="ea-chip" data-tag="{{ c[0] }}" aria-pressed="false">{{ c[1] }}</button>{% endfor %}</div>
+    <p class="ea-count" aria-live="polite"><span id="ea-count">Showing all {{ eat.places.length }} places.</span><button type="button" class="ea-clear" id="ea-clear" hidden>Show all</button></p>
+  </div>
+  {% endif %}
   <ul class="ea-jump" aria-label="Jump to an area">{% for a in eat.areas %}<li><a href="#{{ a | slugify }}">{{ a }}</a></li>{% endfor %}</ul>
+  <p class="ea-none" id="ea-none">Nothing matches all of those. Try taking one away.</p>
   {% for a in eat.areas %}
-  <section id="{{ a | slugify }}">
+  <section id="{{ a | slugify }}" class="ea-area">
     <h2>{{ a }}</h2>
     <div class="ea-grid">
     {% for p in eat.places %}{% if p.area == a %}
-      <div class="card"{% if p.id %} id="eat-{{ p.id }}" data-entry="e:{{ p.id }}" data-label="Where to eat: {{ p.name | escape }}"{% endif %}>
-        {% if p.image %}<img class="thumb" src="{{ p.image.url | url }}" alt="{{ p.image.alt | escape }}" loading="lazy">{% endif %}
+      {%- set tags = [] -%}{%- for pair in SERVES -%}{%- if pair[0] in (p.serves or []) -%}{%- set _ = tags.push(pair[0]) -%}{%- endif -%}{%- endfor -%}{%- for pair in FEATURES -%}{%- if p[pair[0]] -%}{%- set _ = tags.push(pair[0]) -%}{%- endif -%}{%- endfor -%}
+      <div class="card ea-card" data-tags="{{ tags | join(' ') }}"{% if p.id %} id="eat-{{ p.id }}" data-entry="e:{{ p.id }}" data-label="Where to eat: {{ p.name | escape }}"{% endif %}>
+        {% if p.image %}<figure class="ea-pic"><img src="{{ p.image.url | url }}" alt="{{ p.image.alt | escape }}" loading="lazy" width="800" height="500">{% if p.image.website %}<figcaption>From their website</figcaption>{% endif %}</figure>{% endif %}
         <h3>{{ p.name }}</h3>
         {% set n = recommends.eat[p.id] %}{% if n %}<p class="rec-count">&#9733; Recommended by {{ n }} {{ "person" if n == 1 else "people" }}</p>{% endif %}
         <p class="ea-where" data-field="type where">{{ p.type }} &middot; {{ p.where }}</p>
+        {% if p.highlight %}<p class="ea-hi" data-field="highlight">{{ p.highlight }}</p>{% endif %}
         {% if p.food %}<p class="mt0" data-field="food">{{ p.food }}</p>{% endif %}
-        {% if p.garden or p.children or p.dogs %}<p class="mt0">{% if p.garden %}<span class="ea-tag">Garden</span>{% endif %}{% if p.children %}<span class="ea-tag">Children welcome</span>{% endif %}{% if p.dogs %}<span class="ea-tag">Dogs welcome</span>{% endif %}</p>{% endif %}
+        {% if tags.length %}<p class="ea-tags">{% for pair in SERVES %}{% if pair[0] in tags %}<span class="ea-tag serve">{{ pair[1] }}</span>{% endif %}{% endfor %}{% for pair in FEATURES %}{% if pair[0] in tags %}<span class="ea-tag">{{ pair[1] }}</span>{% endif %}{% endfor %}</p>{% endif %}
         {% if p.note %}<p class="small mut mt0" data-field="note">{{ p.note }}</p>{% endif %}
         {% if p.website or p.phone %}<p class="ea-links small">{% if p.website %}<a href="{{ p.website.url }}" target="_blank" rel="noopener">{{ p.website.text }}</a>{% endif %}{% if p.website and p.phone %}<br>{% endif %}{% if p.phone %}<a href="tel:{{ p.phone | replace(' ', '') }}" data-field="phone">{{ p.phone }}</a>{% endif %}</p>{% endif %}
         {% if site.recommendUrl and site.turnstileSiteKey %}<button type="button" class="rec-btn" data-kind="eat" data-entry="{{ p.id }}" aria-expanded="false" hidden>Recommend</button>{% endif %}
@@ -45,8 +79,27 @@
   </section>
   {% endfor %}
   {#- Last checked line (SEO step 6, 26 Nov 2026): the yearly listing checks (orgoutreach.mjs). -#}
-  <p class="small mut">We ask each business to check its entry once a year. Spotted something out of date? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
+  <p class="small mut">We ask each business to check its entry once a year. Pictures marked &ldquo;From their website&rdquo; show the front page of the place&rsquo;s own website. Spotted something out of date? Email <a href="mailto:{{ site.email }}">{{ site.email }}</a>.</p>
   {% if site.suggestUrl and site.turnstileSiteKey %}{% set suggestKind = "eat" %}{% include "suggest-form.njk" %}{% else %}
   <p class="small mut">{{ tellUs | safe }}</p>{% endif %}
 </main>
+{% if chips.length %}
+<script>
+(function(){
+  var box=document.getElementById('ea-filter');if(!box)return;box.hidden=false;
+  var chips=[].slice.call(box.querySelectorAll('.ea-chip')),cards=[].slice.call(document.querySelectorAll('.ea-card')),
+      areas=[].slice.call(document.querySelectorAll('.ea-area')),count=document.getElementById('ea-count'),
+      clear=document.getElementById('ea-clear'),none=document.getElementById('ea-none'),total=cards.length;
+  function apply(){
+    var want=chips.filter(function(c){return c.getAttribute('aria-pressed')==='true'}).map(function(c){return c.dataset.tag}),shown=0;
+    cards.forEach(function(card){var t=(card.dataset.tags||'').split(' ');var ok=want.every(function(w){return t.indexOf(w)>-1});card.hidden=!ok;if(ok)shown++;});
+    areas.forEach(function(a){a.hidden=!a.querySelector('.ea-card:not([hidden])')});
+    count.textContent=want.length?('Showing '+shown+' of '+total+' places.'):('Showing all '+total+' places.');
+    clear.hidden=!want.length;none.style.display=(want.length&&!shown)?'block':'none';
+  }
+  chips.forEach(function(c){c.addEventListener('click',function(){c.setAttribute('aria-pressed',c.getAttribute('aria-pressed')==='true'?'false':'true');apply();})});
+  clear.addEventListener('click',function(){chips.forEach(function(c){c.setAttribute('aria-pressed','false')});apply();});
+})();
+</script>
+{% endif %}
 {% include "recommend.njk" %}
