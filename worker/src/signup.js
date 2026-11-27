@@ -107,7 +107,7 @@ export async function handleSignup(request, env, { fetchImpl = fetch, now = Date
   const back = String(env.SITE_URL || '');
   const sentOrigin = request.headers.get('origin');
   const ua = request.headers.get('user-agent') || '';
-  const record = (reason) => recordFailure(env, { stage: 'server', reason, ua, ms: now() });
+  const record = (reason) => recordFailure(env, { stage: 'server', reason, ua, origin: sentOrigin, ms: now() });
   if (sentOrigin && sentOrigin !== origin) {
     await record('origin');
     return reply(env, false, { ok: false, status: 403, message: `This form only works on ${siteWords(env).website}.`, back });
@@ -133,7 +133,7 @@ export async function handleSignup(request, env, { fetchImpl = fetch, now = Date
   // Its own memory-only limit, so a report never uses up the reader's real tries.
   if (fields.fail === '1') {
     if (await allowed(env, `fail|${ip}`, now(), 'FORMFAIL_LIMITER')) {
-      await recordFailure(env, { stage: code(fields.stage) || 'page', reason: fields.reason, ua, ms: now() });
+      await recordFailure(env, { stage: code(fields.stage) || 'page', reason: fields.reason, ua, origin: sentOrigin, ms: now() });
     }
     return reply(env, true, { ok: true, status: 200, message: '' });
   }

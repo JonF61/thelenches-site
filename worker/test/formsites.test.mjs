@@ -210,3 +210,66 @@ test('a form posted from a site\'s www address works (Safari showed "Load failed
   const res = await worker.fetch(post('/s', { email: 'x@example.org' }, 'https://www.evil.example'), env());
   assert.equal(res.status, 403);
 });
+
+// 27 Nov 2026: the Facebook app's browser sends an Origin that is neither site (e.g. "null"),
+// and every sign-up from it was refused. Turnstile's answer names the host the check was
+// solved on, which then picks the site; a failed check or another host is still refused.
+function withTurnstile(calls, answer) {
+  const inner = globalThis.fetch;
+  calls.verifies = 0;
+  globalThis.fetch = async (input, init) => {
+    if (String(input) === 'https://challenges.cloudflare.com/turnstile/v0/siteverify') {
+      calls.verifies += 1;
+      return Response.json(answer);
+    }
+    return inner(input, init);
+  };
+}
+
+test('Facebook app ("null" origin): Turnstile\'s hostname picks the site, checked once', async () => {
+  const calls = fakeWorld();
+  withTurnstile(calls, { success: true, hostname: 'harvingtonvillage.org.uk' });
+  let res = await worker.fetch(post('/s', { email: 'fb@example.org' }, 'null'), env());
+  assert.equal(res.status, 200, await res.clone().text());
+  assert.equal(res.headers.get('access-control-allow-origin'), 'null', 'the browser can read the reply');
+  assert.equal(calls.verifies, 1, 'a Turnstile token is used once');
+  assert.equal(calls.appends[0].sheet, harvington.sheetId);
+  assert.equal(calls.dispatches[0].client_payload.site, 'harvington');
+
+  res = await worker.fetch(post('/f', {
+    type: 'correction', message: 'The hall phone number has changed.', email: '', page_url: `${HARV}/events/`, page_title: 'Events',
+  }, 'null'), env());
+  assert.equal(res.status, 200, await res.clone().text());
+  assert.equal(calls.appends.at(-1).tab, 'Feedback');
+  assert.equal(calls.appends.at(-1).sheet, harvington.sheetId);
+
+  res = await worker.fetch(post('/sg', {
+    kind: 'trades', name: 'A Builder', trade: 'Builders', contact: '01386 000000', area: 'Harvington', why: '', email: 's@example.org',
+  }, 'null'), env());
+  assert.equal(res.status, 200, await res.clone().text());
+  assert.equal(calls.appends.at(-1).sheet, harvington.sheetId);
+
+  withTurnstile(calls, { success: true, hostname: 'www.thelenches.org.uk' });
+  res = await worker.fetch(post('/s', { email: 'fb2@example.org' }, 'null'), env());
+  assert.equal(res.status, 200);
+  assert.equal(calls.appends.at(-1).sheet, 'lenches-sheet');
+});
+
+test('an unknown origin is still refused when Turnstile fails or names another host, and the origin is recorded', async () => {
+  for (const answer of [{ success: false }, { success: true, hostname: 'evil.example' }]) {
+    const calls = fakeWorld();
+    withTurnstile(calls, answer);
+    const res = await worker.fetch(post('/s', { email: 'x@example.org' }, 'null'), env());
+    assert.equal(res.status, 403);
+    assert.equal(calls.appends.filter((a) => a.tab === 'Sign-ups').length, 0);
+    const fail = calls.appends.find((a) => a.tab === 'Form failures');
+    assert.equal(fail.rows[0][4], 'origin');
+    assert.equal(fail.rows[0][6], 'null', 'the sent origin is recorded');
+  }
+  const calls = fakeWorld();
+  withTurnstile(calls, { success: true, hostname: 'harvingtonvillage.org.uk' });
+  const res = await worker.fetch(post('/s', { email: 'x@example.org', 'cf-turnstile-response': '' }, 'https://evil.example'), env());
+  assert.equal(res.status, 403, 'no token: refused without asking Turnstile');
+  assert.equal(calls.verifies, 0);
+  assert.equal(calls.appends.find((a) => a.tab === 'Form failures').rows[0][6], 'https://evil.example');
+});
