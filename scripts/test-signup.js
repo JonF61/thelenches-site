@@ -189,6 +189,25 @@ const previews = {};
   await signup.run({ action: 'alert', id: ID, ms: NOV27 }, w.deps);
   assert.deepEqual([w.tabs['Sign-ups'][0].email, w.tabs['Sign-ups'][0].status], ['', 'expired']);
 
+  // added (27 Nov): Jon adds a checked failed sign-up; they get "you're on the list" once.
+  w = world({ signups: [{ ...failed }] });
+  assert.strictEqual(await signup.run({ action: 'added', id: AID, ms: NOV27 }, w.deps), 'added');
+  assert.strictEqual(w.sent.length, 1);
+  assert.strictEqual(w.sent[0].to, 'fb@example.org');
+  assert.strictEqual(w.sent[0].subject, "You're on the list: The Lenches Newsletter");
+  assert.match(w.sent[0].text, /added you to the list ourselves/);
+  assert.ok(w.tabs.Subscribers.some((r) => r.email === 'fb@example.org'), 'added to Subscribers');
+  assert.strictEqual(w.tabs['Sign-ups'][0].status, 'subscribed');
+  previews.added = w.sent[0];
+  assert.strictEqual(await signup.run({ action: 'added', id: AID, ms: NOV27 }, w.deps), 'skipped', 'a replay does nothing');
+  assert.strictEqual(w.sent.length, 1);
+  w = world({ signups: [{ ...failed }], dns: [{ email: 'fb@example.org' }] });
+  assert.strictEqual(await signup.run({ action: 'added', id: AID, ms: NOV27 }, w.deps), 'held');
+  assert.strictEqual(w.sent.length, 0, 'Do Not Send: nothing sent');
+  w = world({ signups: [{ ...failed }], subscribers: [{ email: 'fb@example.org', status: 'active' }] });
+  assert.strictEqual(await signup.run({ action: 'added', id: AID, ms: NOV27 }, w.deps), 'already');
+  assert.strictEqual(w.sent.length, 0, 'already on: nothing sent');
+
   assert.ok(!logs.some((l) => l.includes('@')), 'no address in any log line');
 
   const out = path.join(process.env.PREVIEW_DIR || require('os').tmpdir(), 'signup-previews');
