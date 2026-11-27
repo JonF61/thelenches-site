@@ -1130,3 +1130,13 @@ test('5a: Thursday build fires for the Lenches as before, and for Harvington onl
     { event_type: 'newsletter', client_payload: { action: 'autosend', issue_date: '2026-11-19', site: 'harvington' } },
   ]);
 });
+
+test('siteEnv: the Lenches from another site\'s env is still the Lenches Sheet (27 Nov)', async () => {
+  const { siteEnv, SITES } = await import('../src/sites.js');
+  const real = { SHEET_ID: 'lenches-sheet' };
+  const harv = siteEnv(real, 'harvington');
+  assert.equal(harv.SHEET_ID, SITES.harvington.sheetId);
+  assert.equal(siteEnv(harv, 'lenches').SHEET_ID, 'lenches-sheet');
+  assert.equal(siteEnv(siteEnv(harv, 'lenches'), 'lenches').SHEET_ID, 'lenches-sheet');
+  assert.equal(siteEnv(real, 'lenches').SHEET_ID, 'lenches-sheet');
+});
