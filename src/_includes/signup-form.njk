@@ -26,7 +26,11 @@
   var form = document.querySelector('.su-form');
   if (!form || !window.fetch || !window.FormData) return;
   var status = form.querySelector('.su-status'), box = form.querySelector('.su-ts'), button = form.querySelector('.su-join');
-  var widget = null, token = '', waiting = [], widgetError = '';
+  var widget = null, token = '', waiting = [], widgetError = '', needsTick = false;
+  function askTick() {
+    say('Please tick the box above to confirm you\'re not a robot.');
+    try { box.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+  }
   function report(stage, reason) {
     try {
       var d = new FormData();
@@ -44,6 +48,8 @@
     widget = window.turnstile.render(box, {
       sitekey: form.getAttribute('data-sitekey'), appearance: 'interaction-only', theme: 'light',
       callback: got, 'expired-callback': function () { token = ''; },
+      // 27 Nov: the check wants a tick (the Facebook app's browser often does): say so and show it.
+      'before-interactive-callback': function () { needsTick = true; if (button.disabled) askTick(); },
       'error-callback': function (code) { widgetError = 'widget-' + (code || 'error'); got(''); }
     });
   }
@@ -53,9 +59,12 @@
   });
   function tokenSoon() {
     if (token) return Promise.resolve(token);
+    if (needsTick) askTick();
     return new Promise(function (resolve) {
       waiting.push(resolve);
-      setTimeout(function () { resolve(token); }, 15000);
+      // 27 Nov: a slow check gets a nudge after 3 seconds and up to a minute (was 15 seconds).
+      setTimeout(function () { if (!token) { if (needsTick) askTick(); else say('Checking you\'re not a robot…'); } }, 3000);
+      setTimeout(function () { resolve(token); }, 60000);
     });
   }
   form.addEventListener('submit', function (e) {
@@ -67,7 +76,7 @@
     tokenSoon().then(function (t) {
       if (!t) {
         report('page', widgetError || (window.turnstile ? 'no-token' : 'no-script'));
-        throw new Error('We couldn\'t confirm you\'re not a robot. Please try again in a moment.');
+        throw new Error('We couldn\'t confirm you\'re not a robot. Please try again, or email {{ site.email }} and ask to be added.');
       }
       var data = new FormData(form);
       data.set('cf-turnstile-response', t);
