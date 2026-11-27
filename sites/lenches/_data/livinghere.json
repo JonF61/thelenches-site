@@ -3,6 +3,12 @@
   "intro": "Clubs, halls, churches and practical information for everyone in the Lenches.",
   "cards": [
     {
+      "title": "Churches",
+      "url": "/churches/",
+      "icon": "church",
+      "text": "Service times and readings across the ARCH Benefice."
+    },
+    {
       "title": "Groups & Clubs",
       "url": "/groups/",
       "icon": "users",
@@ -15,34 +21,10 @@
       "text": "Church Lench and Rous Lench halls, history and bookings."
     },
     {
-      "title": "Churches",
-      "url": "/churches/",
-      "icon": "church",
-      "text": "Service times and readings across the ARCH Benefice."
-    },
-    {
-      "title": "Where to eat",
-      "url": "/living-here/eat/",
-      "icon": "eat",
-      "text": "Pubs, cafés and restaurants nearby."
-    },
-    {
-      "title": "Local trades",
-      "url": "/living-here/trades/",
-      "icon": "tools",
-      "text": "Plumbers, sweeps, cleaners and more nearby."
-    },
-    {
-      "title": "Health & emergencies",
-      "url": "/living-here/health/",
-      "icon": "health",
-      "text": "GPs, pharmacies, hospitals and defibrillators."
-    },
-    {
-      "title": "Getting around",
-      "url": "/living-here/getting-around/",
-      "icon": "bus",
-      "text": "Buses, on-demand and community transport, stations."
+      "title": "Schools",
+      "url": "/living-here/schools/",
+      "icon": "school",
+      "text": "Local schools, applying and term dates."
     },
     {
       "title": "Council",
@@ -57,10 +39,10 @@
       "text": "New applications, decisions and appeals in the Lenches, week by week."
     },
     {
-      "title": "Schools",
-      "url": "/living-here/schools/",
-      "icon": "school",
-      "text": "Local schools, applying and term dates."
+      "title": "Getting around",
+      "url": "/living-here/getting-around/",
+      "icon": "bus",
+      "text": "Buses, on-demand and community transport, stations."
     },
     {
       "title": "Roads",
@@ -69,16 +51,34 @@
       "text": "Road closures and roadworks in and around the Lenches."
     },
     {
-      "title": "Walks & footpaths",
-      "url": "/living-here/walks/",
-      "icon": "walk",
-      "text": "Circular walks, maps and the Countryside Code."
+      "title": "Bins",
+      "url": "/bins/",
+      "icon": "bins",
+      "text": "Collection days and which bin takes what."
+    },
+    {
+      "title": "Health & emergencies",
+      "url": "/living-here/health/",
+      "icon": "health",
+      "text": "GPs, pharmacies, hospitals and defibrillators."
     },
     {
       "title": "What to do if…",
       "url": "/living-here/what-to-do/",
       "icon": "alert",
       "text": "Power cuts, flooding, lost pets, fly-tipping and who to call."
+    },
+    {
+      "title": "Where to eat",
+      "url": "/living-here/eat/",
+      "icon": "eat",
+      "text": "Pubs, cafés and restaurants nearby."
+    },
+    {
+      "title": "Walks & footpaths",
+      "url": "/living-here/walks/",
+      "icon": "walk",
+      "text": "Circular walks, maps and the Countryside Code."
     }
   ]
 }

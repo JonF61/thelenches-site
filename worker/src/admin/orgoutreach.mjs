@@ -131,8 +131,12 @@ export function orgEntries(data) {
 // data: { trades, eat } (sites/<site>/_data trades.json, eat.json).
 // Another site (18 Nov): { url, domain } give its page links and subject, and `skip` (a Set of
 // ids) leaves out entries the Lenches already checks (the same place listed on both, same id).
-export function listingEntries(data, { url = SITE, domain = 'thelenches.org.uk', skip = null } = {}) {
-  const { trades = {}, eat = {} } = data || {};
+// Retired listings (27 Nov, Jon): Local trades pages are off both sites for about a month, so no
+// yearly checks go out for them (callers pass `retired: RETIRED_LISTINGS`; empty it to bring them back).
+export const RETIRED_LISTINGS = new Set(['trades']);
+export function listingEntries(data, { url = SITE, domain = 'thelenches.org.uk', skip = null, retired = null } = {}) {
+  const { trades: allTrades = {}, eat = {} } = data || {};
+  const trades = retired && retired.has('trades') ? {} : allTrades;
   const out = [];
   const subject = listingSubject(domain);
   const web = (w) => str(w && w.url);

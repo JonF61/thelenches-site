@@ -199,7 +199,7 @@ import {
 import { history, historyQuery, MAX_MESSAGES } from './messages.js';
 import { outreachLists, planNudge, idFor, sentRows, planContactEmail, cleanBrief } from './outreach.mjs';
 import {
-  ORG_TAB, ORG_HEADERS, orgEntries, listingEntries, planListingEmail, orgLists, planOrgCheck, planNext, planOtherEmails, dueOrgs, recentQuery,
+  ORG_TAB, ORG_HEADERS, orgEntries, listingEntries, RETIRED_LISTINGS, planListingEmail, orgLists, planOrgCheck, planNext, planOtherEmails, dueOrgs, recentQuery,
 } from './orgoutreach.mjs';
 // The site's own data, bundled at deploy (deploy-worker.yml also deploys when these change).
 import contactsData from '../../../sites/lenches/_data/contacts.json' with { type: 'json' };
@@ -741,7 +741,7 @@ export async function krytenDraft(rawEnv, body) {
 // Listings (Local trades, Where to eat; 5 Nov) get the same yearly check (listingEntries).
 const ORGS = [
   ...orgEntries({ contacts: contactsData, council: councilData, schools: schoolsData, health: healthData, transport: transportData }),
-  ...listingEntries(listingData('lenches')),
+  ...listingEntries(listingData('lenches'), { retired: RETIRED_LISTINGS }),
 ];
 // Organisations come from the Lenches' bundled data files only. Another site's Commercial
 // Listings (18 Nov) are its own trades and eateries (worker/src/listings.js), with its own page
@@ -750,7 +750,7 @@ const ORGS = [
 const LENCHES_LISTING_IDS = new Set(listingEntries(listingData('lenches')).map((e) => e.id));
 const SITE_ORGS = Object.fromEntries(siteIds().filter((id) => id !== DEFAULT_SITE).map((id) => {
   const cfg = siteConfig(id) || {};
-  return [id, listingEntries(listingData(id), { url: cfg.url, domain: cfg.domain, skip: LENCHES_LISTING_IDS })];
+  return [id, listingEntries(listingData(id), { url: cfg.url, domain: cfg.domain, skip: LENCHES_LISTING_IDS, retired: RETIRED_LISTINGS })];
 }));
 const orgsFor = (env) => (isMain(env) ? ORGS : (SITE_ORGS[env.SITE] || []));
 
