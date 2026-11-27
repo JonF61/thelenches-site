@@ -414,6 +414,26 @@
       }
     },
     {
+      "id": "thai-emerald",
+      "name": "Thai Emerald",
+      "area": "Evesham",
+      "where": "High Street, Evesham",
+      "type": "Thai restaurant",
+      "phone": "01386 49788",
+      "website": {
+        "text": "thai-emerald.co.uk",
+        "url": "https://www.thai-emerald.co.uk/evesham"
+      },
+      "serves": ["lunch", "evening", "takeaway"],
+      "image": {
+        "url": "/images/eat/thai-emerald.jpg",
+        "alt": "Front page of the Thai Emerald website",
+        "website": true
+      },
+      "lat": 52.09528,
+      "lng": -1.94639
+    },
+    {
       "id": "apple-barn-restaurant",
       "name": "Apple Barn Restaurant",
       "area": "Evesham",
@@ -433,6 +453,67 @@
       },
       "lat": 52.11602,
       "lng": -1.93792
+    },
+    {
+      "id": "the-bear",
+      "name": "The Bear",
+      "area": "Evesham",
+      "where": "Port Street, Evesham",
+      "type": "Pub",
+      "website": {
+        "text": "thebearevesham.co.uk",
+        "url": "https://www.thebearevesham.co.uk/"
+      },
+      "highlight": "Town-centre pub opposite the Regal Cinema; real ales and fresh coffee",
+      "serves": ["coffee"],
+      "lat": 52.09091,
+      "lng": -1.93959,
+      "image": {
+        "url": "/images/eat/the-bear.jpg",
+        "alt": "Front page of the The Bear website",
+        "website": true
+      }
+    },
+    {
+      "id": "buongiorno-cafe",
+      "name": "Buongiorno Café",
+      "area": "Evesham",
+      "where": "Bridge Street, Evesham",
+      "type": "Italian café",
+      "food": "Coffee, breakfast and lunch",
+      "website": {
+        "text": "buongiornocafe.co.uk",
+        "url": "https://buongiornocafe.co.uk/"
+      },
+      "highlight": "Award-winning Italian café",
+      "serves": ["breakfast", "lunch", "coffee"],
+      "lat": 52.09181,
+      "lng": -1.94472,
+      "image": {
+        "url": "/images/eat/buongiorno-cafe.jpg",
+        "alt": "Front page of the Buongiorno Café website",
+        "website": true
+      }
+    },
+    {
+      "id": "chillis",
+      "name": "Chillis",
+      "area": "Evesham",
+      "where": "High Street, Evesham",
+      "type": "Indian takeaway",
+      "phone": "01386 442621",
+      "website": {
+        "text": "chillisevesham.co.uk",
+        "url": "https://www.chillisevesham.co.uk/"
+      },
+      "serves": ["takeaway"],
+      "lat": 52.09513,
+      "lng": -1.94649,
+      "image": {
+        "url": "/images/eat/chillis.jpg",
+        "alt": "Front page of the Chillis website",
+        "website": true
+      }
     },
     {
       "id": "the-fleece-inn",
@@ -483,6 +564,109 @@
       "lng": -1.88151
     },
     {
+      "id": "jelly-pickle-jam-tea-shop",
+      "name": "Jelly Pickle Jam Tea Shop",
+      "area": "Evesham",
+      "where": "Vine Mews, Evesham",
+      "type": "Tea shop",
+      "website": {
+        "text": "jellypicklejam.co.uk",
+        "url": "https://jellypicklejam.co.uk/"
+      },
+      "serves": ["coffee"],
+      "lat": 52.0921,
+      "lng": -1.94942
+    },
+    {
+      "id": "karma",
+      "name": "Karma",
+      "area": "Evesham",
+      "where": "Port Street, Evesham",
+      "type": "Indian restaurant and takeaway",
+      "food": "Evening meals",
+      "website": {
+        "text": "karmaevesham.co.uk",
+        "url": "https://karmaevesham.co.uk/"
+      },
+      "serves": ["evening", "takeaway"],
+      "veggie": true,
+      "lat": 52.09111,
+      "lng": -1.94094
+    },
+    {
+      "id": "the-mint-house",
+      "name": "The Mint House",
+      "area": "Evesham",
+      "where": "Waterside, Evesham",
+      "type": "Indian restaurant",
+      "food": "Evening meals; order online for takeaway",
+      "phone": "01386 339844",
+      "website": {
+        "text": "minthouseevesham.com",
+        "url": "https://minthouseevesham.com/"
+      },
+      "serves": ["evening", "takeaway"],
+      "veggie": true,
+      "lat": 52.091,
+      "lng": -1.942,
+      "image": {
+        "url": "/images/eat/the-mint-house.jpg",
+        "alt": "Front page of the The Mint House website",
+        "website": true
+      }
+    },
+    {
+      "id": "the-old-swanne-inne",
+      "name": "The Old Swanne Inne",
+      "area": "Evesham",
+      "where": "High Street, Evesham",
+      "type": "Pub (Wetherspoon)",
+      "food": "Breakfast from 8am to noon every day, then meals all day",
+      "phone": "01386 442650",
+      "website": {
+        "text": "jdwetherspoon.com",
+        "url": "https://www.jdwetherspoon.com/pubs/the-old-swanne-inne-evesham/"
+      },
+      "note": "Under-18s welcome between 8am and 9pm",
+      "serves": ["breakfast", "lunch", "evening"],
+      "garden": true,
+      "stepfree": true,
+      "lat": 52.0943,
+      "lng": -1.94629,
+      "image": {
+        "url": "/images/eat/the-old-swanne-inne.jpg",
+        "alt": "Front page of the The Old Swanne Inne website",
+        "website": true
+      }
+    },
+    {
+      "id": "orto-lounge",
+      "name": "Orto Lounge",
+      "area": "Evesham",
+      "where": "Market Place, Evesham",
+      "type": "Café bar",
+      "food": "Breakfast, brunch, lunch and dinner",
+      "phone": "01386 424081",
+      "website": {
+        "text": "thelounges.co.uk",
+        "url": "https://thelounges.co.uk/orto/"
+      },
+      "highlight": "All-day café bar with a terrace; children’s, gluten-free and vegan menus",
+      "serves": ["breakfast", "lunch", "evening", "coffee"],
+      "garden": true,
+      "dogs": true,
+      "children": true,
+      "veggie": true,
+      "stepfree": true,
+      "lat": 52.09198,
+      "lng": -1.94736,
+      "image": {
+        "url": "/images/eat/orto-lounge.jpg",
+        "alt": "Front page of the Orto Lounge website",
+        "website": true
+      }
+    },
+    {
       "id": "regal-cinema",
       "name": "Regal Cinema",
       "area": "Evesham",
@@ -504,24 +688,39 @@
       "lng": -1.93995
     },
     {
-      "id": "thai-emerald",
-      "name": "Thai Emerald",
+      "id": "saffron-lounge",
+      "name": "Saffron Lounge",
       "area": "Evesham",
       "where": "High Street, Evesham",
-      "type": "Thai restaurant",
-      "phone": "01386 49788",
+      "type": "Indian restaurant",
       "website": {
-        "text": "thai-emerald.co.uk",
-        "url": "https://www.thai-emerald.co.uk/evesham"
+        "text": "saffronloungeevesham.co.uk",
+        "url": "https://saffronloungeevesham.co.uk/"
       },
-      "serves": ["lunch", "evening", "takeaway"],
+      "highlight": "In a Grade II listed building on the High Street",
+      "lat": 52.0935,
+      "lng": -1.94649
+    },
+    {
+      "id": "evesham-balti",
+      "name": "Evesham Balti",
+      "area": "Evesham",
+      "where": "Waterside, Evesham",
+      "type": "Bangladeshi restaurant and takeaway",
+      "food": "Evening meals, seven days a week",
+      "phone": "01386 421253",
+      "website": {
+        "text": "eveshambalti.co.uk",
+        "url": "https://eveshambalti.co.uk/"
+      },
+      "serves": ["evening", "takeaway"],
+      "lat": 52.09066,
+      "lng": -1.94232,
       "image": {
-        "url": "/images/eat/thai-emerald.jpg",
-        "alt": "Front page of the Thai Emerald website",
+        "url": "/images/eat/evesham-balti.jpg",
+        "alt": "Front page of the Evesham Balti website",
         "website": true
-      },
-      "lat": 52.09528,
-      "lng": -1.94639
+      }
     },
     {
       "id": "wayside-farm-shop-tearoom",
@@ -570,6 +769,27 @@
       "lng": -1.97661
     },
     {
+      "id": "thai-legend",
+      "name": "Thai Legend",
+      "area": "Pershore",
+      "where": "High Street, Pershore",
+      "type": "Thai restaurant",
+      "food": "Lunch Monday to Saturday; evening meals every day",
+      "phone": "01386 554604",
+      "website": {
+        "text": "thailegendrestaurant.co.uk",
+        "url": "https://www.thailegendrestaurant.co.uk/"
+      },
+      "serves": ["lunch", "evening"],
+      "lat": 52.11196,
+      "lng": -2.07615,
+      "image": {
+        "url": "/images/eat/thai-legend.jpg",
+        "alt": "Front page of the Thai Legend website",
+        "website": true
+      }
+    },
+    {
       "id": "angel-inn",
       "name": "Angel Inn",
       "area": "Pershore",
@@ -593,6 +813,46 @@
       },
       "lat": 52.11029,
       "lng": -2.07441
+    },
+    {
+      "id": "coffee-1",
+      "name": "Coffee#1",
+      "area": "Pershore",
+      "where": "High Street, Pershore",
+      "type": "Coffee shop",
+      "food": "Coffee, breakfast and light bites",
+      "phone": "01386 554968",
+      "website": {
+        "text": "coffee1.co.uk",
+        "url": "https://www.coffee1.co.uk/locations/pershore/"
+      },
+      "highlight": "Courtyard seating that catches the summer sun",
+      "serves": ["breakfast", "coffee"],
+      "garden": true,
+      "dogs": true,
+      "stepfree": true,
+      "lat": 52.11036,
+      "lng": -2.0752
+    },
+    {
+      "id": "millers-arms",
+      "name": "Millers Arms",
+      "area": "Pershore",
+      "where": "Bridge Street, Pershore",
+      "type": "Pub",
+      "website": {
+        "text": "millersarmspershore.co.uk",
+        "url": "https://www.millersarmspershore.co.uk/"
+      },
+      "highlight": "Grade II listed pub with live music",
+      "lat": 52.10942,
+      "lng": -2.07442,
+      "image": {
+        "url": "/images/eat/millers-arms.jpg",
+        "alt": "Millers Arms, Bridge Street, Pershore",
+        "credit": "Jeff Gogarty, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/7628984"
+      }
     }
   ]
 }
