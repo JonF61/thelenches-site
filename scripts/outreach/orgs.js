@@ -74,7 +74,7 @@ function orgEmail(org, kind, R, optout = true) {
     // Listings (5 Nov, wording approved by Jon): no opt-out line; the check says how to come off.
     const vars = { name: org.name, page: org.pageName, page_url: org.pageUrl, entry: [org.name, ...org.shown].join('\n') };
     // A site's own wording where templates.md has one (listing_check_harvington, 18 Nov).
-    const parts = [replies.greeting(org.greet), replies.fillSite(kind === 'chase' ? 'listing_chase' : 'listing_check', vars), replies.fill('signature')];
+    const parts = [replies.greeting(org.greet), replies.fillSite(kind === 'chase' ? 'listing_chase' : org.listing === 'eat' ? 'listing_check_eat' : 'listing_check', vars), replies.fill('signature')];
     const subject = org.subject || R.LISTING_SUBJECT;
     return { subject: kind === 'chase' ? `Re: ${subject}` : subject, body: parts.join('\n\n') };
   }

@@ -152,6 +152,23 @@ This is what it shows at the moment:
 
 Could you check it's right? If you'd like anything changed or added, such as what you do, the areas you cover or your website, just reply to this email. If you'd rather not be listed, let me know and we'll take it off.
 
+## listing_check_eat
+I help look after thelenches.org.uk, the community website and weekly newsletter for the Lenches villages. {name} is listed free of charge on our {page} page, where people can choose somewhere to eat by what they're after, such as a Sunday roast or somewhere that welcomes dogs:
+{page_url}
+
+This is what it shows at the moment:
+{entry}
+
+Could you check it's right? It would also help to know:
+- which meals you serve (breakfast, lunch, evening meals, Sunday roast, afternoon tea, coffee and cake, takeaway)
+- whether you have a garden or outdoor seating
+- whether dogs and children are welcome
+- whether you have vegetarian or vegan choices
+- whether there's step-free access
+- whether you have an open fire or rooms to stay
+
+If you have a photo of the outside or inside that we could use on the page, we'd be glad of that too. If you'd like anything else changed or added, just reply to this email. If you'd rather not be listed, let me know and we'll take it off.
+
 ## listing_chase
 Just following up on my note about {name}'s free listing on our {page} page. If everything's correct, there's no need to reply. If anything has changed, a quick reply is all we need.
 
@@ -163,6 +180,23 @@ This is what it shows at the moment:
 {entry}
 
 Could you check it's right? If you'd like anything changed or added, such as what you do, the areas you cover or your website, just reply to this email. If you'd rather not be listed, let me know and we'll take it off.
+
+## listing_check_eat_harvington
+I help look after harvingtonvillage.org.uk, the community website and weekly newsletter for Harvington, Norton and Lenchwick. {name} is listed free of charge on our {page} page, where people can choose somewhere to eat by what they're after, such as a Sunday roast or somewhere that welcomes dogs:
+{page_url}
+
+This is what it shows at the moment:
+{entry}
+
+Could you check it's right? It would also help to know:
+- which meals you serve (breakfast, lunch, evening meals, Sunday roast, afternoon tea, coffee and cake, takeaway)
+- whether you have a garden or outdoor seating
+- whether dogs and children are welcome
+- whether you have vegetarian or vegan choices
+- whether there's step-free access
+- whether you have an open fire or rooms to stay
+
+If you have a photo of the outside or inside that we could use on the page, we'd be glad of that too. If you'd like anything else changed or added, just reply to this email. If you'd rather not be listed, let me know and we'll take it off.
 
 ## link_request
 I help look after thelenches.org.uk, the free community website and weekly newsletter for Church, Rous, Ab, Atch and Sheriffs Lench near Evesham. It lists what's on across the villages, local news, road closures, bin days and local clubs and groups.

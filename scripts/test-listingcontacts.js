@@ -102,12 +102,18 @@ async function main() {
   const fresh = await orgs.draftOrgCheck('eat-boot-inn');
   ok(fresh && fresh.to === 'info@thebootinn.com' && fresh.status === 'awaiting' && fresh.policy_codes === 'org_check_eat-boot-inn', 'awaiting draft to the found address');
   ok(fresh.subject === 'Your listing on thelenches.org.uk', 'subject');
-  ok(fresh.body.includes('Boot Inn is listed free of charge on our Where to eat page:\nhttps://thelenches.org.uk/living-here/eat/#eat-boot-inn'), 'name, page and card link');
+  ok(fresh.body.includes("Boot Inn is listed free of charge on our Where to eat page, where people can choose somewhere to eat by what they're after") && fresh.body.includes('\nhttps://thelenches.org.uk/living-here/eat/#eat-boot-inn'), 'name, page and card link');
+  // Where to eat's own check (27 Nov): every tag on the card, and the questions behind the page's buttons.
+  ok(fresh.body.includes('Serves: Lunch, Evening meals') && fresh.body.includes('Garden, Children welcome, Rooms to stay'), 'serves and tags shown');
+  ok(fresh.body.includes('- whether dogs and children are welcome') && fresh.body.includes('a photo of the outside or inside'), 'eatery questions');
   ok(fresh.body.includes('This is what it shows at the moment:\nBoot Inn\nFlyford Flavell\nPub and restaurant'), 'the entry as shown');
   ok(fresh.body.includes("If you'd rather not be listed, let me know and we'll take it off.") && !fresh.body.includes("rather we didn't get in touch"), 'own opt-out wording only');
   ok(/Best wishes,\nHolly\nLenches website assistant/.test(fresh.body), 'Holly signs');
   ok(/^Listing check for Boot Inn/.test(fresh.notes), 'card note');
-  const chase = orgs.orgEmail((await orgs.allEntries()).find((e) => e.id === 'trade-b-tomes-son'), 'chase', await orgs.rules());
+  // Local trades are retired until about 27 Dec (their checks paused), so a stand-in trade entry.
+  const chase = orgs.orgEmail({ listing: 'trades', name: 'B Tomes & Son', pageName: 'Local trades', pageUrl: 'https://thelenches.org.uk/living-here/trades/#trade-b-tomes-son', shown: ['Builder'] }, 'chase', await orgs.rules());
+  const tradeCheck = orgs.orgEmail({ listing: 'trades', name: 'B Tomes & Son', pageName: 'Local trades', pageUrl: 'https://thelenches.org.uk/living-here/trades/#trade-b-tomes-son', shown: ['Builder'] }, 'check', await orgs.rules());
+  ok(!tradeCheck.body.includes('which meals you serve') && tradeCheck.body.includes('the areas you cover'), 'trades keep their own check');
   ok(chase.subject === 'Re: Your listing on thelenches.org.uk' && chase.body.includes("B Tomes & Son's free listing on our Local trades page"), 'chaser wording');
   ok(claudeCalls === 0, 'no Claude');
   console.log('--- sample listing check ---\n' + fresh.body + '\n---');
