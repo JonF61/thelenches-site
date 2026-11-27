@@ -259,7 +259,7 @@
       "kryten": true
     },
     {
-      "task": "Sign-up reminders (27 Nov): four unconfirmed sign-ups (Lenches rows 5, 9, 14; Harvington row 10) were sent one 'Still want …?' reminder by signup.yml Run workflow. Over the next week check which confirmed (status subscribed) and that the rest are wiped at 30 days.",
+      "task": "Sign-up reminders (27 Nov): two unconfirmed sign-ups (Lenches row 5, link valid to 28 Nov; Harvington row 10) were sent one 'Still want …?' reminder by signup.yml Run workflow; Lenches rows 9 and 14 had already joined by email, so got none. Over the next week check whether the two confirmed and that all four rows are wiped at 30 days (Lenches 29 Nov to 1 Dec).",
       "kryten": true
     }
   ]
