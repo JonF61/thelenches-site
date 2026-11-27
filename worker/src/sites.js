@@ -38,8 +38,12 @@ export const siteList = () => siteIds()
 export function siteEnv(env, s) {
   const site = siteName(s);
   const cfg = SITES[site];
-  const sheet = site === DEFAULT_SITE ? String(env.SHEET_ID || cfg.sheetId || '') : String(cfg.sheetId || '');
-  const over = { SHEET_ID: sheet, SITE: site, SITE_HOST: String(cfg.domain || '') };
+  // The default site keeps the real env's SHEET_ID (wrangler.toml), never one a siteEnv for
+  // another site put in front of it (27 Nov 2026: Harvington's Inbound links read its own Replies
+  // as the Lenches', so a request sent from the Lenches for both was missed).
+  const base = env.__realEnv || env;
+  const sheet = site === DEFAULT_SITE ? String(base.SHEET_ID || cfg.sheetId || '') : String(cfg.sheetId || '');
+  const over = { SHEET_ID: sheet, SITE: site, SITE_HOST: String(cfg.domain || ''), __realEnv: base };
   if (site !== DEFAULT_SITE) over.SITE_URL = String(cfg.url || '');
   return Object.assign(Object.create(env), over);
 }
