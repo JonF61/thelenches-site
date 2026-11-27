@@ -26,8 +26,8 @@
       "kryten": true
     },
     {
-      "task": "Facebook app sign-ups (27 Nov fix: an unknown Origin such as \"null\" is accepted when Turnstile's answer names one of our sites): over the next week, check the Sign-ups tabs get Facebook app sign-ups and the Form failures tabs show no more 'origin' rows from it; any that remain now show the origin sent (column G).",
-      "added": "2026-11-23",
+      "task": "Facebook app sign-ups: check on 28 Nov, then again over the next week. Two fixes went in on 27 Nov: PR 561 (an unknown Origin such as \"null\" is accepted when Turnstile names one of our sites) and PR 579 (an http:// origin such as http://harvingtonvillage.org.uk now counts as that site; it refused 11 Harvington sign-ups that day, and 9 were added by hand with the 'added' action). Check that both Form failures tabs show no new 'origin' rows, and that both Sign-ups tabs have no 'review' rows left and no rows stuck at 'sent' after 14:20 on 27 Nov, which would mean the confirm link failed in the Facebook browser.",
+      "added": "2026-11-27",
       "kryten": true
     },
     {
@@ -268,7 +268,7 @@
       "kryten": true
     },
     {
-      "task": "Failed sign-ups to Jon (27 Nov): after the first real one, check the Sign-ups row says 'review' with a plain reason, Jon got the 'Sign-up didn't go through' email, and the Summary card's Reviewed button works.",
+      "task": "Failed sign-ups to Jon (27 Nov): the alert rows and emails worked on 27 Nov. Still to check: that the Summary card's Reviewed button works on the next real failure. Kryten set the 27 Nov rows to reviewed through /k, not the button.",
       "kryten": true
     },
     {
