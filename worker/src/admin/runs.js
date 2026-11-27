@@ -32,6 +32,7 @@ export const WORKFLOW_NAMES = {
   'sponsor-emails.yml': 'Find sponsor emails',
   'link-check.yml': 'Check inbound links',
   'cartoon.yml': 'Draw cartoon',
+  'eat-shots.yml': 'Where to eat pictures',
   'unsubscribe.yml': 'Unsubscribe',
   'suggest.yml': 'Image suggestions',
   'eventimages.yml': 'Event images',
