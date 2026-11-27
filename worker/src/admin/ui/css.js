@@ -95,7 +95,7 @@ span.sum-h{color:inherit;cursor:default}
 .badge.warn{background:var(--warn-bg);color:var(--warn);border-color:transparent}
 .badge.info{background:var(--info-bg);color:var(--info);border-color:transparent}
 .badge.ok{background:var(--ok-bg);color:var(--ok);border-color:transparent}
-.link-edit{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start;margin:6px 0}.link-edit .box{flex:1 1 260px;min-width:0}.link-card h2 .badge{vertical-align:middle;font-weight:normal}
+.link-edit{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-start;margin:6px 0}.link-edit .box{flex:1 1 260px;min-width:0}.link-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-bottom:10px}.link-top p{margin:0}.link-group.needs{border-left:4px solid var(--warn)}.link-group h2{margin-bottom:4px}.link-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;padding:7px 0;border-top:1px solid var(--line)}.lr-main{flex:1 1 420px;min-width:0}.lr-main h3{display:inline;font-size:1em;margin:0 8px 0 0}.lr-main h3 .badge{vertical-align:middle;font-weight:normal;white-space:nowrap}.lr-meta{overflow-wrap:anywhere}.lr-why{color:var(--warn);font-weight:600}.lr-act{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.lr-act .btn.link{padding:4px 6px}.link-row .link-edit{flex:1 1 100%}
 button.chip{font:inherit;color:inherit;cursor:pointer}
 .fbtext{white-space:pre-wrap;overflow-wrap:anywhere;margin:6px 0}
 .fbmsg{border-top:1px solid var(--line);padding-top:6px;margin-top:6px}
