@@ -15,9 +15,13 @@
           {%- if o.see %}<a href="{{ o.see | url }}">Contact details on the Groups page</a>
           {%- else %}
             {%- if o.council %}Clerk: {% endif %}
-            {%- if email %}<a href="mailto:{{ email }}">{{ email }}</a>{% endif %}
-            {%- if d.phone %}{% if email %} &middot; {% endif %}{{ d.phone }}{% endif %}
-            {%- if not email and not d.phone %}{% if d.contactUrl %}<a href="{{ d.contactUrl }}" target="_blank" rel="noopener">Contact form</a>{% elif o.url %}<a href="{{ o.url }}" target="_blank" rel="noopener">Website</a>{% endif %}{% endif %}
+            {#- Every detail we have: email, phone, website (27 Nov 2026, Jon); a contact form only when there's no email. #}
+            {%- set parts = [] %}
+            {%- if email %}{% set parts = (parts.push('<a href="mailto:' + email + '">' + email + '</a>'), parts) %}{% endif %}
+            {%- if d.phone %}{% set parts = (parts.push('<a class="tel" href="tel:' + (d.phone | replace(' ', '')) + '">' + d.phone + '</a>'), parts) %}{% endif %}
+            {%- if not email and d.contactUrl %}{% set parts = (parts.push('<a href="' + d.contactUrl + '" target="_blank" rel="noopener">Contact form</a>'), parts) %}{% endif %}
+            {%- if o.url %}{% set parts = (parts.push('<a href="' + o.url + '" target="_blank" rel="noopener">Website</a>'), parts) %}{% endif %}
+            {{- parts | join(' &middot; ') | safe }}
           {%- endif %}</td></tr>
         {%- endfor %}
       </tbody>

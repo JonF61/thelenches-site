@@ -18,10 +18,12 @@
   "orgs": {
     "harvington-pc": {
       "name": "Harvington Parish Council",
-      "council": "harvington"
+      "council": "harvington",
+      "url": "https://harvington-pc.gov.uk/"
     },
     "norton-lenchwick-pc": {
       "name": "Norton and Lenchwick Parish Council",
+      "council": "norton-lenchwick",
       "url": "https://nortonlenchwick-pc.gov.uk/"
     },
     "village-hall": {
@@ -41,15 +43,18 @@
     },
     "baptist": {
       "name": "Harvington Baptist Church",
-      "email": "info@harvingtonbaptistchurch.org.uk"
+      "email": "info@harvingtonbaptistchurch.org.uk",
+      "url": "https://www.harvingtonbaptistchurch.org.uk/"
     },
     "first-school": {
       "name": "Harvington CofE First School",
-      "school": "Harvington CofE First School"
+      "school": "Harvington CofE First School",
+      "url": "https://www.harvingtonfirstschool.co.uk/"
     },
     "harvey-bears": {
       "name": "Harvey Bears Nursery and Pre-School",
-      "school": "Harvey Bears Nursery and Pre-School"
+      "school": "Harvey Bears Nursery and Pre-School",
+      "url": "https://www.harveybears.org.uk/"
     },
     "youth-project": {
       "name": "Harvington Youth Project",
