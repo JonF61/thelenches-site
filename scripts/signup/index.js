@@ -18,6 +18,11 @@
 //            since gone through (a later new/sent/subscribed/already row, or active in
 //            Subscribers: then "reviewed", nothing sent), Jon gets one email at once; the
 //            panel's Summary lists it until he taps Reviewed.
+//   added    (27 Nov 2026, Jon; manual only, signup.yml Run workflow with action "added") a
+//            failed sign-up ("review" row) Jon has checked: added to Subscribers straight away
+//            (applyListRequest, so Do Not Send still refuses) and sent one "you're on the list"
+//            email (addedEmail, wording approved by Jon 27 Nov). The Facebook app's http://
+//            origin refused 11 Harvington sign-ups that day.
 // Each run also wipes the address from rows never confirmed within KEEP_DAYS ("expired"),
 // as the privacy page promises. Rows are found by id only, so a replayed dispatch does
 // nothing once the row has moved on. Never logs an address: this repo's Actions logs are public.
@@ -123,6 +128,20 @@ function alreadyEmail() {
   };
 }
 
+// Wording approved by Jon, 27 Nov 2026.
+function addedEmail() {
+  const paras = [
+    'Hello,',
+    `Thank you for signing up to ${NEWSLETTER} on our website. Our sign-up form had a problem at the time, so we've added you to the list ourselves. It's free and comes out every Thursday morning.`,
+    'If you didn\'t ask to join, or would rather not have it, just reply to this email or use the unsubscribe link at the foot of any issue.',
+  ];
+  return {
+    subject: `You're on the list: ${NEWSLETTER}`,
+    html: emailHtml(paras, null),
+    text: `${paras.join('\n\n')}\n\n${DOMAIN}\n`,
+  };
+}
+
 // To Jon only (private mail, so the address may appear): a sign-up that didn't go through.
 function failedEmail(email, row) {
   const text = `Someone tried to join ${NEWSLETTER} on the website, but it didn't go through.\n\n`
@@ -161,7 +180,7 @@ async function tidy(deps, rows, ms) {
 }
 
 async function run({ action, id, ms = Date.now() }, deps = { g, applyListRequest, signToken }) {
-  if (!['send', 'confirm', 'resend', 'alert'].includes(action)) throw new Error('ACTION must be send, confirm, resend or alert');
+  if (!['send', 'confirm', 'resend', 'alert', 'added'].includes(action)) throw new Error('ACTION must be send, confirm, resend, alert or added');
   if (!/^su-\d{8}-[a-z0-9]{6}$/.test(id)) throw new Error('SIGNUP_ID is missing or malformed');
   await deps.g.ensureTab(TAB, HEADERS);
   const rows = await deps.g.readTable(TAB);
@@ -196,6 +215,25 @@ async function run({ action, id, ms = Date.now() }, deps = { g, applyListRequest
     await deps.g.sendMail({ to: process.env.ALERT_TO || process.env.GMAIL_USER, ...m, fromName });
     console.log('Failed sign-up: Jon emailed.');
     return 'alerted';
+  }
+
+  if (action === 'added') {
+    if (!['review', 'reviewed'].includes(status) || !email) { console.log(`Row is "${status}", not a failed sign-up. Nothing to do.`); return 'skipped'; }
+    const res = await deps.applyListRequest('subscribe', email, now, { source: 'web form', notes: 'added by Jon after a failed sign-up' });
+    if (res.refused) {
+      await deps.g.updateRow(TAB, row._row, { status: 'held', result: res.refused });
+      console.log('Not added: Do Not Send or another Subscribers status. Nothing sent.');
+      return 'held';
+    }
+    if (res.done !== 'subscribed') {
+      await deps.g.updateRow(TAB, row._row, { status: 'already', result: 'already subscribed' });
+      console.log('Already subscribed. Nothing sent.');
+      return 'already';
+    }
+    await deps.g.sendMail({ to: email, ...addedEmail(), from: FROM, fromName, headers: { 'Auto-Submitted': 'auto-generated' } });
+    await deps.g.updateRow(TAB, row._row, { status: 'subscribed', sent_at: now, confirmed_at: now, result: 'added by Jon after a failed sign-up' });
+    console.log('Added to Subscribers; "you\'re on the list" email sent.');
+    return 'added';
   }
 
   if (action === 'send') {
@@ -265,10 +303,13 @@ async function run({ action, id, ms = Date.now() }, deps = { g, applyListRequest
   return done;
 }
 
-module.exports = { run, confirmEmail, reminderEmail, alreadyEmail, heldEmail, failedEmail, emailHtml, stamp, ageDays, TAB, HEADERS, LINK_DAYS, KEEP_DAYS };
+module.exports = { run, addedEmail, confirmEmail, reminderEmail, alreadyEmail, heldEmail, failedEmail, emailHtml, stamp, ageDays, TAB, HEADERS, LINK_DAYS, KEEP_DAYS };
 
 if (require.main === module) {
-  run({ action: str(process.env.ACTION), id: str(process.env.SIGNUP_ID) }).catch((err) => {
+  // A manual "added" run may name several row ids, comma separated (one at a time, in turn).
+  const action = str(process.env.ACTION);
+  const ids = action === 'added' ? str(process.env.SIGNUP_ID).split(',').map(str).filter(Boolean) : [str(process.env.SIGNUP_ID)];
+  (async () => { for (const id of ids) await run({ action, id }); })().catch((err) => {
     console.error('Fatal:', err && err.message ? err.message : err);
     process.exit(1);
   });
