@@ -51,14 +51,17 @@ export function siteOrigin(env) {
 // is the same site (22 Nov 2026: a Harvington sign-up failed with Safari's "Load failed"
 // because the reply allowed only the address without www). The env then answers that
 // origin for CORS and the origin check; anything else is unchanged.
+// 27 Nov 2026: the same goes for http:// (the Facebook app sent http://harvingtonvillage.org.uk).
 export function formEnv(env, request) {
   const site = siteOrigin(env);
   const sent = request && request.headers.get('origin');
   if (!site || !sent || sent === site) return env;
-  const u = new URL(site);
-  if (u.hostname.startsWith('www.')) return env;
-  u.hostname = `www.${u.hostname}`;
-  return sent === u.origin ? Object.assign(Object.create(env), { FORM_ORIGIN: sent }) : env;
+  let a; let b;
+  try { a = new URL(site); b = new URL(sent); } catch { return env; }
+  const bare = (h) => h.toLowerCase().replace(/^www\./, '');
+  const same = /^https?:$/.test(b.protocol) && !b.port && bare(b.hostname) === bare(a.hostname)
+    && `${b.protocol}//${b.host}` === sent;
+  return same ? Object.assign(Object.create(env), { FORM_ORIGIN: sent }) : env;
 }
 
 export function londonStamp(ms) {
