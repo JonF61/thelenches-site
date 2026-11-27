@@ -414,26 +414,6 @@
       }
     },
     {
-      "id": "thai-emerald",
-      "name": "Thai Emerald",
-      "area": "Evesham",
-      "where": "High Street, Evesham",
-      "type": "Thai restaurant",
-      "phone": "01386 49788",
-      "website": {
-        "text": "thai-emerald.co.uk",
-        "url": "https://www.thai-emerald.co.uk/evesham"
-      },
-      "serves": ["lunch", "evening", "takeaway"],
-      "image": {
-        "url": "/images/eat/thai-emerald.jpg",
-        "alt": "Front page of the Thai Emerald website",
-        "website": true
-      },
-      "lat": 52.09528,
-      "lng": -1.94639
-    },
-    {
       "id": "apple-barn-restaurant",
       "name": "Apple Barn Restaurant",
       "area": "Evesham",
@@ -512,6 +492,27 @@
       "image": {
         "url": "/images/eat/chillis.jpg",
         "alt": "Front page of the Chillis website",
+        "website": true
+      }
+    },
+    {
+      "id": "evesham-balti",
+      "name": "Evesham Balti",
+      "area": "Evesham",
+      "where": "Waterside, Evesham",
+      "type": "Bangladeshi restaurant and takeaway",
+      "food": "Evening meals, seven days a week",
+      "phone": "01386 421253",
+      "website": {
+        "text": "eveshambalti.co.uk",
+        "url": "https://eveshambalti.co.uk/"
+      },
+      "serves": ["evening", "takeaway"],
+      "lat": 52.09066,
+      "lng": -1.94232,
+      "image": {
+        "url": "/images/eat/evesham-balti.jpg",
+        "alt": "Front page of the Evesham Balti website",
         "website": true
       }
     },
@@ -702,25 +703,24 @@
       "lng": -1.94649
     },
     {
-      "id": "evesham-balti",
-      "name": "Evesham Balti",
+      "id": "thai-emerald",
+      "name": "Thai Emerald",
       "area": "Evesham",
-      "where": "Waterside, Evesham",
-      "type": "Bangladeshi restaurant and takeaway",
-      "food": "Evening meals, seven days a week",
-      "phone": "01386 421253",
+      "where": "High Street, Evesham",
+      "type": "Thai restaurant",
+      "phone": "01386 49788",
       "website": {
-        "text": "eveshambalti.co.uk",
-        "url": "https://eveshambalti.co.uk/"
+        "text": "thai-emerald.co.uk",
+        "url": "https://www.thai-emerald.co.uk/evesham"
       },
-      "serves": ["evening", "takeaway"],
-      "lat": 52.09066,
-      "lng": -1.94232,
+      "serves": ["lunch", "evening", "takeaway"],
       "image": {
-        "url": "/images/eat/evesham-balti.jpg",
-        "alt": "Front page of the Evesham Balti website",
+        "url": "/images/eat/thai-emerald.jpg",
+        "alt": "Front page of the Thai Emerald website",
         "website": true
-      }
+      },
+      "lat": 52.09528,
+      "lng": -1.94639
     },
     {
       "id": "wayside-farm-shop-tearoom",
@@ -767,27 +767,6 @@
       },
       "lat": 52.12213,
       "lng": -1.97661
-    },
-    {
-      "id": "thai-legend",
-      "name": "Thai Legend",
-      "area": "Pershore",
-      "where": "High Street, Pershore",
-      "type": "Thai restaurant",
-      "food": "Lunch Monday to Saturday; evening meals every day",
-      "phone": "01386 554604",
-      "website": {
-        "text": "thailegendrestaurant.co.uk",
-        "url": "https://www.thailegendrestaurant.co.uk/"
-      },
-      "serves": ["lunch", "evening"],
-      "lat": 52.11196,
-      "lng": -2.07615,
-      "image": {
-        "url": "/images/eat/thai-legend.jpg",
-        "alt": "Front page of the Thai Legend website",
-        "website": true
-      }
     },
     {
       "id": "angel-inn",
@@ -852,6 +831,27 @@
         "alt": "Millers Arms, Bridge Street, Pershore",
         "credit": "Jeff Gogarty, CC BY-SA 2.0",
         "creditUrl": "https://www.geograph.org.uk/photo/7628984"
+      }
+    },
+    {
+      "id": "thai-legend",
+      "name": "Thai Legend",
+      "area": "Pershore",
+      "where": "High Street, Pershore",
+      "type": "Thai restaurant",
+      "food": "Lunch Monday to Saturday; evening meals every day",
+      "phone": "01386 554604",
+      "website": {
+        "text": "thailegendrestaurant.co.uk",
+        "url": "https://www.thailegendrestaurant.co.uk/"
+      },
+      "serves": ["lunch", "evening"],
+      "lat": 52.11196,
+      "lng": -2.07615,
+      "image": {
+        "url": "/images/eat/thai-legend.jpg",
+        "alt": "Front page of the Thai Legend website",
+        "website": true
       }
     }
   ]
