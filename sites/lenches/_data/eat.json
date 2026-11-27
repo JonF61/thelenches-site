@@ -582,7 +582,13 @@
       },
       "serves": ["coffee"],
       "lat": 52.0921,
-      "lng": -1.94942
+      "lng": -1.94942,
+      "image": {
+        "url": "/images/eat/jelly-pickle-jam-tea-shop.jpg",
+        "alt": "Vine Mews, Evesham, where the tea shop is (a photo of the mews, not the shop)",
+        "credit": "Pauline E, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/2040491"
+      }
     },
     {
       "id": "karma",
@@ -598,7 +604,13 @@
       "serves": ["evening", "takeaway"],
       "veggie": true,
       "lat": 52.09111,
-      "lng": -1.94094
+      "lng": -1.94094,
+      "image": {
+        "url": "/images/eat/karma.jpg",
+        "alt": "Port Street, Evesham, where Karma is (a photo of the street, not the restaurant)",
+        "credit": "Stephen McKay, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/7149357"
+      }
     },
     {
       "id": "the-mint-house",
@@ -706,7 +718,13 @@
       },
       "highlight": "In a Grade II listed building on the High Street",
       "lat": 52.0935,
-      "lng": -1.94649
+      "lng": -1.94649,
+      "image": {
+        "url": "/images/eat/saffron-lounge.jpg",
+        "alt": "High Street, Evesham, where Saffron Lounge is (a photo of the street, not the restaurant)",
+        "credit": "Steve Daniels, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/6614984"
+      }
     },
     {
       "id": "thai-emerald",
@@ -817,7 +835,13 @@
       "dogs": true,
       "stepfree": true,
       "lat": 52.11036,
-      "lng": -2.0752
+      "lng": -2.0752,
+      "image": {
+        "url": "/images/eat/coffee-1.jpg",
+        "alt": "Shops on the High Street, Pershore, near Coffee#1 (a photo of the street, not the café)",
+        "credit": "JThomas, CC BY-SA 2.0",
+        "creditUrl": "https://www.geograph.org.uk/photo/6936905"
+      }
     },
     {
       "id": "millers-arms",
