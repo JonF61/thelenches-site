@@ -155,16 +155,24 @@ export function listingEntries(data, { url = SITE, domain = 'thelenches.org.uk',
   }
   for (const p of eat.places || []) {
     if (!p || !p.id) continue;
-    const tags = [p.garden ? 'Garden' : '', p.children ? 'Children welcome' : '', p.dogs ? 'Dogs welcome' : ''].filter(Boolean).join(', ');
+    // Everything the card shows (27 Nov, Jon: the yearly check asks them to confirm the tags too).
+    const serves = (Array.isArray(p.serves) ? p.serves : []).map((s) => EAT_SERVES[s]).filter(Boolean).join(', ');
+    const tags = Object.keys(EAT_FEATURES).filter((k) => p[k]).map((k) => EAT_FEATURES[k]).join(', ');
     out.push({
       id: `eat-${p.id}`, listing: 'eat', name: str(p.name), email: low(p.email), greet: '',
       page: '/living-here/eat/', pageName: PAGE_NAMES['/living-here/eat/'], pageUrl: `${url}/living-here/eat/#eat-${p.id}`, subject,
       website: web(p.website),
-      shown: [str(p.where), str(p.type), str(p.food), str(p.note), tags, str(p.phone), web(p.website)].filter(Boolean),
+      shown: [
+        str(p.where), str(p.type), str(p.highlight), str(p.food), serves ? `Serves: ${serves}` : '', tags, str(p.note), str(p.phone), web(p.website),
+      ].filter(Boolean),
     });
   }
   return skip ? out.filter((e) => !skip.has(e.id)) : out;
 }
+
+// Where to eat tags, as the page's buttons name them (src/_includes/pages/eat.njk SERVES / FEATURES).
+export const EAT_SERVES = { breakfast: 'Breakfast', lunch: 'Lunch', evening: 'Evening meals', sunday: 'Sunday roast', 'afternoon-tea': 'Afternoon tea', coffee: 'Coffee and cake', takeaway: 'Takeaway' };
+export const EAT_FEATURES = { garden: 'Garden', dogs: 'Dogs welcome', children: 'Children welcome', veggie: 'Vegetarian or vegan choices', stepfree: 'Step-free access', fire: 'Open fire', rooms: 'Rooms to stay' };
 
 // The address Holly writes to: the entry's own, else the Org outreach tab's email cell
 // (listings only: an organisation's address always comes from the repo).
