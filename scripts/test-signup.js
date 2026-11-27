@@ -132,6 +132,37 @@ const previews = {};
   await assert.rejects(signup.run({ action: 'delete', id: ID }, w.deps), /ACTION/);
   await assert.rejects(signup.run({ action: 'send', id: 'reader@example.org' }, w.deps), /SIGNUP_ID/);
 
+  // resend (27 Nov): one reminder to an expired "sent" row; its link never outlives the wipe.
+  const NOV27 = Date.UTC(2026, 10, 27, 12, 0);
+  const RID = 'su-20261030-zk94vj';
+  w = world({ signups: [{ id: RID, requested: '2026-10-30 18:41', email: 'late@example.org', status: 'sent', sent_at: '2026-10-30 18:41' }] });
+  assert.strictEqual(await signup.run({ action: 'resend', id: RID, ms: NOV27 }, w.deps), 'reminded');
+  const rm = w.sent[0];
+  assert.strictEqual(rm.subject, 'Still want The Lenches Newsletter?');
+  assert.match(rm.text, /A few weeks ago someone, hopefully you, asked to get The Lenches Newsletter/);
+  assert.match(rm.text, /This link works until Saturday 28 November\./);
+  const rp = JSON.parse(Buffer.from(rm.text.match(/\/s\?t=(\S+)/)[1].split('.')[0], 'base64url').toString());
+  assert.strictEqual(rp.e * 1000, Date.UTC(2026, 10, 29), 'link ends at the 30-day wipe');
+  assert.strictEqual(w.tabs['Sign-ups'][0].status, 'sent');
+  assert.strictEqual(w.tabs['Sign-ups'][0].result, 'reminder sent');
+  previews.reminder = rm;
+  assert.strictEqual(await signup.run({ action: 'resend', id: RID, ms: NOV27 + 60e3 }, w.deps), 'skipped', 'never a second reminder');
+  assert.strictEqual(w.sent.length, 1);
+  // A newer row gets the full 7 days; the confirm then works.
+  const HID = 'su-20261122-kkv73l';
+  w = world({ signups: [{ id: HID, requested: '2026-11-22 14:50', email: 'h@example.org', status: 'sent', sent_at: '2026-11-22 14:50' }] });
+  assert.strictEqual(await signup.run({ action: 'resend', id: HID, ms: NOV27 }, w.deps), 'reminded');
+  assert.match(w.sent[0].text, /works until Friday 4 December/);
+  assert.strictEqual(await signup.run({ action: 'confirm', id: HID, ms: NOV27 + 3600e3 }, w.deps), 'subscribed');
+  // Sent under 2 days ago, already subscribed, too close to the wipe, or not "sent": nothing sent.
+  w = world({ signups: [{ id: HID, requested: '2026-11-26 10:00', email: 'h@example.org', status: 'sent', sent_at: '2026-11-26 10:00' }] });
+  assert.strictEqual(await signup.run({ action: 'resend', id: HID, ms: NOV27 }, w.deps), 'skipped');
+  w = world({ signups: [{ id: HID, requested: '2026-11-01 10:00', email: 'h@example.org', status: 'sent', sent_at: '2026-11-01 10:00' }], subscribers: [{ email: 'h@example.org', status: 'active' }] });
+  assert.strictEqual(await signup.run({ action: 'resend', id: HID, ms: NOV27 }, w.deps), 'skipped');
+  w = world({ signups: [{ id: RID, requested: '2026-10-28 18:41', email: 'late@example.org', status: 'sent', sent_at: '2026-10-28 18:41' }] });
+  assert.strictEqual(await signup.run({ action: 'resend', id: RID, ms: NOV27 }, w.deps), 'too-late');
+  assert.strictEqual(w.sent.length, 0);
+
   assert.ok(!logs.some((l) => l.includes('@')), 'no address in any log line');
 
   const out = path.join(process.env.PREVIEW_DIR || require('os').tmpdir(), 'signup-previews');
