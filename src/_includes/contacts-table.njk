@@ -12,17 +12,15 @@
         {%- if o.school %}{% for sc in schools.local %}{% if sc.name == o.school %}{% set d = sc %}{% endif %}{% endfor %}{% endif %}
         {%- set email = site.email if o.siteEmail else d.email %}
         <tr><th scope="row">{{ o.name }}</th><td>
-          {%- if o.see %}<a href="{{ o.see | url }}">Contact details on the Groups page</a>
-          {%- else %}
             {%- if o.council %}Clerk: {% endif %}
-            {#- Every detail we have: email, phone, website (27 Nov 2026, Jon); a contact form only when there's no email. #}
+            {#- Every detail we have: email, phone, website, Facebook (27 Nov 2026, Jon; the Groups page's groups too, names left there); a contact form only when there's no email. #}
             {%- set parts = [] %}
             {%- if email %}{% set parts = (parts.push('<a href="mailto:' + email + '">' + email + '</a>'), parts) %}{% endif %}
             {%- if d.phone %}{% set parts = (parts.push('<a class="tel" href="tel:' + (d.phone | replace(' ', '')) + '">' + d.phone + '</a>'), parts) %}{% endif %}
             {%- if not email and d.contactUrl %}{% set parts = (parts.push('<a href="' + d.contactUrl + '" target="_blank" rel="noopener">Contact form</a>'), parts) %}{% endif %}
             {%- if o.url %}{% set parts = (parts.push('<a href="' + o.url + '" target="_blank" rel="noopener">Website</a>'), parts) %}{% endif %}
-            {{- parts | join(' &middot; ') | safe }}
-          {%- endif %}</td></tr>
+            {%- if o.facebook %}{% set parts = (parts.push('<a href="' + o.facebook + '" target="_blank" rel="noopener">Facebook</a>'), parts) %}{% endif %}
+            {{- parts | join(' &middot; ') | safe }}</td></tr>
         {%- endfor %}
       </tbody>
     </table>
