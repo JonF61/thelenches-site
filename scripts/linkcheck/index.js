@@ -122,6 +122,24 @@ function rowUpdate(row, check, today, { requestSent = '', seed = null } = {}) {
   return Object.keys(out).length ? out : null;
 }
 
+// Email finder (27 Nov 2026, Jon): a partner still to ask (or whose link has gone) with no email
+// and a website that isn't Facebook gets the best public address on its own site (the listing
+// finder: home page plus contact pages, same-domain address first), written only into a blank
+// email cell, with FOUND_NOTE added to its notes. A partner whose notes already carry that note
+// is never looked up again, so an address Jon clears stays cleared.
+const FOUND_NOTE = 'Email found on their website by the weekly check: check it before asking';
+function wantsEmail(row) {
+  const st = str(row.status) || 'To ask';
+  return ['To ask', 'Link gone'].includes(st) && !str(row.email) && /^https?:\/\//i.test(str(row.url))
+    && !/facebook\.com|instagram\.com/i.test(str(row.url)) && !str(row.notes).includes(FOUND_NOTE);
+}
+async function emailUpdate(row, deps) {
+  if (!wantsEmail(row)) return null;
+  const email = await deps.findEmail(str(row.url), deps);
+  if (!email) return null;
+  return { email, notes: str(row.notes) ? `${str(row.notes)}; ${FOUND_NOTE}` : FOUND_NOTE };
+}
+
 function seedRows(site) {
   const file = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'lib', 'linkpartners.json'), 'utf8'));
   return (file[site] || []).map((p) => ({ id: p.id, name: p.name, type: p.type || '', url: p.url || '', status: 'To ask', notes: p.notes || '', listed_page: p.listed_page || '', listed_url: p.listed_url || '' }));
@@ -150,18 +168,22 @@ async function main() {
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London' }).format(new Date());
   const counts = {};
   let changed = 0;
+  let emails = 0;
+  const { findEmail } = require('../listingcontacts');
   for (const row of rows) {
     if (!str(row.id) && !str(row.name)) continue;
     const check = await checkSite(row.url, domains);
     counts[check.result] = (counts[check.result] || 0) + 1;
-    const upd = rowUpdate(row, check, today, { requestSent: R.requestsFor(str(row.id), replyRows, SITE).requestSent, seed: seeds[str(row.id)] });
+    let upd = rowUpdate(row, check, today, { requestSent: R.requestsFor(str(row.id), replyRows, SITE).requestSent, seed: seeds[str(row.id)] });
+    const found = await emailUpdate(row, { fetch, findEmail }).catch(() => null);
+    if (found) { upd = { ...(upd || {}), ...found }; emails += 1; }
     if (upd) { await g.updateRow(TAB, row._row, upd); changed += 1; }
     if (upd && upd.status && upd.status !== str(row.status)) console.log(`${str(row.id) || `row ${row._row}`}: ${str(row.status) || 'To ask'} -> ${upd.status}`);
   }
-  console.log(`Checked ${rows.length} partners for links to ${domains.join(', ')}: ${Object.entries(counts).map(([k, n]) => `${n} ${k}`).join(', ') || 'none'}; ${changed} rows updated.`);
+  console.log(`Checked ${rows.length} partners for links to ${domains.join(', ')}: ${Object.entries(counts).map(([k, n]) => `${n} ${k}`).join(', ') || 'none'}; ${changed} rows updated; ${emails} email addresses found.`);
 }
 
-module.exports = { TAB, HEADERS, STATUSES, linksToUs, candidatePages, checkSite, nextStatus, rowUpdate, seedRows, CHECK_WORDS };
+module.exports = { TAB, HEADERS, STATUSES, linksToUs, candidatePages, checkSite, nextStatus, rowUpdate, seedRows, CHECK_WORDS, FOUND_NOTE, wantsEmail, emailUpdate };
 
 if (require.main === module) {
   main().catch((e) => { console.error(e.message); process.exit(1); });
