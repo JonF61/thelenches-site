@@ -73,6 +73,7 @@ const previews = {};
   assert.strictEqual(sub.email, 'reader@example.org');
   assert.strictEqual(sub.status, 'active');
   assert.strictEqual(sub.source, 'web form');
+  assert.match(sub.subscribed_date, /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:00$/, 'subscribed_date written (the Sheets\' date column)');
   assert.strictEqual(w.tabs['Sign-ups'][0].status, 'subscribed');
   assert.strictEqual(await signup.run({ action: 'confirm', id: ID, ms: MS + 7200e3 }, w.deps), 'skipped');
   assert.strictEqual(w.tabs.Subscribers.length, 1, 'replayed confirm adds nothing');

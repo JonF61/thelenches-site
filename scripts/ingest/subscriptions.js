@@ -20,6 +20,10 @@ const ownDomain = (a) => OWN_DOMAINS.some((d) => a.endsWith(`@${d}`));
 const SIGN_ROLE = String(siteConfig().hollySignoff || 'Holly / Lenches website assistant').split(' / ').slice(1).join(' / ') || 'Lenches website assistant';
 const ADDRESS_RE = /^[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[a-z]{2,}$/i;
 const lc = (v) => String(v ?? '').trim().toLowerCase();
+// The Subscribers tab's date column is subscribed_date (YYYY-MM-DD HH:MM:SS, as the
+// MailerLite import). Until 27 Nov rows were written with date/added_at only, headers
+// neither Sheet has, so new subscribers had no date. stamp: 'YYYY-MM-DD HH:MM' (UK).
+const subscribedDate = (stamp) => (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(stamp) ? `${stamp}:00` : String(stamp || ''));
 
 // kind: 'subscribe' | 'unsubscribe'. stamp: 'YYYY-MM-DD HH:MM' (UK).
 // opts.source / opts.notes: what a new Subscribers row says (the web sign-up form,
@@ -55,7 +59,7 @@ async function applyListRequest(kind, address, stamp, opts = {}) {
   if (rows.some(active)) return { done: 'already' };
   if (rows.length) return { refused: `their Subscribers row has status "${rows[0].status}"` };
   await g.appendRows('Subscribers', [{
-    email, status: 'active', source: opts.source || 'email to website@', date, added_at: stamp,
+    email, status: 'active', source: opts.source || 'email to website@', subscribed_date: subscribedDate(stamp), date, added_at: stamp,
     notes: opts.notes || 'added automatically by Holly',
   }]);
   return { done: 'subscribed' };
@@ -110,7 +114,7 @@ async function subscribeContacts(addresses, stamp) {
   const date = stamp.slice(0, 10);
   if (plan.add.length) {
     await g.appendRows('Subscribers', plan.add.map((email) => ({
-      email, status: 'active', source: 'contact', date, added_at: stamp,
+      email, status: 'active', source: 'contact', subscribed_date: subscribedDate(stamp), date, added_at: stamp,
       notes: 'added automatically from Contacts',
     })));
   }
