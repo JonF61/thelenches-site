@@ -127,10 +127,6 @@
           "url": "/living-here/eat/"
         },
         {
-          "title": "Local trades",
-          "url": "/living-here/trades/"
-        },
-        {
           "title": "Getting around",
           "url": "/living-here/getting-around/"
         }
@@ -179,12 +175,9 @@
       "url": "/living-here/",
       "match": [
         "living-here",
-        "churches"
+        "churches",
+        "bins"
       ]
-    },
-    {
-      "title": "Bins",
-      "url": "/bins/"
     },
     {
       "title": "Contact",

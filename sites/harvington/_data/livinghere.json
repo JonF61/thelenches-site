@@ -3,6 +3,12 @@
   "intro": "The practical side of village life: health and emergencies, what to do if something goes wrong, schools, places to eat, local trades, bins, groups and clubs, village halls, churches, the parish councils, getting around and the roads.",
   "cards": [
     {
+      "title": "Churches",
+      "url": "/churches/",
+      "icon": "church",
+      "text": "Sunday services at St James and St Egwin's, and nearby."
+    },
+    {
       "title": "Groups & Clubs",
       "url": "/groups/",
       "icon": "users",
@@ -15,22 +21,10 @@
       "text": "Harvington and Norton halls: regular users and bookings."
     },
     {
-      "title": "Health & emergencies",
-      "url": "/living-here/health/",
-      "icon": "health",
-      "text": "Emergency numbers, defibrillators, GPs and pharmacies."
-    },
-    {
-      "title": "What to do if…",
-      "url": "/living-here/what-to-do/",
-      "icon": "alert",
-      "text": "Power cuts, flooding, lost pets and more: who to call."
-    },
-    {
-      "title": "Churches",
-      "url": "/churches/",
-      "icon": "church",
-      "text": "Sunday services at St James and St Egwin's, and nearby."
+      "title": "Schools",
+      "url": "/living-here/schools/",
+      "icon": "school",
+      "text": "Nursery, first, middle and high schools, applying and holidays."
     },
     {
       "title": "Council",
@@ -45,30 +39,6 @@
       "text": "New applications, decisions and appeals in Harvington, Norton and Lenchwick, week by week."
     },
     {
-      "title": "Schools",
-      "url": "/living-here/schools/",
-      "icon": "school",
-      "text": "Nursery, first, middle and high schools, applying and holidays."
-    },
-    {
-      "title": "Where to eat",
-      "url": "/living-here/eat/",
-      "icon": "eat",
-      "text": "Pubs and cafés in the villages and close by."
-    },
-    {
-      "title": "Local trades",
-      "url": "/living-here/trades/",
-      "icon": "tools",
-      "text": "Builders, electricians, landscapers and more."
-    },
-    {
-      "title": "Bins",
-      "url": "/bins/",
-      "icon": "bins",
-      "text": "Collection days and which bin takes what."
-    },
-    {
       "title": "Getting around",
       "url": "/living-here/getting-around/",
       "icon": "bus",
@@ -79,6 +49,30 @@
       "url": "/living-here/roads/",
       "icon": "road",
       "text": "Closures and roadworks on the way in and out."
+    },
+    {
+      "title": "Bins",
+      "url": "/bins/",
+      "icon": "bins",
+      "text": "Collection days and which bin takes what."
+    },
+    {
+      "title": "Health & emergencies",
+      "url": "/living-here/health/",
+      "icon": "health",
+      "text": "Emergency numbers, defibrillators, GPs and pharmacies."
+    },
+    {
+      "title": "What to do if…",
+      "url": "/living-here/what-to-do/",
+      "icon": "alert",
+      "text": "Power cuts, flooding, lost pets and more: who to call."
+    },
+    {
+      "title": "Where to eat",
+      "url": "/living-here/eat/",
+      "icon": "eat",
+      "text": "Pubs and cafés in the villages and close by."
     }
   ]
 }

@@ -52,10 +52,10 @@ function siteData() {
 // already checks (the same place on both sites keeps one id; worker admin/index.js orgsFor too).
 async function allEntries(data = siteData(), { site = SITE, cfg = siteConfig() } = {}) {
   const R = await rules();
-  if (site === 'lenches') return [...R.orgEntries(data), ...R.listingEntries(data)];
+  if (site === 'lenches') return [...R.orgEntries(data), ...R.listingEntries(data, { retired: R.RETIRED_LISTINGS })];
   const lenchesDir = path.join(ROOT, 'sites', 'lenches', '_data');
   const skip = new Set(R.listingEntries({ trades: readData('trades', lenchesDir), eat: readData('eat', lenchesDir) }).map((e) => e.id));
-  return [...R.orgEntries(data), ...R.listingEntries(data, { url: cfg.url, domain: cfg.domain, skip })];
+  return [...R.orgEntries(data), ...R.listingEntries(data, { url: cfg.url, domain: cfg.domain, skip, retired: R.RETIRED_LISTINGS })];
 }
 
 // A missing Org outreach tab is the same as an empty one.
