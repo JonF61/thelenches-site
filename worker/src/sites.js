@@ -53,11 +53,14 @@ export function siteEnv(env, s) {
 // matches the request's Origin (or, failing that, its Referer). Anything else is the default
 // site, whose own origin check then refuses a stranger as before.
 // A site's www address counts as the site (22 Nov 2026).
-const originOf = (u) => { try { const x = new URL(String(u || '')); x.hostname = x.hostname.replace(/^www\./, ''); return x.origin; } catch { return ''; } };
+// Matched by host alone (www and http/https ignored): 27 Nov 2026, the Facebook app sent
+// Origin http://harvingtonvillage.org.uk, so 11 Harvington sign-ups were taken as the
+// Lenches' and refused.
+const hostKey = (u) => { try { const x = new URL(String(u || '')); return /^https?:$/.test(x.protocol) ? x.hostname.replace(/^www\./, '').toLowerCase() : ''; } catch { return ''; } };
 export function siteFromRequest(request) {
-  const from = originOf(request.headers.get('origin')) || originOf(request.headers.get('referer'));
+  const from = hostKey(request.headers.get('origin')) || hostKey(request.headers.get('referer'));
   if (!from) return DEFAULT_SITE;
-  return siteIds().find((id) => originOf(SITES[id].url) === from) || DEFAULT_SITE;
+  return siteIds().find((id) => hostKey(SITES[id].url) === from) || DEFAULT_SITE;
 }
 
 // The env for a public form or its signed link: the default site keeps the real env exactly;

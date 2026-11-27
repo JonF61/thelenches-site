@@ -211,6 +211,24 @@ test('a form posted from a site\'s www address works (Safari showed "Load failed
   assert.equal(res.status, 403);
 });
 
+test('the Facebook app\'s http:// origin is that site (27 Nov: 11 Harvington sign-ups refused as the Lenches\')', async () => {
+  const req = (h) => new Request('https://w.example/s', { method: 'POST', headers: h });
+  assert.equal(siteFromRequest(req({ origin: 'http://harvingtonvillage.org.uk' })), 'harvington');
+  assert.equal(siteFromRequest(req({ origin: 'http://www.thelenches.org.uk' })), 'lenches');
+  assert.equal(siteFromRequest(req({ origin: 'ftp://harvingtonvillage.org.uk' })), 'lenches');
+  const calls = fakeWorld();
+  for (const [origin, sheet] of [['http://harvingtonvillage.org.uk', harvington.sheetId], ['http://thelenches.org.uk', 'lenches-sheet']]) {
+    const res = await worker.fetch(post('/s', { email: `http${calls.appends.length}@example.org` }, origin), env());
+    assert.equal(res.status, 200, origin);
+    assert.equal(res.headers.get('access-control-allow-origin'), origin);
+    assert.equal(calls.appends.at(-1).sheet, sheet);
+  }
+  for (const bad of ['http://harvingtonvillage.org.uk:8080', 'http://evil.example', 'http://harvingtonvillage.org.uk.evil.example']) {
+    const res = await worker.fetch(post('/s', { email: 'x@example.org' }, bad), env());
+    assert.equal(res.status, 403, bad);
+  }
+});
+
 // 27 Nov 2026: the Facebook app's browser sends an Origin that is neither site (e.g. "null"),
 // and every sign-up from it was refused. Turnstile's answer names the host the check was
 // solved on, which then picks the site; a failed check or another host is still refused.
