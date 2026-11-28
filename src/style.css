@@ -79,7 +79,7 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 .home-skyline .sk-scene{display:none}
 .home-skyline[data-scene]{cursor:pointer}
 .home-skyline.sk-click{--lag:-1.8s}
-.home-skyline[data-scene=walk] .sk-scene-walk,.home-skyline[data-scene=return] .sk-scene-return,.home-skyline[data-scene=sunday] .sk-scene-sunday,.home-skyline[data-scene=dog] .sk-scene-dog,.home-skyline[data-scene=cyclist] .sk-scene-cyclist,.home-skyline[data-scene=tractor] .sk-scene-tractor,.home-skyline[data-scene=birds] .sk-scene-birds,.home-skyline[data-scene=balloon] .sk-scene-balloon{display:inline}
+.home-skyline[data-scene=walk] .sk-scene-walk,.home-skyline[data-scene=return] .sk-scene-return,.home-skyline[data-scene=sunday] .sk-scene-sunday,.home-skyline[data-scene=dog] .sk-scene-dog,.home-skyline[data-scene=cyclist] .sk-scene-cyclist,.home-skyline[data-scene=tractor] .sk-scene-tractor,.home-skyline[data-scene=birds] .sk-scene-birds,.home-skyline[data-scene=balloon] .sk-scene-balloon,.home-skyline[data-scene=santa] .sk-scene-santa{display:inline}
 .home-skyline .sk-m{filter:brightness(.62);opacity:0;animation:sk-go var(--t) linear calc(var(--w) + var(--lag,0s)) 1 both}
 @keyframes sk-go{0%{opacity:0;transform:translateX(0)}5%{opacity:1;transform:translateX(0)}92%{opacity:1;transform:translateX(var(--d))}100%{opacity:0;transform:translateX(var(--d))}}
 .home-skyline .sk-xy{animation:sk-xy var(--t) linear calc(var(--w) + var(--lag,0s)) 1 both}
