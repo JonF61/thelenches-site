@@ -72,27 +72,45 @@ h3{font-size:1.08rem;margin-bottom:.3rem}
 .home-skyline.is-night .skyline-ridge{fill:#18222B;opacity:1}
 .home-skyline.is-night .skyline-windows{fill:#F6C453;filter:drop-shadow(0 0 2px #F6C453)}
 .home-skyline .skyline-smoke{fill:#B9B2A4}
-.home-skyline .skyline-smoke circle{opacity:0;transform-box:fill-box;transform-origin:center;animation:skyline-smoke 7.5s ease-out infinite}
+.home-skyline .skyline-smoke circle{opacity:0;transform-box:fill-box;transform-origin:center;animation:sk-smoke 7.5s ease-out infinite}
 .home-skyline .skyline-smoke circle:nth-child(2){animation-delay:2.5s}
 .home-skyline .skyline-smoke circle:nth-child(3){animation-delay:5s}
-@keyframes skyline-smoke{0%{opacity:0;transform:translate(0,0) scale(.6)}15%{opacity:.55}100%{opacity:0;transform:translate(14px,-26px) scale(2.4)}}
+@keyframes sk-smoke{0%{opacity:0;transform:translate(0,0) scale(.6)}15%{opacity:.55}100%{opacity:0;transform:translate(14px,-26px) scale(2.4)}}
+.home-skyline .sk-scene{display:none}
+.home-skyline[data-scene]{cursor:pointer}
+.home-skyline.sk-click{--lag:-1.8s}
+.home-skyline[data-scene=walk] .sk-scene-walk,.home-skyline[data-scene=return] .sk-scene-return,.home-skyline[data-scene=sunday] .sk-scene-sunday,.home-skyline[data-scene=dog] .sk-scene-dog,.home-skyline[data-scene=cyclist] .sk-scene-cyclist,.home-skyline[data-scene=tractor] .sk-scene-tractor,.home-skyline[data-scene=birds] .sk-scene-birds,.home-skyline[data-scene=balloon] .sk-scene-balloon{display:inline}
+.home-skyline .sk-m{filter:brightness(.62);opacity:0;animation:sk-go var(--t) linear calc(var(--w) + var(--lag,0s)) 1 both}
+@keyframes sk-go{0%{opacity:0;transform:translateX(0)}5%{opacity:1;transform:translateX(0)}92%{opacity:1;transform:translateX(var(--d))}100%{opacity:0;transform:translateX(var(--d))}}
+.home-skyline .sk-xy{animation:sk-xy var(--t) linear calc(var(--w) + var(--lag,0s)) 1 both}
+.home-skyline .sk-balloon{animation-timing-function:ease-in-out}
+@keyframes sk-xy{0%{transform:translate(0,0)}50%{transform:translate(var(--mx),var(--my))}100%{transform:translate(var(--dx),var(--dy))}}
+.home-skyline .sk-tractor{opacity:.6}
+.home-skyline .sk-leg,.home-skyline .sk-dleg{transform-box:fill-box;transform-origin:top center;transform:rotate(16deg);animation:sk-leg .55s ease-in-out infinite alternate}
+.home-skyline .sk-dleg{animation-duration:.3s}
+.home-skyline .sk-leg2{animation-name:sk-leg2}
+@keyframes sk-leg{from{transform:rotate(16deg)}to{transform:rotate(-16deg)}}
+@keyframes sk-leg2{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
+.home-skyline .sk-wheel{transform-box:fill-box;transform-origin:center;animation:sk-spin .5s linear infinite}
+@keyframes sk-spin{to{transform:rotate(360deg)}}
+.home-skyline .sk-wing{transform-box:fill-box;transform-origin:center;animation:sk-flap .35s ease-in-out infinite alternate}
+@keyframes sk-flap{to{transform:scaleY(-.5)}}
 .home-skyline .skyline-doors>*{opacity:.35}
-.home-skyline .skyline-door-home{animation:skyline-door-home 14s linear 2s 1 both}
-.home-skyline .skyline-door-church{animation:skyline-door-church 14s linear 2s 1 both}
-@keyframes skyline-door-home{0%{opacity:.35}3%,9%{opacity:1}13%,100%{opacity:.35}}
-@keyframes skyline-door-church{0%,82%{opacity:.35}86%,96%{opacity:1}100%{opacity:.35}}
-.home-skyline .skyline-walker{filter:brightness(.62);opacity:0;animation:skyline-walk 14s linear 2s 1 both}
-@keyframes skyline-walk{0%,3%{opacity:0;transform:translateX(0)}7%{opacity:1;transform:translateX(0)}88%{opacity:1;transform:translateX(115px)}95%,100%{opacity:0;transform:translateX(115px)}}
-.home-skyline .skyline-leg{transform-box:view-box;transform-origin:0 -4px;transform:rotate(16deg);animation:skyline-leg .55s ease-in-out 2.98s 21 alternate}
-.home-skyline .skyline-leg2{transform:rotate(-16deg);animation-name:skyline-leg2}
-@keyframes skyline-leg{from{transform:rotate(16deg)}to{transform:rotate(-16deg)}}
-@keyframes skyline-leg2{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
+.home-skyline[data-scene=walk] .sk-door-c2,.home-skyline[data-scene=sunday] .sk-door-c2{animation:sk-door-out 14s linear calc(2s + var(--lag,0s)) both}
+.home-skyline[data-scene=sunday] .sk-door-c1{animation:sk-door-out 17s linear calc(5s + var(--lag,0s)) both}
+.home-skyline[data-scene=walk] .sk-door-ch,.home-skyline[data-scene=return] .sk-door-c2{animation:sk-door-in 14s linear calc(2s + var(--lag,0s)) both}
+.home-skyline[data-scene=return] .sk-door-ch{animation:sk-door-out 14s linear calc(2s + var(--lag,0s)) both}
+.home-skyline[data-scene=sunday] .sk-door-ch{animation:sk-door-open 4s linear calc(1s + var(--lag,0s)) both}
+@keyframes sk-door-out{0%{opacity:.35}3%,9%{opacity:1}13%,100%{opacity:.35}}
+@keyframes sk-door-in{0%,82%{opacity:.35}86%,96%{opacity:1}100%{opacity:.35}}
+@keyframes sk-door-open{to{opacity:1}}
 .home-skyline .skyline-lantern{display:none}
 .home-skyline.is-night .skyline-lantern{display:inline;fill:#F6C453;filter:drop-shadow(0 0 2px #F6C453)}
-.home-skyline.is-night .skyline-walker{filter:none}
+.home-skyline.is-night .sk-m{filter:none}
+.home-skyline.is-night .sk-tractor{opacity:1}
 .home-skyline.is-night .skyline-doors{fill:#F6C453}
 .home-skyline.is-night .skyline-smoke{fill:#5A6478}
-@media (prefers-reduced-motion:reduce){.home-skyline .skyline-walker,.home-skyline .skyline-smoke{display:none}.home-skyline .skyline-doors>*{animation:none}}
+@media (prefers-reduced-motion:reduce){.home-skyline .sk-scene,.home-skyline .skyline-smoke{display:none}.home-skyline .skyline-doors>*{animation:none}}
 .home-skyline.is-night .skyline-halloween [fill="#3F5233"],.home-skyline.is-night .skyline-santa [fill="#3F5233"]{fill:#C9D1E0}
 .home-skyline.is-night .skyline-santa [stroke="#3F5233"]{stroke:#C9D1E0}
 .home-aerial{margin:0 0 1.5rem}
