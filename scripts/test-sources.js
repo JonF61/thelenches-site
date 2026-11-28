@@ -60,6 +60,12 @@ assert.strictEqual(localSource({ id: 'rss-abc-1', source: 'Evesham Journal' }), 
 assert.strictEqual(localSource({ id: 'rss-abc-1', source: 'News', link_url: 'https://www.eveshamjournal.co.uk/news/1' }), 'Evesham Journal');
 assert.strictEqual(localSource({ id: 'abc-1', source: 'Evesham Journal' }), '', 'not an RSS row');
 assert.strictEqual(localSource({ id: 'rss-abc-1', source: 'Wychavon' }), '', 'other feed');
+// Worcestershire County Council's feed (28 Nov 2026): filtered and tagged like a local paper.
+assert.strictEqual(localSource({ id: 'rss-abc-1', source: 'Worcestershire County Council' }), 'Worcestershire County Council');
+const { isLocalFeed } = require('./ingest/rss');
+assert.ok(isLocalFeed({ source: 'Worcestershire County Council', match: 'https://www.worcestershire.gov.uk/news/feed.rss' }));
+assert.ok(!isLocalFeed({ source: 'South Lenches PC', match: 'https://www.southlenchesparishcouncil.org/feed/' }));
+assert.ok(!kept('New plan to shape how Worcestershire manages waste over the next 15 years'), 'county story, no place or topic');
 
 // rss.js uses the same filter.
 process.env.ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || 'test';

@@ -168,7 +168,7 @@ The SECOND LINK rule applies to addresses written in the newsletter. If nothing 
 worth listing, record no items and give a skip_reason.`;
 
 // Added after SIGNPOST for local-news feeds (rss.js LOCAL_FEEDS). Same cached prefix per feed type.
-const LOCAL = `LOCAL STORIES ONLY: this feed is a local newspaper. Record the item only if either:
+const LOCAL = `LOCAL STORIES ONLY: this feed is a local newspaper or a council's news feed. Record the item only if either:
 (a) the story is about Church Lench, Rous Lench, Ab Lench, Atch Lench, Sheriffs Lench,
 Harvington (the village near Evesham, not Harvington Hall near Kidderminster), Inkberrow,
 Abbots Morton, Lenchwick, Radford or Norton (near Evesham); or
