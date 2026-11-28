@@ -417,6 +417,11 @@ module.exports = async function (eleventyConfig) {
     return { total: list.length, withHomes: homes.length, homes: homes.reduce((n, e) => n + e.homes, 0), comments: list.filter((e) => P.commentsOpen(e, t)).length };
   });
 
+  // Comments close soon box and the Home line (28 Nov 2026, Jon; lib/planning.js closingSoon).
+  eleventyConfig.addFilter("planningClosing", (open) => require("./lib/planning").closingSoon(open, ukToday()));
+  eleventyConfig.addFilter("planningCommentCounts", (open) => require("./lib/planning").commentCounts(open, ukToday()));
+  eleventyConfig.addFilter("planningDaysLeft", (n) => require("./lib/planning").daysLeftText(n));
+
   eleventyConfig.addFilter("dateParts", (iso) => ({
     dow: fmt(iso, { weekday: "short" }),
     day: fmt(iso, { day: "numeric" }),

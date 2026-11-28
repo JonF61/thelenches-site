@@ -54,7 +54,7 @@ const inLenches = (x) => THIS_SITE === 'lenches' && inLenchesArea(x);
 const { bodyOf } = require('../../lib/wording');
 const { localSource } = require('../../lib/sources');
 const anchors = require('../../lib/anchors');
-const { weekForIssue } = require('../../lib/planning');
+const { weekForIssue, closingSoon } = require('../../lib/planning');
 
 const WINDOW_DAYS = 14;
 const MAX_APPEARANCES = 3;
@@ -315,7 +315,15 @@ function planningFor(data, issueDate) {
   const parishes = siteConfig().planningParishes;
   if (!data || !Array.isArray(parishes) || !parishes.length) return null;
   const w = weekForIssue(data, issueDate);
-  return w ? { ...w, parishes: [...parishes] } : null;
+  // Comments close soon (28 Nov 2026, Jon): undecided applications whose comments close in the 10 days
+  // from the issue date (lib/planning.js closingSoon); only the fields the band shows.
+  const closing = closingSoon(data.open, issueDate).map((e) => ({
+    ref: e.ref, location: e.location, proposal: e.proposal, link: e.link, consultationEnd: e.consultationEnd,
+    daysLeft: e.daysLeft, ...(e.homes ? { homes: e.homes, homesLabel: e.homesLabel } : {}),
+  }));
+  // No weekly list for this issue yet: the band still carries Comments close soon on its own.
+  if (!w) return closing.length ? { parishes: [...parishes], closing } : null;
+  return { ...w, parishes: [...parishes], ...(closing.length ? { closing } : {}) };
 }
 
 function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, cartoons, wherelenches, planning, issues, settings, sources, jpegFor, cutoff, photos }) {

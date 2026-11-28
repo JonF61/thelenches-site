@@ -23,6 +23,16 @@
 .pl-recent-head{font-size:1.1rem;margin:1.6rem 0 .5rem;color:var(--green-dark,#2E3D26)}
 .pl-decided{opacity:.92}
 .pl-key{display:flex;flex-wrap:wrap;gap:.5rem;margin:.4rem 0 1rem}
+.pl-closing{background:#fff8ea;border:1px solid #ecd9a8;border-left:5px solid #c58a12;border-radius:10px;padding:.9rem 1.1rem .6rem;margin:0 0 1.6rem}
+.pl-closing h2{font-size:1.2rem;margin:0 0 .2rem;color:var(--green-dark,#2E3D26)}
+.pl-closing .pl-sub{margin:0 0 .7rem;font-size:.92rem;color:var(--muted,#666)}
+.pl-closing ul{list-style:none;margin:0;padding:0}
+.pl-closing li{padding:.55rem 0;border-top:1px solid #f0e4c4}
+.pl-closing li:first-child{border-top:0}
+.pl-when{display:inline-block;margin:0 .35rem .2rem 0;padding:0 .45rem;border-radius:4px;background:#c58a12;color:#fff;font-size:.78rem;font-weight:700;line-height:1.7}
+.pl-closing .pl-where{font-weight:700}
+.pl-closing .pl-what{display:block;font-size:.95rem;margin:.1rem 0}
+.pl-closing .pl-meta{margin:.1rem 0 0}
 .pl-key span{background:#fff;border:1px solid #e6e1d6;border-radius:8px;padding:.35rem .7rem;font-size:.92rem}
 </style>
 <main class="container">
@@ -31,6 +41,26 @@
     <p class="page-intro">{{ pageIntro | safe }}</p>
     <p class="muted">Updated each week from Wychavon's lists. <a href="{{ council.planning.commentUrl }}" target="_blank" rel="noopener">Search all applications on Wychavon's site</a> &middot; <a href="/living-here/council/#planning">Parish councils and how to comment</a></p>
   </div>
+  {#- Comments close soon (28 Nov 2026, Jon): undecided applications whose comment period ends in the
+      next 10 days (lib/planning.js closingSoon), soonest first; left out when there are none. -#}
+  {%- set closing = (planning.open if planning and planning.open else []) | planningClosing %}
+  {%- if closing.length %}
+  <section class="pl-closing" id="comments-close-soon">
+    <h2>Comments close soon</h2>
+    <p class="pl-sub">Want to have your say? These applications stop taking comments in the next 10 days.</p>
+    <ul>
+      {%- for e in closing %}
+      {%- set d = e.consultationEnd | dateParts %}
+      <li>
+        <span class="pl-when" data-pagefind-ignore>By {{ d.dow }} {{ d.day }} {{ d.mon }} &middot; {{ e.daysLeft | planningDaysLeft }}</span>{% if e.homesLabel %}<span class="pl-badge-homes" data-pagefind-ignore>{{ e.homesLabel }}</span>{% endif %}
+        <span class="pl-where">{{ e.location }}</span>
+        <span class="pl-what">{{ e.proposal }}{% if not e.proposal.endsWith('.') %}.{% endif %}</span>
+        <p class="pl-meta"><a href="{{ e.link }}" target="_blank" rel="noopener">See the plans and comment on Wychavon's site &rarr;</a> &middot; <a href="{{ e.location | planningMap }}" target="_blank" rel="noopener">Map &rarr;</a></p>
+      </li>
+      {%- endfor %}
+    </ul>
+  </section>
+  {%- endif %}
   {%- set weeks = planning.weeks if planning and planning.weeks else [] %}
   {%- for w in weeks %}
   <section class="month pl-week">

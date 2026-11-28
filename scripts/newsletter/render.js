@@ -10,7 +10,7 @@
 const crypto = require('crypto');
 const { anchorUrl, eventPageUrl, calendarUrl, googleCalendarLink } = require('../../lib/anchors');
 const { siteConfig } = require('../../lib/site');
-const { mapUrl } = require('../../lib/planning');
+const { mapUrl, daysLeftText } = require('../../lib/planning');
 
 // The site's own name, address, contributions address and colours (site.json; Harvington stage 5a,
 // 16 Nov 2026). The Lenches' issue is unchanged: these are its old fixed values.
@@ -182,6 +182,7 @@ function planningRange(from, to) {
 }
 function planningIntro(p) {
   const n = (p.parishes || []).length;
+  if (!p.from) return `Planning applications in ${andList(p.parishes || [])} ${n === 1 ? 'parish' : 'parishes'}. This week's list from Wychavon isn't out yet.`;
   return `From Wychavon's weekly list for ${andList(p.parishes || [])} ${n === 1 ? 'parish' : 'parishes'}, ${planningRange(p.from, p.to)}.`;
 }
 const planningExtra = (e, kind) => [
@@ -192,15 +193,29 @@ const planningExtra = (e, kind) => [
 // the address. Entries without homes (and older snapshots) render as before.
 const homesText = (e) => (e.homes ? String(e.homesLabel || (e.homes === 1 ? '1 new home' : `${e.homes} new homes`)) : '');
 const homesBadge = (e) => (e.homes ? ` <span style="background:#b5471b;color:#ffffff;font-size:11px;font-weight:bold;padding:1px 6px;border-radius:3px;white-space:nowrap;">${esc(homesText(e))}</span>` : '');
+// Comments close soon (28 Nov 2026, Jon; select.js puts closing on the band): first in the band, in a
+// pale box. Older snapshots without closing render as before.
+const closingWhen = (e) => `By ${dateParts(e.consultationEnd).short} (${daysLeftText(e.daysLeft)})`;
+function planningClosing(p) {
+  if (!p.closing || !p.closing.length) return '';
+  return `<div style="background:#fff8ea;border-left:4px solid #c58a12;padding:8px 10px 4px;margin:8px 0 4px;">`
+    + `<div style="font-weight:bold;color:${C.green};margin:0 0 2px;">Comments close soon</div>`
+    + `<div style="color:${C.muted};font-size:13px;margin:0 0 6px;">Want to have your say? These stop taking comments in the next 10 days.</div>`
+    + p.closing.map((e) => `<div style="margin:0 0 6px;"><span style="color:#8a5a00;font-weight:bold;">${esc(closingWhen(e))}</span><br><b>${esc(e.location)}</b>${homesBadge(e)}: ${esc(e.proposal)}`
+      + ` · ${aNew(e.link, 'See the plans and comment', C.accentText)}</div>`).join('')
+    + `</div>`;
+}
 function planningBand(p) {
-  const body = PLANNING_PARTS.map(([kind, label], i) => {
+  // A band with only Comments close soon (no weekly list for this issue yet, select.js) skips the weekly parts.
+  const weekly = p.from ? PLANNING_PARTS.map(([kind, label], i) => {
     const list = p[kind] || [];
     const head = `<div style="font-weight:bold;color:${C.green};margin:${i ? 10 : 8}px 0 2px;">${esc(label)}</div>`;
     if (!list.length) return `${head}<div style="color:${C.muted};">${esc(p.lists && p.lists[kind] ? PLANNING_NONE : PLANNING_NOT_YET)}</div>`;
     return head + list.map((e) => `<div style="margin:0 0 5px;"><b>${esc(e.location)}</b>${homesBadge(e)}: ${esc(e.proposal)}`
       + planningExtra(e, kind).map((x, j) => ` · ${j === 0 && kind === 'decisions' ? `<b>${esc(x)}</b>` : esc(x)}`).join('')
       + ` · ${aNew(e.link, e.ref, C.accentText)} · ${aNew(mapUrl(e.location), 'Map', C.accentText)}</div>`).join('');
-  }).join('');
+  }).join('') : '';
+  const body = planningClosing(p) + weekly;
   // Rule straight under the title, the intro below it (Jon, 25 Nov).
   return sectionHead('Planning this week')
     + `<tr><td class="px" style="padding:6px 24px 0;font-family:${SANS};font-size:13px;line-height:1.5;color:${C.muted};">${esc(planningIntro(p))} ${a(siteUrl(PLANNING_PAGE), 'Last 8 weeks on our Planning page', C.accentText)}.</td></tr>`
@@ -553,7 +568,12 @@ function renderText(m) {
   if (m.planning) {
     head('Planning this week');
     out.push(planningIntro(m.planning), `Last 8 weeks on our Planning page: ${siteUrl(PLANNING_PAGE)}`, '');
-    for (const [kind, label] of PLANNING_PARTS) {
+    if (m.planning.closing && m.planning.closing.length) {
+      out.push('Comments close soon:');
+      for (const e of m.planning.closing) out.push(`- ${closingWhen(e)}: ${e.location}${e.homes ? ` [${homesText(e).toLowerCase()}]` : ''}: ${e.proposal} · See the plans and comment: ${e.link}`);
+      out.push('');
+    }
+    for (const [kind, label] of (m.planning.from ? PLANNING_PARTS : [])) {
       const list = m.planning[kind] || [];
       out.push(`${label}:`);
       if (!list.length) out.push(m.planning.lists && m.planning.lists[kind] ? PLANNING_NONE : PLANNING_NOT_YET);
