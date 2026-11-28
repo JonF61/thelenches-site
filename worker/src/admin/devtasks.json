@@ -2,6 +2,11 @@
   "_help": "Development tasks outstanding, shown on the admin panel's Summary page. Kept by Kryten: add, update or remove entries at the end of each job. task: what is to be done; waiting: who or what it waits on (optional); added: YYYY-MM-DD; kryten: true = Kryten's own carry-over, done at the start of the next session (shown with a Kryten badge).",
   "tasks": [
     {
+      "task": "Worcestershire County Council news feed added (Settings row, 28 Nov): after its first ingest runs, check the log that the feed was read (it refused this container with 403; webfetch's curl fallback may be needed) and how many stories passed the place/topic filter, then report to Jon.",
+      "added": "2026-11-28",
+      "kryten": true
+    },
+    {
       "task": "Local trades retired on both sites (27 Nov, Jon): return to them around 27 Dec. To bring back: restore sites/lenches/living-here/trades.njk and sites/harvington/living-here/trades.njk from git history, re-add the Living here cards, footer links and seo.json phrases, point sites/lenches/moved.njk's old farming-services address back to /living-here/trades/, and empty RETIRED_LISTINGS in worker/src/admin/orgoutreach.mjs so yearly listing checks resume. trades.json, recommends and the Worker's Recommend/Suggest code were left in place.",
       "kryten": true,
       "added": "2026-11-27"
