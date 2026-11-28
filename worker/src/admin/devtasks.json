@@ -254,7 +254,7 @@
       "added": "2026-11-26"
     },
     {
-      "task": "After the Wednesday 2 Dec weekly planning run, check planning.json check.problems is empty on both sites and the new week was added (scripts/planning now reads Wychavon with curl).",
+      "task": "After the Wednesday 2 Dec weekly planning run, check planning.json check.problems is empty on both sites and the new week was added (scripts/planning now reads Wychavon with curl). Also (PRs 602-607, 28 Nov): the log shows 'map points N added' and no 'page could not be read' (application pages now read with curl); the 3 Dec issues show Comments close soon (Lenches 2, Harvington 2); and the first planning question to Holly gets stage, dates and both links, no opinion.",
       "added": "2026-11-27",
       "kryten": true
     },
@@ -279,11 +279,6 @@
     {
       "task": "Golden Cross (Harvington) closed for refurbishment (Jon, 27 Nov): when it reopens, remove the 'Closed for refurbishment' highlight from both sites' eat.json and check its details.",
       "added": "2026-11-27"
-    },
-    {
-      "task": "Add the Build history entry for the Google API retry backoff fix (failed-runs routine, 28 Nov: Sheets per-minute quota hit by a burst of link-request drafts on 27 Nov); the Claude Docs connector wasn't available in the routine session.",
-      "added": "2026-11-28",
-      "kryten": true
     }
   ]
 }
