@@ -45,11 +45,6 @@
       "kryten": true
     },
     {
-      "task": "Harvington stage 5a (newsletter per site, 16 Nov): on Thursday 19 Nov check the Lenches issue builds at 06:30 and looks as before (subject, heading, villages line, links), the send log's Last 24h line names both websites, and Newsletter stats still shows the Lenches' opens and clicks; and Harvington's first live issue (newsletter_mode live since 17 Nov, Jon): built at 06:30, Rimmer's check on Wednesday 19:00, reminders sent, nothing sent until Jon taps Send to all, then opens tagged to Harvington in Newsletter stats. The draft refreshes for Harvington only from the panel's Refresh (newsletter-draft.yml's schedule is the Lenches')",
-      "added": "2026-11-16",
-      "kryten": true
-    },
-    {
       "task": "Harvington stage 4c (panel site switcher, 16 Nov; 17 Nov: Harvington's panel shows light blue, its Submissions read the Harvington Sheet, Diagnostic chip green from the Lenches Health tab): still to check Summary's Claude spend shows both sites, and that the first Harvington approval's Apply approval run has SITE harvington",
       "added": "2026-11-16",
       "kryten": true
