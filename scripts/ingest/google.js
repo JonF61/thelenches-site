@@ -16,14 +16,19 @@ const DEFAULT_FROM_NAME = 'Website and Newsletter Team';
 
 // Retry reads and idempotent writes on rate limits / server errors.
 // POST (append, send) is deliberately excluded so a retry can't duplicate rows or emails.
-google.options({
-  retry: true,
-  retryConfig: {
-    retry: 3,
-    httpMethodsToRetry: ['GET', 'PUT'],
-    statusCodesToRetry: [[429, 429], [500, 599]],
-  },
-});
+// Sheets' quota is per minute (27 Nov: a burst of link-request drafts hit "Read requests
+// per minute per user" and four runs failed within 2 seconds), so back off for about a
+// minute in all: waits of 1, 1, 4, 13, 30 and 30 seconds (gaxios: retryDelay, then
+// (multiplier^n - 1) / 2 seconds, capped at maxRetryDelay).
+const RETRY_CONFIG = {
+  retry: 6,
+  retryDelay: 1000,
+  retryDelayMultiplier: 3,
+  maxRetryDelay: 30000,
+  httpMethodsToRetry: ['GET', 'PUT'],
+  statusCodesToRetry: [[429, 429], [500, 599]],
+};
+google.options({ retry: true, retryConfig: RETRY_CONFIG });
 
 let gmailClient;
 let gmailSendClient;
@@ -588,6 +593,7 @@ async function replaceTab(tab, rows) {
 }
 
 module.exports = {
+  RETRY_CONFIG,
   setSheetsClient: (c) => { sheetsClient = c; Object.keys(headerCache).forEach((k) => delete headerCache[k]); }, // offline tests
   listMessageIds,
   readOtherTable,

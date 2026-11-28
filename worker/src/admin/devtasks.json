@@ -279,6 +279,11 @@
     {
       "task": "Golden Cross (Harvington) closed for refurbishment (Jon, 27 Nov): when it reopens, remove the 'Closed for refurbishment' highlight from both sites' eat.json and check its details.",
       "added": "2026-11-27"
+    },
+    {
+      "task": "Add the Build history entry for the Google API retry backoff fix (failed-runs routine, 28 Nov: Sheets per-minute quota hit by a burst of link-request drafts on 27 Nov); the Claude Docs connector wasn't available in the routine session.",
+      "added": "2026-11-28",
+      "kryten": true
     }
   ]
 }
