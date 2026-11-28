@@ -40,4 +40,4 @@ Visible changes need Jon's OK before building. Show a small mock-up (a screensho
 ## Ship
 - PR and merge (`finish-job` skill). Merging deploys the Worker via `deploy-worker.yml`: check that run succeeded.
 - Ask Jon to try it once in the panel (exact clicks), and note anything to watch in devtasks.json with `"kryten": true`.
-- Update CLAUDE.md's panel bullet for the feature (what it does, files, tests), keeping it dense.
+- Update the feature's bullet in `docs/kryten/features.md` (what it does, files, tests), keeping it dense; CLAUDE.md only for working rules.
