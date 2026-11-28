@@ -22,6 +22,7 @@ const itemFeedback = require('./itemfeedback');
 const { LOCAL_FEED, keepLocalStory } = require('../../lib/sources');
 const { pageInfo, USER_AGENT: PAGE_AGENT } = require('./pagelinks');
 const dupes = require('./duplicates');
+const { webFetch } = require('../../lib/webfetch');
 
 const MAX_FEED_ITEMS_PER_RUN = 10; // across all feeds; the rest wait for the next run
 const MAX_RETRIES = 3;
@@ -40,7 +41,7 @@ const MAX_PDF_BYTES = 25 * 1024 * 1024;
 const MAX_PDF_TEXT_PAGES = 30;
 const isNewsletterItem = (item) => NEWSLETTER_RE.test(`${item.title}\n${item.text}`);
 
-async function fetchPdf(url, { fetchImpl = fetch, timeoutMs = FETCH_TIMEOUT_MS } = {}) {
+async function fetchPdf(url, { fetchImpl = webFetch, timeoutMs = FETCH_TIMEOUT_MS } = {}) {
   const res = await fetchImpl(url, {
     headers: { 'User-Agent': PAGE_AGENT, Accept: 'application/pdf,*/*;q=0.5' },
     redirect: 'follow',
@@ -169,7 +170,7 @@ const logKey = (guid) => `rss:${crypto.createHash('sha1').update(guid).digest('h
 const FEED_ACCEPTS = ['application/rss+xml, application/xml;q=0.9, */*;q=0.8', '*/*'];
 const RETRY_STATUS = new Set([406, 415]);
 
-async function fetchFeed(url, { fetchImpl = fetch, timeoutMs = FETCH_TIMEOUT_MS } = {}) {
+async function fetchFeed(url, { fetchImpl = webFetch, timeoutMs = FETCH_TIMEOUT_MS } = {}) {
   let last;
   for (const Accept of FEED_ACCEPTS) {
     const res = await fetchImpl(url, {

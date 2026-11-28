@@ -7,6 +7,7 @@
 'use strict';
 
 const sharp = require('sharp');
+const { webFetch } = require('../../lib/webfetch');
 
 const UA = 'LenchesPipeline/1.0 (+https://thelenches.org.uk)';
 const BLOCKED_HOSTS = /(^|\.)(facebook\.com|fb\.com|fb\.me|instagram\.com|x\.com|twitter\.com|tiktok\.com|threads\.net|thelenches\.org\.uk)$/i;
@@ -32,7 +33,7 @@ async function politeFetch(url, accept) {
   const wait = (lastHit.get(host) || 0) + PAUSE_MS - Date.now();
   if (wait > 0) await sleep(wait);
   lastHit.set(host, Date.now());
-  return fetch(url, {
+  return webFetch(url, {
     redirect: 'follow',
     signal: AbortSignal.timeout(TIMEOUT_MS),
     headers: { 'User-Agent': UA, Accept: accept },
