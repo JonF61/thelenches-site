@@ -33,6 +33,16 @@
 .pl-closing .pl-where{font-weight:700}
 .pl-closing .pl-what{display:block;font-size:.95rem;margin:.1rem 0}
 .pl-closing .pl-meta{margin:.1rem 0 0}
+.pl-committee{background:#eef4fa;border:1px solid #c9dcec;border-left:5px solid #4d7ea8;border-radius:10px;padding:.9rem 1.1rem .6rem;margin:0 0 1.6rem}
+.pl-committee h2{font-size:1.2rem;margin:0 0 .2rem;color:var(--green-dark,#2E3D26)}
+.pl-committee .pl-sub{margin:0 0 .7rem;font-size:.92rem;color:var(--muted,#666)}
+.pl-committee ul{list-style:none;margin:0;padding:0}
+.pl-committee li{padding:.55rem 0;border-top:1px solid #d7e5f1}
+.pl-committee li:first-child{border-top:0}
+.pl-committee .pl-when{background:#4d7ea8}
+.pl-committee .pl-where{font-weight:700}
+.pl-committee .pl-what{display:block;font-size:.95rem;margin:.1rem 0}
+.pl-committee .pl-meta{margin:.1rem 0 0}
 .pl-maparea{margin:0 0 1.6rem}
 .pl-maparea h2{font-size:1.2rem;margin:0 0 .4rem;color:var(--green-dark,#2E3D26)}
 #pl-map{height:380px;border-radius:10px;border:1px solid #dfe6d8}
@@ -67,6 +77,26 @@
         <span class="pl-where">{{ e.location }}</span>
         <span class="pl-what">{{ e.proposal }}{% if not e.proposal.endsWith('.') %}.{% endif %}</span>
         <p class="pl-meta"><a href="{{ e.link }}" target="_blank" rel="noopener">See the plans and comment on Wychavon's site &rarr;</a> &middot; <a href="{{ e.location | planningMap }}" target="_blank" rel="noopener">Map &rarr;</a></p>
+      </li>
+      {%- endfor %}
+    </ul>
+  </section>
+  {%- endif %}
+  {#- Going to planning committee (28 Nov 2026, Jon): undecided applications with a committee date in
+      the next 21 days (lib/planning.js atCommittee), from each application's Wychavon page; left out when none. -#}
+  {%- set cttee = (planning.open if planning and planning.open else []) | planningCommittee %}
+  {%- if cttee.length %}
+  <section class="pl-committee" id="planning-committee">
+    <h2>Going to planning committee</h2>
+    <p class="pl-sub">Wychavon's planning committee will decide these at its meeting on the date shown.</p>
+    <ul>
+      {%- for e in cttee %}
+      {%- set d = e.committee | dateParts %}
+      <li>
+        <span class="pl-when" data-pagefind-ignore>Committee {{ d.dow }} {{ d.day }} {{ d.mon }}</span>{% if e.homesLabel %}<span class="pl-badge-homes" data-pagefind-ignore>{{ e.homesLabel }}</span>{% endif %}
+        <span class="pl-where">{{ e.location }}</span>
+        <span class="pl-what">{{ e.proposal }}{% if not e.proposal.endsWith('.') %}.{% endif %}</span>
+        <p class="pl-meta"><a href="{{ e.link }}" target="_blank" rel="noopener">See the application on Wychavon's site &rarr;</a> &middot; <a href="{{ e.location | planningMap }}" target="_blank" rel="noopener">Map &rarr;</a></p>
       </li>
       {%- endfor %}
     </ul>

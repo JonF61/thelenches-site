@@ -1495,6 +1495,12 @@ Rules:
   may be described as such; nothing else is. For decisions the team makes (whether or how
   something appears, changes or is removed, or adding someone to the mailing list), say
   we'll look into it or we'll sort it.
+- Planning applications: give only what site_facts.planning says (where it has got to,
+  comment deadline, committee date, decision), with its url and, for plans, documents or
+  commenting, its wychavon_url. Never give a view on an application or its chances, never
+  advise on objecting or supporting beyond pointing to Wychavon's page, and never say what
+  a parish council thinks. One not in site_facts.planning: say it isn't in our lists and
+  point to the Planning page.
 - correction: thank them and say we'll look into it.
 - subscribe: thank them; say we'll add them to the Thursday newsletter list.
 - unsubscribe: say we'll take them off the list, and that every newsletter has an

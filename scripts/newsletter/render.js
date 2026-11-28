@@ -205,6 +205,17 @@ function planningClosing(p) {
       + ` · ${aNew(e.link, 'See the plans and comment', C.accentText)}</div>`).join('')
     + `</div>`;
 }
+// Going to planning committee (28 Nov 2026, Jon; select.js committee): a pale blue box after Comments close soon.
+const committeeWhen = (e) => `Committee ${dateParts(e.committee).short}`;
+function planningCommittee(p) {
+  if (!p.committee || !p.committee.length) return '';
+  return `<div style="background:#eef4fa;border-left:4px solid #4d7ea8;padding:8px 10px 4px;margin:8px 0 4px;">`
+    + `<div style="font-weight:bold;color:${C.green};margin:0 0 2px;">Going to planning committee</div>`
+    + `<div style="color:${C.muted};font-size:13px;margin:0 0 6px;">Wychavon's planning committee will decide these at its meeting on the date shown.</div>`
+    + p.committee.map((e) => `<div style="margin:0 0 6px;"><span style="color:#2f5d85;font-weight:bold;">${esc(committeeWhen(e))}</span><br><b>${esc(e.location)}</b>${homesBadge(e)}: ${esc(e.proposal)}`
+      + ` · ${aNew(e.link, 'See the application', C.accentText)}</div>`).join('')
+    + `</div>`;
+}
 function planningBand(p) {
   // A band with only Comments close soon (no weekly list for this issue yet, select.js) skips the weekly parts.
   const weekly = p.from ? PLANNING_PARTS.map(([kind, label], i) => {
@@ -215,7 +226,7 @@ function planningBand(p) {
       + planningExtra(e, kind).map((x, j) => ` · ${j === 0 && kind === 'decisions' ? `<b>${esc(x)}</b>` : esc(x)}`).join('')
       + ` · ${aNew(e.link, e.ref, C.accentText)} · ${aNew(mapUrl(e.location), 'Map', C.accentText)}</div>`).join('');
   }).join('') : '';
-  const body = planningClosing(p) + weekly;
+  const body = planningClosing(p) + planningCommittee(p) + weekly;
   // Rule straight under the title, the intro below it (Jon, 25 Nov).
   return sectionHead('Planning this week')
     + `<tr><td class="px" style="padding:6px 24px 0;font-family:${SANS};font-size:13px;line-height:1.5;color:${C.muted};">${esc(planningIntro(p))} ${a(siteUrl(PLANNING_PAGE), 'Last 8 weeks on our Planning page', C.accentText)}.</td></tr>`
@@ -571,6 +582,11 @@ function renderText(m) {
     if (m.planning.closing && m.planning.closing.length) {
       out.push('Comments close soon:');
       for (const e of m.planning.closing) out.push(`- ${closingWhen(e)}: ${e.location}${e.homes ? ` [${homesText(e).toLowerCase()}]` : ''}: ${e.proposal} · See the plans and comment: ${e.link}`);
+      out.push('');
+    }
+    if (m.planning.committee && m.planning.committee.length) {
+      out.push('Going to planning committee:');
+      for (const e of m.planning.committee) out.push(`- ${committeeWhen(e)}: ${e.location}${e.homes ? ` [${homesText(e).toLowerCase()}]` : ''}: ${e.proposal} · See the application: ${e.link}`);
       out.push('');
     }
     for (const [kind, label] of (m.planning.from ? PLANNING_PARTS : [])) {

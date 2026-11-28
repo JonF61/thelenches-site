@@ -32,4 +32,24 @@ assert.ok(l.keys.includes('health') && l.keys.includes('transport') && l.keys.in
 assert.ok(/website@thelenches\.org\.uk/.test(l.home));
 assert.deepStrictEqual(h.services.sundays, l.services.sundays, 'one ARCH rota for both sites');
 
+// Planning facts (28 Nov 2026): each application's stage, our card and its Wychavon page; both links allowed.
+{
+  const { execFileSync: ex } = require('child_process');
+  const pl = JSON.parse(ex(process.execPath, ['-e', `
+    const { siteFacts } = require('./scripts/ingest/sitefacts');
+    const data = { weeks: [{ from: '2026-11-16', to: '2026-11-20', applications: [{ ref: 'W/26/1/FUL', location: 'Hill Barn', proposal: 'Two dwellings', link: 'https://plan.wychavon.gov.uk/Planning/Display/W/26/1/FUL' }],
+      decisions: [{ ref: 'W/26/9/HP', location: 'Rose Cottage', proposal: 'Extension', decision: 'Approval', link: 'https://plan.wychavon.gov.uk/Planning/Display/W/26/9/HP' }] }],
+      open: [{ ref: 'W/26/1/FUL', location: 'Hill Barn', proposal: 'Two dwellings', link: 'https://plan.wychavon.gov.uk/Planning/Display/W/26/1/FUL', valid: '2026-11-17', consultationEnd: '2026-12-08', committee: '2026-12-10', homesLabel: '2 new homes' }] };
+    const f = siteFacts({ today: '2026-11-28', planning: data });
+    console.log(JSON.stringify({ p: f.facts.planning, ok: f.urls.has('https://plan.wychavon.gov.uk/Planning/Display/W/26/9/HP') && f.urls.has('https://thelenches.org.uk/living-here/planning/#pl-w-26-1-ful') }));`],
+    { cwd: require('path').join(__dirname, '..'), env: { ...process.env, SITE: 'lenches' }, encoding: 'utf8' }).trim().split('\n').pop());
+  const [a, d] = pl.p.applications;
+  assert.ok(pl.ok, 'planning links allowed');
+  assert.strictEqual(a.comments_until, '2026-12-08');
+  assert.ok(a.comments_open && a.committee === '2026-12-10' && a.new_homes === '2 new homes');
+  assert.ok(/Comments until 8 Dec/.test(a.stage) && /Planning committee 10 Dec/.test(a.stage));
+  assert.strictEqual(d.url, 'https://thelenches.org.uk/living-here/planning/#pl-w-26-9-hp');
+  assert.ok(/^Decision in Wychavon's list for 2026-11-16 to 2026-11-20: Approval$/.test(d.stage));
+}
+
 console.log('test-sitefacts-sites: all passed');
