@@ -26,6 +26,17 @@
 <path d="M570,114 V94 L588,82 L606,94 V114Z"/><path d="M608,114 V98 L622,90 L636,98 V114Z"/>
 </g>
 <g class="skyline-windows" fill="{{ sk.window or '#FBF8F1' }}"><rect x="499" y="{{ 66 if spire else 56 }}" width="8" height="12" rx="4"/><rect x="263" y="98" width="6" height="7"/><rect x="580" y="100" width="6" height="7"/></g>
+{#- Moving touches (28 Nov 2026): smoke from the cottage chimney, and a villager who walks from the right-hand
+    cottage to the church door once, a couple of seconds after the page opens (lantern after dark). CSS in style.css;
+    hidden for visitors whose devices ask for reduced motion. -#}
+<g class="skyline-smoke"><circle cx="278.5" cy="67" r="2.2"/><circle cx="278.5" cy="67" r="2.2"/><circle cx="278.5" cy="67" r="2.2"/></g>
+<g class="skyline-doors" fill="{{ sk.window or '#FBF8F1' }}"><rect class="skyline-door-home" x="310" y="104" width="7" height="10"/><path class="skyline-door-church" d="M424,114 V106 a4.5,4.5 0 0 1 9,0 V114Z"/></g>
+<g transform="translate(313.5 114)"><g class="skyline-walker" fill="{{ skG }}" stroke="{{ skG }}">
+<circle cx="0" cy="-11.6" r="1.9" stroke="none"/><rect x="-2" y="-14" width="4" height="1.2" rx=".5" stroke="none"/>
+<rect x="-1.8" y="-9.6" width="3.6" height="6.2" rx="1.2" stroke="none"/>
+<line class="skyline-leg" x1="0" y1="-4" x2="0" y2="0" stroke-width="1.4" stroke-linecap="round"/><line class="skyline-leg skyline-leg2" x1="0" y1="-4" x2="0" y2="0" stroke-width="1.4" stroke-linecap="round"/>
+<line x1="1.4" y1="-8.6" x2="2.8" y2="-5.4" stroke-width="1.1" stroke-linecap="round"/><circle class="skyline-lantern" cx="3" cy="-4.4" r="1.2" stroke="none"/>
+</g></g>
 <line x1="0" y1="114" x2="960" y2="114" stroke="{{ skG }}" stroke-width="1.5"/>
 {%- if seasonal.poppies %}
 {#- Seasonal touches (dates in src/_data/seasonal.js). Remembrance: poppies along the meadow. -#}
