@@ -37,8 +37,8 @@ The Plan doc is a Claude Doc: https://claude.ai/artifact/Qo9N1MsFpUonnnQcb6ZX6S.
 - **Project Plan** tab: make targeted edits only if the plan or status changed. Once something is built and tested, cut it there to a line or two and leave the detail in Build history.
 - If the connector isn't available, tell Jon and add a `"kryten": true` to-do for the entry.
 
-## 5. CLAUDE.md
-- If a working rule, file location or behaviour that a future session needs changed, update CLAUDE.md in the same PR, keeping it dense and dated ("(24 Nov, Jon)").
+## 5. CLAUDE.md and the feature reference
+- If a working rule changed, update CLAUDE.md in the same PR. If how a feature works changed (files, columns, behaviour, tests), update its bullet in `docs/kryten/features.md` (or `docs/kryten/two-sites.md`) instead, and add a new feature's name to the index line in CLAUDE.md. Keep both dense and dated ("(24 Nov, Jon)"). CLAUDE.md loads every session, so keep it to rules (28 Nov, Jon).
 - A significant visible site change: propose a siteupdates.json entry (use the `website-update` skill). Jon decides.
 
 ## 6. devtasks.json (`worker/src/admin/devtasks.json`)

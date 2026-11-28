@@ -31,4 +31,4 @@ Don't merge a render or select change between Thursday's 06:30 build and Jon's S
 ## 5. Ship
 - PR and merge (`finish-job` skill). The PR's "Next run" says what to look for in Thursday's issue on each site.
 - A change readers will notice may deserve a WEBSITE UPDATE line (the `website-update` skill; Jon decides).
-- Update the CLAUDE.md bullet for that section, keeping it dense and dated.
+- Update that section's bullet in `docs/kryten/features.md` (CLAUDE.md only for working rules), keeping it dense and dated.
