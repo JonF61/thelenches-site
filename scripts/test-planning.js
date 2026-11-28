@@ -209,7 +209,7 @@ Total Number of Appeals = 1
   const d = P.parseDisplay(page('Pending', 'N/A'));
   assert.deepStrictEqual(d, { valid: '2026-07-27', consultationEnd: '2026-12-17', committee: '', decision: 'Pending', decisionDate: '',
     appealStarted: '', appealDecision: '', status: 'Pending', location: 'Hill Barn Orchard, Church Lench', proposal: 'Erection of 2 dwellings.',
-    type: 'Full planning permission', parish: 'South Lenches' });
+    type: 'Full planning permission', parish: 'South Lenches', postcode: 'WR11 4UB' });
   assert.ok(P.isOpen(d));
   assert.ok(!P.isOpen(P.parseDisplay(page('Approval', '04/11/2026'))));
   assert.strictEqual(P.parseDisplay('<html>Not found</html>'), null);
@@ -390,3 +390,33 @@ function newsletter(lenchesData) {
     console.log('ok - newsletter Comments close soon');
   }
 }
+
+// Map (28 Nov 2026): placeAll gives each application a point once (grid reference, else the postcode
+// on its page; the postcode is never stored; unreadable pages are tried again), mapPoints the pins.
+(async () => {
+  const { placeAll } = require('./planning/index.js');
+  const data = {
+    weeks: [{ applications: [{ ref: 'W/26/1/FUL', location: 'Land at OS 0208 4905, Sheriffs Lench', proposal: 'Erection of 1 dwelling' },
+      { ref: 'W/26/2/HP', location: 'Hill Barn, Church Lench', proposal: 'Extension' }, { ref: 'W/26/3/HP', location: 'Gone, Rous Lench', proposal: 'x' }],
+    decisions: [{ ref: 'W/26/2/HP', location: 'Hill Barn, Church Lench', proposal: 'Extension', decision: 'Approval' }] }],
+    open: [{ ref: 'W/26/1/FUL', location: 'Land at OS 0208 4905, Sheriffs Lench', proposal: 'Erection of 1 dwelling', consultationEnd: '2026-12-01', homes: 1 }],
+  };
+  const pages = { 'W/26/2/HP': 'WR11 4UH' };
+  const getDisplay = async (u) => {
+    const ref = u.replace(P.DISPLAY, '');
+    if (!pages[ref]) throw new Error('unreadable');
+    return `<p>Planning Online Status</p><p>Summary</p><p>Location Address</p><p>Hill Barn</p><p>Church Lench</p><p>${pages[ref]}</p><p>Proposal</p><p>Extension</p><p>Status</p><p>Pending</p>`;
+  };
+  let lookups = 0;
+  const r = await placeAll(data, { getDisplay, lookup: async () => { lookups += 1; return { lat: 52.1234567, lng: -1.9876543 }; }, wait: 0 });
+  assert.strictEqual(lookups, 1, 'one lookup per reference');
+  assert.deepStrictEqual([data.weeks[0].applications[1].lat, data.weeks[0].applications[1].place, data.weeks[0].decisions[0].place], [52.12346, 'postcode', 'postcode']);
+  assert.strictEqual(data.open[0].place, 'grid');
+  assert.ok(!data.weeks[0].applications[2].place, 'an unreadable page is tried again next run');
+  assert.ok(!JSON.stringify(data).includes('WR11'), 'postcode never stored');
+  assert.strictEqual(r.placed, 4);
+  const pins = P.mapPoints(data, '2026-11-28');
+  assert.deepStrictEqual(pins.map((p) => [p.ref, p.kind, p.anchor, p.approx, p.homes]),
+    [['W/26/1/FUL', 'closing', 'pl-w-26-1-ful', false, 1], ['W/26/2/HP', 'decided', 'pl-w-26-2-hp', true, 0]]);
+  console.log('ok - map points and pins');
+})().catch((e) => { console.error(e); process.exit(1); });
