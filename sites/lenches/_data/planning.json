@@ -22,7 +22,10 @@
           "type": "Permission in Principle",
           "date": "2026-11-17",
           "parish": "South Lenches",
-          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02669/PIP"
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02669/PIP",
+          "lat": 52.13979,
+          "lng": -1.97095,
+          "place": "grid"
         },
         {
           "ref": "W/26/02493/HP",
@@ -31,7 +34,10 @@
           "type": "Householder Planning",
           "date": "2026-11-17",
           "parish": "South Lenches",
-          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02493/HP"
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02493/HP",
+          "lat": 52.16395,
+          "lng": -1.96182,
+          "place": "postcode"
         }
       ],
       "decisions": [],
@@ -53,7 +59,10 @@
           "type": "Permission in Principle",
           "date": "2026-11-09",
           "parish": "South Lenches",
-          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02518/PIP"
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02518/PIP",
+          "lat": 52.16395,
+          "lng": -1.96182,
+          "place": "postcode"
         },
         {
           "ref": "W/26/02632/FUL",
@@ -62,7 +71,10 @@
           "type": "Full planning permission",
           "date": "2026-11-09",
           "parish": "South Lenches",
-          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02632/FUL"
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02632/FUL",
+          "lat": 52.16505,
+          "lng": -1.95895,
+          "place": "grid"
         }
       ],
       "decisions": [],
@@ -84,7 +96,10 @@
           "type": "Householder Planning",
           "date": "2026-11-04",
           "parish": "South Lenches",
-          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02320/HP"
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02320/HP",
+          "lat": 52.15286,
+          "lng": -1.9638,
+          "place": "postcode"
         },
         {
           "ref": "W/26/01984/FUL",
@@ -93,7 +108,8 @@
           "type": "Full planning permission",
           "date": "2026-10-22",
           "parish": "Rous Lench",
-          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/01984/FUL"
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/01984/FUL",
+          "place": "none"
         },
         {
           "ref": "W/26/02564/PIP",
@@ -102,7 +118,10 @@
           "type": "Permission in Principle",
           "date": "2026-11-02",
           "parish": "South Lenches",
-          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02564/PIP"
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02564/PIP",
+          "lat": 52.16449,
+          "lng": -1.98425,
+          "place": "postcode"
         }
       ],
       "decisions": [],
@@ -132,7 +151,10 @@
       "valid": "2026-11-17",
       "consultationEnd": "2026-12-01",
       "homes": 1,
-      "homesLabel": "1 new home"
+      "homesLabel": "1 new home",
+      "lat": 52.13979,
+      "lng": -1.97095,
+      "place": "grid"
     },
     {
       "ref": "W/26/02518/PIP",
@@ -144,7 +166,10 @@
       "valid": "2026-11-09",
       "consultationEnd": "2026-11-30",
       "homes": 5,
-      "homesLabel": "Up to 5 new homes"
+      "homesLabel": "Up to 5 new homes",
+      "lat": 52.16395,
+      "lng": -1.96182,
+      "place": "postcode"
     },
     {
       "ref": "W/26/02632/FUL",
@@ -156,7 +181,10 @@
       "valid": "2026-11-09",
       "consultationEnd": "2026-12-02",
       "homes": 1,
-      "homesLabel": "1 new home"
+      "homesLabel": "1 new home",
+      "lat": 52.16505,
+      "lng": -1.95895,
+      "place": "grid"
     },
     {
       "ref": "W/26/02564/PIP",
@@ -168,7 +196,10 @@
       "valid": "2026-11-02",
       "consultationEnd": "2026-11-18",
       "homes": 1,
-      "homesLabel": "1 new home"
+      "homesLabel": "1 new home",
+      "lat": 52.16449,
+      "lng": -1.98425,
+      "place": "postcode"
     },
     {
       "ref": "W/26/02358/GPDQ",
@@ -180,7 +211,10 @@
       "valid": "2026-10-07",
       "consultationEnd": "2026-11-19",
       "homes": 2,
-      "homesLabel": "2 new homes"
+      "homesLabel": "2 new homes",
+      "lat": 52.13853,
+      "lng": -1.96262,
+      "place": "grid"
     },
     {
       "ref": "W/26/02346/CU",
@@ -192,7 +226,10 @@
       "valid": "2026-10-06",
       "consultationEnd": "2026-11-25",
       "homes": 1,
-      "homesLabel": "1 new home"
+      "homesLabel": "1 new home",
+      "lat": 52.15286,
+      "lng": -1.9638,
+      "place": "postcode"
     },
     {
       "ref": "W/26/02493/HP",
@@ -202,7 +239,10 @@
       "parish": "South Lenches",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02493/HP",
       "valid": "2026-11-17",
-      "consultationEnd": "2026-12-17"
+      "consultationEnd": "2026-12-17",
+      "lat": 52.16395,
+      "lng": -1.96182,
+      "place": "postcode"
     },
     {
       "ref": "W/26/02673/CCO",
@@ -212,7 +252,10 @@
       "parish": "Rous Lench",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02673/CCO",
       "valid": "2026-11-12",
-      "consultationEnd": "2026-12-07"
+      "consultationEnd": "2026-12-07",
+      "lat": 52.17832,
+      "lng": -1.98218,
+      "place": "postcode"
     },
     {
       "ref": "W/26/02320/HP",
@@ -222,7 +265,10 @@
       "parish": "South Lenches",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02320/HP",
       "valid": "2026-11-04",
-      "consultationEnd": "2026-11-25"
+      "consultationEnd": "2026-11-25",
+      "lat": 52.15286,
+      "lng": -1.9638,
+      "place": "postcode"
     },
     {
       "ref": "W/26/01984/FUL",
@@ -232,7 +278,8 @@
       "parish": "Rous Lench",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/01984/FUL",
       "valid": "2026-10-22",
-      "consultationEnd": "2026-12-07"
+      "consultationEnd": "2026-12-07",
+      "place": "none"
     },
     {
       "ref": "W/26/02439/CCO",
@@ -241,7 +288,10 @@
       "type": "Condition Discharge",
       "parish": "Rous Lench",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02439/CCO",
-      "valid": "2026-10-22"
+      "valid": "2026-10-22",
+      "lat": 52.19456,
+      "lng": -1.99025,
+      "place": "postcode"
     },
     {
       "ref": "W/26/02471/CCO",
@@ -260,7 +310,10 @@
       "parish": "Rous Lench",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02318/FUL",
       "valid": "2026-10-08",
-      "consultationEnd": "2026-12-02"
+      "consultationEnd": "2026-12-02",
+      "lat": 52.19223,
+      "lng": -1.98849,
+      "place": "postcode"
     },
     {
       "ref": "W/26/02287/CCO",
@@ -270,7 +323,10 @@
       "parish": "South Lenches",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02287/CCO",
       "valid": "2026-09-29",
-      "consultationEnd": "2026-10-21"
+      "consultationEnd": "2026-10-21",
+      "lat": 52.13787,
+      "lng": -1.9774,
+      "place": "postcode"
     },
     {
       "ref": "W/26/00197/FUL",
@@ -280,7 +336,10 @@
       "parish": "South Lenches",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/00197/FUL",
       "valid": "2026-07-27",
-      "consultationEnd": "2026-09-17"
+      "consultationEnd": "2026-09-17",
+      "lat": 52.15286,
+      "lng": -1.9638,
+      "place": "postcode"
     },
     {
       "ref": "W/24/01110/CCO",
@@ -290,7 +349,10 @@
       "parish": "Rous Lench",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/24/01110/CCO",
       "valid": "2024-06-04",
-      "consultationEnd": "2024-07-02"
+      "consultationEnd": "2024-07-02",
+      "lat": 52.1828,
+      "lng": -1.98558,
+      "place": "postcode"
     }
   ]
 }

@@ -420,6 +420,7 @@ module.exports = async function (eleventyConfig) {
   // Comments close soon box and the Home line (28 Nov 2026, Jon; lib/planning.js closingSoon).
   eleventyConfig.addFilter("planningClosing", (open) => require("./lib/planning").closingSoon(open, ukToday()));
   eleventyConfig.addFilter("planningCommentCounts", (open) => require("./lib/planning").commentCounts(open, ukToday()));
+  eleventyConfig.addFilter("planningMapPoints", (data) => require("./lib/planning").mapPoints(data, ukToday()));
   eleventyConfig.addFilter("planningDaysLeft", (n) => require("./lib/planning").daysLeftText(n));
 
   eleventyConfig.addFilter("dateParts", (iso) => ({

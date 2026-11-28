@@ -139,7 +139,12 @@ function apply({ lists, problems }, { sites = SITES, read = readData, write, tod
 // firewall; one request at a time, half a second apart.
 const PLAN = 'https://plan.wychavon.gov.uk';
 const pause = (ms) => new Promise((r) => { setTimeout(r, ms); });
+// 28 Nov 2026: plan.wychavon.gov.uk's application pages now refuse Node's fetch too (every page "could
+// not be read" in a test run, so the awaiting-a-decision stages stopped updating), while curl reads
+// them: a plain GET (the stage refresh and map points) goes through curl. The planning search
+// (cookies and a POST; SEED_OPEN only) keeps fetch.
 async function getPage(url, { jar, method = 'GET', body } = {}) {
+  if (!jar && method === 'GET' && !body) return curlGet(url).toString('utf8');
   const headers = { 'user-agent': UA, ...(jar && jar.size ? { cookie: [...jar].map(([k, v]) => `${k}=${v}`).join('; ') } : {}) };
   if (body) headers['content-type'] = 'application/x-www-form-urlencoded';
   const res = await fetch(url, { method, body, headers, redirect: 'manual' });
@@ -223,10 +228,55 @@ async function refreshOpen(data, { parishes, seed = [], getDisplay, wait = 500, 
       ...(d.appealStarted ? { appealStarted: d.appealStarted } : {}),
       ...(homes ? { homes, homesLabel: P.homesLabel(proposal, homes) } : {}),
       ...(decided ? { decision: d.decision || d.status, decisionDate: d.decisionDate } : {}),
+      ...(e.place ? { ...(e.lat != null ? { lat: e.lat, lng: e.lng } : {}), place: e.place } : {}),
     });
   }
   if (problems.length > 3) problems.splice(3, problems.length - 3, `and ${problems.length - 3} more`);
   return { open: P.sortOpen(open), problems, dropped, added };
+}
+
+// ---- Map points (28 Nov 2026, Jon): each application in the weeks and open lists gets lat/lng once,
+// for the Planning page map. An "OS 0208 4905" grid reference gives its own point (place "grid");
+// otherwise the postcode on the application's own Wychavon page is looked up on postcodes.io (place
+// "postcode": the postcode's centre, so approximate). The postcode itself is never stored. One that
+// can't be placed gets place "none" and is not tried again.
+const round5 = (x) => Math.round(x * 1e5) / 1e5;
+async function postcodePoint(pc) {
+  const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(pc.replace(/\s+/g, ''))}`, { headers: { 'user-agent': UA } });
+  if (res.status === 404) return null; // not a known postcode
+  if (!res.ok) throw new Error(`postcodes.io HTTP ${res.status}`);
+  const j = await res.json();
+  return j && j.result && j.result.latitude != null ? { lat: j.result.latitude, lng: j.result.longitude } : null;
+}
+async function placeAll(data, { getDisplay, lookup = postcodePoint, wait = 500 }) {
+  const all = [...((data && data.open) || [])];
+  for (const w of (data && data.weeks) || []) for (const k of P.KINDS) all.push(...(w[k] || []));
+  const known = new Map();
+  for (const e of all) if (e.place) known.set(e.ref, e.lat != null ? { lat: e.lat, lng: e.lng, place: e.place } : { place: e.place });
+  let placed = 0;
+  let fetched = 0;
+  for (const e of all) {
+    if (e.place) continue;
+    let pt = known.get(e.ref);
+    if (!pt) {
+      const g = P.gridPoint(e.location);
+      if (g) pt = { lat: round5(g.lat), lng: round5(g.lon), place: 'grid' };
+    }
+    if (!pt) {
+      if (fetched && wait) await pause(wait);
+      fetched += 1;
+      let d = null;
+      try { d = P.parseDisplay(await getDisplay(e.link || P.DISPLAY + e.ref)); } catch (err) { d = null; }
+      if (!d) continue; // page unreadable: try again next run
+      let got = null;
+      if (d.postcode) { try { got = await lookup(d.postcode); } catch (err) { continue; } } // lookup failed: try again next run
+      pt = got ? { lat: round5(got.lat), lng: round5(got.lng), place: 'postcode' } : { place: 'none' };
+    }
+    Object.assign(e, pt);
+    known.set(e.ref, pt);
+    if (pt.lat != null) placed += 1;
+  }
+  return { placed, fetched };
 }
 
 async function main() {
@@ -251,12 +301,16 @@ async function main() {
         console.log(`${site}: ${seed.length} undecided applications on Wychavon's search`);
       }
       const r = await refreshOpen(data, { parishes, seed, getDisplay: (u) => getPage(u) });
-      const before = JSON.stringify(data.open || []);
-      if (before === JSON.stringify(r.open)) { console.log(`${site}: awaiting a decision unchanged (${r.open.length})`); continue; }
+      const before = JSON.stringify(data);
+      const openBefore = JSON.stringify(data.open || []);
       data.open = r.open;
+      const m = process.env.PLACES === 'false' ? { placed: 0, fetched: 0 } : await placeAll(data, { getDisplay: (u) => getPage(u) });
+      if (openBefore === JSON.stringify(r.open)) console.log(`${site}: awaiting a decision unchanged (${r.open.length})`);
+      else console.log(`${site}: awaiting a decision ${r.open.length} (${r.added} added, ${r.dropped} decided or gone)${r.problems.length ? `; ${r.problems.join('; ')}` : ''}`);
+      if (m.placed || m.fetched) console.log(`${site}: map points ${m.placed} added (${m.fetched} pages read)`);
+      if (before === JSON.stringify(data)) continue;
       fs.writeFileSync(fileFor(site), `${JSON.stringify(data, null, 2)}\n`);
       if (!res.changed.includes(site)) res.changed.push(site);
-      console.log(`${site}: awaiting a decision ${r.open.length} (${r.added} added, ${r.dropped} decided or gone)${r.problems.length ? `; ${r.problems.join('; ')}` : ''}`);
     }
   }
   if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, `changed=${res.changed.join(' ')}\n`);
@@ -266,4 +320,4 @@ if (require.main === module) {
   main().catch((e) => { console.error(e && e.stack ? e.stack : e); process.exit(1); });
 }
 
-module.exports = { readLists, apply, refreshOpen, searchOpen };
+module.exports = { readLists, apply, refreshOpen, searchOpen, placeAll };

@@ -33,6 +33,17 @@
 .pl-closing .pl-where{font-weight:700}
 .pl-closing .pl-what{display:block;font-size:.95rem;margin:.1rem 0}
 .pl-closing .pl-meta{margin:.1rem 0 0}
+.pl-maparea{margin:0 0 1.6rem}
+.pl-maparea h2{font-size:1.2rem;margin:0 0 .4rem;color:var(--green-dark,#2E3D26)}
+#pl-map{height:380px;border-radius:10px;border:1px solid #dfe6d8}
+@media (max-width:600px){ #pl-map{height:320px} }
+.pl-chips{display:flex;flex-wrap:wrap;gap:.4rem;margin:0 0 .6rem}
+.pl-chip{padding:.3rem .7rem;border:1px solid #b9c9ad;border-radius:999px;background:#fff;color:#2f4a22;font:inherit;font-size:.9rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:.35rem}
+.pl-chip[aria-pressed="true"]{background:#3F5233;border-color:#3F5233;color:#fff}
+.pl-dot{display:inline-block;width:11px;height:11px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
+.pl-mapnote{margin:.4rem 0 0;font-size:.88rem;color:var(--muted,#666)}
+.pl-pin{border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.4),0 1px 3px rgba(0,0,0,.3)}
+.pl-pin.pl-pin-homes{box-shadow:0 0 0 3px #b5471b,0 1px 3px rgba(0,0,0,.3)}
 .pl-key span{background:#fff;border:1px solid #e6e1d6;border-radius:8px;padding:.35rem .7rem;font-size:.92rem}
 </style>
 <main class="container">
@@ -60,6 +71,52 @@
       {%- endfor %}
     </ul>
   </section>
+  {%- endif %}
+  {#- Map (28 Nov 2026, Jon): a pin per application with a point (scripts/planning placeAll: grid
+      references exact, others at their postcode's centre); filter buttons; each pin's popup links to
+      its card below. Shown by the script only, so without JavaScript nothing appears. -#}
+  {%- set pins = planning | planningMapPoints if planning else [] %}
+  {%- if pins.length %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" integrity="sha512-Zcn6bjR/8RZbLEpLIeOwNtzREBAJnUKESxces60Mpoj+2okopSAcSUIUOseddDm0cxnGQzxIR7vJgsLZbdLE3w==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <section class="pl-maparea" id="planning-map" hidden data-pagefind-ignore>
+    <h2>On the map</h2>
+    <div class="pl-chips" role="group" aria-label="Show on the map">
+      <button type="button" class="pl-chip" data-show="all" aria-pressed="true">All</button>
+      <button type="button" class="pl-chip" data-show="closing" aria-pressed="false"><span class="pl-dot" style="background:#c58a12"></span>Comments close soon</button>
+      <button type="button" class="pl-chip" data-show="open" aria-pressed="false"><span class="pl-dot" style="background:#3F7A2E"></span>Open for comments</button>
+      <button type="button" class="pl-chip" data-show="homes" aria-pressed="false"><span class="pl-dot" style="background:#b5471b"></span>New homes</button>
+      <button type="button" class="pl-chip" data-show="waiting" aria-pressed="false"><span class="pl-dot" style="background:#4d7ea8"></span>Awaiting a decision</button>
+      <button type="button" class="pl-chip" data-show="decided" aria-pressed="false"><span class="pl-dot" style="background:#8a8a8a"></span>Decided</button>
+    </div>
+    <div id="pl-map"></div>
+    <p class="pl-mapnote">Most pins are at the centre of the application's postcode, so near the site rather than on it. A red ring means new homes. Tap a pin for the details.</p>
+  </section>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" integrity="sha512-BwHfrr4c9kmRkLw6iXFdzcdWV/PGkVgiIyIWLLlTSXzWQzxuSg4DiQUCpauz/EWjgk5TYQqX/kvn9pG1NpYfqg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script>
+  (function(){
+    var PINS={{ pins | dump | safe }},area=document.getElementById('planning-map');
+    if(!area||!window.L||!PINS.length)return;
+    area.hidden=false;
+    var COL={closing:'#c58a12',open:'#3F7A2E',waiting:'#4d7ea8',appeal:'#a0522d',decided:'#8a8a8a'};
+    var LABEL={closing:'Comments close soon',open:'Open for comments',waiting:'Awaiting a decision',appeal:'At appeal',decided:'Decided'};
+    function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return '&#'+c.charCodeAt(0)+';'})}
+    var map=L.map('pl-map',{scrollWheelZoom:false,dragging:!L.Browser.mobile,zoomSnap:0.25});
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+    var marks=PINS.map(function(p){
+      var m=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'pl-pin'+(p.homes?' pl-pin-homes':''),iconSize:[16,16],html:'<span style="display:block;width:100%;height:100%;border-radius:50%;background:'+(COL[p.kind]||COL.waiting)+'"></span>'}),title:p.location});
+      m.bindPopup('<strong>'+esc(p.location)+'</strong><br>'+esc(p.proposal)+'<br><em>'+esc(LABEL[p.kind]||'')+(p.decision?': '+esc(p.decision):'')+'</em>'+(p.homes?' &middot; new homes':'')+(p.approx?'<br><small>Pin at the postcode centre</small>':'')+'<br><a href="#'+esc(p.anchor)+'">See it below</a>');
+      m.pin=p;return m;
+    });
+    var chips=[].slice.call(area.querySelectorAll('.pl-chip'));
+    function show(w){
+      var b=[];marks.forEach(function(m){var p=m.pin;var on=w==='all'||(w==='homes'?p.homes>0:w==='open'?(p.kind==='open'||p.kind==='closing'):w==='waiting'?(p.kind==='waiting'||p.kind==='appeal'||p.kind==='open'||p.kind==='closing'):p.kind===w);
+        if(on){m.addTo(map);b.push(m.getLatLng());}else map.removeLayer(m);});
+      if(b.length)map.fitBounds(b,{padding:[24,24],maxZoom:14});
+    }
+    chips.forEach(function(c){c.addEventListener('click',function(){chips.forEach(function(x){x.setAttribute('aria-pressed',x===c?'true':'false')});show(c.dataset.show);});});
+    show('all');map.invalidateSize();
+  })();
+  </script>
   {%- endif %}
   {%- set weeks = planning.weeks if planning and planning.weeks else [] %}
   {%- for w in weeks %}

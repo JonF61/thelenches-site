@@ -22,7 +22,10 @@
           "type": "Certificate of Lawfulness of proposed use",
           "date": "2026-11-18",
           "parish": "Harvington",
-          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02596/CLPU"
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02596/CLPU",
+          "lat": 52.14337,
+          "lng": -1.92997,
+          "place": "postcode"
         },
         {
           "ref": "W/26/02715/AGR",
@@ -31,7 +34,10 @@
           "type": "Agricultural/Forestry/PropRoad",
           "date": "2026-11-18",
           "parish": "Harvington",
-          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02715/AGR"
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02715/AGR",
+          "lat": 52.1416,
+          "lng": -1.92687,
+          "place": "postcode"
         }
       ],
       "decisions": [],
@@ -43,7 +49,10 @@
           "type": "Permission in principle",
           "date": "2026-11-18",
           "parish": "Norton and Lenchwick",
-          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/00662/PIP"
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/00662/PIP",
+          "lat": 52.123,
+          "lng": -1.95121,
+          "place": "postcode"
         }
       ]
     },
@@ -63,7 +72,10 @@
           "type": "Full planning permission",
           "date": "2026-11-09",
           "parish": "Norton and Lenchwick",
-          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02281/FUL"
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02281/FUL",
+          "lat": 52.11811,
+          "lng": -1.95023,
+          "place": "grid"
         }
       ],
       "decisions": [],
@@ -85,7 +97,10 @@
           "type": "Householder Planning",
           "date": "2026-11-02",
           "parish": "Norton and Lenchwick",
-          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02210/HP"
+          "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02210/HP",
+          "lat": 52.11204,
+          "lng": -1.94384,
+          "place": "postcode"
         }
       ],
       "decisions": [
@@ -97,7 +112,10 @@
           "date": "2026-11-04",
           "parish": "Harvington",
           "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/01704/HP",
-          "decision": "Approval"
+          "decision": "Approval",
+          "lat": 52.1447,
+          "lng": -1.92898,
+          "place": "postcode"
         }
       ],
       "appeals": []
@@ -126,7 +144,10 @@
       "valid": "2026-07-22",
       "consultationEnd": "2026-09-10",
       "homes": 4,
-      "homesLabel": "4 new homes"
+      "homesLabel": "4 new homes",
+      "lat": 52.13123,
+      "lng": -1.93297,
+      "place": "grid"
     },
     {
       "ref": "W/25/02185/FUL",
@@ -138,7 +159,10 @@
       "valid": "2025-10-15",
       "consultationEnd": "2026-02-26",
       "homes": 9,
-      "homesLabel": "9 new homes"
+      "homesLabel": "9 new homes",
+      "lat": 52.14112,
+      "lng": -1.92872,
+      "place": "grid"
     },
     {
       "ref": "W/24/00656/FUL",
@@ -151,7 +175,8 @@
       "consultationEnd": "2025-07-03",
       "committee": "2025-09-18",
       "homes": 55,
-      "homesLabel": "Up to 55 new homes"
+      "homesLabel": "Up to 55 new homes",
+      "place": "none"
     },
     {
       "ref": "W/22/01463/FUL",
@@ -163,7 +188,10 @@
       "valid": "2022-06-29",
       "consultationEnd": "2022-09-03",
       "homes": 12,
-      "homesLabel": "12 new homes"
+      "homesLabel": "12 new homes",
+      "lat": 52.12103,
+      "lng": -1.9752,
+      "place": "postcode"
     },
     {
       "ref": "W/26/02596/CLPU",
@@ -173,7 +201,10 @@
       "parish": "Harvington",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02596/CLPU",
       "valid": "2026-11-18",
-      "consultationEnd": "2026-12-09"
+      "consultationEnd": "2026-12-09",
+      "lat": 52.14337,
+      "lng": -1.92997,
+      "place": "postcode"
     },
     {
       "ref": "W/26/02715/AGR",
@@ -183,7 +214,10 @@
       "parish": "Harvington",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02715/AGR",
       "valid": "2026-11-18",
-      "consultationEnd": "2026-12-02"
+      "consultationEnd": "2026-12-02",
+      "lat": 52.1416,
+      "lng": -1.92687,
+      "place": "postcode"
     },
     {
       "ref": "W/26/02281/FUL",
@@ -193,7 +227,10 @@
       "parish": "Norton and Lenchwick",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02281/FUL",
       "valid": "2026-11-09",
-      "consultationEnd": "2026-11-30"
+      "consultationEnd": "2026-11-30",
+      "lat": 52.11811,
+      "lng": -1.95023,
+      "place": "grid"
     },
     {
       "ref": "W/26/02210/HP",
@@ -203,7 +240,10 @@
       "parish": "Norton and Lenchwick",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02210/HP",
       "valid": "2026-11-02",
-      "consultationEnd": "2026-12-11"
+      "consultationEnd": "2026-12-11",
+      "lat": 52.11204,
+      "lng": -1.94384,
+      "place": "postcode"
     },
     {
       "ref": "W/26/02371/CCO",
@@ -213,7 +253,10 @@
       "parish": "Norton and Lenchwick",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02371/CCO",
       "valid": "2026-10-08",
-      "consultationEnd": "2026-11-03"
+      "consultationEnd": "2026-11-03",
+      "lat": 52.11834,
+      "lng": -1.9613,
+      "place": "postcode"
     },
     {
       "ref": "W/26/02039/HP",
@@ -223,7 +266,10 @@
       "parish": "Harvington",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/02039/HP",
       "valid": "2026-10-06",
-      "consultationEnd": "2026-11-12"
+      "consultationEnd": "2026-11-12",
+      "lat": 52.14337,
+      "lng": -1.92997,
+      "place": "postcode"
     },
     {
       "ref": "W/26/01930/FUL",
@@ -233,7 +279,10 @@
       "parish": "Harvington",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/01930/FUL",
       "valid": "2026-09-14",
-      "consultationEnd": "2026-10-13"
+      "consultationEnd": "2026-10-13",
+      "lat": 52.14694,
+      "lng": -1.93782,
+      "place": "postcode"
     },
     {
       "ref": "W/26/01423/FUL",
@@ -243,7 +292,10 @@
       "parish": "Harvington",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/01423/FUL",
       "valid": "2026-08-12",
-      "consultationEnd": "2026-12-02"
+      "consultationEnd": "2026-12-02",
+      "lat": 52.13787,
+      "lng": -1.91616,
+      "place": "grid"
     },
     {
       "ref": "W/25/02787/FUL",
@@ -253,7 +305,10 @@
       "parish": "Norton and Lenchwick",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/25/02787/FUL",
       "valid": "2026-07-08",
-      "consultationEnd": "2026-09-14"
+      "consultationEnd": "2026-09-14",
+      "lat": 52.1182,
+      "lng": -1.93796,
+      "place": "grid"
     },
     {
       "ref": "W/26/00735/FUL",
@@ -263,7 +318,10 @@
       "parish": "Harvington",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/26/00735/FUL",
       "valid": "2026-04-10",
-      "consultationEnd": "2026-12-01"
+      "consultationEnd": "2026-12-01",
+      "lat": 52.13951,
+      "lng": -1.91459,
+      "place": "postcode"
     },
     {
       "ref": "W/25/02800/CCO",
@@ -273,7 +331,8 @@
       "parish": "Norton and Lenchwick",
       "link": "https://plan.wychavon.gov.uk/Planning/Display/W/25/02800/CCO",
       "valid": "2025-12-23",
-      "consultationEnd": "2026-01-13"
+      "consultationEnd": "2026-01-13",
+      "place": "none"
     }
   ]
 }
