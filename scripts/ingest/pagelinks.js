@@ -7,6 +7,7 @@
 // feeds (rss.js), whose articles we don't fetch.
 
 const USER_AGENT = 'TheLenchesBot/1.0 (+https://thelenches.org.uk)';
+const { webFetch } = require('../../lib/webfetch');
 const FETCH_TIMEOUT_MS = 15000;
 const MAX_BYTES = 1500000;
 const MAX_LINKS = 80;
@@ -66,7 +67,7 @@ function pdfsFromHtml(html, pageUrl) {
 // { links, pdfs } from the item's page; one fetch, best effort (empty on any failure).
 async function pageInfo(url) {
   try {
-    const res = await fetch(url, {
+    const res = await webFetch(url, {
       headers: { 'User-Agent': USER_AGENT, Accept: 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.5' },
       redirect: 'follow',
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),

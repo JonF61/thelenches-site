@@ -12,6 +12,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { webFetch } = require('../../lib/webfetch');
 
 const TAB = 'Link partners';
 const HEADERS = ['id', 'name', 'type', 'url', 'status', 'link_found_at', 'last_checked', 'check', 'notes', 'email', 'asked_at', 'listed_page', 'listed_url'];
@@ -72,7 +73,7 @@ async function fetchText(url, deps) {
 }
 
 // One partner's website -> { result: 'linking' | 'none' | 'unreadable' | 'no-url' | 'facebook', at }
-async function checkSite(url, domains, deps = { fetch }) {
+async function checkSite(url, domains, deps = { fetch: webFetch }) {
   url = str(url);
   if (!/^https?:\/\//i.test(url)) return { result: 'no-url', at: '' };
   if (/facebook\.com|instagram\.com/i.test(url)) return { result: 'facebook', at: '' };
@@ -175,7 +176,7 @@ async function main() {
     const check = await checkSite(row.url, domains);
     counts[check.result] = (counts[check.result] || 0) + 1;
     let upd = rowUpdate(row, check, today, { requestSent: R.requestsFor(str(row.id), replyRows, SITE).requestSent, seed: seeds[str(row.id)] });
-    const found = await emailUpdate(row, { fetch, findEmail }).catch(() => null);
+    const found = await emailUpdate(row, { fetch: webFetch, findEmail }).catch(() => null);
     if (found) { upd = { ...(upd || {}), ...found }; emails += 1; }
     if (upd) { await g.updateRow(TAB, row._row, upd); changed += 1; }
     if (upd && upd.status && upd.status !== str(row.status)) console.log(`${str(row.id) || `row ${row._row}`}: ${str(row.status) || 'To ask'} -> ${upd.status}`);

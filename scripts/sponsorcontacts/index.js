@@ -10,6 +10,7 @@
 
 const g = require('../ingest/google');
 const { findEmail, fetchText } = require('../listingcontacts');
+const { webFetch } = require('../../lib/webfetch');
 
 const TAB = 'Sponsors';
 const GUESSED = 'Website guessed by the finder: check it is the right firm';
@@ -54,7 +55,7 @@ async function guessSite(name, town, deps) {
   return '';
 }
 
-async function run(deps = { g, fetch }) {
+async function run(deps = { g, fetch: webFetch }) {
   const rows = await deps.g.readTable(TAB);
   let looked = 0; let found = 0; let sites = 0;
   for (const r of rows) {

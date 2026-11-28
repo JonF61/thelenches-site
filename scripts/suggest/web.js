@@ -11,6 +11,7 @@
 'use strict';
 
 const sharp = require('sharp');
+const { webFetch } = require('../../lib/webfetch');
 const { parseRobots, attrs, decode, metaGetter, absolute, BLOCKED_HOSTS, UA } = require('../eventimages/find');
 
 const TIMEOUT_MS = 10000;
@@ -57,7 +58,7 @@ async function readCapped(res, max = MAX_BYTES) {
 }
 
 function get(url, accept) {
-  return fetch(url, {
+  return webFetch(url, {
     redirect: 'follow',
     signal: AbortSignal.timeout(TIMEOUT_MS),
     headers: { 'User-Agent': UA, Accept: accept },
