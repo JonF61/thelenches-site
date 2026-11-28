@@ -41,6 +41,9 @@ cards:
     {#- This weekend line (SEO step 4, 26 Nov 2026; lib/weekend.js). -#}
     {%- set wkCount = (whatson.events | merge(pipeline.events) | upcoming | weekendList) | length %}
     <p class="intro-news">{% if wkCount %}{{ wkCount }} {{ "event" if wkCount == 1 else "events" }} on this weekend: <a href="{{ '/events/this-weekend/' | url }}">see what's on</a>.{% else %}<a href="{{ '/events/this-weekend/' | url }}">What's on this weekend</a>{% endif %}</p>
+    {#- Planning line (28 Nov 2026, Jon; lib/planning.js commentCounts): only while applications are open for comments. -#}
+    {%- set plc = (planning.open if planning and planning.open else []) | planningCommentCounts %}
+    {%- if plc.comments %}<p class="intro-news">{{ plc.comments }} planning {{ "application" if plc.comments == 1 else "applications" }} open for comments{% if plc.withHomes %}, {{ plc.withHomes }} with new homes{% endif %}{% if plc.closing %} ({{ plc.closing }} closing in the next 10 days){% endif %}: <a href="{{ '/living-here/planning/' | url }}#comments-close-soon">see planning</a>.</p>{% endif %}
     <p class="muted">Everything here is collected from local groups, organisations and residents, and kept as accurate and up to date as we can manage.</p>
   </section>
 
