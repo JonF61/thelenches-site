@@ -27,7 +27,7 @@
 </g>
 <g class="skyline-windows" fill="{{ sk.window or '#FBF8F1' }}"><rect x="499" y="{{ 66 if spire else 56 }}" width="8" height="12" rx="4"/><rect x="263" y="98" width="6" height="7"/><rect x="580" y="100" width="6" height="7"/></g>
 {#- Moving scenes (28 Nov 2026): one per visit, picked by the script below (Sunday mornings 8 to 12 UK time: people
-    walking to church); ?scene=walk|return|birds|cyclist|tractor|dog|balloon|sunday forces one, for checking. Chimney
+    walking to church); ?scene=walk|return|birds|cyclist|tractor|dog|balloon|sunday|santa forces one, for checking. Chimney
     smoke always. CSS in style.css; all hidden for visitors whose devices ask for reduced motion. -#}
 <defs><symbol id="sk-person" overflow="visible"><circle cx="0" cy="-11.6" r="1.9" stroke="none"/><rect x="-2" y="-14" width="4" height="1.2" rx=".5" stroke="none"/><rect x="-1.8" y="-9.6" width="3.6" height="6.2" rx="1.2" stroke="none"/><line class="sk-leg" x1="0" y1="-4" x2="0" y2="0" stroke-width="1.4" stroke-linecap="round"/><line class="sk-leg sk-leg2" x1="0" y1="-4" x2="0" y2="0" stroke-width="1.4" stroke-linecap="round"/><line x1="1.4" y1="-8.6" x2="2.8" y2="-5.4" stroke-width="1.1" stroke-linecap="round"/><circle class="skyline-lantern" cx="3" cy="-4.4" r="1.2" stroke="none"/></symbol></defs>
 <g class="skyline-smoke"><circle cx="278.5" cy="67" r="2.2"/><circle cx="278.5" cy="67" r="2.2"/><circle cx="278.5" cy="67" r="2.2"/></g>
@@ -142,13 +142,5 @@
     scene = santa && santa.getAttribute('data-eve') ? 'santa' : uk.weekday === 'Sun' && +uk.hour >= 8 && +uk.hour < 12 ? 'sunday' : all[Math.floor(Math.random() * all.length)];
   }
   box.setAttribute('data-scene', scene);
-  /* A click on the skyline plays the next scene at once (Jon, 28 Nov). */
-  var order = ['walk', 'return', 'birds', 'cyclist', 'tractor', 'dog', 'balloon', 'sunday'];
-  if (box.querySelector('.sk-scene-santa')) order.push('santa');
-  box.addEventListener('click', function () {
-    scene = order[(order.indexOf(scene) + 1) % order.length];
-    box.removeAttribute('data-scene'); box.classList.add('sk-click'); void box.offsetWidth;
-    box.setAttribute('data-scene', scene);
-  });
 })();
 </script>
