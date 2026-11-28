@@ -217,7 +217,7 @@
     {
       "id": "rss-969a998ebd92618b-1",
       "title": "County worried about its say in new regional water plans",
-      "body": "Worcestershire County Council is worried that planned regional arrangements for managing water could leave the county's communities with less say on flooding and other local concerns.",
+      "body": "Worcestershire County Council is worried that planned regional arrangements for managing water, part of government reforms meant to give communities more say, could leave the county's communities with less say on flooding and other local concerns.",
       "village": "Lenches",
       "expires": "2026-12-19",
       "added": "2026-11-28",
@@ -225,6 +225,10 @@
       "link": {
         "text": "Read more at Worcestershire County Council",
         "url": "https://www.worcestershire.gov.uk/news/concerns-raised-over-worcestershires-voice-new-regional-water-arrangements"
+      },
+      "link2": {
+        "text": "Read more at Evesham Journal",
+        "url": "https://www.eveshamjournal.co.uk/news/26762827.worcestershires-concern-severn-regional-water-council/"
       }
     },
     {
