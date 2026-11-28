@@ -43,6 +43,7 @@ const ALL_PAGES = [
   ['Health & emergencies', '/living-here/health/', 'GPs, pharmacies, hospitals and defibrillators.'],
   ['Getting around', '/living-here/getting-around/', 'Buses, on-demand and community transport, stations.'],
   ['Council', '/living-here/council/', 'Parish councils, councillors and planning searches.'],
+  ['Planning', '/living-here/planning/', "Planning applications, decisions and appeals from Wychavon's weekly lists, ones awaiting a decision, comment deadlines and a map."],
   ['Schools', '/living-here/schools/', 'Local schools, applying and term dates.'],
   ['Walks & footpaths', '/living-here/walks/', 'Circular walks, maps and the Countryside Code.'],
   ['Contact', '/contact/', 'How to send in events and news (submission guidelines), and how to get in touch.'],
@@ -131,6 +132,8 @@ function siteFacts(opts = {}) {
   };
 
   const living = livingHere(opts);
+  const planning = planningFacts(opts.planning || readJson('planning.json', null), today);
+  if (planning) for (const a of planning.applications) { use(a.url); use(a.wychavon_url); }
 
   return {
     facts: {
@@ -140,9 +143,52 @@ function siteFacts(opts = {}) {
       notices,
       bins,
       church_services: services,
+      ...(planning ? { planning } : {}),
       ...living,
     },
     urls,
+  };
+}
+
+// Planning (28 Nov 2026, Jon): the applications the Planning page shows, each with its stage in plain
+// words (as on the page), comment deadline, committee date, decision, its card on our page and its
+// Wychavon page (the only outside link Holly may give). Open ones first, then the weekly lists' others.
+const MAX_PLANNING = 40;
+function planningFacts(data, today) {
+  if (!data || !pageExists('/living-here/planning/')) return null;
+  const P = require('../../lib/planning');
+  const page = `${SITE}/living-here/planning/`;
+  const slug = (ref) => String(ref).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  const seen = new Map();
+  const shownInWeeks = new Set();
+  for (const w of data.weeks || []) for (const e of w.applications || []) shownInWeeks.add(e.ref);
+  for (const e of data.open || []) {
+    seen.set(e.ref, {
+      ref: e.ref, location: str(e.location), proposal: clip(e.proposal), type: str(e.type),
+      stage: e.decisionDate ? `Decided ${e.decisionDate}: ${str(e.decision)}` : P.openStatus(e, today).map((x) => x.text).join(' · '),
+      ...(e.consultationEnd && !e.decisionDate ? { comments_until: e.consultationEnd, comments_open: P.commentsOpen(e, today) } : {}),
+      ...(e.committee ? { committee: e.committee } : {}),
+      ...(e.homesLabel ? { new_homes: e.homesLabel } : {}),
+      url: `${page}#${shownInWeeks.has(e.ref) && !e.decisionDate ? 'pl' : 'open'}-${slug(e.ref)}`,
+      wychavon_url: e.link,
+    });
+  }
+  for (const w of data.weeks || []) {
+    for (const [kind, label] of [['applications', 'New application'], ['decisions', 'Decision'], ['appeals', 'Appeal']]) {
+      for (const e of w[kind] || []) {
+        if (seen.has(e.ref)) continue;
+        seen.set(e.ref, {
+          ref: e.ref, location: str(e.location), proposal: clip(e.proposal), type: str(e.type),
+          stage: `${label} in Wychavon's list for ${w.from} to ${w.to}${e.decision ? `: ${str(e.decision)}` : ''}`,
+          url: `${page}#pl-${slug(e.ref)}`, wychavon_url: e.link,
+        });
+      }
+    }
+  }
+  return {
+    about: "From Wychavon District Council's weekly lists and each application's page. Plans, documents and comments are on Wychavon's site (wychavon_url).",
+    url: page,
+    applications: [...seen.values()].slice(0, MAX_PLANNING),
   };
 }
 
