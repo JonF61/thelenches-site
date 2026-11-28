@@ -219,6 +219,19 @@ Total Number of Appeals = 1
   assert.deepStrictEqual(old, ['Valid 29 Apr 2024', 'comments closed 3 Jul 2025', 'went to planning committee 18 Sep 2025', 'waiting 2 years: check Wychavon for the latest']);
   ok('application pages read for stage only; stage lines');
 
+  // Comments close soon (28 Nov 2026): undecided, comments open, ending within 10 days, soonest first.
+  const opens = [
+    { ref: 'A', consultationEnd: '2026-12-07', homes: 0 }, { ref: 'B', consultationEnd: '2026-11-30', homes: 5 },
+    { ref: 'C', consultationEnd: '2026-11-27' }, { ref: 'D', consultationEnd: '2026-12-20' },
+    { ref: 'E', consultationEnd: '2026-12-01', decisionDate: '2026-11-26' }, { ref: 'F', consultationEnd: '2026-12-01', appealStarted: '2026-11-01' },
+    { ref: 'G', consultationEnd: '2026-11-28' },
+  ];
+  const cs = P.closingSoon(opens, '2026-11-28');
+  assert.deepStrictEqual(cs.map((e) => [e.ref, e.daysLeft]), [['G', 0], ['B', 2], ['A', 9]]);
+  assert.deepStrictEqual(P.commentCounts(opens, '2026-11-28'), { comments: 4, withHomes: 1, closing: 3 });
+  assert.deepStrictEqual([0, 1, 4].map(P.daysLeftText), ['closes today', 'closes tomorrow', '4 days left']);
+  ok('comments close soon and the Home counts');
+
   const { refreshOpen } = require('./planning/index.js');
   const data = { weeks: [{ from: '2026-11-16', applications: [{ ref: 'W/26/00197/FUL', location: 'x', proposal: 'y', link: P.DISPLAY + 'W/26/00197/FUL', date: '2026-11-17' },
     { ref: 'W/26/00002/HP', location: 'a', proposal: 'b', link: P.DISPLAY + 'W/26/00002/HP' }], decisions: [{ ref: 'W/26/00002/HP' }] }],
@@ -359,4 +372,21 @@ function newsletter(lenchesData) {
   assert.strictEqual((h.html.match(/Not yet published by Wychavon\./g) || []).length, 2);
   ok('Harvington newsletter section');
   console.log('All planning tests passed.');
+}
+
+// Newsletter: Comments close soon at the top of the band, also on its own before the week's list is out.
+{
+  const { render } = require('./newsletter/render.js');
+  const closing = [{ ref: 'W/26/1/FUL', location: 'Hill Barn, Church Lench', proposal: 'Erection of 2 dwellings', link: P.DISPLAY + 'W/26/1/FUL', consultationEnd: '2026-12-07', daysLeft: 4, homes: 2, homesLabel: '2 new homes' }];
+  const base = { issueDate: '2026-12-03', events: [], notices: [], roads: [], regulars: [], elsewhere: [], bins: { expired: true, groups: [] } };
+  const out = render({ ...base, planning: { parishes: ['South Lenches', 'Rous Lench'], closing } });
+  {
+    const html = out.html || String(out);
+    assert.ok(html.includes('Comments close soon') && html.includes('By Mon 7 Dec (4 days left)'));
+    assert.ok(html.includes("This week&#39;s list from Wychavon isn&#39;t out yet."));
+    assert.ok(!html.includes('Not yet published by Wychavon.'), 'no weekly parts without a week');
+    assert.ok(html.includes('See the plans and comment'));
+    assert.ok((out.text || '').includes('Comments close soon:'), 'text version too');
+    console.log('ok - newsletter Comments close soon');
+  }
 }
