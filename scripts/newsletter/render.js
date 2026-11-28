@@ -211,7 +211,7 @@ function planningCommittee(p) {
   if (!p.committee || !p.committee.length) return '';
   return `<div style="background:#eef4fa;border-left:4px solid #4d7ea8;padding:8px 10px 4px;margin:8px 0 4px;">`
     + `<div style="font-weight:bold;color:${C.green};margin:0 0 2px;">Going to planning committee</div>`
-    + `<div style="color:${C.muted};font-size:13px;margin:0 0 6px;">Wychavon's planning committee will decide these at its meeting on the date shown. Committee meetings are open to the public.</div>`
+    + `<div style="color:${C.muted};font-size:13px;margin:0 0 6px;">Wychavon's planning committee will decide these at its meeting on the date shown.</div>`
     + p.committee.map((e) => `<div style="margin:0 0 6px;"><span style="color:#2f5d85;font-weight:bold;">${esc(committeeWhen(e))}</span><br><b>${esc(e.location)}</b>${homesBadge(e)}: ${esc(e.proposal)}`
       + ` · ${aNew(e.link, 'See the application', C.accentText)}</div>`).join('')
     + `</div>`;
