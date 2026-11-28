@@ -421,6 +421,7 @@ module.exports = async function (eleventyConfig) {
   eleventyConfig.addFilter("planningClosing", (open) => require("./lib/planning").closingSoon(open, ukToday()));
   eleventyConfig.addFilter("planningCommentCounts", (open) => require("./lib/planning").commentCounts(open, ukToday()));
   eleventyConfig.addFilter("planningMapPoints", (data) => require("./lib/planning").mapPoints(data, ukToday()));
+  eleventyConfig.addFilter("planningCommittee", (open) => require("./lib/planning").atCommittee(open, ukToday()));
   eleventyConfig.addFilter("planningDaysLeft", (n) => require("./lib/planning").daysLeftText(n));
 
   eleventyConfig.addFilter("dateParts", (iso) => ({

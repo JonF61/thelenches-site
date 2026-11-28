@@ -54,7 +54,7 @@ const inLenches = (x) => THIS_SITE === 'lenches' && inLenchesArea(x);
 const { bodyOf } = require('../../lib/wording');
 const { localSource } = require('../../lib/sources');
 const anchors = require('../../lib/anchors');
-const { weekForIssue, closingSoon } = require('../../lib/planning');
+const { weekForIssue, closingSoon, atCommittee } = require('../../lib/planning');
 
 const WINDOW_DAYS = 14;
 const MAX_APPEARANCES = 3;
@@ -321,9 +321,15 @@ function planningFor(data, issueDate) {
     ref: e.ref, location: e.location, proposal: e.proposal, link: e.link, consultationEnd: e.consultationEnd,
     daysLeft: e.daysLeft, ...(e.homes ? { homes: e.homes, homesLabel: e.homesLabel } : {}),
   }));
-  // No weekly list for this issue yet: the band still carries Comments close soon on its own.
-  if (!w) return closing.length ? { parishes: [...parishes], closing } : null;
-  return { ...w, parishes: [...parishes], ...(closing.length ? { closing } : {}) };
+  // Going to planning committee (28 Nov 2026, Jon): committee dates in the 21 days from the issue date.
+  const committee = atCommittee(data.open, issueDate).map((e) => ({
+    ref: e.ref, location: e.location, proposal: e.proposal, link: e.link, committee: e.committee,
+    ...(e.homes ? { homes: e.homes, homesLabel: e.homesLabel } : {}),
+  }));
+  const extra = { ...(closing.length ? { closing } : {}), ...(committee.length ? { committee } : {}) };
+  // No weekly list for this issue yet: the band still carries those boxes on their own.
+  if (!w) return Object.keys(extra).length ? { parishes: [...parishes], ...extra } : null;
+  return { ...w, parishes: [...parishes], ...extra };
 }
 
 function select({ issueDate, pending, whatson, bins, siteupdates, onthisday, cartoons, wherelenches, planning, issues, settings, sources, jpegFor, cutoff, photos }) {

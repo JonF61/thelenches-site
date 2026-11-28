@@ -231,6 +231,10 @@ Total Number of Appeals = 1
   assert.deepStrictEqual(P.commentCounts(opens, '2026-11-28'), { comments: 4, withHomes: 1, closing: 3 });
   assert.deepStrictEqual([0, 1, 4].map(P.daysLeftText), ['closes today', 'closes tomorrow', '4 days left']);
   ok('comments close soon and the Home counts');
+  const ct = P.atCommittee([{ ref: 'A', committee: '2026-12-10' }, { ref: 'B', committee: '2026-11-27' }, { ref: 'C', committee: '2026-12-30' },
+    { ref: 'D', committee: '2026-12-03', decisionDate: '2026-12-03' }, { ref: 'E', committee: '2026-11-28' }], '2026-11-28');
+  assert.deepStrictEqual(ct.map((e) => e.ref), ['E', 'A']);
+  ok('going to planning committee: the next 21 days, undecided');
 
   const { refreshOpen } = require('./planning/index.js');
   const data = { weeks: [{ from: '2026-11-16', applications: [{ ref: 'W/26/00197/FUL', location: 'x', proposal: 'y', link: P.DISPLAY + 'W/26/00197/FUL', date: '2026-11-17' },
@@ -379,7 +383,10 @@ function newsletter(lenchesData) {
   const { render } = require('./newsletter/render.js');
   const closing = [{ ref: 'W/26/1/FUL', location: 'Hill Barn, Church Lench', proposal: 'Erection of 2 dwellings', link: P.DISPLAY + 'W/26/1/FUL', consultationEnd: '2026-12-07', daysLeft: 4, homes: 2, homesLabel: '2 new homes' }];
   const base = { issueDate: '2026-12-03', events: [], notices: [], roads: [], regulars: [], elsewhere: [], bins: { expired: true, groups: [] } };
-  const out = render({ ...base, planning: { parishes: ['South Lenches', 'Rous Lench'], closing } });
+  const committee = [{ ref: 'W/26/2/FUL', location: 'Woodlands, Church Lench', proposal: 'Up to 5 dwellings', link: P.DISPLAY + 'W/26/2/FUL', committee: '2026-12-10' }];
+  const out = render({ ...base, planning: { parishes: ['South Lenches', 'Rous Lench'], closing, committee } });
+  assert.ok(out.html.includes('Going to planning committee') && out.html.includes('Committee Thu 10 Dec'));
+  assert.ok(out.text.includes('- Committee Thu 10 Dec: Woodlands, Church Lench'));
   {
     const html = out.html || String(out);
     assert.ok(html.includes('Comments close soon') && html.includes('By Mon 7 Dec (4 days left)'));
