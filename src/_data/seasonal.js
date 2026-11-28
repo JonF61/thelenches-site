@@ -4,6 +4,7 @@
 //   halloween  31 Oct: pumpkins and bats
 //   harvest    15 Sep to 7 Oct: apples on the trees, wheat sheaves
 //   christmas  1 Dec to 6 Jan (Twelfth Night): snow and a star; santa on 24 Dec as well
+//   santaSky   1 to 24 Dec: Santa's sleigh flies across the skyline (one of the random scenes; every visit on 24 Dec)
 //   easter     Palm Sunday to Easter Monday: daffodils
 //   blossom    15 Mar to 30 Apr, but not during Easter
 //   stgeorge   23 Apr: a flag of St George on the church tower (needs the taller sky)
@@ -36,6 +37,7 @@ function seasonsFor(today) {
     harvest: md >= '09-15' && md <= '10-07',
     christmas: md >= '12-01' || md <= '01-06',
     santa: md === '12-24',
+    santaSky: md >= '12-01' && md <= '12-24',
     easter: isEaster,
     blossom: md >= '03-15' && md <= '04-30' && !isEaster,
     stgeorge: md === '04-23',
