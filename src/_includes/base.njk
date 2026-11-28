@@ -85,7 +85,7 @@
         <strong>{{ site.brand or "The Lenches" }} Website</strong><br>
         <a href="mailto:{{ site.email }}">{{ site.email }}</a>
         {#- The other site, run by the same volunteers (26 Nov 2026, Jon): site.json neighbour {name, url}. -#}
-        {% if site.neighbour %}<br>Our neighbouring website: <a href="{{ site.neighbour.url }}">{{ site.neighbour.name }}</a>{% endif %}
+        {% if site.neighbour %}<br>Our neighbouring website<br><a href="{{ site.neighbour.url }}">{{ site.neighbour.name }}</a>{% endif %}
       </div>
       {#- Every page, grouped as on the Home page (site.json footer). -#}
       <nav class="footer-nav" aria-label="All pages">
