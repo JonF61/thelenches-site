@@ -15,6 +15,7 @@
 
 const g = require('../ingest/google');
 const { allEntries, orgRows, rules } = require('../outreach/orgs');
+const { webFetch } = require('../../lib/webfetch');
 
 const UA = 'Mozilla/5.0 (compatible; LenchesWebsite/1.0; +https://thelenches.org.uk)';
 const TIMEOUT_MS = 12000;
@@ -100,7 +101,7 @@ async function fetchText(url, deps) {
 }
 
 // The address found on one website, or ''.
-async function findEmail(website, deps = { fetch }) {
+async function findEmail(website, deps = { fetch: webFetch }) {
   if (!/^https?:\/\//i.test(str(website)) || /facebook\.com|instagram\.com/i.test(website)) return '';
   const home = await fetchText(website, deps);
   const all = addressesIn(home);
@@ -117,7 +118,7 @@ async function findEmail(website, deps = { fetch }) {
 }
 
 // only: one listing id (trade-… / eat-…), or '' for all. Returns { looked, found, saved }.
-async function run({ only = '' } = {}, deps = { g, fetch }) {
+async function run({ only = '' } = {}, deps = { g, fetch: webFetch }) {
   const R = await rules();
   const entries = (await allEntries()).filter((e) => e.listing && (!only || e.id === only));
   if (only && !entries.length) { console.log(`No listing ${only}. Nothing to do.`); return { looked: 0, found: 0, saved: 0 }; }
